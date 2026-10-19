@@ -36,8 +36,8 @@ AGENTS.md（権限と責任: 絶対禁止事項、役割と担当の対応表）
 - [03-build-protocol.md](03-build-protocol.md) — 製造担当の権限境界(設計書からの逸脱時の対応)、スコープ制約
 - [04-inspect-protocol.md](04-inspect-protocol.md) — 検収担当が着手確認から終了確認まで必ず通る7段階の手順と合否条件
 - [05-verification-protocol.md](05-verification-protocol.md) — テスト追加時・検証時に必須の手順順序(red確認→対照実験)とアサーションの原則(発見の分類義務は[04-inspect-protocol.md](04-inspect-protocol.md)を参照)
-- 06-ui-md3-protocol.md — UI・MD3 Expressiveの必須制約(**初回push直後に作成予定。現在は欠番**)
-- 07-mahjong-rule-protocol.md — 麻雀ルール・点数計算の確定事実の扱い(**初回push直後に作成予定。現在は欠番**)
+- [06-ui-md3-protocol.md](06-ui-md3-protocol.md) — `src/ui/`で必ず守る技術制約(色トークン・Material Webのラッパー経由・自作部品の置き場所・バージョン固定・bare import禁止)、牌画像の色の例外
+- [07-mahjong-rule-protocol.md](07-mahjong-rule-protocol.md) — ルール仕様の確定/未確定の扱い、所定値の変更禁止、三麻の不変条件、点数の期待値の出典
 - [08-independent-review-protocol.md](08-independent-review-protocol.md) — マージ提案前の独立レビュー1本以上のゲートと省略条件、レビュー担当の読み取り専用の権限境界、指摘の真偽判定の義務
 
 各ファイルの「必須事項」は上から順に実行できる構成にしてある。手法の詳細・具体例は該当する[docs/rules/advisory/](advisory/README.md)のファイルにリンクする。
