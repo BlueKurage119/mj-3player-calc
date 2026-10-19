@@ -17,7 +17,12 @@ npm run build:wasm   # 初回と Rust 変更時
 npm install
 npm run dev
 npm test
+npm run lint && npm run typecheck && npm run format:check
 ```
+
+## 開発の進め方
+
+Issue 駆動で、ヒアリング→設計→製造→検収の順に進めます。詳細は [CLAUDE.md](CLAUDE.md)・[docs/rules/](docs/rules/README.md)、要件は [docs/requirements.md](docs/requirements.md)、Issue 下書きは [docs/issues-draft.md](docs/issues-draft.md) を参照してください。
 
 ## ライセンス
 
