@@ -83,7 +83,7 @@ Issue開発フローの詳細は、必ず守る手順(業務標準)と、それ�
 
 - React 19 + TypeScript + Vite + vite-plugin-pwa。計算コアはTypeScript、手牌分解器はRust(wasm-pack でWASM化)
 - Biome(`biome.json`)による lint・整形。詳細な規約は設定ファイルを正とする
-- UIは Material Design 3 Expressive に準ずる。Material Web(`@material/web`)で使えるものはラップ・改造して使い、Expressive 固有で使えない部分は自作する。色トークン規約等の必須制約は `docs/rules/06-ui-md3-protocol.md`(作成予定)を参照
+- UIは Material Design 3 Expressive に準ずる。Material Web(`@material/web`)で使えるものはラップ・改造して使い、Expressive 固有で使えない部分は自作する。色トークン規約等の必須制約は [docs/rules/06-ui-md3-protocol.md](docs/rules/06-ui-md3-protocol.md) を参照
 - UI文言は日本語
 
 ## 6. 主要コマンド
