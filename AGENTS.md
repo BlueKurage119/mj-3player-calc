@@ -48,6 +48,7 @@
 #### 麻雀ルール・点数計算に関する遵守事項
 
 - ルールの解釈・点数は、出典(公式ルール・点数表等)や業務標準、テストケースと照合できたものだけを、設計上の「確定」事実として扱うこと
+- ルールの正本は [docs/mahjong-rules.md](docs/mahjong-rules.md)、扱い方の必須事項は [docs/rules/07-mahjong-rule-protocol.md](docs/rules/07-mahjong-rule-protocol.md) を参照すること
 
 ## 4. 開発の進め方
 
@@ -107,6 +108,7 @@ npm test               # Vitest
 ## 8. 参照文書
 
 - [docs/requirements.md](docs/requirements.md) — 要件(協議記録。【確定】【設計案】【未確定】のタグで確度を区別している)
+- [docs/mahjong-rules.md](docs/mahjong-rules.md) — 麻雀ルール仕様(計算の前提となるルールの正本)
 - [docs/license-policy.md](docs/license-policy.md) — 参照リポジトリの調査とライセンス方針
 - [docs/issues-draft.md](docs/issues-draft.md) — Issue下書き(Epic単位)
 - [docs/design/](docs/design/) — 各IssueのIssue単位設計書
