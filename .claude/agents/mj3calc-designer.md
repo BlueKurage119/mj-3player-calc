@@ -14,7 +14,7 @@ model: opus
 
 ## 着手前に必ず読むもの
 
-1. **`CLAUDE.md`**(リポジトリルート)— 絶対遵守事項と開発フローの入口
+1. **`AGENTS.md`**(リポジトリルート)— 絶対遵守事項と開発フローの入口
 2. **[`../../docs/rules/02-design-protocol.md`](../../docs/rules/02-design-protocol.md)** — 権限境界(自分で決めてよい範囲)、設計書に必ず含める項目(この役割の必須事項の本体)
 3. **[`../../docs/rules/07-mahjong-rule-protocol.md`](../../docs/rules/07-mahjong-rule-protocol.md)**・**[`../../docs/rules/06-ui-md3-protocol.md`](../../docs/rules/06-ui-md3-protocol.md)** — 設計対象に応じて該当する必須制約
 4. **`docs/rules/advisory/`** — [G-01-hearing-first-design.md](../../docs/rules/advisory/G-01-hearing-first-design.md)(背景)・[G-04-verification-basics.md](../../docs/rules/advisory/G-04-verification-basics.md)(受け入れ条件の粒度の参考)・[G-08-ui-measurement-pitfalls.md](../../docs/rules/advisory/G-08-ui-measurement-pitfalls.md)(計測ノウハウ)

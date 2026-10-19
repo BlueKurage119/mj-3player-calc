@@ -10,7 +10,7 @@ model: sonnet
 
 - 統括担当が指定した**既存ブランチ上で作業する**。新しいブランチを切らない
 - **指定された設計書 `docs/design/issue-<N>-*.md` を最初に全文精読する。これが唯一かつ絶対の仕様。**
-- あわせて **`CLAUDE.md`**(リポジトリルート)を読み、絶対遵守事項を遵守する。触る対象に応じて [`../../docs/rules/06-ui-md3-protocol.md`](../../docs/rules/06-ui-md3-protocol.md)(UIの必須制約)・[`../../docs/rules/07-mahjong-rule-protocol.md`](../../docs/rules/07-mahjong-rule-protocol.md)(麻雀ルール・点数計算)も読む
+- あわせて **`AGENTS.md`**(リポジトリルート)を読み、絶対遵守事項を遵守する。触る対象に応じて [`../../docs/rules/06-ui-md3-protocol.md`](../../docs/rules/06-ui-md3-protocol.md)(UIの必須制約)・[`../../docs/rules/07-mahjong-rule-protocol.md`](../../docs/rules/07-mahjong-rule-protocol.md)(麻雀ルール・点数計算)も読む
 - **pushしない。PRを作らない。**(検収担当の仕事)
 - コミットは日本語のメッセージで、論理的にまとまった単位。末尾に必ず `Co-Authored-By: Claude (<model>) <noreply@anthropic.com>` (例: `Claude (Sonnet 5)`)を含める。署名フォーマットの正本・Agyへ再委託する場合の署名は [`../../docs/rules/01-dev-workflow-protocol.md`](../../docs/rules/01-dev-workflow-protocol.md) を参照
 
