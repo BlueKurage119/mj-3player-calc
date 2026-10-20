@@ -1,8 +1,8 @@
 # Issue化ドラフト(Epic単位)
 
-更新日: 2026-10-20
+更新日: 2026-10-20(Issue を登録)
 
-[要件](requirements.md)を実装タスクに分けた下書き。Issue を登録したら、見出しを GitHub の Issue へのリンクにする。識別番号(A1 など)は Issue 番号とは別で、どの Epic のどの項目かを示すために使う。各項目の未決事項は、着手前のヒアリングで決める。
+[要件](requirements.md)を実装タスクに分けた下書き。Issue を登録したら、見出しを GitHub の Issue へのリンクにする。各 Epic は親 Issue とし、項目は着手時に Sub-Issue として登録する。マイルストーンは Epic ごとに設け(「Epic A: 計算コアの三麻化」など)、親 Issue とその Sub-Issue に付ける。識別番号(A1 など)は Issue 番号とは別で、どの Epic のどの項目かを示すために使う。各項目の未決事項は、着手前のヒアリングで決める。
 
 **Version 1 の範囲**: Epic A〜E と G。Epic F はフェーズ1(F1・F2)のみ v1 に含める。
 
@@ -17,22 +17,22 @@
 
 - 業務標準 06(UI・MD3 Expressive)と 07(麻雀ルール・点数計算)、麻雀ルール仕様(済)
 
-## Epic A: 計算コアの三麻化
+## [Epic A: 計算コアの三麻化](https://github.com/BlueKurage119/mj-3player-calc/issues/2)
 
-- **A1. 点数計算のゴールデンテスト整備**
+- **[A1. 点数計算のゴールデンテスト整備](https://github.com/BlueKurage119/mj-3player-calc/issues/9)**
   改修前の挙動を固定する。出典付きの牌姿と期待値(役・翻・符・点数)。以降の改修の安全網。
-- **A2. 三麻の牌構成**
+- **[A2. 三麻の牌構成](https://github.com/BlueKurage119/mj-3player-calc/issues/10)**
   2m〜8m の除外(入力の検証、`shantenTiles`・`chitoitsuShantenTiles` の有効牌)、残り枚数の計算、ドラ表示牌の 1m⇔9m。
-- **A3. 三麻の卓情報**
+- **[A3. 三麻の卓情報](https://github.com/BlueKurage119/mj-3player-calc/issues/11)**
   自風を東南西に限る。親子の判定。本場の1本場あたりの点数を設定値にする。
-- **A4. 北の扱い**
+- **[A4. 北の扱い](https://github.com/BlueKurage119/mj-3player-calc/issues/12)**
   抜きドラ(抜いた枚数×1翻、手牌の枚数に数えない)と共通役牌(刻子・槓子で1翻、雀頭の符)。
-- **A5. 支払い計算(ツモ損3方式)**
+- **[A5. 支払い計算(ツモ損3方式)](https://github.com/BlueKurage119/mj-3player-calc/issues/13)**
   ツモ損あり／北家分折半／ロン打点折半。親・子それぞれのツモとロン。未決: 端数処理。
-- **A6. ローカル役とオープンリーチ**
+- **[A6. ローカル役とオープンリーチ](https://github.com/BlueKurage119/mj-3player-calc/issues/14)**
   [麻雀ルール仕様](mahjong-rules.md)§4.2 の役。牌姿で判定できる役から実装する。一括でオン・オフする。八連荘は実装しない。未決: 各役の定義の出典、状況の入力が要る役(燕返し・槓振り・人和・石の上にも三年)の入力方法。
 
-## Epic B: ルール設定
+## [Epic B: ルール設定](https://github.com/BlueKurage119/mj-3player-calc/issues/3)
 
 - **B1. ルール項目の拡張**
   [麻雀ルール仕様](mahjong-rules.md)の「変更可」の項目(赤ドラ・北の扱い・ツモ損・本場・供託・数え役満・切り上げ満貫・喰い断・オープンリーチ・ローカル役)。
@@ -41,7 +41,7 @@
 - **B3. ルールプリセット**
   既定のプリセット「雀魂段位戦」「一番街段位戦」と、利用者による各項目の変更。未決: 各プリセットの設定値(準拠先の公式ルールを出典にする)、利用者が作った組み合わせを保存するか。
 
-## Epic C: デザイン基盤
+## [Epic C: デザイン基盤](https://github.com/BlueKurage119/mj-3player-calc/issues/4)
 
 - **C1. MD3 テーマ基盤**
   `@material/material-color-utilities` によるトークンの生成、ライト・ダーク、色トークンの規約。
@@ -50,7 +50,7 @@
 - **C3. 牌画像**
   FluffyStuff/riichi-mahjong-tiles(CC0)の取り込み。クレジット表示。
 
-## Epic D: 入力 UI
+## [Epic D: 入力 UI](https://github.com/BlueKurage119/mj-3player-calc/issues/5)
 
 - **D1. 画面の骨格**
   入力部と結果部の配置(mahjong-calc を参考に)。片手操作を前提にする。
@@ -62,7 +62,7 @@
 - **D5. 状況の入力**
   自風・場風・ツモ／ロン・立直などの偶然役・本場・供託。
 
-## Epic E: 結果表示
+## [Epic E: 結果表示](https://github.com/BlueKurage119/mj-3player-calc/issues/6)
 
 - **E1. 牌姿に応じた表示の切り替え**
   和了形・聴牌形・それ以外。
@@ -71,7 +71,7 @@
 - **E3. 聴牌の結果**
   待ち牌ごとの役と打点、残り枚数。
 
-## Epic F: 何切る
+## [Epic F: 何切る](https://github.com/BlueKurage119/mj-3player-calc/issues/7)
 
 - **F1. 打牌候補の一覧(v1)**
   向聴数、受け入れの種類と枚数。三麻の残り枚数で計算する。
@@ -80,7 +80,7 @@
 - **F3. 聴牌確率・和了確率・期待値(v1 の後)**
   クリーンルームで独自実装し、Web Worker で計算する。公開されているアルゴリズム解説や論文を出典にする。
 
-## Epic G: PWA・リリース
+## [Epic G: PWA・リリース](https://github.com/BlueKurage119/mj-3player-calc/issues/8)
 
 - **G1. オフライン対応とインストール**
   WASM・牌画像のプリキャッシュ、更新の通知、アイコン・マニフェスト。
