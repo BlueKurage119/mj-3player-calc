@@ -146,7 +146,7 @@ export interface GoldenCase {
 
 1. 手牌・副露・ドラ表示牌に `2m`〜`8m` が無い
 2. ドラ表示牌に `1m` が無い
-3. 北(`4z`)が手牌・副露に無い
+3. 北(`4z`)が手牌・副露に無い。ただし、期待値の役が国士無双・字一色・小四喜・大四喜の役満を含むケースは例外とし、北を含んでよい【確定】(オーナー回答。役満の倍数は、北に関わる三麻の設定に左右されないため)
 4. 副露に `chii` が無い、赤5m(`0m`)が無い
 5. `seat` / `round` に `'north'` が無い。連風牌(`round` と `seat` が同じ風)の雀頭を含まない
 6. `source.yakuHanFu` と `source.basePoint` が空でない
@@ -266,7 +266,7 @@ G22・G23 は雀魂の設定(切り上げ満貫あり)では画面の点数が�
 8. **独立性**: `golden-cases.ts` の `expected.basePoint` が数値リテラルで書かれ、`calculateBasePoint` 等の実装関数を呼んで作られていない(`grep -n "calculateBasePoint" src/core/golden-cases.ts` が0件)
 9. **検知力の確認**: `src/core/score.ts` の `bp >= (roundedMangan ? 1920 : 2000)` を一時的に `bp >= 1920` に変えて `npm test` を実行すると golden テストが失敗し、元に戻すと通る(確認後に `git status` で差分が無いことを確かめる)
 10. **品質**: `npm run lint`・`npm run typecheck`・`npm run format:check` がエラー0
-11. **手計算ケースの比率**: `source.yakuHanFu` が和了画面以外(Wikipedia・手計算)のケースが全体の3割以下(8局まで)
+11. **手計算ケースの比率**: `source.yakuHanFu` が和了画面以外(Wikipedia・手計算)のケースが全体の3割以下(8局まで)。データ検査で機械的に確かめる。判定は「`source.verifiedBy` に `'screenshot'` を含まないケース」の件数による
 12. **Rule の固定**: テスト内の `Rule` 定数が §3.1 の全フィールドを明示し、値が表のとおりである。`GoldenCase.riichi` が変換なしで `HandOptions.riichi` に渡されている
 13. **検算の手段**: §5.3-9 のデータ検査テストが通る(全ケースに2つ以上の検算手段が記されている)。加えて `grep -n "livewing\|mahjong-calc" src/core/golden-cases.ts` で、検算手段として livewing/mahjong-calc が挙げられていないことを確かめる
 
