@@ -288,6 +288,13 @@ const isChitoitsuShape = (c: GoldenCase): boolean => {
   return isChitoitsu;
 };
 
+const northYakuman = [
+  'kokushi',
+  'kokushi-13',
+  'tsuiso',
+  'shosushi',
+  'daisushi'
+];
 const windNumber = { east: 1, south: 2, west: 3 } as const;
 const verifiedByValues = ['screenshot', 'hand-calc', 'kobalab'];
 const absolutePath = /\/Users\/|\/home\/|~\//;
@@ -301,7 +308,10 @@ describe.each(goldenCases)('データ検査 $id', c => {
       []
     );
   });
-  test('北 (4z) が手牌・副露に無い', () => {
+  test('北 (4z) が手牌・副露に無い (北を含む役満は例外)', () => {
+    // 国士無双・字一色・小四喜・大四喜は北を含んでよい (設計書 §5.3-3)
+    if (Object.keys(c.expected.yaku).some(y => northYakuman.includes(y)))
+      return;
     const tiles = [
       ...parseTiles(c.hand),
       ...(c.melds ?? []).map(m => parseSingleTile(m.tile))
@@ -354,6 +364,15 @@ describe.each(goldenCases)('データ検査 $id', c => {
 const noCases = goldenCases.length === 0;
 
 describe('ケース全体の検査', () => {
+  test.skipIf(noCases)(
+    'verifiedBy に screenshot を含まないケースが全体の3割以下',
+    () => {
+      const n = goldenCases.filter(
+        c => !c.source.verifiedBy.includes('screenshot')
+      ).length;
+      expect(n / goldenCases.length).toBeLessThanOrEqual(0.3);
+    }
+  );
   test.skipIf(noCases)('id が重複しない', () => {
     const ids = goldenCases.map(c => c.id);
     expect(new Set(ids).size).toBe(ids.length);
