@@ -4,18 +4,16 @@
 // 三麻化 (A2 以降) で意図しない変化があれば検知する安全網とする。
 //
 // 出典の扱い (業務標準07「点数の期待値」)
-// - 役・飜・符: 雀魂 (または麻雀一番街) の和了画面を、オーナーが cases.csv にまとめたもの。
-//   画面の点数表示 (三麻はツモ損を含む) は期待値に使わない。
-//   一部は Wikipedia「麻雀の得点計算」「麻雀の役一覧」に基づく手計算で補う。
+// - 牌姿: オーナーが自作した和了形。実際の対局の和了画面は使わない。
+// - 役・飜・符・基本点・区分: 手計算 (Wikipedia「麻雀の得点計算」「麻雀の役一覧」) と
+//   電脳麻将 (kobalab) の両方で一致を確かめたものを期待値とする。
+//   実装の取り込み元や本リポジトリのアプリ画面は検算に使わない。
 // - 基本点: Wikipedia「麻雀の得点計算」の式 (基本点 = 符 x 2^(飜+2)、満貫以上の区分)
 //   で手計算した数値を、golden-cases.ts に数値リテラルで直接書く。
 //   期待値を実装の関数で作らない (独立性のため)。
-// - 抜き北: 抜きドラの飜を差し引いた飜・基本点・区分を収録し、
-//   差し引いた飜数を source.nukiDoraDeducted に記す。手牌は抜き北なしの形で入力する。
+// - 抜き北: 自作の和了形には含めない (抜きドラの飜の差し引きは行わない)。
 // - 裏ドラ: コアに専用の役名が無いため、表ドラと合算して dora の飜に入れる。
 //   裏ドラ表示牌は dora 表示牌の文字列に加える。
-// - 検算: 役・飜・符は screenshot / hand-calc / kobalab のうち2つ以上で一致を確かめたものとする。
-//   実装の取り込み元や本リポジトリのアプリ画面は検算に使わない。
 //
 // 検証しないもの: 支払い (親子配分・本場・供託・ツモ損)、偶然役 (一発・嶺上・槍槓・海底・天和など)。
 
@@ -296,7 +294,6 @@ const northYakuman = [
   'daisushi'
 ];
 const windNumber = { east: 1, south: 2, west: 3 } as const;
-const verifiedByValues = ['screenshot', 'hand-calc', 'kobalab'];
 const absolutePath = /\/Users\/|\/home\/|~\//;
 
 describe.each(goldenCases)('データ検査 $id', c => {
@@ -337,42 +334,24 @@ describe.each(goldenCases)('データ検査 $id', c => {
     for (const s of [
       c.source.yakuHanFu,
       c.source.basePoint,
-      c.source.screenshot ?? '',
       c.source.note ?? ''
     ])
       expect(s).not.toMatch(absolutePath);
   });
-  test('verifiedBy が重複のない2要素以上で、値が既定のいずれか', () => {
-    const v = c.source.verifiedBy as string[];
-    expect(v.length).toBeGreaterThanOrEqual(2);
-    expect(new Set(v).size).toBe(v.length);
-    for (const x of v) expect(verifiedByValues).toContain(x);
-  });
-  test('nukiDoraDeducted は指定するなら正の整数', () => {
-    const n = c.source.nukiDoraDeducted;
-    if (typeof n === 'undefined') return;
-    expect(Number.isInteger(n)).toBe(true);
-    expect(n).toBeGreaterThan(0);
+  test('verifiedBy に hand-calc と kobalab の両方があり、ほかの値が無い', () => {
+    const v = [...(c.source.verifiedBy as string[])].sort();
+    expect(v).toEqual(['hand-calc', 'kobalab']);
   });
 });
 
 // ---- ケース全体の検査 (設計書 §5.3 の 7, 8 と §8 受け入れ条件 4) ----
 // ケースが空のあいだは満たせない検査なので、スキップする。
-// (G01〜G28 の期待値は、オーナーが cases.csv を用意してから別に投入する。)
+// (G01〜G28 の期待値は、オーナーが cases.csv を用意してから別に投入する。G28 は任意。)
 // ケースを投入した後は、スキップせずに実行される。
 
 const noCases = goldenCases.length === 0;
 
 describe('ケース全体の検査', () => {
-  test.skipIf(noCases)(
-    'verifiedBy に screenshot を含まないケースが全体の3割以下',
-    () => {
-      const n = goldenCases.filter(
-        c => !c.source.verifiedBy.includes('screenshot')
-      ).length;
-      expect(n / goldenCases.length).toBeLessThanOrEqual(0.3);
-    }
-  );
   test.skipIf(noCases)('id が重複しない', () => {
     const ids = goldenCases.map(c => c.id);
     expect(new Set(ids).size).toBe(ids.length);
