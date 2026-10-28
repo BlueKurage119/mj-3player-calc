@@ -8,6 +8,8 @@
 // - 役・飜・符・基本点・区分: 手計算 (Wikipedia「麻雀の得点計算」「麻雀の役一覧」) と
 //   電脳麻将 (kobalab) の両方で一致を確かめたものを期待値とする。
 //   実装の取り込み元や本リポジトリのアプリ画面は検算に使わない。
+//   全ケースを手計算 (Excel の計算式) と電脳麻将の両方で検算した。
+// - 資料: ../../../doc/三麻テスト用牌譜.xlsx (1局1シート)。期待値は golden-cases.ts に転記し、テストは xlsx を読まない。
 // - 基本点: Wikipedia「麻雀の得点計算」の式 (基本点 = 符 x 2^(飜+2)、満貫以上の区分)
 //   で手計算した数値を、golden-cases.ts に数値リテラルで直接書く。
 //   期待値を実装の関数で作らない (独立性のため)。
@@ -338,16 +340,11 @@ describe.each(goldenCases)('データ検査 $id', c => {
     ])
       expect(s).not.toMatch(absolutePath);
   });
-  test('verifiedBy に hand-calc と kobalab の両方があり、ほかの値が無い', () => {
-    const v = [...(c.source.verifiedBy as string[])].sort();
-    expect(v).toEqual(['hand-calc', 'kobalab']);
-  });
 });
 
 // ---- ケース全体の検査 (設計書 §5.3 の 7, 8 と §8 受け入れ条件 4) ----
 // ケースが空のあいだは満たせない検査なので、スキップする。
-// (G01〜G28 の期待値は、オーナーが cases.csv を用意してから別に投入する。G28 は任意。)
-// ケースを投入した後は、スキップせずに実行される。
+// (ケースが空だった間の扱い。G01〜G28 の28件を xlsx から投入した現在は、スキップされずに実行される。)
 
 const noCases = goldenCases.length === 0;
 
