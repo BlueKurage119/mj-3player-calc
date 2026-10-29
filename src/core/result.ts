@@ -14,6 +14,7 @@ import {
   type TileCountsIndex,
   compareTiles,
   countsIndexToTile,
+  isSanmaTile,
   tileAvailableCount,
   tilesToCounts
 } from './tile';
@@ -65,12 +66,23 @@ interface JustHora {
 
 export type Result = HoraShanten | DiscardShanten | Tempai | JustHora | null;
 
+const isValidSanmaInput = (input: Input): boolean => {
+  if (input.hand.some(t => !isSanmaTile(t))) return false;
+  if (input.dora.some(t => !isSanmaTile(t))) return false;
+  for (const meld of input.melds) {
+    if (meld.type === 'chii') return false;
+    if (meld.tile !== null && !isSanmaTile(meld.tile)) return false;
+  }
+  return true;
+};
+
 export const generateResult = (
   table: Table,
   input: Input,
   handOptions: HandOptions,
   rule: Rule
 ): Result => {
+  if (!isValidSanmaInput(input)) return null;
   if (input.hand.length % 3 === 0) return null;
 
   const handCounts = tilesToCounts(input.hand);

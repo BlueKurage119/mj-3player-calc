@@ -3,6 +3,7 @@ import {
   type TileCount,
   type TileCounts,
   type TileCountsIndex,
+  isSanmaIndex,
   tileCountsFirstIndex
 } from '.';
 import { countBy, groupBy, memoize, uniqueSorted } from '../util';
@@ -77,7 +78,7 @@ export const waitingTiles = (
       }
       throw new Error();
     })
-    .filter(t => handAndMeldsCounts[t] < 4);
+    .filter(t => handAndMeldsCounts[t] < 4 && isSanmaIndex(t));
   tiles.sort((a, b) => a - b);
   return uniqueSorted(tiles, (a, b) => a === b);
 };
@@ -181,7 +182,11 @@ export const shantenTiles = (
     }
   }
   return ret.flatMap((a, i) =>
-    a && (handAndMeldsCounts[i] as TileCount) < 4 ? [i] : []
+    a &&
+    isSanmaIndex(i as TileCountsIndex) &&
+    (handAndMeldsCounts[i] as TileCount) < 4
+      ? [i]
+      : []
   ) as TileCountsIndex[];
 };
 
@@ -192,8 +197,12 @@ export const countChitoitsuShanten = (counts: TileCounts): number =>
 
 export const chitoitsuShantenTiles = (counts: TileCounts): TileCountsIndex[] =>
   (countBy(counts, c => c > 0) < 7
-    ? counts.flatMap((c, i) => (c <= 1 ? [i] : []))
-    : counts.flatMap((c, i) => (c === 1 ? [i] : []))) as TileCountsIndex[];
+    ? counts.flatMap((c, i) =>
+        c <= 1 && isSanmaIndex(i as TileCountsIndex) ? [i] : []
+      )
+    : counts.flatMap((c, i) =>
+        c === 1 && isSanmaIndex(i as TileCountsIndex) ? [i] : []
+      )) as TileCountsIndex[];
 
 export const countKokushiShanten = (counts: TileCounts): number => {
   const yaochuCounts = counts.filter(
