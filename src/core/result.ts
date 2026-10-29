@@ -70,7 +70,6 @@ const isValidSanmaInput = (input: Input): boolean => {
   if (input.hand.some(t => !isSanmaTile(t))) return false;
   if (input.dora.some(t => !isSanmaTile(t))) return false;
   for (const meld of input.melds) {
-    if (meld.type === 'chii') return false;
     if (meld.tile !== null && !isSanmaTile(meld.tile)) return false;
   }
   return true;

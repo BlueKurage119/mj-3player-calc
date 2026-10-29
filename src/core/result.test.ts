@@ -1,9 +1,9 @@
 import { describe, expect, test } from 'vitest';
-import type { HandOptions } from './input';
+import type { HandOptions, Meld } from './input';
 import { generateResult } from './result';
 import type { Rule } from './rule';
 import type { Table } from './table';
-import type { NumberTile, Tile } from './tile';
+import type { Tile } from './tile';
 
 // ---- 補助関数 (golden.test.ts より複製) ----
 
@@ -49,7 +49,7 @@ const parseSingleTile = (s: string): Tile => {
 
 const rule: Rule = {
   red: { m: 0, p: 1, s: 1 },
-  honbaBonus: 100,
+  honbaPoint: 200,
   roundedMangan: false,
   doubleWindFu: 4,
   accumlatedYakuman: true,
@@ -130,44 +130,14 @@ describe('入力の検証 (V1〜V6)', () => {
     expect(res).toBeNull();
   });
 
-  test('V4: 副露にチー 1m が含まれる場合 (手牌H4: 10枚 + チー 1m) -> 例外を投げず null', () => {
-    const res = generateResult(
-      defaultTable,
-      {
-        hand: parseTiles('19m123456p78s'),
-        melds: [
-          {
-            type: 'chii',
-            tile: parseSingleTile('1m') as NumberTile,
-            includeRed: false
-          }
-        ],
-        dora: []
-      },
-      defaultHandOptions,
-      rule
-    );
-    expect(res).toBeNull();
-  });
-
-  test('V5: 副露にチー 1p が含まれる場合 (手牌H4: 10枚 + チー 1p) -> null', () => {
-    const res = generateResult(
-      defaultTable,
-      {
-        hand: parseTiles('19m123456p78s'),
-        melds: [
-          {
-            type: 'chii',
-            tile: parseSingleTile('1p') as NumberTile,
-            includeRed: false
-          }
-        ],
-        dora: []
-      },
-      defaultHandOptions,
-      rule
-    );
-    expect(res).toBeNull();
+  test('チーは Meld の型で表せない', () => {
+    const m: Meld = {
+      // @ts-expect-error チーは三麻に存在しない
+      type: 'chii',
+      tile: parseSingleTile('1m'),
+      includeRed: false
+    };
+    expect(m).toBeDefined();
   });
 
   test('V6: 手牌に 2m〜8m が5枚含まれる場合 (H6: 22222m9m123456p78s: 14枚) -> 例外を投げず null', () => {
@@ -442,5 +412,67 @@ describe('null 混入なし', () => {
         expect(Number.isNaN(a.count)).toBe(false);
       }
     }
+  });
+});
+
+// ---- 設計書 §5.2-3: 天和・地和 ----
+describe('天和・地和 (T1〜T3)', () => {
+  // 出典: mahjong-rules.md §7【確定】(親は自風が東の者)
+  const getHoraYakuNames = (seat: Table['seat'], handStr: string): string[] => {
+    const res = generateResult(
+      { round: 'east', seat, continue: 0, deposit: 0 },
+      {
+        hand: parseTiles(handStr),
+        melds: [],
+        dora: []
+      },
+      {
+        ...defaultHandOptions,
+        tenho: true
+      },
+      rule
+    );
+    expect(res).not.toBeNull();
+    expect(res?.type).toBe('hora-shanten');
+    if (res?.type !== 'hora-shanten') return [];
+    expect(res.info.type).toBe('hora');
+    if (res.info.type !== 'hora') return [];
+    return res.info.hora.flatMap(h => h.yaku).map(y => y.name);
+  };
+
+  test('T1-親: 通常形 自風東で天和', () => {
+    const yakuNames = getHoraYakuNames('east', '111m999m123p456p11z');
+    expect(yakuNames).toContain('tenho');
+    expect(yakuNames).not.toContain('chiho');
+  });
+
+  test('T1-子: 通常形 自風南で地和', () => {
+    const yakuNames = getHoraYakuNames('south', '111m999m123p456p11z');
+    expect(yakuNames).toContain('chiho');
+    expect(yakuNames).not.toContain('tenho');
+  });
+
+  test('T2-親: 七対子 自風東で天和', () => {
+    const yakuNames = getHoraYakuNames('east', '1199m11p22p33s44s11z');
+    expect(yakuNames).toContain('tenho');
+    expect(yakuNames).not.toContain('chiho');
+  });
+
+  test('T2-子: 七対子 自風西で地和', () => {
+    const yakuNames = getHoraYakuNames('west', '1199m11p22p33s44s11z');
+    expect(yakuNames).toContain('chiho');
+    expect(yakuNames).not.toContain('tenho');
+  });
+
+  test('T3-親: 国士無双 自風東で天和', () => {
+    const yakuNames = getHoraYakuNames('east', '19m19p19s12345677z');
+    expect(yakuNames).toContain('tenho');
+    expect(yakuNames).not.toContain('chiho');
+  });
+
+  test('T3-子: 国士無双 自風南で地和', () => {
+    const yakuNames = getHoraYakuNames('south', '19m19p19s12345677z');
+    expect(yakuNames).toContain('chiho');
+    expect(yakuNames).not.toContain('tenho');
   });
 });

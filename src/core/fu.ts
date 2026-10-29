@@ -55,11 +55,6 @@ interface PinfuTsumoFu {
   fu: 0;
 }
 
-interface KuiPinfuFu {
-  type: 'kui-pinfu';
-  fu: 10;
-}
-
 export type Fu =
   | Futei
   | ShuntsuFu
@@ -68,8 +63,7 @@ export type Fu =
   | WaitingFu
   | MenzenRon
   | TsumoFu
-  | PinfuTsumoFu
-  | KuiPinfuFu;
+  | PinfuTsumoFu;
 
 export const fu = (
   decomposeResult: DecomposeResult,
@@ -122,28 +116,26 @@ export const fu = (
     ...melds.flatMap(m =>
       m.tile === null
         ? []
-        : m.type === 'chii'
-          ? [{ type: 'shuntsu', tile: tileToCountsIndex(m.tile), fu: 0 } as Fu]
-          : [
-              {
-                type: 'kotsu',
-                tile: tileToCountsIndex(m.tile),
-                kotsuType:
-                  m.type === 'pon' ? 'minko' : m.closed ? 'ankan' : 'minkan',
-                fu:
-                  m.tile.type === 'z' || m.tile.n === 1 || m.tile.n === 9
-                    ? m.type === 'pon'
-                      ? 4
-                      : m.closed
-                        ? 32
-                        : 16
-                    : m.type === 'pon'
-                      ? 2
-                      : m.closed
-                        ? 16
-                        : 8
-              } as KotsuFu
-            ]
+        : [
+            {
+              type: 'kotsu',
+              tile: tileToCountsIndex(m.tile),
+              kotsuType:
+                m.type === 'pon' ? 'minko' : m.closed ? 'ankan' : 'minkan',
+              fu:
+                m.tile.type === 'z' || m.tile.n === 1 || m.tile.n === 9
+                  ? m.type === 'pon'
+                    ? 4
+                    : m.closed
+                      ? 32
+                      : 16
+                  : m.type === 'pon'
+                    ? 2
+                    : m.closed
+                      ? 16
+                      : 8
+            } as KotsuFu
+          ]
     )
   );
   if (typeof tatsu !== 'number') {
@@ -232,14 +224,6 @@ export const fu = (
       ret.push({ type: 'tsumo', fu: 2 });
     }
   }
-  if (
-    melds.length > 0 &&
-    melds.every(m => m.type === 'chii') &&
-    sumOfFu(ret) === 20
-  ) {
-    ret.push({ type: 'kui-pinfu', fu: 10 });
-  }
-
   return ret;
 };
 

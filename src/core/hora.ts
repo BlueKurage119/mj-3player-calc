@@ -7,7 +7,7 @@ import {
 } from './input';
 import type { Rule } from './rule';
 import { calculateBasePoint } from './score';
-import type { Table } from './table';
+import { isDealer, type Table } from './table';
 import {
   type NumberTileCounts,
   type Tile,
@@ -130,7 +130,7 @@ export const generateHora = (
           ...input.melds.map(m => {
             if (m.tile === null) throw new Error();
             return {
-              type: m.type === 'chii' ? 'shuntsu' : 'kotsu',
+              type: 'kotsu',
               tile: tileToCountsIndex(m.tile)
             } as Block;
           })
@@ -145,7 +145,7 @@ export const generateHora = (
             m.tile === null
               ? []
               : {
-                  type: m.type === 'chii' ? 'shuntsu' : 'kotsu',
+                  type: 'kotsu',
                   tile: tileToCountsIndex(m.tile)
                 }
           ),
@@ -336,7 +336,7 @@ export const generateHora = (
           yakuman.push({
             yakuman: {
               type: 'yakuman',
-              name: table.seat === 'east' ? 'tenho' : 'chiho',
+              name: isDealer(table) ? 'tenho' : 'chiho',
               point: 1
             },
             ron: false,
@@ -806,7 +806,7 @@ export const generateChitoitsuHora = (
             ...yakuman,
             {
               type: 'yakuman',
-              name: table.seat === 'east' ? 'tenho' : 'chiho',
+              name: isDealer(table) ? 'tenho' : 'chiho',
               point: 1
             }
           ]
@@ -969,7 +969,7 @@ export const generateKokushiHora = (
         },
         {
           type: 'yakuman',
-          name: table.seat === 'east' ? 'tenho' : 'chiho',
+          name: isDealer(table) ? 'tenho' : 'chiho',
           point: 1
         }
       ]

@@ -87,7 +87,7 @@ const toMelds = (c: GoldenCase): Meld[] =>
 
 const rule: Rule = {
   red: { m: 0, p: 1, s: 1 },
-  honbaBonus: 100,
+  honbaPoint: 200,
   roundedMangan: false,
   doubleWindFu: 4,
   accumlatedYakuman: true,
