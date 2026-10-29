@@ -172,3 +172,36 @@ export const isSanmaIndex = (index: TileCountsIndex): boolean;
 - §2.2・§6 はコード読解によるもので、テストは実行していない
 - §5 の H1〜H6 の分岐(向聴数・最小になる形・`tempai` になること)は読解による見込み。製造担当は実行して確かめ、外れた場合は表の「通る分岐」と同じ意図の別の牌姿に替え、枚数と分岐を添えて報告する
 - §5-7 の和了形の役・飜は製造担当の手計算で確定させる
+
+## 追記: Issue #20 によるテスト名の変更
+
+### A0(初期構成)
+
+| ファイル | 旧名 | 新名 |
+| --- | --- | --- |
+| shanten.test.ts | `111m999m123p456s77z は和了形` | `A0: 111m999m123p456s77z は和了形` |
+| shanten.test.ts | `111m999m123p456s7z は聴牌` | `A0: 111m999m123p456s7z は聴牌` |
+| shanten.test.ts | `19m は順子にならない` | `A0: 19m は順子にならない` |
+
+### A2
+
+| ファイル | 旧名 | 新名 |
+| --- | --- | --- |
+| result.test.ts | describe `N11: H2 parseTiles` | describe `A2-N11: A2-H2 parseTiles` |
+| result.test.ts | `H2 1m999m11p22p33s444s は13枚・6種` | `A2-H2: 1m999m11p22p33s444s は13枚・6種` |
+| result.test.ts | describe `入力の検証 (V1〜V6)` | describe `入力の検証 (A2-V1〜V6)` |
+| result.test.ts | `V1: …`・`V2: …`・`V3: …`・`V6: …` | `A2-V1: …`・`A2-V2: …`・`A2-V3: …`・`A2-V6: …`(説明部分は同じ) |
+| result.test.ts | `向聴形: H1 (19m123456p789s12z) で …` | `A2: 向聴形: H1 (19m123456p789s12z) で …` |
+| result.test.ts | `聴牌形: H3 (11m99m123p456s: 10枚) で …` | `A2: 聴牌形: H3 (11m99m123p456s: 10枚) で …` |
+| result.test.ts | `ドラ表示牌 1m で 9m がドラになり、dora 3飜となる` | `A2: ドラ表示牌 1m で 9m がドラになり、dora 3飜となる` |
+| result.test.ts | `R1: …`・`R2: …`・`R3: …` | `A2-R1: …`・`A2-R2: …`・`A2-R3: …` |
+| result.test.ts | `§5-7・§5-9 の全ケースで …` | `A2: §5-7・§5-9 の全ケースで …` |
+| shanten.test.ts | `H1: 19m123456p789s12z の有効牌に …` | `A2-H1: 19m123456p789s12z の有効牌に …` |
+| shanten.test.ts | `H2: 1m999m11p22p33s444s の結果に …` | `A2-H2: 1m999m11p22p33s444s の結果に …` |
+| index.test.ts | `1m(0) -> 9m(8)` ほか nextIndex の5件 | `A2: 1m(0) -> 9m(8)` ほか(先頭に `A2: ` を付ける) |
+| index.test.ts | `1m・9m・赤5p・1z は真`・`2m〜8m は偽`・`添字版: …` | 先頭に `A2: ` を付ける |
+| index.test.ts | `isAvailableTiles: …`・`tileAvailableCount: …` | 先頭に `A2: ` を付ける |
+
+注記:
+- H1〜H6 は本書の「手牌の記号」で、テスト番号ではない。`A2-H1`・`A2-H2` は、その手牌を主題にしたテストの名前として使う。
+- `A2-N11` は本書に記載がなく、テストのコメント「注意事項 N11」にのみ由来する(由来資料はリポジトリ内に見当たらない)。Issue #20 で A2 に分類した。

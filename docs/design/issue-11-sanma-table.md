@@ -262,3 +262,17 @@ test('W1: 北は Wind の型で表せない', () => {
 
 - 2026-10-29 オーナーが設計を承認した。製造方式は AGY スキル式とし、PR の作成と Codex レビューへの対応までを委任する
 - 供託1本あたりの点数(1000)は `Rule` に加えず、B1 で設定化するまで `bonus.ts` の定数 `DEPOSIT_POINT` にとどめる(承認時に記録)
+
+## 追記: Issue #20 によるテスト名の変更
+
+| ファイル | 旧名 | 新名 |
+| --- | --- | --- |
+| result.test.ts | `チーは Meld の型で表せない` | `A3: チーは Meld の型で表せない` |
+| result.test.ts | describe `天和・地和 (T1〜T3)` | describe `天和・地和 (A3-T1〜T3)` |
+| result.test.ts | `T1-親`・`T1-子`・`T2-親`・`T2-子`・`T3-親`・`T3-子` | 先頭に `A3-` を付ける(例 `A3-T1-親: 通常形 自風東で天和`) |
+| table.test.ts | describe `isDealer (D1)`、`D1: …` | describe `isDealer (A3-D1)`、`A3-D1: …` |
+| table.test.ts | describe `Wind の型 (W1)`、`W1: …` | describe `Wind の型 (A3-W1)`、`A3-W1: …` |
+| bonus.test.ts | describe `calculateTableBonus (TB1〜TB15)` | describe `calculateTableBonus (A3-TB1〜TB15)` |
+| bonus.test.ts | `TB1: …` 〜 `TB15: …` | `A3-TB1: …` 〜 `A3-TB15: …` |
+
+注記: 1件だけ実行するときは `-t 'A3-TB1:'` のように `:` まで含める(業務標準05)。

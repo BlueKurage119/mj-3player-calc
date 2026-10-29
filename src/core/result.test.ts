@@ -1,4 +1,5 @@
 import { describe, expect, test } from 'vitest';
+import type { Hora } from './hora';
 import type { HandOptions, Meld } from './input';
 import { generateResult } from './result';
 import type { Rule } from './rule';
@@ -78,8 +79,8 @@ const defaultHandOptions: HandOptions = {
 };
 
 // ---- 注意事項 N11 ----
-describe('N11: H2 parseTiles', () => {
-  test('H2 1m999m11p22p33s444s は13枚・6種', () => {
+describe('A2-N11: A2-H2 parseTiles', () => {
+  test('A2-H2: 1m999m11p22p33s444s は13枚・6種', () => {
     const tiles = parseTiles('1m999m11p22p33s444s');
     expect(tiles).toHaveLength(13);
     const unique = new Set(tiles.map(t => `${t.type}${t.n}`));
@@ -88,8 +89,8 @@ describe('N11: H2 parseTiles', () => {
 });
 
 // ---- 設計書 §5-6: 入力の検証 ----
-describe('入力の検証 (V1〜V6)', () => {
-  test('V1: 手牌に 2m〜8m が含まれる場合 (2m9m123456p789s12z: 13枚) -> null', () => {
+describe('入力の検証 (A2-V1〜V6)', () => {
+  test('A2-V1: 手牌に 2m〜8m が含まれる場合 (2m9m123456p789s12z: 13枚) -> null', () => {
     const res = generateResult(
       defaultTable,
       {
@@ -104,7 +105,7 @@ describe('入力の検証 (V1〜V6)', () => {
     expect(res).toBeNull();
   });
 
-  test('V2: ドラ表示牌に 2m〜8m が含まれる場合 (手牌H1: 13枚, ドラ 5m) -> null', () => {
+  test('A2-V2: ドラ表示牌に 2m〜8m が含まれる場合 (手牌H1: 13枚, ドラ 5m) -> null', () => {
     const res = generateResult(
       defaultTable,
       {
@@ -119,7 +120,7 @@ describe('入力の検証 (V1〜V6)', () => {
     expect(res).toBeNull();
   });
 
-  test('V3: 副露に 2m〜8m が含まれる場合 (手牌H4: 10枚 + ポン 3m) -> null', () => {
+  test('A2-V3: 副露に 2m〜8m が含まれる場合 (手牌H4: 10枚 + ポン 3m) -> null', () => {
     const res = generateResult(
       defaultTable,
       {
@@ -134,7 +135,7 @@ describe('入力の検証 (V1〜V6)', () => {
     expect(res).toBeNull();
   });
 
-  test('チーは Meld の型で表せない', () => {
+  test('A3: チーは Meld の型で表せない', () => {
     const m: Meld = {
       // @ts-expect-error チーは三麻に存在しない
       type: 'chii',
@@ -144,7 +145,7 @@ describe('入力の検証 (V1〜V6)', () => {
     expect(m).toBeDefined();
   });
 
-  test('V6: 手牌に 2m〜8m が5枚含まれる場合 (H6: 22222m9m123456p78s: 14枚) -> 例外を投げず null', () => {
+  test('A2-V6: 手牌に 2m〜8m が5枚含まれる場合 (H6: 22222m9m123456p78s: 14枚) -> 例外を投げず null', () => {
     const res = generateResult(
       defaultTable,
       {
@@ -165,7 +166,7 @@ describe('入力の検証 (V1〜V6)', () => {
 
 // ---- 設計書 §5-7: 一覧に 2m〜8m が無い ----
 describe('一覧に 2m〜8m が無い', () => {
-  test('向聴形: H1 (19m123456p789s12z) で 2m〜8m が無く、1m・9m がある', () => {
+  test('A2: 向聴形: H1 (19m123456p789s12z) で 2m〜8m が無く、1m・9m がある', () => {
     const res = generateResult(
       defaultTable,
       {
@@ -184,24 +185,15 @@ describe('一覧に 2m〜8m が無い', () => {
     if (res.info.type !== 'shanten') return;
 
     const availabilities = res.info.tileAvailabilities;
-    // 2m〜8m が一覧に存在しない
-    const has2mTo8m = availabilities.some(
-      a => a.tile.type === 'm' && a.tile.n >= 2 && a.tile.n <= 8
-    );
-    expect(has2mTo8m).toBe(false);
-
-    // 1m・9m が一覧に含まれる
-    const has1m = availabilities.some(
-      a => a.tile.type === 'm' && a.tile.n === 1
-    );
-    const has9m = availabilities.some(
-      a => a.tile.type === 'm' && a.tile.n === 9
-    );
-    expect(has1m).toBe(true);
-    expect(has9m).toBe(true);
+    // 一覧の全体は向聴計算の結果で、本テストの関心は萬子の除外。全体は手計算で確定できないため検証しない
+    const manzuTiles = availabilities
+      .filter(a => a.tile.type === 'm')
+      .map(a => `${a.tile.type}${a.tile.n}`)
+      .sort();
+    expect(manzuTiles).toEqual(['m1', 'm9']);
   });
 
-  test('聴牌形: H3 (11m99m123p456s: 10枚) で牌が 1m・9m のみ', () => {
+  test('A2: 聴牌形: H3 (11m99m123p456s: 10枚) で牌が 1m・9m のみ', () => {
     const res = generateResult(
       defaultTable,
       {
@@ -228,7 +220,7 @@ describe('ドラ表示牌 1m', () => {
   // 手牌: 999m(暗刻), 123p(順子), 456p(順子), 789s(順子), 11z(東東・対子) の計14枚
   // ドラ表示牌 1m により、三麻では 1m の次の萬子として 9m がドラとなる。
   // 手牌に 9m が3枚あるため、ドラ3飜。立直1飜と合わせて計4飜。
-  test('ドラ表示牌 1m で 9m がドラになり、dora 3飜となる', () => {
+  test('A2: ドラ表示牌 1m で 9m がドラになり、dora 3飜となる', () => {
     const res = generateResult(
       defaultTable,
       {
@@ -248,22 +240,40 @@ describe('ドラ表示牌 1m', () => {
     if (res?.type !== 'hora-shanten') return;
     expect(res.info.type).toBe('hora');
     if (res.info.type !== 'hora') return;
+    const horaInfo = res.info;
 
-    const [hora] = res.info.hora;
-    expect(hora).toBeDefined();
-    if (!hora) return;
+    const getHora = (by: 'ron' | 'tsumo'): Hora => {
+      // 和了の一覧から指定の by の最初の和了を選ぶ。選んだ和了は役の全体で検証する
+      const hora = horaInfo.hora.find(h => h.by === by);
+      expect(hora).toBeDefined();
+      if (!hora) throw new Error(`no hora for ${by}`);
+      return hora;
+    };
+    const toYakuTuples = (hora: Hora) =>
+      hora.yaku
+        .map(
+          y => [y.name, y.type === 'yaku' ? y.han : y.point] as [string, number]
+        )
+        .sort((a, b) => a[0].localeCompare(b[0]));
 
-    const doraYaku = hora.yaku.find(y => y.name === 'dora');
-    expect(doraYaku).toEqual({ type: 'yaku', name: 'dora', han: 3 });
+    const ronHora = getHora('ron');
+    expect(toYakuTuples(ronHora)).toEqual([
+      ['dora', 3],
+      ['riichi', 1]
+    ]);
 
-    const riichiYaku = hora.yaku.find(y => y.name === 'riichi');
-    expect(riichiYaku).toEqual({ type: 'yaku', name: 'riichi', han: 1 });
+    const tsumoHora = getHora('tsumo');
+    expect(toYakuTuples(tsumoHora)).toEqual([
+      ['dora', 3],
+      ['riichi', 1],
+      ['tsumo', 1]
+    ]);
   });
 });
 
 // ---- 設計書 §5-9: 残り枚数(108枚構成) ----
 describe('残り枚数(108枚構成)', () => {
-  test('R1: 手牌 H1、ドラ表示牌 1m -> 1m残り2、9m残り3', () => {
+  test('A2-R1: 手牌 H1、ドラ表示牌 1m -> 1m残り2、9m残り3', () => {
     const res = generateResult(
       defaultTable,
       {
@@ -279,22 +289,25 @@ describe('残り枚数(108枚構成)', () => {
     if (res?.type !== 'hora-shanten' || res.info.type !== 'shanten') return;
 
     const availabilities = res.info.tileAvailabilities;
-    // 2m〜8m が一覧に無い
-    expect(
-      availabilities.some(
-        a => a.tile.type === 'm' && a.tile.n >= 2 && a.tile.n <= 8
-      )
-    ).toBe(false);
+    // 一覧の全体は向聴計算の結果で、本テストの関心は萬子の除外。全体は手計算で確定できないため検証しない
+    const manzuTiles = availabilities
+      .filter(a => a.tile.type === 'm')
+      .map(a => `${a.tile.type}${a.tile.n}`)
+      .sort();
+    expect(manzuTiles).toEqual(['m1', 'm9']);
 
     const a1m = availabilities.find(a => a.tile.type === 'm' && a.tile.n === 1);
-    const a9m = availabilities.find(a => a.tile.type === 'm' && a.tile.n === 9);
+    expect(a1m).toBeDefined();
     // 1m: 4 - 手牌1 - 表示牌1 = 2
     expect(a1m?.count).toBe(2);
+
+    const a9m = availabilities.find(a => a.tile.type === 'm' && a.tile.n === 9);
+    expect(a9m).toBeDefined();
     // 9m: 4 - 手牌1 - 表示牌0 = 3
     expect(a9m?.count).toBe(3);
   });
 
-  test('R2: 手牌 H4 + 副露ポン 6s、ドラ表示牌 9m9s -> 6s残り1、9s残り3、9m残り2、1m残り3', () => {
+  test('A2-R2: 手牌 H4 + 副露ポン 6s、ドラ表示牌 9m9s -> 6s残り1、9s残り3、9m残り2、1m残り3', () => {
     const res = generateResult(
       defaultTable,
       {
@@ -310,29 +323,35 @@ describe('残り枚数(108枚構成)', () => {
     if (res?.type !== 'hora-shanten' || res.info.type !== 'shanten') return;
 
     const availabilities = res.info.tileAvailabilities;
-    // 2m〜8m が一覧に無い
-    expect(
-      availabilities.some(
-        a => a.tile.type === 'm' && a.tile.n >= 2 && a.tile.n <= 8
-      )
-    ).toBe(false);
+    // 一覧の全体は向聴計算の結果で、本テストの関心は萬子の除外。全体は手計算で確定できないため検証しない
+    const manzuTiles = availabilities
+      .filter(a => a.tile.type === 'm')
+      .map(a => `${a.tile.type}${a.tile.n}`)
+      .sort();
+    expect(manzuTiles).toEqual(['m1', 'm9']);
 
     const a6s = availabilities.find(a => a.tile.type === 's' && a.tile.n === 6);
-    const a9s = availabilities.find(a => a.tile.type === 's' && a.tile.n === 9);
-    const a9m = availabilities.find(a => a.tile.type === 'm' && a.tile.n === 9);
-    const a1m = availabilities.find(a => a.tile.type === 'm' && a.tile.n === 1);
-
+    expect(a6s).toBeDefined();
     // 6s: 4 - 副露3 = 1
     expect(a6s?.count).toBe(1);
+
+    const a9s = availabilities.find(a => a.tile.type === 's' && a.tile.n === 9);
+    expect(a9s).toBeDefined();
     // 9s: 4 - 表示牌1 = 3
     expect(a9s?.count).toBe(3);
+
+    const a9m = availabilities.find(a => a.tile.type === 'm' && a.tile.n === 9);
+    expect(a9m).toBeDefined();
     // 9m: 4 - 手牌1 - 表示牌1 = 2
     expect(a9m?.count).toBe(2);
+
+    const a1m = availabilities.find(a => a.tile.type === 'm' && a.tile.n === 1);
+    expect(a1m).toBeDefined();
     // 1m: 4 - 手牌1 - 表示牌0 = 3
     expect(a1m?.count).toBe(3);
   });
 
-  test('R3: 手牌 H5、ドラ表示牌 0p(赤5p) -> 赤5p残り0、通常5p残り3、赤5s残り1、通常5s残り3', () => {
+  test('A2-R3: 手牌 H5、ドラ表示牌 0p(赤5p) -> 赤5p残り0、通常5p残り3、赤5s残り1、通常5s残り3', () => {
     const res = generateResult(
       defaultTable,
       {
@@ -348,25 +367,39 @@ describe('残り枚数(108枚構成)', () => {
     if (res?.type !== 'hora-shanten' || res.info.type !== 'shanten') return;
 
     const availabilities = res.info.tileAvailabilities;
-    // 2m〜8m が一覧に無い
-    expect(
-      availabilities.some(
-        a => a.tile.type === 'm' && a.tile.n >= 2 && a.tile.n <= 8
-      )
-    ).toBe(false);
+    // 一覧の全体は向聴計算の結果で、本テストの関心は萬子の除外。全体は手計算で確定できないため検証しない
+    const manzuTiles = availabilities
+      .filter(a => a.tile.type === 'm')
+      .map(a => `${a.tile.type}${a.tile.n}`)
+      .sort();
+    expect(manzuTiles).toEqual(['m1', 'm9']);
 
     const aRed5p = availabilities.find(
       a => a.tile.type === 'p' && a.tile.n === 5 && a.tile.red
     );
+    expect(aRed5p).toBeDefined();
+    // 赤5p: 赤1 - 表示牌1 = 0
+    expect(aRed5p?.count).toBe(0);
+
     const aNormal5p = availabilities.find(
       a => a.tile.type === 'p' && a.tile.n === 5 && !a.tile.red
     );
+    expect(aNormal5p).toBeDefined();
+    // 通常5p: 3 - 表示牌0 = 3
+    expect(aNormal5p?.count).toBe(3);
+
     const aRed5s = availabilities.find(
       a => a.tile.type === 's' && a.tile.n === 5 && a.tile.red
     );
+    expect(aRed5s).toBeDefined();
+    // 赤5s: 赤1 - 表示牌0 = 1
+    expect(aRed5s?.count).toBe(1);
+
     const aNormal5s = availabilities.find(
       a => a.tile.type === 's' && a.tile.n === 5 && !a.tile.red
     );
+    expect(aNormal5s).toBeDefined();
+    // 通常5s: 3 - 表示牌0 = 3
 
     // 赤5p: 赤1 - 表示牌1 = 0
     expect(aRed5p?.count).toBe(0);
@@ -381,7 +414,7 @@ describe('残り枚数(108枚構成)', () => {
 
 // ---- 設計書 §5-10: null 混入なし ----
 describe('null 混入なし', () => {
-  test('§5-7・§5-9 の全ケースで tileAvailabilities の count がすべて number 型である', () => {
+  test('A2: §5-7・§5-9 の全ケースで tileAvailabilities の count がすべて number 型である', () => {
     const cases = [
       // H1 (向聴形)
       { hand: '19m123456p789s12z', melds: [], dora: '', nuki: 0 },
@@ -429,7 +462,7 @@ describe('null 混入なし', () => {
 });
 
 // ---- 設計書 §5.2-3: 天和・地和 ----
-describe('天和・地和 (T1〜T3)', () => {
+describe('天和・地和 (A3-T1〜T3)', () => {
   // 出典: mahjong-rules.md §7【確定】(親は自風が東の者)
   const getHoraYakuNames = (seat: Table['seat'], handStr: string): string[] => {
     const res = generateResult(
@@ -454,39 +487,39 @@ describe('天和・地和 (T1〜T3)', () => {
     return res.info.hora.flatMap(h => h.yaku).map(y => y.name);
   };
 
-  test('T1-親: 通常形 自風東で天和', () => {
+  test('A3-T1-親: 通常形 自風東で天和', () => {
     const yakuNames = getHoraYakuNames('east', '111m999m123p456p11z');
-    expect(yakuNames).toContain('tenho');
-    expect(yakuNames).not.toContain('chiho');
+    // 和了の件数は手牌の分解数に依存し期待値の関心外なので、重複を除いて比べる
+    expect([...new Set(yakuNames)].sort()).toEqual(['tenho']);
   });
 
-  test('T1-子: 通常形 自風南で地和', () => {
+  test('A3-T1-子: 通常形 自風南で地和', () => {
     const yakuNames = getHoraYakuNames('south', '111m999m123p456p11z');
-    expect(yakuNames).toContain('chiho');
-    expect(yakuNames).not.toContain('tenho');
+    // 和了の件数は手牌の分解数に依存し期待値の関心外なので、重複を除いて比べる
+    expect([...new Set(yakuNames)].sort()).toEqual(['chiho']);
   });
 
-  test('T2-親: 七対子 自風東で天和', () => {
+  test('A3-T2-親: 七対子 自風東で天和', () => {
     const yakuNames = getHoraYakuNames('east', '1199m11p22p33s44s11z');
-    expect(yakuNames).toContain('tenho');
-    expect(yakuNames).not.toContain('chiho');
+    // 和了の件数は手牌の分解数に依存し期待値の関心外なので、重複を除いて比べる
+    expect([...new Set(yakuNames)].sort()).toEqual(['tenho']);
   });
 
-  test('T2-子: 七対子 自風西で地和', () => {
+  test('A3-T2-子: 七対子 自風西で地和', () => {
     const yakuNames = getHoraYakuNames('west', '1199m11p22p33s44s11z');
-    expect(yakuNames).toContain('chiho');
-    expect(yakuNames).not.toContain('tenho');
+    // 和了の件数は手牌の分解数に依存し期待値の関心外なので、重複を除いて比べる
+    expect([...new Set(yakuNames)].sort()).toEqual(['chiho']);
   });
 
-  test('T3-親: 国士無双 自風東で天和', () => {
+  test('A3-T3-親: 国士無双 自風東で天和', () => {
     const yakuNames = getHoraYakuNames('east', '19m19p19s12345677z');
-    expect(yakuNames).toContain('tenho');
-    expect(yakuNames).not.toContain('chiho');
+    // 和了の件数は手牌の分解数に依存し期待値の関心外なので、重複を除いて比べる
+    expect([...new Set(yakuNames)].sort()).toEqual(['kokushi-13', 'tenho']);
   });
 
-  test('T3-子: 国士無双 自風南で地和', () => {
+  test('A3-T3-子: 国士無双 自風南で地和', () => {
     const yakuNames = getHoraYakuNames('south', '19m19p19s12345677z');
-    expect(yakuNames).toContain('chiho');
-    expect(yakuNames).not.toContain('tenho');
+    // 和了の件数は手牌の分解数に依存し期待値の関心外なので、重複を除いて比べる
+    expect([...new Set(yakuNames)].sort()).toEqual(['chiho', 'kokushi-13']);
   });
 });
