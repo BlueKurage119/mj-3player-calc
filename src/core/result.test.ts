@@ -57,7 +57,8 @@ const rule: Rule = {
   kokushi13DoubleYakuman: true,
   suankoTankiDoubleYakuman: true,
   daisushiDoubleYakuman: true,
-  pureChurenDoubleYakuman: true
+  pureChurenDoubleYakuman: true,
+  north: 'nukidora'
 };
 
 const defaultTable: Table = {
@@ -94,7 +95,8 @@ describe('入力の検証 (V1〜V6)', () => {
       {
         hand: parseTiles('2m9m123456p789s12z'),
         melds: [],
-        dora: []
+        dora: [],
+        nuki: 0
       },
       defaultHandOptions,
       rule
@@ -108,7 +110,8 @@ describe('入力の検証 (V1〜V6)', () => {
       {
         hand: parseTiles('19m123456p789s12z'),
         melds: [],
-        dora: parseTiles('5m')
+        dora: parseTiles('5m'),
+        nuki: 0
       },
       defaultHandOptions,
       rule
@@ -122,7 +125,8 @@ describe('入力の検証 (V1〜V6)', () => {
       {
         hand: parseTiles('19m123456p78s'),
         melds: [{ type: 'pon', tile: parseSingleTile('3m') }],
-        dora: []
+        dora: [],
+        nuki: 0
       },
       defaultHandOptions,
       rule
@@ -149,7 +153,8 @@ describe('入力の検証 (V1〜V6)', () => {
           ...parseTiles('9m123456p78s')
         ],
         melds: [],
-        dora: []
+        dora: [],
+        nuki: 0
       },
       defaultHandOptions,
       rule
@@ -166,7 +171,8 @@ describe('一覧に 2m〜8m が無い', () => {
       {
         hand: parseTiles('19m123456p789s12z'),
         melds: [],
-        dora: []
+        dora: [],
+        nuki: 0
       },
       defaultHandOptions,
       rule
@@ -201,7 +207,8 @@ describe('一覧に 2m〜8m が無い', () => {
       {
         hand: parseTiles('11m99m123p456s'),
         melds: [],
-        dora: []
+        dora: [],
+        nuki: 0
       },
       defaultHandOptions,
       rule
@@ -227,7 +234,8 @@ describe('ドラ表示牌 1m', () => {
       {
         hand: parseTiles('999m123p456p789s11z'),
         melds: [],
-        dora: parseTiles('1m')
+        dora: parseTiles('1m'),
+        nuki: 0
       },
       {
         ...defaultHandOptions,
@@ -261,7 +269,8 @@ describe('残り枚数(108枚構成)', () => {
       {
         hand: parseTiles('19m123456p789s12z'),
         melds: [],
-        dora: parseTiles('1m')
+        dora: parseTiles('1m'),
+        nuki: 0
       },
       defaultHandOptions,
       rule
@@ -291,7 +300,8 @@ describe('残り枚数(108枚構成)', () => {
       {
         hand: parseTiles('19m123456p78s'),
         melds: [{ type: 'pon', tile: parseSingleTile('6s') }],
-        dora: parseTiles('9m9s')
+        dora: parseTiles('9m9s'),
+        nuki: 0
       },
       defaultHandOptions,
       rule
@@ -328,7 +338,8 @@ describe('残り枚数(108枚構成)', () => {
       {
         hand: parseTiles('19m46p46s123789p1z'),
         melds: [],
-        dora: parseTiles('0p')
+        dora: parseTiles('0p'),
+        nuki: 0
       },
       defaultHandOptions,
       rule
@@ -373,19 +384,20 @@ describe('null 混入なし', () => {
   test('§5-7・§5-9 の全ケースで tileAvailabilities の count がすべて number 型である', () => {
     const cases = [
       // H1 (向聴形)
-      { hand: '19m123456p789s12z', melds: [], dora: '' },
+      { hand: '19m123456p789s12z', melds: [], dora: '', nuki: 0 },
       // H3 (聴牌形)
-      { hand: '11m99m123p456s', melds: [], dora: '' },
+      { hand: '11m99m123p456s', melds: [], dora: '', nuki: 0 },
       // R1
-      { hand: '19m123456p789s12z', melds: [], dora: '1m' },
+      { hand: '19m123456p789s12z', melds: [], dora: '1m', nuki: 0 },
       // R2
       {
         hand: '19m123456p78s',
         melds: [{ type: 'pon' as const, tile: parseSingleTile('6s') }],
-        dora: '9m9s'
+        dora: '9m9s',
+        nuki: 0
       },
       // R3
-      { hand: '19m46p46s123789p1z', melds: [], dora: '0p' }
+      { hand: '19m46p46s123789p1z', melds: [], dora: '0p', nuki: 0 }
     ];
 
     for (const c of cases) {
@@ -394,7 +406,8 @@ describe('null 混入なし', () => {
         {
           hand: parseTiles(c.hand),
           melds: c.melds,
-          dora: parseTiles(c.dora)
+          dora: parseTiles(c.dora),
+          nuki: 0
         },
         defaultHandOptions,
         rule
@@ -424,7 +437,8 @@ describe('天和・地和 (T1〜T3)', () => {
       {
         hand: parseTiles(handStr),
         melds: [],
-        dora: []
+        dora: [],
+        nuki: 0
       },
       {
         ...defaultHandOptions,
