@@ -1,7 +1,7 @@
 # AGENTS.md
 
 このファイルはエージェント(Claude・Codex・Antigravity)向けのプロジェクト指示である。 **会話・コミットメッセージ・ドキュメントはすべて日本語で行うこと。**
-指示の正本はこのファイルだけとする。Claude Code は[CLAUDE.md](CLAUDE.md)からこのファイルを読み込む。
+指示の正本はこのファイルだけとする。Claude Code はこのファイルを直接読み込む(CLAUDE.md は置かない)。
 
 ## 1. 概要
 
