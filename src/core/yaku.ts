@@ -10,6 +10,7 @@ export const yakuNames = [
   'white',
   'green',
   'red',
+  'north',
   'rinshan',
   'chankan',
   'haitei',
@@ -30,7 +31,8 @@ export const yakuNames = [
   'ryampeko',
   'chinitsu',
   'dora',
-  'red-dora'
+  'red-dora',
+  'nuki-dora'
 ] as const;
 
 export interface NormalYaku {

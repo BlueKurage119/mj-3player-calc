@@ -405,6 +405,8 @@ export const generateHora = (
                 b.type === 'ryammen' ||
                 b.type === 'toitsu') &&
               head < tileCountsFirstIndex.z + 4 &&
+              (rule.north !== 'yakuhai' ||
+                head !== tileCountsFirstIndex.z + 3) &&
               head !==
                 tileCountsFirstIndex.z +
                   ['east', 'south', 'west', 'north'].indexOf(table.round) &&
@@ -486,7 +488,20 @@ export const generateHora = (
               : []
           )
         );
-        if (input.melds.some(m => m.type === 'kan') && options.rinshan) {
+        if (
+          rule.north === 'yakuhai' &&
+          allTilesCounts[(tileCountsFirstIndex.z + 3) as TileCountsIndex] >= 3
+        ) {
+          yaku.push({
+            yaku: { type: 'yaku', name: 'north', han: 1 },
+            ron: true,
+            tsumo: true
+          });
+        }
+        if (
+          (input.melds.some(m => m.type === 'kan') || input.nuki > 0) &&
+          options.rinshan
+        ) {
           yaku.push({
             yaku: { type: 'yaku', name: 'rinshan', han: 1 },
             ron: false,
@@ -683,10 +698,13 @@ export const generateHora = (
           });
         }
 
-        const d = sumBy(
-          input.dora,
-          t => allTilesCounts[nextIndex(tileToCountsIndex(t))]
-        );
+        const westCount = countBy(input.dora, t => t.type === 'z' && t.n === 3);
+        const d =
+          sumBy(
+            input.dora,
+            t => allTilesCounts[nextIndex(tileToCountsIndex(t))]
+          ) +
+          input.nuki * westCount;
         if (d > 0) {
           yaku.push({
             yaku: { type: 'yaku', name: 'dora', han: d },
@@ -698,6 +716,13 @@ export const generateHora = (
         if (r > 0) {
           yaku.push({
             yaku: { type: 'yaku', name: 'red-dora', han: r },
+            ron: true,
+            tsumo: true
+          });
+        }
+        if (input.nuki > 0) {
+          yaku.push({
+            yaku: { type: 'yaku', name: 'nuki-dora', han: input.nuki },
             ron: true,
             tsumo: true
           });
@@ -758,7 +783,8 @@ export const generateChitoitsuHora = (
   hand: Tile[],
   options: HandOptions,
   dora: Tile[],
-  rule: Rule
+  rule: Rule,
+  nuki: number
 ): Hora[] => {
   const counts = tilesToCounts(hand);
   const stats = colorStats(counts);
@@ -846,6 +872,13 @@ export const generateChitoitsuHora = (
       ron: false,
       tsumo: true
     });
+    if (nuki > 0 && options.rinshan) {
+      yaku.push({
+        yaku: { type: 'yaku', name: 'rinshan', han: 1 },
+        ron: false,
+        tsumo: true
+      });
+    }
     if (
       counts.every((c, i) =>
         i % 9 === 0 || i % 9 === 8 || i >= tileCountsFirstIndex.z
@@ -910,7 +943,10 @@ export const generateChitoitsuHora = (
     }
     const all = [...hand, horaTile];
     const allCounts = tilesToCounts(all);
-    const d = sumBy(dora, t => allCounts[nextIndex(tileToCountsIndex(t))]);
+    const westCount = countBy(dora, t => t.type === 'z' && t.n === 3);
+    const d =
+      sumBy(dora, t => allCounts[nextIndex(tileToCountsIndex(t))]) +
+      nuki * westCount;
     if (d > 0) {
       yaku.push({
         yaku: { type: 'yaku', name: 'dora', han: d },
@@ -926,13 +962,32 @@ export const generateChitoitsuHora = (
         tsumo: true
       });
     }
+    if (nuki > 0) {
+      yaku.push({
+        yaku: { type: 'yaku', name: 'nuki-dora', han: nuki },
+        ron: true,
+        tsumo: true
+      });
+    }
 
-    return ronAndTsumo.flatMap(by => ({
+    const tsumo: Hora = {
       type: 'chitoitsu',
-      by,
+      by: 'tsumo',
       horaTile,
-      yaku: yaku.flatMap(y => (y[by] ? [y.yaku] : []))
-    }));
+      yaku: yaku.flatMap(y => (y.tsumo ? [y.yaku] : []))
+    };
+    const ron: Hora = {
+      type: 'chitoitsu',
+      by: 'ron',
+      horaTile,
+      yaku: yaku.flatMap(y => (y.ron ? [y.yaku] : []))
+    };
+
+    if (options.rinshan && tsumo.yaku.some(y => y.name === 'rinshan')) {
+      return [tsumo];
+    }
+
+    return [tsumo, ron];
   });
 };
 

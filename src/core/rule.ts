@@ -1,6 +1,9 @@
 /** 1本場あたりの点数の所定値(mahjong-rules.md §3.2) */
 export const DEFAULT_HONBA_POINT = 200;
 
+/** 北の扱いの所定値(mahjong-rules.md §2) */
+export const DEFAULT_NORTH: Rule['north'] = 'nukidora';
+
 export interface Rule {
   red: {
     m: 0 | 1 | 2 | 3 | 4;
@@ -16,6 +19,7 @@ export interface Rule {
   suankoTankiDoubleYakuman: boolean;
   daisushiDoubleYakuman: boolean;
   pureChurenDoubleYakuman: boolean;
+  north: 'nukidora' | 'yakuhai';
 }
 
 export const compareRules = (a: Rule, b: Rule) =>
@@ -30,4 +34,5 @@ export const compareRules = (a: Rule, b: Rule) =>
   a.kokushi13DoubleYakuman === b.kokushi13DoubleYakuman &&
   a.suankoTankiDoubleYakuman === b.suankoTankiDoubleYakuman &&
   a.daisushiDoubleYakuman === b.daisushiDoubleYakuman &&
-  a.pureChurenDoubleYakuman === b.pureChurenDoubleYakuman;
+  a.pureChurenDoubleYakuman === b.pureChurenDoubleYakuman &&
+  a.north === b.north;

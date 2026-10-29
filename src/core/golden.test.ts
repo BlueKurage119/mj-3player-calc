@@ -95,7 +95,8 @@ const rule: Rule = {
   kokushi13DoubleYakuman: true,
   suankoTankiDoubleYakuman: true,
   daisushiDoubleYakuman: true,
-  pureChurenDoubleYakuman: true
+  pureChurenDoubleYakuman: true,
+  north: 'nukidora'
 };
 
 const tableOf = (c: GoldenCase): Table => ({
@@ -144,7 +145,7 @@ const findHora = (c: GoldenCase): Hora => {
   const melds = toMelds(c);
   const result = generateResult(
     tableOf(c),
-    { hand: parseTiles(c.hand), melds, dora: parseTiles(c.dora) },
+    { hand: parseTiles(c.hand), melds, dora: parseTiles(c.dora), nuki: 0 },
     handOptionsOf(c),
     rule
   );
