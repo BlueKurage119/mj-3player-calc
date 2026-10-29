@@ -4,8 +4,8 @@ import { generateResult } from './result';
 import { type Rule, compareRules } from './rule';
 import { calculateBasePoint, ceil10 } from './score';
 import type { Table } from './table';
-import type { Tile } from './tile';
-import { sumOfFu } from './fu';
+import type { Tile, TileCountsIndex } from './tile';
+import { type Fu, sumOfFu } from './fu';
 import type { Hora } from './hora';
 import { sumBy } from './util';
 
@@ -99,10 +99,29 @@ const getHora = (res: Result, by: 'ron' | 'tsumo'): Hora => {
   if (res?.type !== 'hora-shanten') throw new Error('not hora-shanten');
   expect(res.info.type).toBe('hora');
   if (res.info.type !== 'hora') throw new Error('not hora');
+  // 和了の一覧から指定の by の最初の和了を選ぶ。選んだ和了は役・符の全体で検証する
   const hora = res.info.hora.find(h => h.by === by);
   expect(hora).toBeDefined();
   if (!hora) throw new Error(`no hora for ${by}`);
   return hora;
+};
+
+const sortFu = (fuList: Fu[]): Fu[] => {
+  const futei = fuList.filter(f => f.type === 'futei');
+  const mid = fuList
+    .filter(
+      (f): f is Extract<Fu, { tile: TileCountsIndex }> =>
+        f.type === 'shuntsu' || f.type === 'kotsu' || f.type === 'head'
+    )
+    .sort((a, b) => a.tile - b.tile);
+  const tail = fuList.filter(
+    f =>
+      f.type === 'waiting' ||
+      f.type === 'menzen-ron' ||
+      f.type === 'tsumo' ||
+      f.type === 'pinfu-tsumo'
+  );
+  return [...futei, ...mid, ...tail];
 };
 
 const toYakuTuples = (hora: Hora): [string, number][] => {
@@ -166,9 +185,12 @@ describe('Issue #12: 北の扱い (A4)', () => {
         baseRule
       );
       const hora = getHora(res, 'tsumo');
-      const tuples = toYakuTuples(hora);
-      expect(tuples).toContainEqual(['tsumo', 1]);
-      expect(tuples).toContainEqual(['pinfu', 1]);
+      expect(toYakuTuples(hora)).toEqual([
+        ['nuki-dora', 2],
+        ['pinfu', 1],
+        ['riichi', 1],
+        ['tsumo', 1]
+      ]);
     });
 
     test('A4-N05: P、抜、nuki 2、ロン -> 符の内訳に menzen-ron(10符)がある', () => {
@@ -181,7 +203,21 @@ describe('Issue #12: 北の扱い (A4)', () => {
       const hora = getHora(res, 'ron');
       expect(hora.type).toBe('mentsu');
       if (hora.type === 'mentsu') {
-        expect(hora.fu).toContainEqual({ type: 'menzen-ron', fu: 10 });
+        expect(hora.horaTile).toEqual({ type: 'p', n: 6 });
+        expect(sortFu(hora.fu)).toEqual([
+          { type: 'futei', fu: 20 },
+          { type: 'head', tile: 8, fu: 0 },
+          { type: 'shuntsu', tile: 9, fu: 0 },
+          { type: 'shuntsu', tile: 18, fu: 0 },
+          { type: 'shuntsu', tile: 24, fu: 0 },
+          {
+            type: 'waiting',
+            waitingType: 'ryammen',
+            block: { type: 'shuntsu', tile: 12, fu: 0 },
+            fu: 0
+          },
+          { type: 'menzen-ron', fu: 10 }
+        ]);
       }
     });
 
@@ -221,7 +257,13 @@ describe('Issue #12: 北の扱い (A4)', () => {
         expect(hora).toBeDefined();
         if (!hora) return;
         expect(hora.by).toBe('tsumo');
-        expect(toYakuTuples(hora)).toContainEqual(['rinshan', 1]);
+        expect(toYakuTuples(hora)).toEqual([
+          ['nuki-dora', 1],
+          ['pinfu', 1],
+          ['riichi', 1],
+          ['rinshan', 1],
+          ['tsumo', 1]
+        ]);
       }
     });
 
@@ -232,12 +274,17 @@ describe('Issue #12: 北の扱い (A4)', () => {
         { ...defaultOptions, rinshan: true },
         baseRule
       );
-      expect(res?.type).toBe('hora-shanten');
-      if (res?.type === 'hora-shanten' && res.info.type === 'hora') {
-        for (const hora of res.info.hora) {
-          expect(hora.yaku.some(y => y.name === 'rinshan')).toBe(false);
-        }
-      }
+      const tsumoHora = getHora(res, 'tsumo');
+      expect(toYakuTuples(tsumoHora)).toEqual([
+        ['pinfu', 1],
+        ['riichi', 1],
+        ['tsumo', 1]
+      ]);
+      const ronHora = getHora(res, 'ron');
+      expect(toYakuTuples(ronHora)).toEqual([
+        ['pinfu', 1],
+        ['riichi', 1]
+      ]);
     });
 
     test('A4-N09: C、抜、nuki 1、rinshan: true、ツモ -> 和了は tsumo のみ1件、役に rinshan1・nuki-dora1', () => {
@@ -254,9 +301,13 @@ describe('Issue #12: 北の扱い (A4)', () => {
         expect(hora).toBeDefined();
         if (!hora) return;
         expect(hora.by).toBe('tsumo');
-        const tuples = toYakuTuples(hora);
-        expect(tuples).toContainEqual(['rinshan', 1]);
-        expect(tuples).toContainEqual(['nuki-dora', 1]);
+        expect(toYakuTuples(hora)).toEqual([
+          ['chitoitsu', 2],
+          ['nuki-dora', 1],
+          ['riichi', 1],
+          ['rinshan', 1],
+          ['tsumo', 1]
+        ]);
       }
     });
 
@@ -268,9 +319,12 @@ describe('Issue #12: 北の扱い (A4)', () => {
         baseRule
       );
       const hora = getHora(res, 'ron');
-      const tuples = toYakuTuples(hora);
-      expect(tuples).toContainEqual(['tanyao', 1]);
-      expect(tuples).toContainEqual(['nuki-dora', 1]);
+      expect(toYakuTuples(hora)).toEqual([
+        ['nuki-dora', 1],
+        ['pinfu', 1],
+        ['riichi', 1],
+        ['tanyao', 1]
+      ]);
     });
 
     test('A4-N11: X、抜、nuki 2、ロン -> 役 = 役満 kokushi(point 1)のみ(nuki-dora は無い)', () => {
@@ -298,7 +352,10 @@ describe('Issue #12: 北の扱い (A4)', () => {
         yakuhaiRule
       );
       const hora = getHora(res, 'ron');
-      expect(toYakuTuples(hora)).toContainEqual(['north', 1]);
+      expect(toYakuTuples(hora)).toEqual([
+        ['north', 1],
+        ['riichi', 1]
+      ]);
     });
 
     test('A4-Y02: K、抜、nuki 0、ロン -> 役に north が無い', () => {
@@ -309,7 +366,7 @@ describe('Issue #12: 北の扱い (A4)', () => {
         baseRule
       );
       const hora = getHora(res, 'ron');
-      expect(hora.yaku.some(y => y.name === 'north')).toBe(false);
+      expect(toYakuTuples(hora)).toEqual([['riichi', 1]]);
     });
 
     test('A4-Y03: H、共、ロン -> 役に pinfu が無い。符の合計 32(切り上げ後40)', () => {
@@ -320,7 +377,7 @@ describe('Issue #12: 北の扱い (A4)', () => {
         yakuhaiRule
       );
       const hora = getHora(res, 'ron');
-      expect(hora.yaku.some(y => y.name === 'pinfu')).toBe(false);
+      expect(toYakuTuples(hora)).toEqual([['riichi', 1]]);
       expect(hora.type).toBe('mentsu');
       if (hora.type === 'mentsu') {
         const rawFu = sumOfFu(hora.fu);
@@ -337,7 +394,10 @@ describe('Issue #12: 北の扱い (A4)', () => {
         baseRule
       );
       const hora = getHora(res, 'ron');
-      expect(hora.yaku.some(y => y.name === 'pinfu')).toBe(true);
+      expect(toYakuTuples(hora)).toEqual([
+        ['pinfu', 1],
+        ['riichi', 1]
+      ]);
       expect(hora.type).toBe('mentsu');
       if (hora.type === 'mentsu') {
         const rawFu = sumOfFu(hora.fu);
@@ -356,8 +416,21 @@ describe('Issue #12: 北の扱い (A4)', () => {
       const hora = getHora(res, 'tsumo');
       expect(hora.type).toBe('mentsu');
       if (hora.type === 'mentsu') {
-        expect(hora.fu.some(f => f.type === 'pinfu-tsumo')).toBe(false);
-        expect(hora.fu).toContainEqual({ type: 'tsumo', fu: 2 });
+        expect(hora.horaTile).toEqual({ type: 'p', n: 6 });
+        expect(sortFu(hora.fu)).toEqual([
+          { type: 'futei', fu: 20 },
+          { type: 'shuntsu', tile: 9, fu: 0 },
+          { type: 'shuntsu', tile: 18, fu: 0 },
+          { type: 'shuntsu', tile: 24, fu: 0 },
+          { type: 'head', tile: 30, fu: 2 },
+          {
+            type: 'waiting',
+            waitingType: 'ryammen',
+            block: { type: 'shuntsu', tile: 12, fu: 0 },
+            fu: 0
+          },
+          { type: 'tsumo', fu: 2 }
+        ]);
         const rawFu = sumOfFu(hora.fu);
         expect(rawFu).toBe(24);
         expect(ceil10(rawFu)).toBe(30);
@@ -374,7 +447,21 @@ describe('Issue #12: 北の扱い (A4)', () => {
       const hora = getHora(res, 'tsumo');
       expect(hora.type).toBe('mentsu');
       if (hora.type === 'mentsu') {
-        expect(hora.fu).toContainEqual({ type: 'pinfu-tsumo', fu: 0 });
+        expect(hora.horaTile).toEqual({ type: 'p', n: 6 });
+        expect(sortFu(hora.fu)).toEqual([
+          { type: 'futei', fu: 20 },
+          { type: 'shuntsu', tile: 9, fu: 0 },
+          { type: 'shuntsu', tile: 18, fu: 0 },
+          { type: 'shuntsu', tile: 24, fu: 0 },
+          { type: 'head', tile: 30, fu: 0 },
+          {
+            type: 'waiting',
+            waitingType: 'ryammen',
+            block: { type: 'shuntsu', tile: 12, fu: 0 },
+            fu: 0
+          },
+          { type: 'pinfu-tsumo', fu: 0 }
+        ]);
         const rawFu = sumOfFu(hora.fu);
         expect(rawFu).toBe(20);
         expect(ceil10(rawFu)).toBe(20);
@@ -391,6 +478,21 @@ describe('Issue #12: 北の扱い (A4)', () => {
       const hora = getHora(res, 'ron');
       expect(hora.type).toBe('mentsu');
       if (hora.type === 'mentsu') {
+        expect(hora.horaTile).toEqual({ type: 'z', n: 4 });
+        expect(sortFu(hora.fu)).toEqual([
+          { type: 'futei', fu: 20 },
+          { type: 'shuntsu', tile: 9, fu: 0 },
+          { type: 'shuntsu', tile: 12, fu: 0 },
+          { type: 'shuntsu', tile: 18, fu: 0 },
+          { type: 'shuntsu', tile: 24, fu: 0 },
+          {
+            type: 'waiting',
+            waitingType: 'tanki',
+            block: { type: 'head', tile: 30, fu: 2 },
+            fu: 2
+          },
+          { type: 'menzen-ron', fu: 10 }
+        ]);
         const waiting = hora.fu.find(f => f.type === 'waiting');
         expect(waiting?.block.fu).toBe(2);
         expect(sumOfFu(hora.fu)).toBe(34);
@@ -407,6 +509,21 @@ describe('Issue #12: 北の扱い (A4)', () => {
       const hora = getHora(res, 'ron');
       expect(hora.type).toBe('mentsu');
       if (hora.type === 'mentsu') {
+        expect(hora.horaTile).toEqual({ type: 'z', n: 4 });
+        expect(sortFu(hora.fu)).toEqual([
+          { type: 'futei', fu: 20 },
+          { type: 'shuntsu', tile: 9, fu: 0 },
+          { type: 'shuntsu', tile: 12, fu: 0 },
+          { type: 'shuntsu', tile: 18, fu: 0 },
+          { type: 'shuntsu', tile: 24, fu: 0 },
+          {
+            type: 'waiting',
+            waitingType: 'tanki',
+            block: { type: 'head', tile: 30, fu: 0 },
+            fu: 2
+          },
+          { type: 'menzen-ron', fu: 10 }
+        ]);
         const waiting = hora.fu.find(f => f.type === 'waiting');
         expect(waiting?.block.fu).toBe(0);
         expect(sumOfFu(hora.fu)).toBe(32);
@@ -423,6 +540,21 @@ describe('Issue #12: 北の扱い (A4)', () => {
       const hora = getHora(res, 'tsumo');
       expect(hora.type).toBe('mentsu');
       if (hora.type === 'mentsu') {
+        expect(hora.horaTile).toEqual({ type: 'z', n: 4 });
+        expect(sortFu(hora.fu)).toEqual([
+          { type: 'futei', fu: 20 },
+          { type: 'shuntsu', tile: 9, fu: 0 },
+          { type: 'shuntsu', tile: 12, fu: 0 },
+          { type: 'shuntsu', tile: 18, fu: 0 },
+          { type: 'shuntsu', tile: 24, fu: 0 },
+          {
+            type: 'waiting',
+            waitingType: 'tanki',
+            block: { type: 'head', tile: 30, fu: 2 },
+            fu: 2
+          },
+          { type: 'tsumo', fu: 2 }
+        ]);
         const waiting = hora.fu.find(f => f.type === 'waiting');
         expect(waiting?.block.fu).toBe(2);
         expect(sumOfFu(hora.fu)).toBe(26);
@@ -439,6 +571,21 @@ describe('Issue #12: 北の扱い (A4)', () => {
       const hora = getHora(res, 'tsumo');
       expect(hora.type).toBe('mentsu');
       if (hora.type === 'mentsu') {
+        expect(hora.horaTile).toEqual({ type: 'z', n: 4 });
+        expect(sortFu(hora.fu)).toEqual([
+          { type: 'futei', fu: 20 },
+          { type: 'shuntsu', tile: 9, fu: 0 },
+          { type: 'shuntsu', tile: 12, fu: 0 },
+          { type: 'shuntsu', tile: 18, fu: 0 },
+          { type: 'shuntsu', tile: 24, fu: 0 },
+          {
+            type: 'waiting',
+            waitingType: 'tanki',
+            block: { type: 'head', tile: 30, fu: 0 },
+            fu: 2
+          },
+          { type: 'tsumo', fu: 2 }
+        ]);
         const waiting = hora.fu.find(f => f.type === 'waiting');
         expect(waiting?.block.fu).toBe(0);
         expect(sumOfFu(hora.fu)).toBe(24);
@@ -458,7 +605,7 @@ describe('Issue #12: 北の扱い (A4)', () => {
         yakuhaiRule
       );
       const hora = getHora(res, 'ron');
-      expect(toYakuTuples(hora)).toContainEqual(['north', 1]);
+      expect(toYakuTuples(hora)).toEqual([['north', 1]]);
     });
 
     test('A4-Y12: M(明槓)、共、ロン -> 役に north1', () => {
@@ -474,7 +621,7 @@ describe('Issue #12: 北の扱い (A4)', () => {
         yakuhaiRule
       );
       const hora = getHora(res, 'ron');
-      expect(toYakuTuples(hora)).toContainEqual(['north', 1]);
+      expect(toYakuTuples(hora)).toEqual([['north', 1]]);
     });
 
     test('A4-Y13: M、抜、ロン -> 役に north が無い', () => {
@@ -490,7 +637,7 @@ describe('Issue #12: 北の扱い (A4)', () => {
         baseRule
       );
       const hora = getHora(res, 'ron');
-      expect(hora.yaku.some(y => y.name === 'north')).toBe(false);
+      expect(toYakuTuples(hora)).toEqual([]);
     });
 
     test('A4-Y14: K、共、nuki 0、dora 3z、ロン -> 役に north1・dora3', () => {
@@ -506,9 +653,11 @@ describe('Issue #12: 北の扱い (A4)', () => {
         yakuhaiRule
       );
       const hora = getHora(res, 'ron');
-      const tuples = toYakuTuples(hora);
-      expect(tuples).toContainEqual(['north', 1]);
-      expect(tuples).toContainEqual(['dora', 3]);
+      expect(toYakuTuples(hora)).toEqual([
+        ['dora', 3],
+        ['north', 1],
+        ['riichi', 1]
+      ]);
     });
   });
 
@@ -628,11 +777,9 @@ describe('Issue #12: 北の扱い (A4)', () => {
         );
         expect(res?.type).toBe('tempai');
         if (res?.type === 'tempai') {
-          const a4z = res.tileAvailabilities.find(
-            a => a.tile.type === 'z' && a.tile.n === 4
-          );
-          expect(a4z).toBeDefined();
-          expect(a4z?.count).toBe(expectedCount);
+          expect(res.tileAvailabilities).toEqual([
+            { tile: { type: 'z', n: 4 }, count: expectedCount }
+          ]);
         }
       }
     });

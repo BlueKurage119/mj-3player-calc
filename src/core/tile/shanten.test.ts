@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import type { TileCounts, TileCountsIndex } from '.';
+import type { TileCounts } from '.';
 import { chitoitsuShantenTiles, minShanten, shantenTiles } from './shanten';
 
 // 34種の枚数配列 (m: 0-8, p: 9-17, s: 18-26, z: 27-33)
@@ -72,13 +72,9 @@ describe('shantenTiles (三麻の有効牌除外)', () => {
     const { results } = minShanten(c, 0);
     const tiles = shantenTiles(results, c, 0);
 
-    // 設計書 §5-4: 添字1〜7(2m〜8m)が存在しないことの検証
-    for (let i = 1; i <= 7; i++) {
-      expect(tiles.includes(i as TileCountsIndex)).toBe(false);
-    }
-    // 設計書 §5-4: 添字0(1m)・8(9m)が含まれることの検証
-    expect(tiles.includes(0)).toBe(true);
-    expect(tiles.includes(8)).toBe(true);
+    // 有効牌の全体は向聴計算の結果で、手計算で確定できない。本テストの関心は萬子の除外
+    const manzuTiles = tiles.filter(i => i < 9);
+    expect(manzuTiles).toEqual([0, 8]);
   });
 });
 
@@ -95,11 +91,9 @@ describe('chitoitsuShantenTiles (三麻の七対子有効牌除外)', () => {
     ]);
     const tiles = chitoitsuShantenTiles(c);
 
-    // 設計書 §5-5: 添字1〜7(2m〜8m)が存在しないことの検証
-    for (let i = 1; i <= 7; i++) {
-      expect(tiles.includes(i as TileCountsIndex)).toBe(false);
-    }
-    // 設計書 §5-5: 添字0(1m)が含まれることの検証
-    expect(tiles.includes(0)).toBe(true);
+    expect(tiles).toEqual([
+      0, 11, 12, 13, 14, 15, 16, 17, 18, 19, 22, 23, 24, 25, 26, 27, 28, 29, 30,
+      31, 32, 33
+    ]);
   });
 });
