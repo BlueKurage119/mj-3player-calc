@@ -343,41 +343,36 @@ describe.each(goldenCases)('データ検査 $id', c => {
 });
 
 // ---- ケース全体の検査 (設計書 §5.3 の 7, 8 と §8 受け入れ条件 4) ----
-// ケースが空のあいだは満たせない検査なので、スキップする。
-// (ケースが空だった間の扱い。G01〜G28 の28件を xlsx から投入した現在は、スキップされずに実行される。)
-
-const noCases = goldenCases.length === 0;
+// ケース配列が誤って空になった場合にテスト全体が成功しないよう、スキップはしない
+// (空のときはケース数・カテゴリ網羅・C10 境界の検査が失敗する)。
 
 describe('ケース全体の検査', () => {
-  test.skipIf(noCases)('id が重複しない', () => {
+  test('id が重複しない', () => {
     const ids = goldenCases.map(c => c.id);
     expect(new Set(ids).size).toBe(ids.length);
   });
-  test.skipIf(noCases)('ケース数が 20 以上 30 以下', () => {
+  test('ケース数が 20 以上 30 以下', () => {
     expect(goldenCases.length).toBeGreaterThanOrEqual(20);
     expect(goldenCases.length).toBeLessThanOrEqual(30);
   });
-  test.skipIf(noCases)('カテゴリ C1〜C11 がすべて1件以上ある', () => {
+  test('カテゴリ C1〜C11 がすべて1件以上ある', () => {
     const present = new Set(goldenCases.map(c => c.category));
     for (let i = 1; i <= 11; i++) expect(present).toContain(`C${i}`);
   });
-  test.skipIf(noCases)(
-    'C10 に 30符4飜 と 60符3飜 があり、基本点 1920・区分 通常 である',
-    () => {
-      const c10 = goldenCases.filter(c => c.category === 'C10');
-      for (const [fu, han] of [
-        [30, 4],
-        [60, 3]
-      ] as const) {
-        const hit = c10.filter(
-          c => c.expected.fu === fu && c.expected.han === han
-        );
-        expect(hit.length).toBeGreaterThanOrEqual(1);
-        for (const c of hit) {
-          expect(c.expected.basePoint).toBe(1920);
-          expect(c.expected.tier).toBe('通常');
-        }
+  test('C10 に 30符4飜 と 60符3飜 があり、基本点 1920・区分 通常 である', () => {
+    const c10 = goldenCases.filter(c => c.category === 'C10');
+    for (const [fu, han] of [
+      [30, 4],
+      [60, 3]
+    ] as const) {
+      const hit = c10.filter(
+        c => c.expected.fu === fu && c.expected.han === han
+      );
+      expect(hit.length).toBeGreaterThanOrEqual(1);
+      for (const c of hit) {
+        expect(c.expected.basePoint).toBe(1920);
+        expect(c.expected.tier).toBe('通常');
       }
     }
-  );
+  });
 });
