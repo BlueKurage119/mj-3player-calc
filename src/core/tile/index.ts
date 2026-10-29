@@ -96,12 +96,21 @@ export const compareTiles = (a: Tile, b: Tile) =>
       ? (a.red ? 1 : 0) - (b.red ? 1 : 0)
       : a.n - b.n;
 
+/** 三麻に存在する牌か(2m〜8m でない) */
+export const isSanmaTile = (tile: Tile): boolean =>
+  !(tile.type === 'm' && tile.n >= 2 && tile.n <= 8);
+
+/** 枚数配列の添字版。添字 1〜7(2m〜8m)が false */
+export const isSanmaIndex = (index: TileCountsIndex): boolean =>
+  index < 1 || index > 7;
+
 export const isAvailableTiles = (
   red: Rule['red'],
   existing: Tile[],
   toUse: Tile[]
 ): boolean => {
   const merged = [...existing, ...toUse];
+  if (merged.some(t => !isSanmaTile(t))) return false;
   const counts = [...Array(34)].map(() => 0) as TileCounts;
   for (const t of merged) {
     counts[tileToCountsIndex(t)] += 1;
@@ -131,6 +140,7 @@ export const tileAvailableCount = (
   existing: Tile[],
   toUse: Tile
 ): number | null => {
+  if (!isSanmaTile(toUse)) return null;
   const count = countBy(existing, t => compareTiles(t, toUse) === 0);
   if (toUse.type !== 'z' && toUse.n === 5) {
     const r = red[toUse.type];
@@ -166,14 +176,20 @@ export const tilesToCounts = (tiles: Tile[]): TileCounts => {
   return counts;
 };
 
-export const nextIndex = (index: TileCountsIndex): TileCountsIndex =>
-  (index < tileCountsFirstIndex.z
-    ? ((index + 1) % 9) + Math.floor(index / 9) * 9
-    : index < tileCountsFirstIndex.z + 4
-      ? tileCountsFirstIndex.z + ((index - tileCountsFirstIndex.z + 1) % 4)
-      : tileCountsFirstIndex.z +
-        4 +
-        ((index - (tileCountsFirstIndex.z + 4) + 1) % 3)) as TileCountsIndex;
+export const nextIndex = (index: TileCountsIndex): TileCountsIndex => {
+  if (index === 0) return 8;
+  if (index === 8) return 0;
+  if (index < tileCountsFirstIndex.z) {
+    return (((index + 1) % 9) + Math.floor(index / 9) * 9) as TileCountsIndex;
+  }
+  if (index < tileCountsFirstIndex.z + 4) {
+    return (tileCountsFirstIndex.z +
+      ((index - tileCountsFirstIndex.z + 1) % 4)) as TileCountsIndex;
+  }
+  return (tileCountsFirstIndex.z +
+    4 +
+    ((index - (tileCountsFirstIndex.z + 4) + 1) % 3)) as TileCountsIndex;
+};
 
 export const colorStats = (counts: TileCounts): ColorStats =>
   counts.reduce(
