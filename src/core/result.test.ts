@@ -444,3 +444,65 @@ describe('null 混入なし', () => {
     }
   });
 });
+
+// ---- 設計書 §5.2-3: 天和・地和 ----
+describe('天和・地和 (T1〜T3)', () => {
+  // 出典: mahjong-rules.md §7【確定】(親は自風が東の者)
+  const getHoraYakuNames = (seat: Table['seat'], handStr: string): string[] => {
+    const res = generateResult(
+      { round: 'east', seat, continue: 0, deposit: 0 },
+      {
+        hand: parseTiles(handStr),
+        melds: [],
+        dora: []
+      },
+      {
+        ...defaultHandOptions,
+        tenho: true
+      },
+      rule
+    );
+    expect(res).not.toBeNull();
+    expect(res?.type).toBe('hora-shanten');
+    if (res?.type !== 'hora-shanten') return [];
+    expect(res.info.type).toBe('hora');
+    if (res.info.type !== 'hora') return [];
+    return res.info.hora.flatMap(h => h.yaku).map(y => y.name);
+  };
+
+  test('T1-親: 通常形 自風東で天和', () => {
+    const yakuNames = getHoraYakuNames('east', '111m999m123p456p11z');
+    expect(yakuNames).toContain('tenho');
+    expect(yakuNames).not.toContain('chiho');
+  });
+
+  test('T1-子: 通常形 自風南で地和', () => {
+    const yakuNames = getHoraYakuNames('south', '111m999m123p456p11z');
+    expect(yakuNames).toContain('chiho');
+    expect(yakuNames).not.toContain('tenho');
+  });
+
+  test('T2-親: 七対子 自風東で天和', () => {
+    const yakuNames = getHoraYakuNames('east', '1199m11p22p33s44s11z');
+    expect(yakuNames).toContain('tenho');
+    expect(yakuNames).not.toContain('chiho');
+  });
+
+  test('T2-子: 七対子 自風西で地和', () => {
+    const yakuNames = getHoraYakuNames('west', '1199m11p22p33s44s11z');
+    expect(yakuNames).toContain('chiho');
+    expect(yakuNames).not.toContain('tenho');
+  });
+
+  test('T3-親: 国士無双 自風東で天和', () => {
+    const yakuNames = getHoraYakuNames('east', '19m19p19s12345677z');
+    expect(yakuNames).toContain('tenho');
+    expect(yakuNames).not.toContain('chiho');
+  });
+
+  test('T3-子: 国士無双 自風南で地和', () => {
+    const yakuNames = getHoraYakuNames('south', '19m19p19s12345677z');
+    expect(yakuNames).toContain('chiho');
+    expect(yakuNames).not.toContain('tenho');
+  });
+});
