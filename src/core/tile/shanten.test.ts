@@ -10,7 +10,7 @@ const counts = (entries: [number, number][]): TileCounts => {
 };
 
 describe('三麻の手牌を分解できる (2m〜8m なし)', () => {
-  test('111m999m123p456s77z は和了形', () => {
+  test('A0: 111m999m123p456s77z は和了形', () => {
     const c = counts([
       [0, 3],
       [8, 3],
@@ -24,7 +24,7 @@ describe('三麻の手牌を分解できる (2m〜8m なし)', () => {
     ]);
     expect(minShanten(c, 0).shanten).toBe(-1);
   });
-  test('111m999m123p456s7z は聴牌', () => {
+  test('A0: 111m999m123p456s7z は聴牌', () => {
     const c = counts([
       [0, 3],
       [8, 3],
@@ -38,7 +38,7 @@ describe('三麻の手牌を分解できる (2m〜8m なし)', () => {
     ]);
     expect(minShanten(c, 0).shanten).toBe(0);
   });
-  test('19m は順子にならない', () => {
+  test('A0: 19m は順子にならない', () => {
     const c = counts([
       [0, 1],
       [8, 1],
@@ -52,7 +52,7 @@ describe('三麻の手牌を分解できる (2m〜8m なし)', () => {
 });
 
 describe('shantenTiles (三麻の有効牌除外)', () => {
-  test('H1: 19m123456p789s12z の有効牌に 2m〜8m(添字1〜7)が無く、1m・9m(添字0・8)が含まれる', () => {
+  test('A2-H1: 19m123456p789s12z の有効牌に 2m〜8m(添字1〜7)が無く、1m・9m(添字0・8)が含まれる', () => {
     // H1: 13枚。孤立 1m・9m の前後(2m・3m・7m・8m)が候補から除外されることを検証する
     const c = counts([
       [0, 1],
@@ -83,7 +83,7 @@ describe('shantenTiles (三麻の有効牌除外)', () => {
 });
 
 describe('chitoitsuShantenTiles (三麻の七対子有効牌除外)', () => {
-  test('H2: 1m999m11p22p33s444s の結果に 2m〜8m(添字1〜7)が無く、1m(添字0)が含まれる', () => {
+  test('A2-H2: 1m999m11p22p33s444s の結果に 2m〜8m(添字1〜7)が無く、1m(添字0)が含まれる', () => {
     // H2: 13枚・6種(種類数<7)。枚数0の 2m〜8m が除外され、枚数1の 1m が残ることを検証する
     const c = counts([
       [0, 1],

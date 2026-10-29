@@ -78,8 +78,8 @@ const defaultHandOptions: HandOptions = {
 };
 
 // ---- 注意事項 N11 ----
-describe('N11: H2 parseTiles', () => {
-  test('H2 1m999m11p22p33s444s は13枚・6種', () => {
+describe('A2-N11: A2-H2 parseTiles', () => {
+  test('A2-H2: 1m999m11p22p33s444s は13枚・6種', () => {
     const tiles = parseTiles('1m999m11p22p33s444s');
     expect(tiles).toHaveLength(13);
     const unique = new Set(tiles.map(t => `${t.type}${t.n}`));
@@ -88,8 +88,8 @@ describe('N11: H2 parseTiles', () => {
 });
 
 // ---- 設計書 §5-6: 入力の検証 ----
-describe('入力の検証 (V1〜V6)', () => {
-  test('V1: 手牌に 2m〜8m が含まれる場合 (2m9m123456p789s12z: 13枚) -> null', () => {
+describe('入力の検証 (A2-V1〜V6)', () => {
+  test('A2-V1: 手牌に 2m〜8m が含まれる場合 (2m9m123456p789s12z: 13枚) -> null', () => {
     const res = generateResult(
       defaultTable,
       {
@@ -104,7 +104,7 @@ describe('入力の検証 (V1〜V6)', () => {
     expect(res).toBeNull();
   });
 
-  test('V2: ドラ表示牌に 2m〜8m が含まれる場合 (手牌H1: 13枚, ドラ 5m) -> null', () => {
+  test('A2-V2: ドラ表示牌に 2m〜8m が含まれる場合 (手牌H1: 13枚, ドラ 5m) -> null', () => {
     const res = generateResult(
       defaultTable,
       {
@@ -119,7 +119,7 @@ describe('入力の検証 (V1〜V6)', () => {
     expect(res).toBeNull();
   });
 
-  test('V3: 副露に 2m〜8m が含まれる場合 (手牌H4: 10枚 + ポン 3m) -> null', () => {
+  test('A2-V3: 副露に 2m〜8m が含まれる場合 (手牌H4: 10枚 + ポン 3m) -> null', () => {
     const res = generateResult(
       defaultTable,
       {
@@ -134,7 +134,7 @@ describe('入力の検証 (V1〜V6)', () => {
     expect(res).toBeNull();
   });
 
-  test('チーは Meld の型で表せない', () => {
+  test('A3: チーは Meld の型で表せない', () => {
     const m: Meld = {
       // @ts-expect-error チーは三麻に存在しない
       type: 'chii',
@@ -144,7 +144,7 @@ describe('入力の検証 (V1〜V6)', () => {
     expect(m).toBeDefined();
   });
 
-  test('V6: 手牌に 2m〜8m が5枚含まれる場合 (H6: 22222m9m123456p78s: 14枚) -> 例外を投げず null', () => {
+  test('A2-V6: 手牌に 2m〜8m が5枚含まれる場合 (H6: 22222m9m123456p78s: 14枚) -> 例外を投げず null', () => {
     const res = generateResult(
       defaultTable,
       {
@@ -165,7 +165,7 @@ describe('入力の検証 (V1〜V6)', () => {
 
 // ---- 設計書 §5-7: 一覧に 2m〜8m が無い ----
 describe('一覧に 2m〜8m が無い', () => {
-  test('向聴形: H1 (19m123456p789s12z) で 2m〜8m が無く、1m・9m がある', () => {
+  test('A2: 向聴形: H1 (19m123456p789s12z) で 2m〜8m が無く、1m・9m がある', () => {
     const res = generateResult(
       defaultTable,
       {
@@ -201,7 +201,7 @@ describe('一覧に 2m〜8m が無い', () => {
     expect(has9m).toBe(true);
   });
 
-  test('聴牌形: H3 (11m99m123p456s: 10枚) で牌が 1m・9m のみ', () => {
+  test('A2: 聴牌形: H3 (11m99m123p456s: 10枚) で牌が 1m・9m のみ', () => {
     const res = generateResult(
       defaultTable,
       {
@@ -228,7 +228,7 @@ describe('ドラ表示牌 1m', () => {
   // 手牌: 999m(暗刻), 123p(順子), 456p(順子), 789s(順子), 11z(東東・対子) の計14枚
   // ドラ表示牌 1m により、三麻では 1m の次の萬子として 9m がドラとなる。
   // 手牌に 9m が3枚あるため、ドラ3飜。立直1飜と合わせて計4飜。
-  test('ドラ表示牌 1m で 9m がドラになり、dora 3飜となる', () => {
+  test('A2: ドラ表示牌 1m で 9m がドラになり、dora 3飜となる', () => {
     const res = generateResult(
       defaultTable,
       {
@@ -263,7 +263,7 @@ describe('ドラ表示牌 1m', () => {
 
 // ---- 設計書 §5-9: 残り枚数(108枚構成) ----
 describe('残り枚数(108枚構成)', () => {
-  test('R1: 手牌 H1、ドラ表示牌 1m -> 1m残り2、9m残り3', () => {
+  test('A2-R1: 手牌 H1、ドラ表示牌 1m -> 1m残り2、9m残り3', () => {
     const res = generateResult(
       defaultTable,
       {
@@ -294,7 +294,7 @@ describe('残り枚数(108枚構成)', () => {
     expect(a9m?.count).toBe(3);
   });
 
-  test('R2: 手牌 H4 + 副露ポン 6s、ドラ表示牌 9m9s -> 6s残り1、9s残り3、9m残り2、1m残り3', () => {
+  test('A2-R2: 手牌 H4 + 副露ポン 6s、ドラ表示牌 9m9s -> 6s残り1、9s残り3、9m残り2、1m残り3', () => {
     const res = generateResult(
       defaultTable,
       {
@@ -332,7 +332,7 @@ describe('残り枚数(108枚構成)', () => {
     expect(a1m?.count).toBe(3);
   });
 
-  test('R3: 手牌 H5、ドラ表示牌 0p(赤5p) -> 赤5p残り0、通常5p残り3、赤5s残り1、通常5s残り3', () => {
+  test('A2-R3: 手牌 H5、ドラ表示牌 0p(赤5p) -> 赤5p残り0、通常5p残り3、赤5s残り1、通常5s残り3', () => {
     const res = generateResult(
       defaultTable,
       {
@@ -381,7 +381,7 @@ describe('残り枚数(108枚構成)', () => {
 
 // ---- 設計書 §5-10: null 混入なし ----
 describe('null 混入なし', () => {
-  test('§5-7・§5-9 の全ケースで tileAvailabilities の count がすべて number 型である', () => {
+  test('A2: §5-7・§5-9 の全ケースで tileAvailabilities の count がすべて number 型である', () => {
     const cases = [
       // H1 (向聴形)
       { hand: '19m123456p789s12z', melds: [], dora: '', nuki: 0 },
@@ -429,7 +429,7 @@ describe('null 混入なし', () => {
 });
 
 // ---- 設計書 §5.2-3: 天和・地和 ----
-describe('天和・地和 (T1〜T3)', () => {
+describe('天和・地和 (A3-T1〜T3)', () => {
   // 出典: mahjong-rules.md §7【確定】(親は自風が東の者)
   const getHoraYakuNames = (seat: Table['seat'], handStr: string): string[] => {
     const res = generateResult(
@@ -454,37 +454,37 @@ describe('天和・地和 (T1〜T3)', () => {
     return res.info.hora.flatMap(h => h.yaku).map(y => y.name);
   };
 
-  test('T1-親: 通常形 自風東で天和', () => {
+  test('A3-T1-親: 通常形 自風東で天和', () => {
     const yakuNames = getHoraYakuNames('east', '111m999m123p456p11z');
     expect(yakuNames).toContain('tenho');
     expect(yakuNames).not.toContain('chiho');
   });
 
-  test('T1-子: 通常形 自風南で地和', () => {
+  test('A3-T1-子: 通常形 自風南で地和', () => {
     const yakuNames = getHoraYakuNames('south', '111m999m123p456p11z');
     expect(yakuNames).toContain('chiho');
     expect(yakuNames).not.toContain('tenho');
   });
 
-  test('T2-親: 七対子 自風東で天和', () => {
+  test('A3-T2-親: 七対子 自風東で天和', () => {
     const yakuNames = getHoraYakuNames('east', '1199m11p22p33s44s11z');
     expect(yakuNames).toContain('tenho');
     expect(yakuNames).not.toContain('chiho');
   });
 
-  test('T2-子: 七対子 自風西で地和', () => {
+  test('A3-T2-子: 七対子 自風西で地和', () => {
     const yakuNames = getHoraYakuNames('west', '1199m11p22p33s44s11z');
     expect(yakuNames).toContain('chiho');
     expect(yakuNames).not.toContain('tenho');
   });
 
-  test('T3-親: 国士無双 自風東で天和', () => {
+  test('A3-T3-親: 国士無双 自風東で天和', () => {
     const yakuNames = getHoraYakuNames('east', '19m19p19s12345677z');
     expect(yakuNames).toContain('tenho');
     expect(yakuNames).not.toContain('chiho');
   });
 
-  test('T3-子: 国士無双 自風南で地和', () => {
+  test('A3-T3-子: 国士無双 自風南で地和', () => {
     const yakuNames = getHoraYakuNames('south', '19m19p19s12345677z');
     expect(yakuNames).toContain('chiho');
     expect(yakuNames).not.toContain('tenho');
