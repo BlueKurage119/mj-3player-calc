@@ -1,15 +1,9 @@
 import type { Rule } from './rule';
-import type { NumberTile, Tile } from './tile';
+import type { Tile } from './tile';
 
 export interface Pon {
   type: 'pon';
   tile: Tile | null;
-}
-
-export interface Chii {
-  type: 'chii';
-  tile: NumberTile | null;
-  includeRed: boolean;
 }
 
 export interface Kan {
@@ -18,7 +12,7 @@ export interface Kan {
   closed: boolean;
 }
 
-export type Meld = Pon | Chii | Kan;
+export type Meld = Pon | Kan;
 
 export interface Input {
   hand: Tile[];
@@ -44,20 +38,6 @@ export const instantiateMeld = (meld: Meld, red: Rule['red']): Tile[] => {
         ];
       }
       return [...Array(3)].map(() => tile);
-    case 'chii': {
-      if (tile.n >= 8) throw new Error();
-      const r =
-        (meld.includeRed && red[tile.type] >= 1) || red[tile.type] === 4;
-      return [
-        tile,
-        tile.n + 1 === 5
-          ? { ...tile, n: 5, red: r }
-          : ({ ...tile, n: tile.n + 1 } as NumberTile),
-        (tile.n + 2 === 5
-          ? { ...tile, n: 5, red: r }
-          : { ...tile, n: tile.n + 2 }) as NumberTile
-      ];
-    }
     case 'kan':
       if (tile.type !== 'z' && tile.n === 5) {
         const r = red[tile.type];

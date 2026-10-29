@@ -1,9 +1,9 @@
 import { describe, expect, test } from 'vitest';
-import type { HandOptions } from './input';
+import type { HandOptions, Meld } from './input';
 import { generateResult } from './result';
 import type { Rule } from './rule';
 import type { Table } from './table';
-import type { NumberTile, Tile } from './tile';
+import type { Tile } from './tile';
 
 // ---- 補助関数 (golden.test.ts より複製) ----
 
@@ -130,44 +130,14 @@ describe('入力の検証 (V1〜V6)', () => {
     expect(res).toBeNull();
   });
 
-  test('V4: 副露にチー 1m が含まれる場合 (手牌H4: 10枚 + チー 1m) -> 例外を投げず null', () => {
-    const res = generateResult(
-      defaultTable,
-      {
-        hand: parseTiles('19m123456p78s'),
-        melds: [
-          {
-            type: 'chii',
-            tile: parseSingleTile('1m') as NumberTile,
-            includeRed: false
-          }
-        ],
-        dora: []
-      },
-      defaultHandOptions,
-      rule
-    );
-    expect(res).toBeNull();
-  });
-
-  test('V5: 副露にチー 1p が含まれる場合 (手牌H4: 10枚 + チー 1p) -> null', () => {
-    const res = generateResult(
-      defaultTable,
-      {
-        hand: parseTiles('19m123456p78s'),
-        melds: [
-          {
-            type: 'chii',
-            tile: parseSingleTile('1p') as NumberTile,
-            includeRed: false
-          }
-        ],
-        dora: []
-      },
-      defaultHandOptions,
-      rule
-    );
-    expect(res).toBeNull();
+  test('チーは Meld の型で表せない', () => {
+    const m: Meld = {
+      // @ts-expect-error チーは三麻に存在しない
+      type: 'chii',
+      tile: parseSingleTile('1m'),
+      includeRed: false
+    };
+    expect(m).toBeDefined();
   });
 
   test('V6: 手牌に 2m〜8m が5枚含まれる場合 (H6: 22222m9m123456p78s: 14枚) -> 例外を投げず null', () => {
