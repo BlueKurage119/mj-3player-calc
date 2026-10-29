@@ -82,14 +82,34 @@ export const generateResult = (
   rule: Rule
 ): Result => {
   if (!isValidSanmaInput(input)) return null;
-  if (input.hand.length % 3 === 0) return null;
-
-  const handCounts = tilesToCounts(input.hand);
+  if (!Number.isInteger(input.nuki) || input.nuki < 0 || input.nuki > 4) {
+    return null;
+  }
+  if (rule.north === 'yakuhai' && input.nuki > 0) {
+    return null;
+  }
   const meldTiles = input.melds.flatMap(meld =>
     instantiateMeld(meld, rule.red)
   );
+  const isNorth = (t: Tile) => t.type === 'z' && t.n === 4;
+  const northCount =
+    input.hand.filter(isNorth).length +
+    meldTiles.filter(isNorth).length +
+    input.nuki +
+    input.dora.filter(isNorth).length;
+  if (northCount >= 5) {
+    return null;
+  }
+  if (input.hand.length % 3 === 0) return null;
+
+  const handCounts = tilesToCounts(input.hand);
   const handAndMelds = [...input.hand, ...meldTiles];
-  const allInputTiles = [...handAndMelds, ...input.dora];
+  const northTile: Tile = { type: 'z', n: 4 };
+  const allInputTiles = [
+    ...handAndMelds,
+    ...input.dora,
+    ...Array(input.nuki).fill(northTile)
+  ];
   const handAndMeldsCounts = tilesToCounts(handAndMelds);
   const tileCountsIndexToTileAvailabilities = (index: TileCountsIndex) => {
     const tile = countsIndexToTile(index);
@@ -130,7 +150,8 @@ export const generateResult = (
                 input.hand,
                 handOptions,
                 input.dora,
-                rule
+                rule,
+                input.nuki
               )
             : []),
           ...(kokushiShanten === 0

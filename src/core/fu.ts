@@ -71,7 +71,7 @@ export const fu = (
   waiting: TileCountsIndex,
   by: 'tsumo' | 'ron',
   { round, seat }: Table,
-  { doubleWindFu }: Rule
+  { doubleWindFu, north }: Rule
 ): Fu[] => {
   const ret: Fu[] = [{ type: 'futei', fu: 20 }];
   const tatsu =
@@ -85,6 +85,7 @@ export const fu = (
   const head =
     decomposeResult.blocks.find(b => b.type === 'toitsu' && b.tile !== waiting)
       ?.tile ?? waiting;
+  const northHead = north === 'yakuhai' && head === tileCountsFirstIndex.z + 3;
   const roundHead =
     head ===
     tileCountsFirstIndex.z + ['east', 'south', 'west', 'north'].indexOf(round);
@@ -143,7 +144,7 @@ export const fu = (
       type: 'head',
       tile: head,
       fu:
-        head >= tileCountsFirstIndex.z + 4
+        head >= tileCountsFirstIndex.z + 4 || northHead
           ? 2
           : roundHead && seatHead
             ? doubleWindFu
@@ -166,7 +167,7 @@ export const fu = (
             type: 'head',
             tile: waiting,
             fu:
-              head >= tileCountsFirstIndex.z + 4
+              head >= tileCountsFirstIndex.z + 4 || northHead
                 ? 2
                 : roundHead && seatHead
                   ? doubleWindFu
@@ -216,6 +217,7 @@ export const fu = (
         b => b.type === 'shuntsu' || b.type === 'ryammen' || b.type === 'toitsu'
       ) &&
       head < tileCountsFirstIndex.z + 4 &&
+      !northHead &&
       !roundHead &&
       !seatHead
     ) {
