@@ -32,7 +32,9 @@ const fullRule: Rule = {
   daisushiDoubleYakuman: true,
   pureChurenDoubleYakuman: true,
   north: 'nukidora',
-  tsumoLoss: 'loss'
+  tsumoLoss: 'loss',
+  localYaku: false,
+  openRiichi: false
 };
 
 describe('A5: 支払い計算', () => {

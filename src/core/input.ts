@@ -58,10 +58,19 @@ export type InputFocus =
   | { type: 'meld'; i: number };
 
 export interface HandOptions {
-  riichi: 'none' | 'riichi' | 'double-riichi';
+  riichi:
+    | 'none'
+    | 'riichi'
+    | 'double-riichi'
+    | 'open-riichi'
+    | 'open-double-riichi';
   ippatsu: boolean;
   rinshan: boolean;
   chankan: boolean;
   haitei: boolean;
   tenho: boolean;
+  /** 燕返し: 他家の立直宣言牌でロン(ローカル役) */
+  tsubameGaeshi: boolean;
+  /** 槓振り: 他家の槓・北抜き直後の打牌でロン(ローカル役) */
+  kanFuri: boolean;
 }

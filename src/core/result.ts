@@ -5,6 +5,7 @@ import {
   generateKokushiHora,
   uniqueHoras
 } from './hora';
+import { generateShisanputaHora } from './local-yaku';
 import { type HandOptions, type Input, instantiateMeld } from './input';
 import type { Rule } from './rule';
 import type { Table } from './table';
@@ -81,6 +82,13 @@ export const generateResult = (
   handOptions: HandOptions,
   rule: Rule
 ): Result => {
+  if (
+    (handOptions.riichi === 'open-riichi' ||
+      handOptions.riichi === 'open-double-riichi') &&
+    !rule.openRiichi
+  ) {
+    throw new Error('オープン立直はルールで許可されていません');
+  }
   if (!isValidSanmaInput(input)) return null;
   if (!Number.isInteger(input.nuki) || input.nuki < 0 || input.nuki > 4) {
     return null;
@@ -139,7 +147,16 @@ export const generateResult = (
     if (input.hand.length === 13) {
       const chitoitsuShanten = countChitoitsuShanten(handCounts);
       const kokushiShanten = countKokushiShanten(handCounts);
-      if (shanten === 0 || chitoitsuShanten === 0 || kokushiShanten === 0) {
+      const shisanputaHoras =
+        rule.localYaku && handOptions.tenho && input.melds.length === 0
+          ? generateShisanputaHora(table, input.hand, handOptions, rule)
+          : [];
+      if (
+        shanten === 0 ||
+        chitoitsuShanten === 0 ||
+        kokushiShanten === 0 ||
+        shisanputaHoras.length > 0
+      ) {
         const horas = [
           ...(shanten === 0
             ? generateHora(table, handOptions, results, input, rule)
@@ -156,7 +173,8 @@ export const generateResult = (
             : []),
           ...(kokushiShanten === 0
             ? generateKokushiHora(table, handCounts, handOptions, rule)
-            : [])
+            : []),
+          ...shisanputaHoras
         ];
         return {
           type: 'hora-shanten',

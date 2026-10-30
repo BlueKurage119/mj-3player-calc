@@ -27,6 +27,11 @@ import type { Block } from './tile/block';
 import type { DecomposeResult } from './tile/shanten';
 import { countBy, countGroupBy, product2, sumBy, uniqueSorted } from './util';
 import type { Yaku, Yakuman } from './yaku';
+import {
+  judgeChitoitsuLocalYaku,
+  judgeKokushiLocalYaku,
+  judgeMentsuLocalYaku
+} from './local-yaku';
 
 interface MentsuHora {
   type: 'mentsu';
@@ -38,7 +43,7 @@ interface MentsuHora {
 }
 
 interface SpecialHora {
-  type: 'chitoitsu' | 'kokushi';
+  type: 'chitoitsu' | 'kokushi' | 'shisanputa';
   by: 'tsumo' | 'ron';
   horaTile: Tile;
   yaku: Yaku[];
@@ -47,6 +52,20 @@ interface SpecialHora {
 export type Hora = MentsuHora | SpecialHora;
 
 const ronAndTsumo = ['ron' as const, 'tsumo' as const];
+
+const riichiHan = (r: HandOptions['riichi']): number => {
+  switch (r) {
+    case 'riichi':
+      return 1;
+    case 'double-riichi':
+    case 'open-riichi':
+      return 2;
+    case 'open-double-riichi':
+      return 3;
+    default:
+      return 0;
+  }
+};
 
 export const generateHora = (
   table: Table,
@@ -181,7 +200,17 @@ export const generateHora = (
             b => b.type === 'kotsu' || b.type === 'toitsu'
           )
         ) {
-          if (typeof tatsu === 'number') {
+          if (options.tenho && isDealer(table)) {
+            yakuman.push({
+              yakuman: {
+                type: 'yakuman',
+                name: 'suanko-tanki',
+                point: rule.suankoTankiDoubleYakuman ? 2 : 1
+              },
+              ron: true,
+              tsumo: true
+            });
+          } else if (typeof tatsu === 'number') {
             yakuman.push({
               yakuman: {
                 type: 'yakuman',
@@ -303,17 +332,19 @@ export const generateHora = (
             // biome-ignore lint/style/noNonNullAssertion:
             cc[horaTile.n - 1]! -= 1;
 
-            if (
-              cc[0] === 3 &&
-              cc[1] === 1 &&
-              cc[2] === 1 &&
-              cc[3] === 1 &&
-              cc[4] === 1 &&
-              cc[5] === 1 &&
-              cc[6] === 1 &&
-              cc[7] === 1 &&
-              cc[8] === 3
-            ) {
+            const isPureChuren =
+              (options.tenho && isDealer(table)) ||
+              (cc[0] === 3 &&
+                cc[1] === 1 &&
+                cc[2] === 1 &&
+                cc[3] === 1 &&
+                cc[4] === 1 &&
+                cc[5] === 1 &&
+                cc[6] === 1 &&
+                cc[7] === 1 &&
+                cc[8] === 3);
+
+            if (isPureChuren) {
               yakuman.push({
                 yakuman: {
                   type: 'yakuman',
@@ -332,43 +363,114 @@ export const generateHora = (
             }
           }
         }
+
+        const localResult = judgeMentsuLocalYaku({
+          allMentsu,
+          head,
+          allTiles,
+          allTilesCounts,
+          horaTile,
+          melds: input.melds,
+          menzen,
+          table,
+          options,
+          rule
+        });
+
+        if (localResult.removeRyuiso) {
+          const idx = yakuman.findIndex(y => y.yakuman.name === 'ryuiso');
+          if (idx !== -1) {
+            yakuman.splice(idx, 1);
+          }
+        }
+        yakuman.push(...localResult.yakuman);
+
         if (input.melds.length === 0 && options.tenho) {
-          yakuman.push({
-            yakuman: {
-              type: 'yakuman',
-              name: isDealer(table) ? 'tenho' : 'chiho',
-              point: 1
-            },
-            ron: false,
-            tsumo: true
-          });
-          return [
-            {
+          if (isDealer(table)) {
+            yakuman.push({
+              yakuman: {
+                type: 'yakuman',
+                name: 'tenho',
+                point: 1
+              },
+              ron: false,
+              tsumo: true
+            });
+            return [
+              {
+                type: 'mentsu',
+                by: 'tsumo',
+                fu: fu(
+                  decomposeResult,
+                  input.melds,
+                  tileToCountsIndex(horaTile),
+                  'tsumo',
+                  table,
+                  rule
+                ),
+                horaTile,
+                melds: input.melds,
+                yaku: yakuman.flatMap(y => (y.tsumo ? [y.yakuman] : []))
+              } as MentsuHora
+            ];
+          }
+
+          const tsumoHora: MentsuHora = {
+            type: 'mentsu',
+            by: 'tsumo',
+            fu: fu(
+              decomposeResult,
+              input.melds,
+              tileToCountsIndex(horaTile),
+              'tsumo',
+              table,
+              rule
+            ),
+            horaTile,
+            melds: input.melds,
+            yaku: [
+              ...yakuman.flatMap(y => (y.tsumo ? [y.yakuman] : [])),
+              { type: 'yakuman', name: 'chiho', point: 1 }
+            ]
+          };
+
+          if (rule.localYaku) {
+            const ronHora: MentsuHora = {
               type: 'mentsu',
-              by: 'tsumo',
+              by: 'ron',
               fu: fu(
                 decomposeResult,
                 input.melds,
                 tileToCountsIndex(horaTile),
-                'tsumo',
+                'ron',
                 table,
                 rule
               ),
               horaTile,
               melds: input.melds,
-              yaku: yakuman.flatMap(y => (y.tsumo ? [y.yakuman] : []))
-            } as MentsuHora
-          ];
+              yaku: [
+                ...yakuman.flatMap(y => (y.ron ? [y.yakuman] : [])),
+                { type: 'yakuman', name: 'renho', point: 1 }
+              ]
+            };
+            return [tsumoHora, ronHora];
+          }
+
+          return [tsumoHora];
         }
 
         const yaku: { yaku: Yaku; ron: boolean; tsumo: boolean }[] = [];
+
+        const isDoubleRiichi =
+          options.riichi === 'double-riichi' ||
+          options.riichi === 'open-double-riichi';
 
         if (menzen && options.riichi !== 'none') {
           yaku.push({
             yaku: {
               type: 'yaku',
               name: options.riichi,
-              han: options.riichi === 'double-riichi' ? 2 : 1
+              han: riichiHan(options.riichi)
             },
             ron: true,
             tsumo: true
@@ -510,7 +612,7 @@ export const generateHora = (
         }
         if (
           options.chankan &&
-          options.riichi !== 'double-riichi' &&
+          !isDoubleRiichi &&
           typeof tatsu !== 'number' &&
           (tatsu.type === 'kanchan' ||
             tatsu.type === 'penchan' ||
@@ -522,10 +624,7 @@ export const generateHora = (
             tsumo: false
           });
         }
-        if (
-          options.haitei &&
-          (options.riichi === 'double-riichi' ? !options.ippatsu : true)
-        ) {
+        if (options.haitei && (isDoubleRiichi ? !options.ippatsu : true)) {
           yaku.push({
             yaku: { type: 'yaku', name: 'haitei', han: 1 },
             ron: false,
@@ -728,6 +827,14 @@ export const generateHora = (
           });
         }
 
+        if (localResult.removeIipeko) {
+          const idx = yaku.findIndex(y => y.yaku.name === 'iipeko');
+          if (idx !== -1) {
+            yaku.splice(idx, 1);
+          }
+        }
+        yaku.push(...localResult.yaku);
+
         const tsumo: MentsuHora = {
           type: 'mentsu',
           by: 'tsumo',
@@ -818,27 +925,73 @@ export const generateChitoitsuHora = (
   })();
 
   return horaTiles.flatMap(horaTile => {
+    const all = [...hand, horaTile];
+    const allCounts = tilesToCounts(all);
     const yakuman: Yakuman[] = [];
     if (counts.every((c, i) => (i < tileCountsFirstIndex.z ? c === 0 : true))) {
       yakuman.push({ type: 'yakuman', name: 'tsuiso', point: 1 });
     }
+
+    const localResult = judgeChitoitsuLocalYaku(all, allCounts, options, rule);
+
+    if (localResult.removeTsuiso) {
+      const idx = yakuman.findIndex(y => y.name === 'tsuiso');
+      if (idx !== -1) {
+        yakuman.splice(idx, 1);
+      }
+    }
+    yakuman.push(...localResult.yakuman);
+
     if (options.tenho) {
-      return [
-        {
+      if (isDealer(table)) {
+        return [
+          {
+            type: 'chitoitsu',
+            by: 'tsumo',
+            horaTile,
+            yaku: [
+              ...yakuman,
+              {
+                type: 'yakuman',
+                name: 'tenho',
+                point: 1
+              }
+            ]
+          }
+        ];
+      }
+      const tsumoHora: Hora = {
+        type: 'chitoitsu',
+        by: 'tsumo',
+        horaTile,
+        yaku: [
+          ...yakuman,
+          {
+            type: 'yakuman',
+            name: 'chiho',
+            point: 1
+          }
+        ]
+      };
+      if (rule.localYaku) {
+        const ronHora: Hora = {
           type: 'chitoitsu',
-          by: 'tsumo',
+          by: 'ron',
           horaTile,
           yaku: [
             ...yakuman,
             {
               type: 'yakuman',
-              name: isDealer(table) ? 'tenho' : 'chiho',
+              name: 'renho',
               point: 1
             }
           ]
-        }
-      ];
+        };
+        return [tsumoHora, ronHora];
+      }
+      return [tsumoHora];
     }
+
     if (yakuman.length > 0) {
       return ronAndTsumo.flatMap(by => ({
         type: 'chitoitsu',
@@ -848,13 +1001,17 @@ export const generateChitoitsuHora = (
       }));
     }
 
+    const isDoubleRiichi =
+      options.riichi === 'double-riichi' ||
+      options.riichi === 'open-double-riichi';
+
     const yaku: { yaku: Yaku; ron: boolean; tsumo: boolean }[] = [];
     if (options.riichi !== 'none') {
       yaku.push({
         yaku: {
           type: 'yaku',
           name: options.riichi,
-          han: options.riichi === 'double-riichi' ? 2 : 1
+          han: riichiHan(options.riichi)
         },
         ron: true,
         tsumo: true
@@ -892,10 +1049,7 @@ export const generateChitoitsuHora = (
         tsumo: true
       });
     }
-    if (
-      options.haitei &&
-      (options.riichi === 'double-riichi' ? !options.ippatsu : true)
-    ) {
+    if (options.haitei && (isDoubleRiichi ? !options.ippatsu : true)) {
       yaku.push(
         {
           yaku: { type: 'yaku', name: 'hotei', han: 1 },
@@ -941,8 +1095,6 @@ export const generateChitoitsuHora = (
         tsumo: true
       });
     }
-    const all = [...hand, horaTile];
-    const allCounts = tilesToCounts(all);
     const westCount = countBy(dora, t => t.type === 'z' && t.n === 3);
     const d =
       sumBy(dora, t => allCounts[nextIndex(tileToCountsIndex(t))]) +
@@ -969,6 +1121,8 @@ export const generateChitoitsuHora = (
         tsumo: true
       });
     }
+
+    yaku.push(...localResult.yaku);
 
     const tsumo: Hora = {
       type: 'chitoitsu',
@@ -1011,24 +1165,72 @@ export const generateKokushiHora = (
       )
     : [countsIndexToTile(lack[0] as TileCountsIndex)];
 
+  const { yakuman: localYakuman } = judgeKokushiLocalYaku(options, rule);
+
   if (options.tenho) {
-    return horaTiles.map(horaTile => ({
-      type: 'kokushi',
-      by: 'tsumo',
+    if (isDealer(table)) {
+      return horaTiles.map(horaTile => ({
+        type: 'kokushi' as const,
+        by: 'tsumo' as const,
+        horaTile,
+        yaku: [
+          {
+            type: 'yakuman' as const,
+            name: 'kokushi-13' as const,
+            point: rule.kokushi13DoubleYakuman ? 2 : 1
+          },
+          {
+            type: 'yakuman' as const,
+            name: 'tenho' as const,
+            point: 1
+          },
+          ...localYakuman
+        ]
+      }));
+    }
+
+    const tsumoHoras = horaTiles.map(horaTile => ({
+      type: 'kokushi' as const,
+      by: 'tsumo' as const,
       horaTile,
       yaku: [
         {
-          type: 'yakuman',
-          name: wait13 ? 'kokushi-13' : 'kokushi',
+          type: 'yakuman' as const,
+          name: wait13 ? ('kokushi-13' as const) : ('kokushi' as const),
           point: wait13 && rule.kokushi13DoubleYakuman ? 2 : 1
         },
         {
-          type: 'yakuman',
-          name: isDealer(table) ? 'tenho' : 'chiho',
+          type: 'yakuman' as const,
+          name: 'chiho' as const,
           point: 1
-        }
+        },
+        ...localYakuman
       ]
     }));
+
+    if (rule.localYaku) {
+      const ronHoras = horaTiles.map(horaTile => ({
+        type: 'kokushi' as const,
+        by: 'ron' as const,
+        horaTile,
+        yaku: [
+          {
+            type: 'yakuman' as const,
+            name: wait13 ? ('kokushi-13' as const) : ('kokushi' as const),
+            point: wait13 && rule.kokushi13DoubleYakuman ? 2 : 1
+          },
+          {
+            type: 'yakuman' as const,
+            name: 'renho' as const,
+            point: 1
+          },
+          ...localYakuman
+        ]
+      }));
+      return [...tsumoHoras, ...ronHoras];
+    }
+
+    return tsumoHoras;
   }
 
   return product2(horaTiles, ronAndTsumo).map(([horaTile, by]) => ({
@@ -1040,7 +1242,8 @@ export const generateKokushiHora = (
         type: 'yakuman',
         name: wait13 ? 'kokushi-13' : 'kokushi',
         point: wait13 && rule.kokushi13DoubleYakuman ? 2 : 1
-      }
+      },
+      ...localYakuman
     ]
   }));
 };
