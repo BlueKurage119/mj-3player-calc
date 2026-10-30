@@ -98,7 +98,7 @@ export const calculatePayment = (
         break;
       case 'north-split': {
         const northShare = ceil100(2 * basePoint);
-        eachNonDealerBase = ceil100(ceil100(2 * basePoint) + northShare / 2);
+        eachNonDealerBase = ceil100(northShare + northShare / 2);
         break;
       }
       case 'ron-split':
@@ -130,7 +130,7 @@ export const calculatePayment = (
       break;
     case 'north-split': {
       const northShare = ceil100(basePoint);
-      nonDealerBase = ceil100(ceil100(basePoint) + northShare / 2);
+      nonDealerBase = ceil100(northShare + northShare / 2);
       dealerBase = ceil100(ceil100(2 * basePoint) + northShare / 2);
       break;
     }
