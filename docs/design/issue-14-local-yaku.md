@@ -5,7 +5,7 @@
 - 変更対象(全ファイル):
   - 新規: `src/core/local-yaku.ts`・`src/core/local-yaku.test.ts`
   - 変更: `src/core/rule.ts`・`src/core/input.ts`・`src/core/yaku.ts`・`src/core/hora.ts`・`src/core/result.ts`
-  - テスト変更: `src/core/result.test.ts`・`src/core/golden.test.ts`・`src/core/north.test.ts`(固定条件の `Rule`・`HandOptions` に §4.1・§4.2 の新項目を所定値で加える行だけ)
+  - テスト変更: `src/core/result.test.ts`・`src/core/golden.test.ts`・`src/core/north.test.ts`・`src/core/payment.test.ts`(固定条件の `Rule`・`HandOptions` に §4.1・§4.2 の新項目を所定値で加える行だけ)
   - 統括担当がコミット: 本設計書、`docs/mahjong-rules.md` §4.2・§6(コミット 2983fd2 で反映済み)
   - 変更しない: `src/core/score.ts`・`fu.ts`・`payment.ts`・`bonus.ts`・`table.ts`・`src/core/tile/**`・`wasm/**`・`src/ui/**`
 
@@ -209,7 +209,7 @@ A6-L30 のため、面子手の局所役判定は1つの関数として export �
 | A6-L09 | 222p333p44p567s99s + 4p | — | ロン: {平和1, 一色三順3}=4飜30符、基本点1920(一盃口なし。三連刻の読み 2飜40符640 より高い) |
 | A6-L10 | 同上 | — | ツモ: 5飜、基本点2000(一色三順+平和+ツモ と 三暗刻+三連刻+ツモ が同点。役の内訳は検査しない) |
 | A6-L11 | 111p222p333p567s9s + 9s | — | ロン: {三暗刻2, 三連刻2}=4飜50符、基本点2000(一色三順の読み 3飜40符1280 より高い) |
-| A6-L12 | 11122233s西西 + 3s | ポン中(仕様 §4.2 の例) | ロン: 5飜、基本点2000(一色三順2+中1+混一色2 と 三連刻2+中1+混一色2 が同点。内訳は検査しない) |
+| A6-L12 | 11122233s西西 + 3s | ポン中(仕様 §4.2 の例) | ロン: 7飜、基本点3000(三連刻2+対々和2+混一色2+中1 が、一色三順2+混一色2+中1 の5飜に勝つ。内訳は検査しない) |
 | A6-L13 | 西 + 西 | ポン2s・3s・4s、明槓5s | ロン: {四連刻 役満1} |
 | A6-L14 | 2222p3333p444p99s + 4p | — | ロン: {一色四順 役満1} |
 | A6-L15 | 777s999s中 + 中 | ポン1s・5s | ロン: {紅孔雀 役満1} |
