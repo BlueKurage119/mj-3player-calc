@@ -671,7 +671,7 @@ describe('A6: ローカル役とオープンリーチ', () => {
     expect(computeBasePoint(tsumoHora, defaultRule)).toBe(8000);
   });
 
-  test('A6-L23: 十三不搭の判定 (13種各1枚+白で十三不搭役満1、全13種が和了牌)', () => {
+  test('A6-L23: 十三不搭の判定 (13種各1枚+白で十三不搭役満1、全13種・14件が和了牌)', () => {
     // 出典: 役の成否・飜数は mahjong-rules.md §4.2・§4.2.1、符・基本点は手計算(Wikipedia『麻雀の得点計算』の式、mahjong-rules.md §6)
     const hand = parseTiles('19m147p258s12345z');
     const options: HandOptions = {
@@ -689,8 +689,8 @@ describe('A6: ローカル役とオープンリーチ', () => {
     if (res?.type !== 'hora-shanten' || res.info.type !== 'hora')
       throw new Error();
 
-    // 手牌の13種それぞれでツモ和了がある (全13件)
-    expect(res.info.hora.length).toBe(13);
+    // 手牌の13種それぞれでツモ和了がある。5s は赤・赤なしの2通り (全14件)
+    expect(res.info.hora.length).toBe(14);
     expect(res.info.hora.every(h => h.by === 'tsumo')).toBe(true);
     for (const h of res.info.hora) {
       expect(h.yaku).toEqual([
@@ -712,6 +712,29 @@ describe('A6: ローカル役とオープンリーチ', () => {
     if (res14?.type !== 'hora-shanten' || res14.info.type !== 'hora')
       throw new Error();
     expect(res14.info.hora.length).toBe(1);
+    expect(res14.info.hora[0]?.yaku).toEqual([
+      { type: 'yakuman', name: 'shisanputa', point: 1 }
+    ]);
+  });
+
+  test('A6-L23-赤: 赤5で完成する十三不搭も和了になる (PR #24 のレビュー指摘)', () => {
+    // 出典: 役の成否は mahjong-rules.md §4.2.1(十三不搭)。赤5は通常の5と同じ牌種として扱う
+    const options: HandOptions = { ...defaultOptions, tenho: true };
+    const hand14 = parseTiles('19m147p28s123455z0s');
+    const res14 = generateResult(
+      defaultTable,
+      { hand: hand14, melds: [], dora: [], nuki: 0 },
+      options,
+      defaultRule
+    );
+    if (res14?.type !== 'hora-shanten' || res14.info.type !== 'hora')
+      throw new Error();
+    expect(res14.info.hora.length).toBe(1);
+    expect(res14.info.hora[0]?.horaTile).toEqual({
+      type: 's',
+      n: 5,
+      red: true
+    });
     expect(res14.info.hora[0]?.yaku).toEqual([
       { type: 'yakuman', name: 'shisanputa', point: 1 }
     ]);

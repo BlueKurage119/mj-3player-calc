@@ -5,6 +5,7 @@ import {
   type Tile,
   type TileCounts,
   type TileCountsIndex,
+  compareTiles,
   countsIndexToTile,
   tileCountsFirstIndex,
   tilesToCounts
@@ -612,6 +613,22 @@ export const isShisanputa = (counts: TileCounts): boolean => {
 };
 
 /**
+ * 和了牌の候補を赤・赤なしに展開する(hora.ts の面子手の展開と同じ規則)
+ */
+const horaTileVariants = (tile: Tile, hand: Tile[], rule: Rule): Tile[] => {
+  if (tile.type === 'z' || tile.n !== 5) return [tile];
+  const r = rule.red[tile.type];
+  const count = (red: boolean) =>
+    hand.filter(t => compareTiles(t, { ...tile, red }) === 0).length;
+  if (r === count(true)) return [{ ...tile, red: false }];
+  if (4 - r === count(false)) return [{ ...tile, red: true }];
+  return [
+    { ...tile, red: false },
+    { ...tile, red: true }
+  ];
+};
+
+/**
  * 十三不搭の和了を生成する
  */
 export const generateShisanputaHora = (
@@ -667,13 +684,14 @@ export const generateShisanputaHora = (
     counts14[idx]! += 1;
 
     if (isShisanputa(counts14)) {
-      const tile = countsIndexToTile(idx);
-      horas.push({
-        type: 'shisanputa',
-        by: 'tsumo',
-        horaTile: tile,
-        yaku: [{ type: 'yakuman', name: 'shisanputa', point: 1 }]
-      });
+      for (const tile of horaTileVariants(countsIndexToTile(idx), hand, rule)) {
+        horas.push({
+          type: 'shisanputa',
+          by: 'tsumo',
+          horaTile: tile,
+          yaku: [{ type: 'yakuman', name: 'shisanputa', point: 1 }]
+        });
+      }
     }
   }
 
