@@ -763,7 +763,7 @@ describe('A5: 支払い計算', () => {
     });
   });
 
-  describe('例外・ルール (A5-P38, P40〜P46, A5-R01, R02)', () => {
+  describe('例外・ルール (A5-P38, P40〜P47, A5-R01, R02)', () => {
     // 出典: calculateTableBonus (bonus.ts) の卓情報検証仕様
     test.each([
       ['供託 -1', tableOf('south', 0, -1)],
@@ -889,6 +889,26 @@ describe('A5: 支払い計算', () => {
         ).toThrow('ツモ損の設定が不正です');
       }
     );
+
+    // 出典: 設計書 §4.3 手順0-c (honbaPointは0以上の整数。境界値0は有効)
+    test('A5-P47: honbaPoint 0 は有効 ツモ損あり 子30符2飜ツモ 南・1本場', () => {
+      const actual = calculatePayment(480, tableOf('south', 1, 0), 'tsumo', {
+        tsumoLoss: 'loss',
+        honbaPoint: 0
+      });
+      expect(actual).toEqual({
+        detail: {
+          by: 'tsumo',
+          winner: 'nonDealer',
+          dealer: { base: 1000, withHonba: 1000 },
+          nonDealer: { base: 500, withHonba: 500 }
+        },
+        total: 1500,
+        honba: 0,
+        deposit: 0,
+        bonus: 0
+      });
+    });
 
     // 出典: 設計書 §4.1 (compareRulesの検証)
     test('A5-R01: compareRulesがtsumoLossの差異を検知する', () => {
