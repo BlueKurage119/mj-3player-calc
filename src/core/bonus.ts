@@ -39,7 +39,7 @@ export const calculateTableBonus = (
   }
 
   // 3. ツモ
-  // 【未確定】端数処理は Epic B で確定する。それまでは例外を投げる
+  // mahjong-rules.md §3.2【確定】: 折半が100点単位にならない本場設定は認めず、例外を投げる
   const half = (honbaPoint * table.continue) / 2;
   if (!Number.isInteger(half) || half % 100 !== 0) {
     throw new Error('ツモ折半の額が100の倍数ではありません');
