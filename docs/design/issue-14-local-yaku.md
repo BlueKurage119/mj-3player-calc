@@ -5,7 +5,7 @@
 - 変更対象(全ファイル):
   - 新規: `src/core/local-yaku.ts`・`src/core/local-yaku.test.ts`
   - 変更: `src/core/rule.ts`・`src/core/input.ts`・`src/core/yaku.ts`・`src/core/hora.ts`・`src/core/result.ts`
-  - テスト変更: `src/core/result.test.ts`・`src/core/golden.test.ts`・`src/core/north.test.ts`・`src/core/golden-cases.ts`(固定条件の `Rule`・`HandOptions` に §4.1・§4.2 の新項目を所定値で加える行だけ)
+  - テスト変更: `src/core/result.test.ts`・`src/core/golden.test.ts`・`src/core/north.test.ts`(固定条件の `Rule`・`HandOptions` に §4.1・§4.2 の新項目を所定値で加える行だけ)
   - 統括担当がコミット: 本設計書、`docs/mahjong-rules.md` §4.2・§6(コミット 2983fd2 で反映済み)
   - 変更しない: `src/core/score.ts`・`fu.ts`・`payment.ts`・`bonus.ts`・`table.ts`・`src/core/tile/**`・`wasm/**`・`src/ui/**`
 
@@ -50,7 +50,7 @@
 | 最高打点選択 | `uniqueHoras` が同一和了牌・同一ツモ/ロンの候補から、役満数→飜(5飜以上)→基本点→飜の順で1つ選ぶ。分解の読み分けはこれに任せられる |
 | ダブル立直の分岐 | `options.riichi === 'double-riichi'` を見る箇所が `hora.ts` に3つある(槍槓の付与条件 L513・海底の付与条件 L527・七対子の海底 L897)。立直の飜は `options.riichi === 'double-riichi' ? 2 : 1`(L371・L857) |
 | 天和・地和 | `options.tenho` かつ副露なしで、親なら天和・子なら地和を付け、ツモのみを返す(早期 return)。国士・七対子にも同様の分岐がある |
-| 天和時の待ちの扱い(確定事項7d の照合) | **既存コードは確定事項7dを満たしていない**。国士(`generateKokushiHora`)は13枚の欠けの有無で `kokushi`/`kokushi-13` を決め、天和でも単騎待ちなら `kokushi`。九蓮(`hora.ts` L290〜333)は和了牌を除いた形で `pure-churen`/`churen` を決める。四暗刻(L178〜200)は和了の待ち(単騎か双碰か)で `suanko-tanki`/`suanko` を決める。いずれも天和でも実際の和了牌に依存する。§4.7 で修正する。既存テスト `result.test.ts` A3-T1 系(L490〜518)は、通常形と13面の国士だけで、修正の影響を受けない |
+| 天和時の待ちの扱い(確定事項7d の照合) | **既存コードは確定事項7dを満たしていない**。国士(`generateKokushiHora`)は13枚の欠けの有無で `kokushi`/`kokushi-13` を決め、天和でも単騎待ちなら `kokushi`。九蓮(`hora.ts` L290〜333)は和了牌を除いた形で `pure-churen`/`churen` を決める。四暗刻(L178〜200)は和了の待ち(単騎か双碰か)で `suanko-tanki`/`suanko` を決める。いずれも天和でも実際の和了牌に依存する。§4.7 で修正する。既存テスト `result.test.ts` A3-T1 系(L491〜525)は、通常形と13面の国士だけで、修正の影響を受けない |
 | 13枚入力の流れ | `result.ts` で 13枚のとき、面子手・七対子・国士のいずれかが聴牌なら和了一覧を返し、それ以外は向聴数を返す。14枚入力は最後の1枚を和了牌として13枚の結果から抽出する |
 | 役満の複合 | `Rule.multipleYakuman` は計算コアで参照されていない。役満は常に `point` の合計で数える(既存挙動。本Issueでも変えない) |
 | UI | `src/ui/App.tsx` は1行のみで、役名の表示対応表はまだない |
@@ -252,7 +252,7 @@ A6-L30 のため、面子手の局所役判定は1つの関数として export �
 
 - [ ] `npx vitest run src/core/local-yaku.test.ts --reporter=verbose` が成功し、§5 の表の全IDが `A6-Lxx:`・`A6-Txx:`・`A6-Oxx:`・`A6-Rxx:` で始まるタイトルとして現れる(`grep -o "A6-[LTOR][0-9]*:" src/core/local-yaku.test.ts | sort -u` で A6-L01〜L30・A6-T01〜T05・A6-O01〜O03・A6-R01〜R04 が過不足なく出る)
 - [ ] §5 の期待値(役・飜・符・基本点)がテストのソースに数値で直書きされ、各テストに出典コメントがある(ソースを目視)
-- [ ] **既存結果の不変**: `git diff main -- src/core/result.test.ts src/core/golden.test.ts src/core/north.test.ts src/core/golden-cases.ts` が、固定の `Rule` に `localYaku: false,`・`openRiichi: false,`、固定の `HandOptions` に `tsubameGaeshi: false,`・`kanFuri: false,` を加える追加行だけである(期待値の変更・削除行がない)。かつこれらのテストの件数と結果が main と同じ(`npx vitest run` の該当ファイルの件数を main と比べる)
+- [ ] **既存結果の不変**: `git diff main -- src/core/result.test.ts src/core/golden.test.ts src/core/north.test.ts`(`src/core/golden-cases.ts` は差分なし) が、固定の `Rule` に `localYaku: false,`・`openRiichi: false,`、固定の `HandOptions` に `tsubameGaeshi: false,`・`kanFuri: false,` を加える追加行だけである(期待値の変更・削除行がない)。かつこれらのテストの件数と結果が main と同じ(`npx vitest run` の該当ファイルの件数を main と比べる)
 - [ ] A6-T01〜T05 が成功する(天和は国士13面・純正九蓮・四暗刻単騎、地和と天和なしは従来どおり)。`result.test.ts` の A3-T1 系が無変更で成功する
 - [ ] A6-R02・A6-R03 が成功する(`localYaku=false` でローカル役が現れず、状況入力が無視される)
 - [ ] `grep -n "localYaku\|openRiichi\|DEFAULT_LOCAL_YAKU\|DEFAULT_OPEN_RIICHI" src/core/rule.ts` で、型2項目・所定値定数2つ(値は `false`)・`compareRules` の2条件が出る
