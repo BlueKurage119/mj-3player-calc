@@ -59,7 +59,8 @@ const rule: Rule = {
   suankoTankiDoubleYakuman: true,
   daisushiDoubleYakuman: true,
   pureChurenDoubleYakuman: true,
-  north: 'nukidora'
+  north: 'nukidora',
+  tsumoLoss: 'loss'
 };
 
 const defaultTable: Table = {
