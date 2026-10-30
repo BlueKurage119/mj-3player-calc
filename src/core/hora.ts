@@ -612,7 +612,7 @@ export const generateHora = (
         }
         if (
           options.chankan &&
-          !isDoubleRiichi &&
+          (isDoubleRiichi ? !options.ippatsu : true) &&
           typeof tatsu !== 'number' &&
           (tatsu.type === 'kanchan' ||
             tatsu.type === 'penchan' ||
