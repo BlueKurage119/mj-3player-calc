@@ -1456,3 +1456,96 @@ describe('A6: ローカル役とオープンリーチ', () => {
     expect(compareRules(base, { ...base })).toBe(true);
   });
 });
+
+describe('A7: オープンダブル立直+一発時の槍槓・海底', () => {
+  test('A7-C01: オープンダブル立直+一発時に面子手で槍槓が付かない (ロン)', () => {
+    // 出典: 役の付与条件は mahjong-rules.md §4.2(オープンダブル立直はダブル立直の上位として置き換える)と設計書 issue-14 §4.4、符・基本点は手計算(mahjong-rules.md §6)
+    const hand = parseTiles('234p567p345s67s99s');
+    const horaTile = parseSingleTile('8s');
+    const options: HandOptions = {
+      ...defaultOptions,
+      riichi: 'open-double-riichi',
+      ippatsu: true,
+      chankan: true
+    };
+    const res = generateResult(
+      defaultTable,
+      { hand, melds: [], dora: [], nuki: 0 },
+      options,
+      defaultRule
+    );
+    const ronHora = getHoraBy(res, horaTile, 'ron');
+    expect(ronHora.yaku).toEqual([
+      { type: 'yaku', name: 'open-double-riichi', han: 3 },
+      { type: 'yaku', name: 'ippatsu', han: 1 },
+      { type: 'yaku', name: 'pinfu', han: 1 }
+    ]);
+    expect(computeBasePoint(ronHora, defaultRule)).toBe(2000);
+  });
+
+  test('A7-H01: オープンダブル立直+一発時に面子手で海底・河底が付かない (ロン・ツモ)', () => {
+    // 出典: 役の付与条件は mahjong-rules.md §4.2(オープンダブル立直はダブル立直の上位として置き換える)と設計書 issue-14 §4.4、符・基本点は手計算(mahjong-rules.md §6)
+    const hand = parseTiles('234p567p345s678s9s');
+    const horaTile = parseSingleTile('9s');
+    const options: HandOptions = {
+      ...defaultOptions,
+      riichi: 'open-double-riichi',
+      ippatsu: true,
+      haitei: true
+    };
+    const res = generateResult(
+      defaultTable,
+      { hand, melds: [], dora: [], nuki: 0 },
+      options,
+      defaultRule
+    );
+    const ronHora = getHoraBy(res, horaTile, 'ron');
+    expect(ronHora.yaku).toEqual([
+      { type: 'yaku', name: 'open-double-riichi', han: 3 },
+      { type: 'yaku', name: 'ippatsu', han: 1 }
+    ]);
+    expect(computeBasePoint(ronHora, defaultRule)).toBe(2000);
+
+    const tsumoHora = getHoraBy(res, horaTile, 'tsumo');
+    expect(tsumoHora.yaku).toEqual([
+      { type: 'yaku', name: 'open-double-riichi', han: 3 },
+      { type: 'yaku', name: 'ippatsu', han: 1 },
+      { type: 'yaku', name: 'tsumo', han: 1 }
+    ]);
+    expect(computeBasePoint(tsumoHora, defaultRule)).toBe(2000);
+  });
+
+  test('A7-H02: オープンダブル立直+一発時に七対子で海底・河底が付かない (ロン・ツモ)', () => {
+    // 出典: 役の付与条件は mahjong-rules.md §4.2(オープンダブル立直はダブル立直の上位として置き換える)と設計書 issue-14 §4.4、符・基本点は手計算(mahjong-rules.md §6)
+    const hand = parseTiles('1199p11335577s9s');
+    const horaTile = parseSingleTile('9s');
+    const options: HandOptions = {
+      ...defaultOptions,
+      riichi: 'open-double-riichi',
+      ippatsu: true,
+      haitei: true
+    };
+    const res = generateResult(
+      defaultTable,
+      { hand, melds: [], dora: [], nuki: 0 },
+      options,
+      defaultRule
+    );
+    const ronHora = getHoraBy(res, horaTile, 'ron');
+    expect(ronHora.yaku).toEqual([
+      { type: 'yaku', name: 'open-double-riichi', han: 3 },
+      { type: 'yaku', name: 'ippatsu', han: 1 },
+      { type: 'yaku', name: 'chitoitsu', han: 2 }
+    ]);
+    expect(computeBasePoint(ronHora, defaultRule)).toBe(3000);
+
+    const tsumoHora = getHoraBy(res, horaTile, 'tsumo');
+    expect(tsumoHora.yaku).toEqual([
+      { type: 'yaku', name: 'open-double-riichi', han: 3 },
+      { type: 'yaku', name: 'ippatsu', han: 1 },
+      { type: 'yaku', name: 'tsumo', han: 1 },
+      { type: 'yaku', name: 'chitoitsu', han: 2 }
+    ]);
+    expect(computeBasePoint(tsumoHora, defaultRule)).toBe(3000);
+  });
+});
