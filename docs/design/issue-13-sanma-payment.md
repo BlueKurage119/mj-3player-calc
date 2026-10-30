@@ -218,12 +218,13 @@ export const calculatePayment = (
 | A5-P44 | `test.each` 10件: 基本点 0・-100・480.5・NaN・Infinity × ron・tsumo(卓は南・0) | `toThrow('基本点は正の整数である必要があります')` |
 | A5-P45 | `test.each` 6件: `honbaPoint` が -100・NaN・150.5 × ron・tsumo(基本点 480、卓は南・1本場) | `toThrow('1本場あたりの点数は0以上の整数である必要があります')` |
 | A5-P46 | `test.each` 2件: `tsumoLoss` が `'none' as Rule['tsumoLoss']` × ron・tsumo(基本点 480、卓は南・0) | `toThrow('ツモ損の設定が不正です')` |
+| A5-P47 | `honbaPoint: 0`・子30符2飜 ツモ損あり ツモ(基本点 480、卓は南・1本場・供託0)。境界値0は有効(PR #23 の検収で追加) | 例外を投げず `toEqual` で全体一致: 親 1000・子 500(withHonba も同額)、total 1500、honba 0、deposit 0、bonus 0 |
 | A5-R01 | `compareRules` が、`tsumoLoss` だけ異なる2つの `Rule` を false、同一の `Rule` を true とする | 1テスト内で両方を `toBe` |
 | A5-R02 | `DEFAULT_TSUMO_LOSS` が `'loss'` | `toBe('loss')` |
 
 ## 6. 受け入れ条件
 
-- [ ] `npx vitest run src/core/payment.test.ts` が成功し、実行件数が **74件**(`test.each` 展開後)である。内訳は次のとおり:
+- [ ] `npx vitest run src/core/payment.test.ts` が成功し、実行件数が **75件**(`test.each` 展開後)である。内訳は次のとおり:
 
   | ID | 件数 |
   | --- | --- |
@@ -241,10 +242,11 @@ export const calculatePayment = (
   | A5-P44(10) | 10 |
   | A5-P45(6) | 6 |
   | A5-P46(2) | 2 |
+  | A5-P47 | 1 |
   | A5-R01・R02 | 2 |
-  | 合計 | 74 |
+  | 合計 | 75 |
 
-- [ ] 実在するテストIDが A5-P01〜P07、P11〜P16、P21〜P46、A5-R01・R02 であり、A5-P08〜P10・P17〜P20 は存在しない(`grep -o "A5-[PR][0-9]*:" src/core/payment.test.ts | sort -u` で確認)
+- [ ] 実在するテストIDが A5-P01〜P07、P11〜P16、P21〜P47、A5-R01・R02 であり、A5-P08〜P10・P17〜P20 は存在しない(`grep -o "A5-[PR][0-9]*:" src/core/payment.test.ts | sort -u` で確認)
 - [ ] 1件だけ実行するときは `-t 'A5-P01:'` のように `:` まで含める。展開後のタイトルも含め、すべてのテストタイトルが `A5-Pxx:` または `A5-Rxx:` で始まる(`npx vitest run src/core/payment.test.ts --reporter=verbose` の出力で確認)
 - [ ] §5.1 の7件と §5.2 の6件が表の数値と完全一致で書かれ、出典コメントがあることをテストのソースで確認する
 - [ ] `git diff main -- src/core/golden-cases.ts src/core/score.ts src/core/result.ts src/core/hora.ts src/ui` が空
