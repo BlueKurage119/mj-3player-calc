@@ -415,7 +415,7 @@ describe('A6: ローカル役とオープンリーチ', () => {
     expect(computeBasePoint(ronHora, defaultRule)).toBe(2000);
   });
 
-  test('A6-L12: 副露手の一色三順と三連刻の同点 (5飜満貫2000)', () => {
+  test('A6-L12: 副露手では三連刻+対々和が一色三順に勝つ (7飜跳満3000)', () => {
     // 出典: 役の成否・飜数は mahjong-rules.md §4.2・§4.2.1、符・基本点は手計算(Wikipedia『麻雀の得点計算』の式、mahjong-rules.md §6)
     const hand = parseTiles('111s222s33s33z');
     const horaTile = parseSingleTile('3s');
@@ -428,11 +428,9 @@ describe('A6: ローカル役とオープンリーチ', () => {
     );
     const ronHora = getHoraBy(res, horaTile, 'ron');
     const totalHan = sumBy(ronHora.yaku, y => (y.type === 'yaku' ? y.han : 0));
-    // 設計書 §5 の期待値は 5飜・満貫2000 (一色三順2+中1+混一色2 と 三連刻2+中1+混一色2 が同点と想定)
-    // 実際の実装では刻子読みに対々和(2飜)が加わり 7飜・跳満3000 となるが、
-    // 指示「期待値と実装が食い違ったら、実装やテストを合わせ込まず停止して報告する」に従い、設計書の期待値のまま検証する
-    expect(totalHan).toBe(5);
-    expect(computeBasePoint(ronHora, defaultRule)).toBe(2000);
+    // 三連刻2+対々和2+混一色2+中1 = 7飜(一色三順の読みは 一色三順2+混一色2+中1 = 5飜)
+    expect(totalHan).toBe(7);
+    expect(computeBasePoint(ronHora, defaultRule)).toBe(3000);
   });
 
   test('A6-L13: 四連刻の判定 (2345s刻子で役満1)', () => {
