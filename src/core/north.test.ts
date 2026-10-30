@@ -63,7 +63,9 @@ const baseRule: Rule = {
   daisushiDoubleYakuman: true,
   pureChurenDoubleYakuman: true,
   north: 'nukidora',
-  tsumoLoss: 'loss'
+  tsumoLoss: 'loss',
+  localYaku: false,
+  openRiichi: false
 };
 
 const defaultTable: Table = {
@@ -79,7 +81,9 @@ const defaultOptions: HandOptions = {
   rinshan: false,
   chankan: false,
   haitei: false,
-  tenho: false
+  tenho: false,
+  tsubameGaeshi: false,
+  kanFuri: false
 };
 
 // 牌姿定義 (設計書 §5.1)

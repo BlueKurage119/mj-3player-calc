@@ -60,7 +60,9 @@ const rule: Rule = {
   daisushiDoubleYakuman: true,
   pureChurenDoubleYakuman: true,
   north: 'nukidora',
-  tsumoLoss: 'loss'
+  tsumoLoss: 'loss',
+  localYaku: false,
+  openRiichi: false
 };
 
 const defaultTable: Table = {
@@ -76,7 +78,9 @@ const defaultHandOptions: HandOptions = {
   rinshan: false,
   chankan: false,
   haitei: false,
-  tenho: false
+  tenho: false,
+  tsubameGaeshi: false,
+  kanFuri: false
 };
 
 // ---- 注意事項 N11 ----

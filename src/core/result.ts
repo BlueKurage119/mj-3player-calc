@@ -81,6 +81,13 @@ export const generateResult = (
   handOptions: HandOptions,
   rule: Rule
 ): Result => {
+  if (
+    (handOptions.riichi === 'open-riichi' ||
+      handOptions.riichi === 'open-double-riichi') &&
+    !rule.openRiichi
+  ) {
+    throw new Error('オープン立直はルールで許可されていません');
+  }
   if (!isValidSanmaInput(input)) return null;
   if (!Number.isInteger(input.nuki) || input.nuki < 0 || input.nuki > 4) {
     return null;

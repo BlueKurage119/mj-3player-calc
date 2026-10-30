@@ -32,7 +32,16 @@ export const yakuNames = [
   'chinitsu',
   'dora',
   'red-dora',
-  'nuki-dora'
+  'nuki-dora',
+  'open-riichi',
+  'open-double-riichi',
+  'tsubame-gaeshi',
+  'kan-furi',
+  'toiputao',
+  'shiiaru-raotai',
+  'uumensai',
+  'sanrenko',
+  'isshoku-sanjun'
 ] as const;
 
 export interface NormalYaku {
@@ -56,7 +65,21 @@ export const yakumanNames = [
   'churen',
   'pure-churen',
   'tenho',
-  'chiho'
+  'chiho',
+  'renho',
+  'surenko',
+  'isshoku-yonjun',
+  'beni-kujaku',
+  'koitten',
+  'kokuiso',
+  'daisharin',
+  'daichikurin',
+  'ishino-ue',
+  'shisanputa',
+  'kinmonkyo',
+  'tohoku-shinkansen',
+  'junsei-ryuiso',
+  'daichisei'
 ] as const;
 
 export interface Yakuman {

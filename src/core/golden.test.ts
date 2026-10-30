@@ -97,7 +97,9 @@ const rule: Rule = {
   daisushiDoubleYakuman: true,
   pureChurenDoubleYakuman: true,
   north: 'nukidora',
-  tsumoLoss: 'loss'
+  tsumoLoss: 'loss',
+  localYaku: false,
+  openRiichi: false
 };
 
 const tableOf = (c: GoldenCase): Table => ({
@@ -113,7 +115,9 @@ const handOptionsOf = (c: GoldenCase): HandOptions => ({
   rinshan: false,
   chankan: false,
   haitei: false,
-  tenho: false
+  tenho: false,
+  tsubameGaeshi: false,
+  kanFuri: false
 });
 
 // ---- 計算結果の取り出し ----
