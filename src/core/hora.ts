@@ -6,7 +6,7 @@ import {
   instantiateMeld
 } from './input';
 import { type Rule, redCountOf } from './rule';
-import { calculateBasePoint } from './score';
+import { calculateBasePoint, yakumanMultiplier } from './score';
 import { isDealer, type Table } from './table';
 import {
   type NumberTileCounts,
@@ -1262,8 +1262,8 @@ export const uniqueHoras = (horas: Hora[], rule: Rule): Hora[] => {
       b.yaku.some(y => y.type === 'yakuman')
     )
       return (
-        sumBy(b.yaku, y => (y.type === 'yakuman' ? y.point : 0)) -
-        sumBy(a.yaku, y => (y.type === 'yakuman' ? y.point : 0))
+        yakumanMultiplier(b.yaku, rule.multipleYakuman) -
+        yakumanMultiplier(a.yaku, rule.multipleYakuman)
       );
     const ah = sumBy(a.yaku, y => (y.type === 'yaku' ? y.han : 0));
     const bh = sumBy(b.yaku, y => (y.type === 'yaku' ? y.han : 0));
