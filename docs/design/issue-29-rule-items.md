@@ -37,13 +37,13 @@
 | 14 | ルール検査の関数を計算コアに置く。検査を通らない値の計算時の扱いを整理する | — | §4.3・§4.6 |
 | 15 | 項目・選択肢・所定値の定義を計算コアに置く | — | §4.7 |
 | 16 | 既定ルールを組み立てる関数・定数を用意してよい | — | §4.1 |
-| Q1 | 一発なしで `handOptions.ippatsu: true` が渡されたら、入口で false に正規化する(実効値 = `rule.ippatsu && options.ippatsu`)。例外は投げない。正規化値をダブル立直系の槍槓・海底・河底の判定(`hora.ts` L615・L627・L1052、`local-yaku.ts` L129)にも使い、これらは複合する(2026-10-31 ユーザー回答) | — | §4.5・§5.2 |
+| Q1 | 一発なしで `handOptions.ippatsu: true` が渡されたら、入口で false に正規化する(実効値 = `rule.ippatsu && options.ippatsu`)。例外は投げない。正規化値をダブル立直系の槍槓・海底・河底の判定(`hora.ts` L618・L630・L1055、`local-yaku.ts` L129)にも使い、これらは複合する(2026-10-31 ユーザー回答) | — | §4.5・§5.2 |
 | Q2 | 役なし和了形の扱いは B1 で変えない。B1-K02 は副露断么九に別の役も付く牌姿で、`tanyao` だけが消え hora が残ることを検証する(同上) | — | §5.2 |
 
 ### 2.2 既存コードの実物確認(2026-10-31)
 
 - `Rule.red` は `{ m, p, s }` 各 `0〜4`。`red[...]` の参照箇所(main 時点の行番号): `input.ts` L32・L45(`instantiateMeld` のポン・カン)、`tile/index.ts` L133・L134(`isAvailableTiles`)・L146・L147(`tileAvailableCount`)、`hora.ts` L122(`generateHora` の和了牌展開)・L906(`generateChitoitsuHora` の和了牌展開)、`local-yaku.ts` L620(`horaTileVariants`)。`result.ts` は `rule.red` を上記へ渡すのみ
-- 一発は `hora.ts` の `generateHora`(L478)と `generateChitoitsuHora`(L1019)で `options.ippatsu` のとき push。ダブル立直系の槍槓(L615)・海底(L627)・河底(L1052)と `local-yaku.ts` の石の上にも三年(L129)は `isDoubleRiichi ? !options.ippatsu : true` で一発と排他。国士(`generateKokushiHora`)には一発の push が無い(コードの読み。役満のため影響しない)
+- 一発は `hora.ts` の `generateHora`(L478)と `generateChitoitsuHora`(L1022)で `options.ippatsu` のとき push。ダブル立直系の槍槓(L618)・海底(L630)・河底(L1055)と `local-yaku.ts` の石の上にも三年(L129)は `isDoubleRiichi ? !options.ippatsu : true` で一発と排他。国士(`generateKokushiHora`)には一発の push が無い(コードの読み。役満のため影響しない)
 - 断么九は `generateHora`(L493 付近)で副露の有無を問わず push(現状は喰い断ありと同じ挙動)。`menzen` は同関数 L193 で定義済み。七対子の断么九は門前のみ
 - `calculateTableBonus(table, by, honbaPoint)` が `DEPOSIT_POINT` を直接使う。`calculatePayment` は `Pick<Rule, 'tsumoLoss' | 'honbaPoint'>` を受け、`tsumoLoss` の列挙と `honbaPoint` の非負整数を検査して例外を投げる
 - ローカル役のダブル役満は `local-yaku.ts` L343・L488 で `point: 2` 固定(Rule の項目に依存しない)。本Issueでは触らない
@@ -148,7 +148,7 @@ export const isValidRule = (rule: unknown): rule is Rule; // validateRule(rule).
   const options: HandOptions = { ...handOptions, ippatsu: rule.ippatsu && handOptions.ippatsu };
   ```
 
-  以降の処理(`generateHora`・`generateChitoitsuHora`・`generateKokushiHora`・`generateShisanputaHora`・ローカル役判定、L318 の再帰呼び出しを含む)には正規化後の `options` だけを渡す。これで `hora.ts` L478・L1019 の一発の push、L615(槍槓)・L627(海底)・L1052(河底)、`local-yaku.ts` L129(石の上にも三年)がすべて正規化値で判定される。`hora.ts`・`local-yaku.ts` の一発関連の行は変更しない(Q1 で許可された local-yaku.ts の変更は不要)
+  以降の処理(`generateHora`・`generateChitoitsuHora`・`generateKokushiHora`・`generateShisanputaHora`・ローカル役判定、L318 の再帰呼び出しを含む)には正規化後の `options` だけを渡す。これで `hora.ts` L478・L1022 の一発の push、L618(槍槓)・L630(海底)・L1055(河底)、`local-yaku.ts` L129(石の上にも三年)がすべて正規化値で判定される。`hora.ts`・`local-yaku.ts` の一発関連の行は変更しない(Q1 で許可された local-yaku.ts の変更は不要)
 - 結果として、一発なしのルールでダブル立直系に一発が入力されても、槍槓・海底・河底(ローカル役ありなら石の上にも三年)が成立する
 - 例外は投げない(オープン立直の例外とは扱いが異なる)
 - 喰い断: `generateHora` の断么九の条件(L493)に `(menzen || rule.kuitan)` を加える。`menzen` は L193 の既存の定義(暗槓のみ門前扱い)をそのまま使う。七対子・国士は変更なし
@@ -232,6 +232,7 @@ export const RULE_ITEMS: readonly RuleItem[];
 | B1-DR03 | 同上(G02 と同じ牌姿) | ron | 所定 / `ippatsu: false` | double-riichi・ippatsu・haitei | 所定: double-riichi:2, ippatsu:1, pinfu:1, red-dora:1。なし: double-riichi:2, pinfu:1, hotei:1, red-dora:1 |
 | B1-DR04 | 同上 | ron | 所定 / `ippatsu: false` | double-riichi・ippatsu・chankan | 所定: double-riichi:2, ippatsu:1, pinfu:1, red-dora:1。なし: double-riichi:2, pinfu:1, chankan:1, red-dora:1 |
 | B1-DR05 | G01 | tsumo | `localYaku: true` / `localYaku: true`・`ippatsu: false` | double-riichi・ippatsu・haitei | 前者: double-riichi:2, ippatsu:1, tsumo:1, pinfu:1, red-dora:1。後者: ishino-ue(役満1倍)のみ |
+| B1-DR06 | G03 `225577p2244668s8s`(七対子) | ron | 所定 / `ippatsu: false` | double-riichi・ippatsu・haitei | 所定: double-riichi:2, ippatsu:1, tanyao:1, chitoitsu:2。なし: double-riichi:2, tanyao:1, hotei:1, chitoitsu:2(七対子経路 `generateChitoitsuHora` の河底判定 L1055 の検証用。2026-11-01 実測) |
 | B1-K01 | 手牌 `444p777s8p8p` + ポン 2p・ポン 6s | ron | 所定 | — | tanyao:1, toitoi:2 |
 | B1-K02 | 同上 | ron | `kuitan: false` | — | toitoi:2(hora が1件残る) |
 | B1-K03 | G12 `23467p22234s8p` + 暗槓 0p | ron | `kuitan: false` | — | tanyao:1, red-dora:1(G12 の期待と同じ。暗槓のみは門前) |
@@ -250,7 +251,7 @@ export const RULE_ITEMS: readonly RuleItem[];
 
 1. `npm run lint`・`npm run typecheck`・`npm run format:check`・`npm test` がすべてエラー0・失敗0
 2. `npx vitest run src/core/rule.test.ts --reporter=verbose` の一覧に `B1-R01:`〜`B1-R09:` の9件の名前が1回ずつあり、すべて合格。1件だけ確かめるときは `npx vitest run -t 'B1-R01:'` のように `:` まで含める(業務標準05)
-3. `npx vitest run src/core/rule-effects.test.ts --reporter=verbose` の一覧に §5.2 の18件(`B1-Y01:`〜`B1-Y04:`・`B1-DR01:`〜`B1-DR05:`・`B1-K01:`〜`B1-K03:`・`B1-D01:`〜`B1-D03:`・`B1-B01:`〜`B1-B03:`)の名前が1回ずつあり、すべて合格。各テストの期待役が §5.2 の表のリテラルと一致し、§5.2 の出典区分のコメントがある(目視)
+3. `npx vitest run src/core/rule-effects.test.ts --reporter=verbose` の一覧に §5.2 の19件(`B1-Y01:`〜`B1-Y04:`・`B1-DR01:`〜`B1-DR06:`・`B1-K01:`〜`B1-K03:`・`B1-D01:`〜`B1-D03:`・`B1-B01:`〜`B1-B03:`)の名前が1回ずつあり、すべて合格。各テストの期待役が §5.2 の表のリテラルと一致し、§5.2 の出典区分のコメントがある(目視)
 4. 既存テストの期待値不変: `git diff main -- src/core/golden-cases.ts` が空。`git diff main -- src/core/*.test.ts src/core/tile/*.test.ts`(新規2ファイルを除く)の変更が次だけである(目視):
    - (a) 6ファイルの固定条件の `Rule` の `red` 行を `red: 1` にし、`depositPoint: 1000`・`ippatsu: true`・`kuitan: true` を加える。`tile/index.test.ts` L162 を `const red: Rule['red'] = 1;` にする
    - (b) `bonus.test.ts` の `calculateTableBonus` 呼び出しに第4引数 `1000` を加える。`payment.test.ts` の `defaultRule`(L18-21)、各 rule 引数、`Pick` 型の引数に `depositPoint: 1000`(型なら `'depositPoint'`)を加える
@@ -265,9 +266,9 @@ export const RULE_ITEMS: readonly RuleItem[];
    - `git diff main -- src/core/local-yaku.ts src/core/hora.ts | grep "^[-+].*ippatsu"` が空(一発は result.ts の正規化だけで反映する)
    - `git diff main -- src/core/score.ts src/core/fu.ts src/ui` が空。`git diff main -- src/core/result.ts` の変更が一発の正規化と、正規化後の値を渡す置き換えだけである(目視)
 7. ミューテーション確認(G-05。1つずつ行い、確認後に必ず戻して `git status` で差分が無いことを確かめる):
-   - `result.ts` の正規化を `ippatsu: handOptions.ippatsu` に変える → B1-Y02・Y03・Y04・DR02・DR03・DR04・DR05 が失敗し、B1-Y01・DR01 は合格のまま
-   - `hora.ts` L1019 側(七対子)の `if (options.ippatsu)` を `if (true)` にする → B1-Y03 だけが失敗し(一発系の中で)、B1-Y02・Y04 は合格のまま。L478 側(面子手)を同様にする → B1-Y02・Y04 が失敗し、B1-Y03 は合格のまま
-   - `hora.ts` L627 の `(isDoubleRiichi ? !options.ippatsu : true)` を `(isDoubleRiichi ? false : true)` にする → B1-DR02 が失敗する。L1052 側 → B1-DR03、L615 側 → B1-DR04 が失敗する
+   - `result.ts` の正規化を `ippatsu: handOptions.ippatsu` に変える → B1-Y02・Y03・Y04・DR02・DR03・DR04・DR05・DR06 が失敗し、B1-Y01・DR01 は合格のまま
+   - `hora.ts` L1022 側(七対子)の `if (options.ippatsu)` を `if (true)` にする → B1-Y03・DR06 が失敗し、B1-Y02・Y04 は合格のまま。L478 側(面子手)を同様にする → B1-Y02・Y04 が失敗し、B1-Y03 は合格のまま
+   - `hora.ts` L630 の `(isDoubleRiichi ? !options.ippatsu : true)` を `(isDoubleRiichi ? false : true)` にする → B1-DR02 が失敗する。L1055 側(七対子) → B1-DR06、L618 側 → B1-DR04 が失敗する
    - 断么九の条件から `(menzen || rule.kuitan)` を外す → B1-K02 が失敗する。`rule.kuitan` だけにする → B1-K03 が失敗する
    - `compareRules` から `kuitan` の比較を1行消す → B1-R03 が失敗する
    - `validateRule` の本場の `% 200` を `% 100` にする → B1-R05 が失敗する
