@@ -398,6 +398,51 @@ describe('B1: ルール効果と計算結果の検証 (rule-effects)', () => {
     });
   });
 
+  // 出典: 所定値側は既存 golden (G03) に double-riichi・ippatsu を加算、ルールなし側は仕様から導出 (mahjong-rules.md §4.1.1【確定】)
+  test('B1-DR06: 七対子 ダブル立直・一発入力・河底ロン (所定値／一発なし)', () => {
+    const input: Input = {
+      hand: parseTiles('225577p2244668s8s'),
+      melds: [],
+      dora: [],
+      nuki: 0
+    };
+    const options: HandOptions = {
+      ...defaultHandOptions,
+      riichi: 'double-riichi',
+      ippatsu: true,
+      haitei: true
+    };
+
+    // 所定値
+    const actualDefault = getHoraYakuMap(
+      input,
+      options,
+      createDefaultRule(),
+      'ron'
+    );
+    expect(actualDefault).toEqual({
+      'double-riichi': 2,
+      ippatsu: 1,
+      tanyao: 1,
+      chitoitsu: 2
+    });
+
+    // 一発なし: 河底が複合
+    const ruleNoIppatsu = { ...createDefaultRule(), ippatsu: false };
+    const actualNoIppatsu = getHoraYakuMap(
+      input,
+      options,
+      ruleNoIppatsu,
+      'ron'
+    );
+    expect(actualNoIppatsu).toEqual({
+      'double-riichi': 2,
+      tanyao: 1,
+      hotei: 1,
+      chitoitsu: 2
+    });
+  });
+
   // 出典: 所定値側は副露断么九と対々和が成立 (Wikipedia「麻雀の役一覧」および mahjong-rules.md §4.1)
   test('B1-K01: 副露手 断么九・対々和 (所定値)', () => {
     const input: Input = {
