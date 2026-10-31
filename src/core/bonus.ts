@@ -1,22 +1,20 @@
 import type { Rule } from './rule';
 import type { Table } from './table';
 
-/** 供託1本あたりの点数(mahjong-rules.md §3.2。設定化は B1) */
-export const DEPOSIT_POINT = 1000;
-
 export interface TableBonus {
   /** ロン: 放銃者が払う本場の額。ツモでは 0 */
   ronFromDiscarder: number;
   /** ツモ: ツモられた2人がそれぞれ払う本場の額。ロンでは 0 */
   tsumoFromEach: number;
-  /** 和了者が受け取る供託の額(本数×DEPOSIT_POINT) */
+  /** 和了者が受け取る供託の額(本数×depositPoint) */
   deposit: number;
 }
 
 export const calculateTableBonus = (
   table: Table,
   by: 'ron' | 'tsumo',
-  honbaPoint: Rule['honbaPoint']
+  honbaPoint: Rule['honbaPoint'],
+  depositPoint: Rule['depositPoint']
 ): TableBonus => {
   // 1. 入口の検証(オーナー回答Q2)
   if (
@@ -28,7 +26,7 @@ export const calculateTableBonus = (
     throw new Error('本場数および供託本数は0以上の整数である必要があります');
   }
 
-  const deposit = DEPOSIT_POINT * table.deposit;
+  const deposit = depositPoint * table.deposit;
 
   if (by === 'ron') {
     return {

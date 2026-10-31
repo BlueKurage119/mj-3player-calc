@@ -1,5 +1,5 @@
 import type { HandOptions, Meld } from './input';
-import type { Rule } from './rule';
+import { type Rule, redCountOf } from './rule';
 import type { Table } from './table';
 import {
   type Tile,
@@ -617,7 +617,7 @@ export const isShisanputa = (counts: TileCounts): boolean => {
  */
 const horaTileVariants = (tile: Tile, hand: Tile[], rule: Rule): Tile[] => {
   if (tile.type === 'z' || tile.n !== 5) return [tile];
-  const r = rule.red[tile.type];
+  const r = redCountOf(rule.red, tile.type);
   const count = (red: boolean) =>
     hand.filter(t => compareTiles(t, { ...tile, red }) === 0).length;
   if (r === count(true)) return [{ ...tile, red: false }];

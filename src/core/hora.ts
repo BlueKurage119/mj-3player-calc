@@ -5,7 +5,7 @@ import {
   type Meld,
   instantiateMeld
 } from './input';
-import type { Rule } from './rule';
+import { type Rule, redCountOf } from './rule';
 import { calculateBasePoint } from './score';
 import { isDealer, type Table } from './table';
 import {
@@ -119,7 +119,7 @@ export const generateHora = (
           if (handAndMeldsCounts[t] >= 4) return [];
           const tile = countsIndexToTile(t);
           if (tile.type !== 'z' && tile.n === 5) {
-            const r = rule.red[tile.type];
+            const r = redCountOf(rule.red, tile.type);
             if (
               r ===
               countBy(
@@ -490,7 +490,10 @@ export const generateHora = (
             tsumo: true
           });
         }
-        if (allTiles.every(t => t.type !== 'z' && t.n !== 1 && t.n !== 9)) {
+        if (
+          (menzen || rule.kuitan) &&
+          allTiles.every(t => t.type !== 'z' && t.n !== 1 && t.n !== 9)
+        ) {
           yaku.push({
             yaku: { type: 'yaku', name: 'tanyao', han: 1 },
             ron: true,
@@ -903,7 +906,7 @@ export const generateChitoitsuHora = (
       c === 1 ? countsIndexToTile(i as TileCountsIndex) : []
     )[0] as Tile;
     if (tile.type !== 'z' && tile.n === 5) {
-      const r = rule.red[tile.type];
+      const r = redCountOf(rule.red, tile.type);
       if (
         r === 0 ||
         (r === 1 &&

@@ -159,7 +159,7 @@ describe('isSanmaTile・isSanmaIndex', () => {
 });
 
 describe('isAvailableTiles・tileAvailableCount (三麻の牌可否判定)', () => {
-  const red: Rule['red'] = { m: 0, p: 1, s: 1 };
+  const red: Rule['red'] = 1;
 
   test('A2: isAvailableTiles: 2m を含むときは false、1m は true', () => {
     expect(isAvailableTiles(red, [], [{ type: 'm', n: 2 }])).toBe(false);

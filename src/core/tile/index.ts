@@ -1,4 +1,4 @@
-import type { Rule } from '../rule';
+import { type Rule, redCountOf } from '../rule';
 import { countBy } from '../util';
 
 export type NumberTile = {
@@ -130,8 +130,8 @@ export const isAvailableTiles = (
   );
   return (['m', 'p', 's'] as const).every(
     type =>
-      (fiveCounts[type][0] as number) <= 4 - red[type] &&
-      (fiveCounts[type][1] as number) <= red[type]
+      (fiveCounts[type][0] as number) <= 4 - redCountOf(red, type) &&
+      (fiveCounts[type][1] as number) <= redCountOf(red, type)
   );
 };
 
@@ -143,8 +143,8 @@ export const tileAvailableCount = (
   if (!isSanmaTile(toUse)) return null;
   const count = countBy(existing, t => compareTiles(t, toUse) === 0);
   if (toUse.type !== 'z' && toUse.n === 5) {
-    const r = red[toUse.type];
-    if ((r === 4 && !toUse.red) || (r === 0 && toUse.red)) return null;
+    const r = redCountOf(red, toUse.type);
+    if (r === 0 && toUse.red) return null;
     return toUse.red ? r - count : 4 - r - count;
   }
   return 4 - count;

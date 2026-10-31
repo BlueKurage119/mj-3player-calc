@@ -17,12 +17,16 @@ const tableOf = (
 
 const defaultRule = {
   tsumoLoss: 'loss' as const,
-  honbaPoint: 200
+  honbaPoint: 200,
+  depositPoint: 1000
 };
 
 const fullRule: Rule = {
-  red: { m: 0, p: 1, s: 1 },
+  red: 1,
   honbaPoint: 200,
+  depositPoint: 1000,
+  ippatsu: true,
+  kuitan: true,
   roundedMangan: false,
   doubleWindFu: 4,
   accumlatedYakuman: true,
@@ -43,7 +47,8 @@ describe('A5: 支払い計算', () => {
     test('A5-P01: ロン打点折半 子20符2飜ツモ 南・3本場', () => {
       const actual = calculatePayment(320, tableOf('south', 3, 0), 'tsumo', {
         tsumoLoss: 'ron-split',
-        honbaPoint: 200
+        honbaPoint: 200,
+        depositPoint: 1000
       });
       expect(actual).toEqual({
         detail: {
@@ -63,7 +68,8 @@ describe('A5: 支払い計算', () => {
     test('A5-P02: ロン打点折半 子20符4飜ツモ 南・0本場', () => {
       const actual = calculatePayment(1280, tableOf('south', 0, 0), 'tsumo', {
         tsumoLoss: 'ron-split',
-        honbaPoint: 200
+        honbaPoint: 200,
+        depositPoint: 1000
       });
       expect(actual).toEqual({
         detail: {
@@ -83,7 +89,8 @@ describe('A5: 支払い計算', () => {
     test('A5-P03: ロン打点折半 子30符3飜ツモ 南・1本場', () => {
       const actual = calculatePayment(960, tableOf('south', 1, 0), 'tsumo', {
         tsumoLoss: 'ron-split',
-        honbaPoint: 200
+        honbaPoint: 200,
+        depositPoint: 1000
       });
       expect(actual).toEqual({
         detail: {
@@ -103,7 +110,8 @@ describe('A5: 支払い計算', () => {
     test('A5-P04: ロン打点折半 子30符4飜ツモ 南・0本場', () => {
       const actual = calculatePayment(1920, tableOf('south', 0, 0), 'tsumo', {
         tsumoLoss: 'ron-split',
-        honbaPoint: 200
+        honbaPoint: 200,
+        depositPoint: 1000
       });
       expect(actual).toEqual({
         detail: {
@@ -123,7 +131,8 @@ describe('A5: 支払い計算', () => {
     test('A5-P05: ロン打点折半 親25符4飜ツモ 東・0本場', () => {
       const actual = calculatePayment(1600, tableOf('east', 0, 0), 'tsumo', {
         tsumoLoss: 'ron-split',
-        honbaPoint: 200
+        honbaPoint: 200,
+        depositPoint: 1000
       });
       expect(actual).toEqual({
         detail: {
@@ -142,7 +151,8 @@ describe('A5: 支払い計算', () => {
     test('A5-P06: 北家分折半 子30符2飜ツモ 南・0本場', () => {
       const actual = calculatePayment(480, tableOf('south', 0, 0), 'tsumo', {
         tsumoLoss: 'north-split',
-        honbaPoint: 200
+        honbaPoint: 200,
+        depositPoint: 1000
       });
       expect(actual).toEqual({
         detail: {
@@ -162,7 +172,8 @@ describe('A5: 支払い計算', () => {
     test('A5-P07: 北家分折半 親40符2飜ツモ 東・1本場', () => {
       const actual = calculatePayment(640, tableOf('east', 1, 0), 'tsumo', {
         tsumoLoss: 'north-split',
-        honbaPoint: 200
+        honbaPoint: 200,
+        depositPoint: 1000
       });
       expect(actual).toEqual({
         detail: {
@@ -183,7 +194,8 @@ describe('A5: 支払い計算', () => {
     test('A5-P11: ツモ損あり 親 満貫ツモ', () => {
       const actual = calculatePayment(2000, tableOf('east', 0, 0), 'tsumo', {
         tsumoLoss: 'loss',
-        honbaPoint: 200
+        honbaPoint: 200,
+        depositPoint: 1000
       });
       expect(actual).toEqual({
         detail: {
@@ -202,7 +214,8 @@ describe('A5: 支払い計算', () => {
     test('A5-P12: ツモ損あり 子 満貫ツモ', () => {
       const actual = calculatePayment(2000, tableOf('south', 0, 0), 'tsumo', {
         tsumoLoss: 'loss',
-        honbaPoint: 200
+        honbaPoint: 200,
+        depositPoint: 1000
       });
       expect(actual).toEqual({
         detail: {
@@ -222,7 +235,8 @@ describe('A5: 支払い計算', () => {
     test('A5-P13: 北家分折半 親 満貫ツモ', () => {
       const actual = calculatePayment(2000, tableOf('east', 0, 0), 'tsumo', {
         tsumoLoss: 'north-split',
-        honbaPoint: 200
+        honbaPoint: 200,
+        depositPoint: 1000
       });
       expect(actual).toEqual({
         detail: {
@@ -241,7 +255,8 @@ describe('A5: 支払い計算', () => {
     test('A5-P14: 北家分折半 子 満貫ツモ', () => {
       const actual = calculatePayment(2000, tableOf('south', 0, 0), 'tsumo', {
         tsumoLoss: 'north-split',
-        honbaPoint: 200
+        honbaPoint: 200,
+        depositPoint: 1000
       });
       expect(actual).toEqual({
         detail: {
@@ -261,7 +276,8 @@ describe('A5: 支払い計算', () => {
     test('A5-P15: ロン打点折半 親 満貫ツモ', () => {
       const actual = calculatePayment(2000, tableOf('east', 0, 0), 'tsumo', {
         tsumoLoss: 'ron-split',
-        honbaPoint: 200
+        honbaPoint: 200,
+        depositPoint: 1000
       });
       expect(actual).toEqual({
         detail: {
@@ -280,7 +296,8 @@ describe('A5: 支払い計算', () => {
     test('A5-P16: ロン打点折半 子 満貫ツモ', () => {
       const actual = calculatePayment(2000, tableOf('south', 0, 0), 'tsumo', {
         tsumoLoss: 'ron-split',
-        honbaPoint: 200
+        honbaPoint: 200,
+        depositPoint: 1000
       });
       expect(actual).toEqual({
         detail: {
@@ -302,7 +319,8 @@ describe('A5: 支払い計算', () => {
     test('A5-P21: ツモ損あり 子30符2飜ツモ 南・0本場', () => {
       const actual = calculatePayment(480, tableOf('south', 0, 0), 'tsumo', {
         tsumoLoss: 'loss',
-        honbaPoint: 200
+        honbaPoint: 200,
+        depositPoint: 1000
       });
       expect(actual).toEqual({
         detail: {
@@ -322,7 +340,8 @@ describe('A5: 支払い計算', () => {
     test('A5-P22: ツモ損あり 親40符2飜ツモ 東・0本場', () => {
       const actual = calculatePayment(640, tableOf('east', 0, 0), 'tsumo', {
         tsumoLoss: 'loss',
-        honbaPoint: 200
+        honbaPoint: 200,
+        depositPoint: 1000
       });
       expect(actual).toEqual({
         detail: {
@@ -345,7 +364,8 @@ describe('A5: 支払い計算', () => {
     ])('A5-P23: 子30符2飜ロン (%s)', tsumoLoss => {
       const actual = calculatePayment(480, tableOf('south', 0, 0), 'ron', {
         tsumoLoss,
-        honbaPoint: 200
+        honbaPoint: 200,
+        depositPoint: 1000
       });
       expect(actual).toEqual({
         detail: {
@@ -367,7 +387,8 @@ describe('A5: 支払い計算', () => {
     ])('A5-P24: 親30符2飜ロン (%s)', tsumoLoss => {
       const actual = calculatePayment(480, tableOf('east', 0, 0), 'ron', {
         tsumoLoss,
-        honbaPoint: 200
+        honbaPoint: 200,
+        depositPoint: 1000
       });
       expect(actual).toEqual({
         detail: {
@@ -385,7 +406,8 @@ describe('A5: 支払い計算', () => {
     test('A5-P25: ロン打点折半 子30符2飜ロン 南・2本場・供託1本', () => {
       const actual = calculatePayment(480, tableOf('south', 2, 1), 'ron', {
         tsumoLoss: 'ron-split',
-        honbaPoint: 200
+        honbaPoint: 200,
+        depositPoint: 1000
       });
       expect(actual).toEqual({
         detail: {
@@ -403,7 +425,8 @@ describe('A5: 支払い計算', () => {
     test('A5-P26: ツモ損あり 子満貫ツモ 南・1本場・供託2本', () => {
       const actual = calculatePayment(2000, tableOf('south', 1, 2), 'tsumo', {
         tsumoLoss: 'loss',
-        honbaPoint: 200
+        honbaPoint: 200,
+        depositPoint: 1000
       });
       expect(actual).toEqual({
         detail: {
@@ -469,7 +492,8 @@ describe('A5: 支払い計算', () => {
     ])('A5-P27: 子役満ツモ (%s)', (tsumoLoss, expected) => {
       const actual = calculatePayment(8000, tableOf('south', 0, 0), 'tsumo', {
         tsumoLoss,
-        honbaPoint: 200
+        honbaPoint: 200,
+        depositPoint: 1000
       });
       expect(actual).toEqual(expected);
     });
@@ -521,7 +545,8 @@ describe('A5: 支払い計算', () => {
     ])('A5-P28: 親役満ツモ (%s)', (tsumoLoss, expected) => {
       const actual = calculatePayment(8000, tableOf('east', 0, 0), 'tsumo', {
         tsumoLoss,
-        honbaPoint: 200
+        honbaPoint: 200,
+        depositPoint: 1000
       });
       expect(actual).toEqual(expected);
     });
@@ -577,7 +602,8 @@ describe('A5: 支払い計算', () => {
       // 役満の基本点は呼び出し側が渡す(A5-P29 は 16000)
       const actual = calculatePayment(16000, tableOf('south', 0, 0), 'tsumo', {
         tsumoLoss,
-        honbaPoint: 200
+        honbaPoint: 200,
+        depositPoint: 1000
       });
       expect(actual).toEqual(expected);
     });
@@ -590,7 +616,8 @@ describe('A5: 支払い計算', () => {
     ])('A5-P30: 子役満ロン (%s)', tsumoLoss => {
       const actual = calculatePayment(8000, tableOf('south', 0, 0), 'ron', {
         tsumoLoss,
-        honbaPoint: 200
+        honbaPoint: 200,
+        depositPoint: 1000
       });
       expect(actual).toEqual({
         detail: {
@@ -614,7 +641,8 @@ describe('A5: 支払い計算', () => {
       const basePoint = calculateBasePoint(30, 13, false, true);
       const actual = calculatePayment(basePoint, tableOf('east', 0, 0), 'ron', {
         tsumoLoss,
-        honbaPoint: 200
+        honbaPoint: 200,
+        depositPoint: 1000
       });
       expect(actual).toEqual({
         detail: {
@@ -632,7 +660,8 @@ describe('A5: 支払い計算', () => {
     test('A5-P32: ツモ損あり 子30符2飜ツモ(供託のみ) 南・0本場・供託1本', () => {
       const actual = calculatePayment(480, tableOf('south', 0, 1), 'tsumo', {
         tsumoLoss: 'loss',
-        honbaPoint: 200
+        honbaPoint: 200,
+        depositPoint: 1000
       });
       expect(actual).toEqual({
         detail: {
@@ -652,7 +681,8 @@ describe('A5: 支払い計算', () => {
     test('A5-P33: ツモ損あり 親40符2飜ツモ 東・2本場', () => {
       const actual = calculatePayment(640, tableOf('east', 2, 0), 'tsumo', {
         tsumoLoss: 'loss',
-        honbaPoint: 200
+        honbaPoint: 200,
+        depositPoint: 1000
       });
       expect(actual).toEqual({
         detail: {
@@ -671,7 +701,8 @@ describe('A5: 支払い計算', () => {
     test('A5-P34: 北家分折半 子30符2飜ツモ 南・1本場・供託1本', () => {
       const actual = calculatePayment(480, tableOf('south', 1, 1), 'tsumo', {
         tsumoLoss: 'north-split',
-        honbaPoint: 200
+        honbaPoint: 200,
+        depositPoint: 1000
       });
       expect(actual).toEqual({
         detail: {
@@ -691,7 +722,8 @@ describe('A5: 支払い計算', () => {
     test('A5-P35: 北家分折半 親30符2飜ロン 東・2本場・供託1本', () => {
       const actual = calculatePayment(480, tableOf('east', 2, 1), 'ron', {
         tsumoLoss: 'north-split',
-        honbaPoint: 200
+        honbaPoint: 200,
+        depositPoint: 1000
       });
       expect(actual).toEqual({
         detail: {
@@ -709,7 +741,8 @@ describe('A5: 支払い計算', () => {
     test('A5-P36: ロン打点折半 子役満ツモ 南・1本場', () => {
       const actual = calculatePayment(8000, tableOf('south', 1, 0), 'tsumo', {
         tsumoLoss: 'ron-split',
-        honbaPoint: 200
+        honbaPoint: 200,
+        depositPoint: 1000
       });
       expect(actual).toEqual({
         detail: {
@@ -729,7 +762,8 @@ describe('A5: 支払い計算', () => {
     test('A5-P37: ツモ損あり honbaPoint 300 子30符2飜ツモ 南・0本場', () => {
       const actual = calculatePayment(480, tableOf('south', 0, 0), 'tsumo', {
         tsumoLoss: 'loss',
-        honbaPoint: 300
+        honbaPoint: 300,
+        depositPoint: 1000
       });
       expect(actual).toEqual({
         detail: {
@@ -749,7 +783,8 @@ describe('A5: 支払い計算', () => {
     test('A5-P39: 北家分折半 親30符2飜ツモ 東・0本場', () => {
       const actual = calculatePayment(480, tableOf('east', 0, 0), 'tsumo', {
         tsumoLoss: 'north-split',
-        honbaPoint: 200
+        honbaPoint: 200,
+        depositPoint: 1000
       });
       expect(actual).toEqual({
         detail: {
@@ -782,21 +817,33 @@ describe('A5: 支払い計算', () => {
       [
         '基本点0 + tsumoLoss不正',
         0,
-        { tsumoLoss: 'invalid' as Rule['tsumoLoss'], honbaPoint: 200 },
+        {
+          tsumoLoss: 'invalid' as Rule['tsumoLoss'],
+          honbaPoint: 200,
+          depositPoint: 1000
+        },
         tableOf('south', 0, 0),
         '基本点は正の整数である必要があります'
       ],
       [
         'tsumoLoss不正 + honbaPoint -100',
         480,
-        { tsumoLoss: 'invalid' as Rule['tsumoLoss'], honbaPoint: -100 },
+        {
+          tsumoLoss: 'invalid' as Rule['tsumoLoss'],
+          honbaPoint: -100,
+          depositPoint: 1000
+        },
         tableOf('south', 0, 0),
         'ツモ損の設定が不正です'
       ],
       [
         'honbaPoint -100 + 本場 -1',
         480,
-        { tsumoLoss: 'loss' as const, honbaPoint: -100 },
+        {
+          tsumoLoss: 'loss' as const,
+          honbaPoint: -100,
+          depositPoint: 1000
+        },
         tableOf('south', -1, 0),
         '1本場あたりの点数は0以上の整数である必要があります'
       ]
@@ -821,7 +868,8 @@ describe('A5: 支払い計算', () => {
       expect(() =>
         calculatePayment(480, tableOf('south', 1, 0), 'tsumo', {
           tsumoLoss: 'loss',
-          honbaPoint: 300
+          honbaPoint: 300,
+          depositPoint: 1000
         })
       ).toThrow('ツモ折半の額が100の倍数ではありません');
     });
@@ -830,7 +878,8 @@ describe('A5: 支払い計算', () => {
     test('A5-P43: honbaPoint 300・1本場のロン', () => {
       const actual = calculatePayment(480, tableOf('south', 1, 0), 'ron', {
         tsumoLoss: 'loss',
-        honbaPoint: 300
+        honbaPoint: 300,
+        depositPoint: 1000
       });
       expect(actual).toEqual({
         detail: {
@@ -874,7 +923,8 @@ describe('A5: 支払い計算', () => {
       expect(() =>
         calculatePayment(480, tableOf('south', 1, 0), by, {
           tsumoLoss: 'loss',
-          honbaPoint
+          honbaPoint,
+          depositPoint: 1000
         })
       ).toThrow('1本場あたりの点数は0以上の整数である必要があります');
     });
@@ -886,7 +936,8 @@ describe('A5: 支払い計算', () => {
         expect(() =>
           calculatePayment(480, tableOf('south', 0, 0), by, {
             tsumoLoss: 'none' as Rule['tsumoLoss'],
-            honbaPoint: 200
+            honbaPoint: 200,
+            depositPoint: 1000
           })
         ).toThrow('ツモ損の設定が不正です');
       }
@@ -896,7 +947,8 @@ describe('A5: 支払い計算', () => {
     test('A5-P47: honbaPoint 0 は有効 ツモ損あり 子30符2飜ツモ 南・1本場', () => {
       const actual = calculatePayment(480, tableOf('south', 1, 0), 'tsumo', {
         tsumoLoss: 'loss',
-        honbaPoint: 0
+        honbaPoint: 0,
+        depositPoint: 1000
       });
       expect(actual).toEqual({
         detail: {

@@ -1,4 +1,4 @@
-import type { Rule } from './rule';
+import { type Rule, redCountOf } from './rule';
 import type { Tile } from './tile';
 
 export interface Pon {
@@ -29,7 +29,7 @@ export const instantiateMeld = (meld: Meld, red: Rule['red']): Tile[] => {
   switch (type) {
     case 'pon':
       if (tile.type !== 'z' && tile.n === 5) {
-        const r = red[tile.type];
+        const r = redCountOf(red, tile.type);
         return [
           ...[
             ...Array(tile.red ? Math.max(0, 4 - r - 1) : Math.min(3, 4 - r))
@@ -42,7 +42,7 @@ export const instantiateMeld = (meld: Meld, red: Rule['red']): Tile[] => {
       return [...Array(3)].map(() => tile);
     case 'kan':
       if (tile.type !== 'z' && tile.n === 5) {
-        const r = red[tile.type];
+        const r = redCountOf(red, tile.type);
         return [
           ...[...Array(4 - r)].map(() => ({ ...tile, red: false })),
           ...[...Array(r)].map(() => ({ ...tile, red: true }))

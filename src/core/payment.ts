@@ -42,7 +42,7 @@ export const calculatePayment = (
   basePoint: number,
   table: Table,
   by: 'ron' | 'tsumo',
-  rule: Pick<Rule, 'tsumoLoss' | 'honbaPoint'>
+  rule: Pick<Rule, 'tsumoLoss' | 'honbaPoint' | 'depositPoint'>
 ): Payment => {
   // 0. 入口の検証(設計書 §4.3 手順0)
   // 0-a. 基本点: 正の整数であること
@@ -64,8 +64,18 @@ export const calculatePayment = (
     throw new Error('1本場あたりの点数は0以上の整数である必要があります');
   }
 
+  // 0-d. 供託1本あたりの点数: 0以上の整数であること
+  if (!Number.isInteger(rule.depositPoint) || rule.depositPoint < 0) {
+    throw new Error('供託1本あたりの点数は0以上の整数である必要があります');
+  }
+
   // 1. calculateTableBonus の呼び出し(例外は捕獲せずそのまま投げる)
-  const bonus = calculateTableBonus(table, by, rule.honbaPoint);
+  const bonus = calculateTableBonus(
+    table,
+    by,
+    rule.honbaPoint,
+    rule.depositPoint
+  );
 
   // 2. 和了者の親子および方式に応じた本場抜きの負担額の計算
   const dealerWinner = isDealer(table);
