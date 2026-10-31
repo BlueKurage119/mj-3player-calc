@@ -5,9 +5,11 @@ import {
   generateKokushiHora,
   uniqueHoras
 } from './hora';
+import { type HoraScore, calculateHoraScore } from './hora-score';
 import { generateShisanputaHora } from './local-yaku';
 import { type HandOptions, type Input, instantiateMeld } from './input';
-import type { Rule } from './rule';
+import { RuleValidationError } from './rule-error';
+import { type Rule, validateRule } from './rule';
 import type { Table } from './table';
 import {
   type Tile,
@@ -30,9 +32,16 @@ import {
 } from './tile/shanten';
 import { countBy, minsBy, uniqueSorted } from './util';
 
+export type { HoraScore };
+export { calculateHoraScore };
+export { RuleValidationError };
+
+/** score 付きの和了候補 */
+export type ScoredHora = Hora & { score: HoraScore };
+
 interface HoraInfo {
   type: 'hora';
-  hora: Hora[];
+  hora: ScoredHora[];
 }
 
 interface ShantenInfo {
@@ -76,7 +85,13 @@ const isValidSanmaInput = (input: Input): boolean => {
   return true;
 };
 
-export const generateResult = (
+const scoreHoras = (horas: Hora[], table: Table, rule: Rule): ScoredHora[] =>
+  uniqueHoras(horas, rule).map(h => ({
+    ...h,
+    score: calculateHoraScore(h, table, rule)
+  }));
+
+const generateResultInner = (
   table: Table,
   input: Input,
   handOptions: HandOptions,
@@ -184,7 +199,7 @@ export const generateResult = (
           type: 'hora-shanten',
           info: {
             type: 'hora',
-            hora: uniqueHoras(horas, rule)
+            hora: scoreHoras(horas, table, rule)
           }
         };
       }
@@ -226,8 +241,9 @@ export const generateResult = (
           type: 'hora-shanten',
           info: {
             type: 'hora',
-            hora: uniqueHoras(
+            hora: scoreHoras(
               generateHora(table, options, results, input, rule),
+              table,
               rule
             )
           }
@@ -274,7 +290,7 @@ export const generateResult = (
       if (typeof b === 'undefined') throw new Error();
       return [a, b];
     })();
-    const result = generateResult(
+    const result = generateResultInner(
       table,
       { ...input, hand: handWithoutLast },
       options,
@@ -319,7 +335,7 @@ export const generateResult = (
           hand.findIndex(h => compareTiles(h, t) === 0),
           1
         );
-        const r = generateResult(table, { ...input, hand }, options, rule);
+        const r = generateResultInner(table, { ...input, hand }, options, rule);
         if (r === null || (r.type !== 'hora-shanten' && r.type !== 'tempai'))
           throw new Error();
 
@@ -336,4 +352,23 @@ export const generateResult = (
   }
 
   throw new Error();
+};
+
+export const generateResult = (
+  table: Table,
+  input: Input,
+  handOptions: HandOptions,
+  rule: Rule
+): Result => {
+  const issues = validateRule(rule);
+  if (issues.length > 0) throw new RuleValidationError(issues);
+  if (
+    !Number.isInteger(table.continue) ||
+    table.continue < 0 ||
+    !Number.isInteger(table.deposit) ||
+    table.deposit < 0
+  ) {
+    throw new Error('本場数および供託本数は0以上の整数である必要があります');
+  }
+  return generateResultInner(table, input, handOptions, rule);
 };
