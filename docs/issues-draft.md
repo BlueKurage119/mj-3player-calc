@@ -43,7 +43,7 @@
 - **[B3. ルールプリセット](https://github.com/BlueKurage119/mj-3player-calc/issues/31)**
   「雀魂段位戦」「一番街段位戦」の設定値を定数で持ち、現在のルールがどのプリセットに一致するか(一致しなければカスタム)を判定する。利用者が作ったプリセットの名前付き保存は後続の Epic で扱う。
 - **[B4. 計算結果と支払いの接続](https://github.com/BlueKurage119/mj-3player-calc/issues/32)**
-  `generateResult` から `calculatePayment` を呼び、ツモ損・本場・供託を含む支払額を返す。検査を通らないときの例外の返し方。B2 に依存する。
+  `generateResult` から `calculatePayment` を呼び、ツモ損・本場・供託を含む支払額を返す。B1 で設定にした供託・本場の額を支払額に反映する。検査を通らないときの例外の返し方。B1・B2 に依存する。
 
 ## [Epic C: デザイン基盤](https://github.com/BlueKurage119/mj-3player-calc/issues/4)
 
