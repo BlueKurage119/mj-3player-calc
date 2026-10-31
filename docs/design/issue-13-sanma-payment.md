@@ -264,7 +264,7 @@ export const calculatePayment = (
 - **UI**: §0 の表記に従う。本場込みは本場数が1以上のときだけ表示する(ロン・ツモとも)。合計欄は、ツモなら `bonus` が0より大きいとき「合計 total(+bonus)点」とし、ロンは加算額だけを括弧書きにする。子ツモで `dealer` と `nonDealer` が同額なら「オール」と書く
 - **B1**: `tsumoLoss` の選択肢UI。`DEPOSIT_POINT` の設定化は従来どおり B1
 - **B2**: 保存済みルールに `tsumoLoss` がなければ `DEFAULT_TSUMO_LOSS` で補う。**`calculatePayment` を `generateResult`・UI に接続する前に B2 を済ませること**(未補完のルールでは手順0-b で必ず例外になるため。PR #23 のレビューで追加)
-- **B3**: プリセット「雀魂段位戦」は北家分折半、「一番街段位戦」はロン打点折半が候補(各公式ルールで要確認)
+- **B3**: プリセットは「段位戦ルール」の1つで、`tsumoLoss` は所定値の `loss`(ツモ損あり)とする(Issue #29 で確定。mahjong-rules.md 冒頭)。雀魂・麻雀一番街のツモ損なしの方式の違いは、プリセットでは区別しない(Issue #31 で旧記載を訂正)
 
 ## 8. 要ヒアリング事項
 
