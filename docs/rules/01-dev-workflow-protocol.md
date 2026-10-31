@@ -120,6 +120,7 @@ Co-Authored-By: Codex (GPT 5.6 Terra) <noreply@openai.com>
 | Claude | `Claude (<model>)` | `<noreply@anthropic.com>` |
 | Codex | `Codex (GPT <model>)` | `<noreply@openai.com>` |
 | Antigravity | `Antigravity (<model>)` | `<gemini-code-assist@users.noreply.github.com>` |
+| Github Copilot | `Copilot (<model>)` | `<223556219+Copilot@users.noreply.github.com>` |
 
 #### PR・コメントの署名
 
@@ -132,6 +133,7 @@ Co-Authored-By: Codex (GPT 5.6 Terra) <noreply@openai.com>
 | Claude | `🤖 Generated with [Claude Code](https://claude.com/claude-code)` |
 | Codex | `🤖 Generated with Codex` |
 | Antigravity | `🤖 Generated with Antigravity` |
+| Github Copilot | `🤖 Generated with Copilot` |
 
 ## 外部レビュー対応の権限(必須)
 
