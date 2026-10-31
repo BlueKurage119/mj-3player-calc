@@ -52,8 +52,11 @@ const parseSingleTile = (s: string): Tile => {
 
 // ---- 固定する条件 (設計書 §5) ----
 const baseRule: Rule = {
-  red: { m: 0, p: 1, s: 1 },
+  red: 1,
   honbaPoint: 200,
+  depositPoint: 1000,
+  ippatsu: true,
+  kuitan: true,
   roundedMangan: false,
   doubleWindFu: 4,
   accumlatedYakuman: true,

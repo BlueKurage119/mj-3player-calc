@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
-import { DEPOSIT_POINT, calculateTableBonus } from './bonus';
-import { DEFAULT_HONBA_POINT } from './rule';
+import { calculateTableBonus } from './bonus';
+import { DEFAULT_DEPOSIT_POINT, DEFAULT_HONBA_POINT } from './rule';
 import type { Table } from './table';
 
 describe('calculateTableBonus (A3-TB1〜TB15)', () => {
@@ -12,7 +12,7 @@ describe('calculateTableBonus (A3-TB1〜TB15)', () => {
       continue: 0,
       deposit: 0
     };
-    const bonus = calculateTableBonus(table, 'ron', 200);
+    const bonus = calculateTableBonus(table, 'ron', 200, 1000);
     expect(bonus).toEqual({
       ronFromDiscarder: 0,
       tsumoFromEach: 0,
@@ -28,7 +28,7 @@ describe('calculateTableBonus (A3-TB1〜TB15)', () => {
       continue: 1,
       deposit: 0
     };
-    const bonus = calculateTableBonus(table, 'ron', 200);
+    const bonus = calculateTableBonus(table, 'ron', 200, 1000);
     expect(bonus).toEqual({
       ronFromDiscarder: 200,
       tsumoFromEach: 0,
@@ -44,7 +44,7 @@ describe('calculateTableBonus (A3-TB1〜TB15)', () => {
       continue: 3,
       deposit: 2
     };
-    const bonus = calculateTableBonus(table, 'ron', 200);
+    const bonus = calculateTableBonus(table, 'ron', 200, 1000);
     expect(bonus).toEqual({
       ronFromDiscarder: 600,
       tsumoFromEach: 0,
@@ -60,7 +60,7 @@ describe('calculateTableBonus (A3-TB1〜TB15)', () => {
       continue: 1,
       deposit: 0
     };
-    const bonus = calculateTableBonus(table, 'tsumo', 200);
+    const bonus = calculateTableBonus(table, 'tsumo', 200, 1000);
     expect(bonus).toEqual({
       ronFromDiscarder: 0,
       tsumoFromEach: 100,
@@ -76,7 +76,7 @@ describe('calculateTableBonus (A3-TB1〜TB15)', () => {
       continue: 2,
       deposit: 1
     };
-    const bonus = calculateTableBonus(table, 'tsumo', 200);
+    const bonus = calculateTableBonus(table, 'tsumo', 200, 1000);
     expect(bonus).toEqual({
       ronFromDiscarder: 0,
       tsumoFromEach: 200,
@@ -92,7 +92,7 @@ describe('calculateTableBonus (A3-TB1〜TB15)', () => {
       continue: 0,
       deposit: 3
     };
-    const bonus = calculateTableBonus(table, 'tsumo', 200);
+    const bonus = calculateTableBonus(table, 'tsumo', 200, 1000);
     expect(bonus).toEqual({
       ronFromDiscarder: 0,
       tsumoFromEach: 0,
@@ -108,7 +108,7 @@ describe('calculateTableBonus (A3-TB1〜TB15)', () => {
       continue: 2,
       deposit: 0
     };
-    const bonus = calculateTableBonus(table, 'ron', 300);
+    const bonus = calculateTableBonus(table, 'ron', 300, 1000);
     expect(bonus).toEqual({
       ronFromDiscarder: 600,
       tsumoFromEach: 0,
@@ -124,7 +124,7 @@ describe('calculateTableBonus (A3-TB1〜TB15)', () => {
       continue: 1,
       deposit: 0
     };
-    const bonus = calculateTableBonus(table, 'tsumo', 400);
+    const bonus = calculateTableBonus(table, 'tsumo', 400, 1000);
     expect(bonus).toEqual({
       ronFromDiscarder: 0,
       tsumoFromEach: 200,
@@ -140,7 +140,7 @@ describe('calculateTableBonus (A3-TB1〜TB15)', () => {
       continue: 1,
       deposit: 0
     };
-    expect(() => calculateTableBonus(table, 'tsumo', 300)).toThrow();
+    expect(() => calculateTableBonus(table, 'tsumo', 300, 1000)).toThrow();
   });
 
   // 出典: オーナー回答Q2 (本場数が負)
@@ -151,7 +151,7 @@ describe('calculateTableBonus (A3-TB1〜TB15)', () => {
       continue: -1,
       deposit: 0
     };
-    expect(() => calculateTableBonus(table, 'ron', 200)).toThrow();
+    expect(() => calculateTableBonus(table, 'ron', 200, 1000)).toThrow();
   });
 
   // 出典: オーナー回答Q2 (本場数が整数でない)
@@ -162,7 +162,7 @@ describe('calculateTableBonus (A3-TB1〜TB15)', () => {
       continue: 1.5,
       deposit: 0
     };
-    expect(() => calculateTableBonus(table, 'ron', 200)).toThrow();
+    expect(() => calculateTableBonus(table, 'ron', 200, 1000)).toThrow();
   });
 
   // 出典: オーナー回答Q2 (供託本数が負)
@@ -173,7 +173,7 @@ describe('calculateTableBonus (A3-TB1〜TB15)', () => {
       continue: 0,
       deposit: -1
     };
-    expect(() => calculateTableBonus(table, 'ron', 200)).toThrow();
+    expect(() => calculateTableBonus(table, 'ron', 200, 1000)).toThrow();
   });
 
   // 出典: オーナー回答Q2 (供託本数が整数でない)
@@ -184,13 +184,13 @@ describe('calculateTableBonus (A3-TB1〜TB15)', () => {
       continue: 0,
       deposit: 0.5
     };
-    expect(() => calculateTableBonus(table, 'tsumo', 200)).toThrow();
+    expect(() => calculateTableBonus(table, 'tsumo', 200, 1000)).toThrow();
   });
 
   // 出典: mahjong-rules.md §3.2 (所定値の定義)
   test('A3-TB14: 所定値定数の確認', () => {
     expect(DEFAULT_HONBA_POINT).toBe(200);
-    expect(DEPOSIT_POINT).toBe(1000);
+    expect(DEFAULT_DEPOSIT_POINT).toBe(1000);
   });
 
   // 出典: mahjong-rules.md §3.2 の式「1本場あたりの点数×本場数(ロンは全額)」から導出 (ロンでは100の倍数の検査をせず、例外を投げないことの検知用)
@@ -201,7 +201,7 @@ describe('calculateTableBonus (A3-TB1〜TB15)', () => {
       continue: 1,
       deposit: 0
     };
-    const bonus = calculateTableBonus(table, 'ron', 300);
+    const bonus = calculateTableBonus(table, 'ron', 300, 1000);
     expect(bonus).toEqual({
       ronFromDiscarder: 300,
       tsumoFromEach: 0,

@@ -89,6 +89,10 @@ export const generateResult = (
   ) {
     throw new Error('オープン立直はルールで許可されていません');
   }
+  const options: HandOptions = {
+    ...handOptions,
+    ippatsu: rule.ippatsu && handOptions.ippatsu
+  };
   if (!isValidSanmaInput(input)) return null;
   if (!Number.isInteger(input.nuki) || input.nuki < 0 || input.nuki > 4) {
     return null;
@@ -148,8 +152,8 @@ export const generateResult = (
       const chitoitsuShanten = countChitoitsuShanten(handCounts);
       const kokushiShanten = countKokushiShanten(handCounts);
       const shisanputaHoras =
-        rule.localYaku && handOptions.tenho && input.melds.length === 0
-          ? generateShisanputaHora(table, input.hand, handOptions, rule)
+        rule.localYaku && options.tenho && input.melds.length === 0
+          ? generateShisanputaHora(table, input.hand, options, rule)
           : [];
       if (
         shanten === 0 ||
@@ -159,20 +163,20 @@ export const generateResult = (
       ) {
         const horas = [
           ...(shanten === 0
-            ? generateHora(table, handOptions, results, input, rule)
+            ? generateHora(table, options, results, input, rule)
             : []),
           ...(chitoitsuShanten === 0
             ? generateChitoitsuHora(
                 table,
                 input.hand,
-                handOptions,
+                options,
                 input.dora,
                 rule,
                 input.nuki
               )
             : []),
           ...(kokushiShanten === 0
-            ? generateKokushiHora(table, handCounts, handOptions, rule)
+            ? generateKokushiHora(table, handCounts, options, rule)
             : []),
           ...shisanputaHoras
         ];
@@ -223,7 +227,7 @@ export const generateResult = (
           info: {
             type: 'hora',
             hora: uniqueHoras(
-              generateHora(table, handOptions, results, input, rule),
+              generateHora(table, options, results, input, rule),
               rule
             )
           }
@@ -273,7 +277,7 @@ export const generateResult = (
     const result = generateResult(
       table,
       { ...input, hand: handWithoutLast },
-      handOptions,
+      options,
       rule
     );
     if (
@@ -315,7 +319,7 @@ export const generateResult = (
           hand.findIndex(h => compareTiles(h, t) === 0),
           1
         );
-        const r = generateResult(table, { ...input, hand }, handOptions, rule);
+        const r = generateResult(table, { ...input, hand }, options, rule);
         if (r === null || (r.type !== 'hora-shanten' && r.type !== 'tempai'))
           throw new Error();
 
