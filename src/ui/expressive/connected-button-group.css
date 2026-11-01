@@ -1,0 +1,101 @@
+.connected-button-group {
+  display: flex;
+  align-items: center;
+  gap: 0.125rem;
+}
+
+.connected-button {
+  --expressive-morph-height: 2.5rem;
+
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  flex: 1 1 0;
+  height: 2.5rem;
+  padding: 0 1rem;
+  border: none;
+  background-color: var(--md-sys-color-surface-container);
+  color: var(--md-sys-color-on-surface-variant);
+  cursor: pointer;
+  outline: none;
+  font-family: var(--md-sys-typescale-label-large-font);
+  font-size: var(--md-sys-typescale-label-large-size);
+  line-height: var(--md-sys-typescale-label-large-line-height);
+  font-weight: var(--md-sys-typescale-label-large-weight);
+  letter-spacing: var(--md-sys-typescale-label-large-tracking);
+}
+
+.connected-button:first-child {
+  --expressive-morph-rest-ss: var(--expressive-morph-full);
+  --expressive-morph-rest-es: var(--expressive-morph-full);
+  --expressive-morph-rest-se: var(--md-sys-shape-corner-small);
+  --expressive-morph-rest-ee: var(--md-sys-shape-corner-small);
+
+  --expressive-morph-pressed-ss: var(--expressive-morph-full);
+  --expressive-morph-pressed-es: var(--expressive-morph-full);
+  --expressive-morph-pressed-se: var(--md-sys-shape-corner-extra-small);
+  --expressive-morph-pressed-ee: var(--md-sys-shape-corner-extra-small);
+
+  --expressive-morph-selected-ss: var(--expressive-morph-full);
+  --expressive-morph-selected-es: var(--expressive-morph-full);
+  --expressive-morph-selected-se: var(--expressive-morph-full);
+  --expressive-morph-selected-ee: var(--expressive-morph-full);
+}
+
+.connected-button:not(:first-child):not(:last-child) {
+  --expressive-morph-rest: var(--md-sys-shape-corner-small);
+  --expressive-morph-pressed: var(--md-sys-shape-corner-extra-small);
+  --expressive-morph-selected: var(--expressive-morph-full);
+}
+
+.connected-button:last-child {
+  --expressive-morph-rest-ss: var(--md-sys-shape-corner-small);
+  --expressive-morph-rest-es: var(--md-sys-shape-corner-small);
+  --expressive-morph-rest-se: var(--expressive-morph-full);
+  --expressive-morph-rest-ee: var(--expressive-morph-full);
+
+  --expressive-morph-pressed-ss: var(--md-sys-shape-corner-extra-small);
+  --expressive-morph-pressed-es: var(--md-sys-shape-corner-extra-small);
+  --expressive-morph-pressed-se: var(--expressive-morph-full);
+  --expressive-morph-pressed-ee: var(--expressive-morph-full);
+
+  --expressive-morph-selected-ss: var(--expressive-morph-full);
+  --expressive-morph-selected-es: var(--expressive-morph-full);
+  --expressive-morph-selected-se: var(--expressive-morph-full);
+  --expressive-morph-selected-ee: var(--expressive-morph-full);
+}
+
+.connected-button:first-child:last-child {
+  --expressive-morph-rest-ss: var(--expressive-morph-full);
+  --expressive-morph-rest-es: var(--expressive-morph-full);
+  --expressive-morph-rest-se: var(--expressive-morph-full);
+  --expressive-morph-rest-ee: var(--expressive-morph-full);
+
+  --expressive-morph-pressed-ss: var(--expressive-morph-full);
+  --expressive-morph-pressed-es: var(--expressive-morph-full);
+  --expressive-morph-pressed-se: var(--expressive-morph-full);
+  --expressive-morph-pressed-ee: var(--expressive-morph-full);
+
+  --expressive-morph-selected-ss: var(--expressive-morph-full);
+  --expressive-morph-selected-es: var(--expressive-morph-full);
+  --expressive-morph-selected-se: var(--expressive-morph-full);
+  --expressive-morph-selected-ee: var(--expressive-morph-full);
+}
+
+.connected-button[aria-checked="true"] {
+  z-index: 1;
+  background-color: var(--md-sys-color-primary);
+  color: var(--md-sys-color-on-primary);
+  font-family: var(--md-sys-typescale-emphasized-label-large-font);
+  font-size: var(--md-sys-typescale-emphasized-label-large-size);
+  line-height: var(--md-sys-typescale-emphasized-label-large-line-height);
+  font-weight: var(--md-sys-typescale-emphasized-label-large-weight);
+  letter-spacing: var(--md-sys-typescale-emphasized-label-large-tracking);
+}
+
+.connected-button:disabled {
+  opacity: 0.38;
+  cursor: not-allowed;
+}

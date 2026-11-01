@@ -1,27 +1,27 @@
 import { useRef } from 'react';
 import type React from 'react';
 import { FocusRing, Ripple } from '../md';
-import { type SegmentedOption, nextIndex } from './segmented-logic';
+import { type ConnectedOption, nextIndex } from './connected-logic';
 import { SHAPE_MORPH_CLASS } from './shape-morph';
-import './segmented-button-group.css';
+import './connected-button-group.css';
 
-export interface SegmentedButtonGroupProps<T extends string> {
+export interface ConnectedButtonGroupProps<T extends string> {
   label: string;
-  options: readonly SegmentedOption<T>[];
+  options: readonly ConnectedOption<T>[];
   value: T;
   onValueChange: (value: T) => void;
   className?: string | undefined;
 }
 
-export function SegmentedButtonGroup<T extends string>(
-  props: SegmentedButtonGroupProps<T>
+export function ConnectedButtonGroup<T extends string>(
+  props: ConnectedButtonGroupProps<T>
 ): React.JSX.Element {
   const { label, options, value, onValueChange, className } = props;
   const buttonRefs = useRef<(HTMLButtonElement | null)[]>([]);
 
   const containerClassName = className
-    ? `segmented-button-group ${className}`
-    : 'segmented-button-group';
+    ? `connected-button-group ${className}`
+    : 'connected-button-group';
 
   return (
     <div role="radiogroup" aria-label={label} className={containerClassName}>
@@ -39,7 +39,7 @@ export function SegmentedButtonGroup<T extends string>(
             aria-checked={isSelected}
             tabIndex={isSelected ? 0 : -1}
             disabled={opt.disabled}
-            className={`segmented-button ${SHAPE_MORPH_CLASS}`}
+            className={`connected-button ${SHAPE_MORPH_CLASS}`}
             onClick={() => {
               if (!opt.disabled) {
                 onValueChange(opt.value);

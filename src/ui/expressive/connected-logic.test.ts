@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { nextIndex } from './segmented-logic';
+import { nextIndex } from './connected-logic';
 
-describe('C2: SegmentedButtonGroup のキー操作ロジック (C2-K01〜K06)', () => {
+describe('C2: ConnectedButtonGroup のキー操作ロジック (C2-K01〜K06)', () => {
   const options = [
     { value: 'a', label: 'A' },
     { value: 'b', label: 'B' },

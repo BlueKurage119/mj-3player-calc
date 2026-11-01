@@ -1,4 +1,4 @@
-export interface SegmentedOption<T extends string = string> {
+export interface ConnectedOption<T extends string = string> {
   value: T;
   label: string;
   disabled?: boolean | undefined;

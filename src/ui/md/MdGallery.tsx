@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type React from 'react';
-import { SegmentedButtonGroup, type SegmentedOption } from '../expressive';
+import { ConnectedButtonGroup, type ConnectedOption } from '../expressive';
 import { useTheme } from '../theme';
 import {
   AssistChip,
@@ -19,7 +19,7 @@ import {
   Tabs
 } from './index';
 
-const SEGMENTED_OPTIONS: readonly SegmentedOption[] = [
+const CONNECTED_OPTIONS: readonly ConnectedOption[] = [
   { value: 'opt1', label: '選択肢1' },
   { value: 'opt2', label: '選択肢2' },
   { value: 'opt3', label: '選択肢3' }
@@ -34,7 +34,7 @@ export default function MdGallery(): React.JSX.Element {
   const [dialogReturnValue, setDialogReturnValue] = useState('');
   const [activeTab, setActiveTab] = useState(0);
   const [selectVal, setSelectVal] = useState('apple');
-  const [segmentedVal, setSegmentedVal] = useState('opt1');
+  const [connectedVal, setConnectedVal] = useState('opt1');
 
   const sampleIcon = (
     <svg viewBox="0 0 24 24" width="1.5rem" height="1.5rem" aria-hidden="true">
@@ -164,12 +164,12 @@ export default function MdGallery(): React.JSX.Element {
       </section>
 
       <section>
-        <h2>Segmented Button Group</h2>
-        <SegmentedButtonGroup
+        <h2>Connected Button Group</h2>
+        <ConnectedButtonGroup
           label="サンプル選択肢"
-          options={SEGMENTED_OPTIONS}
-          value={segmentedVal}
-          onValueChange={setSegmentedVal}
+          options={CONNECTED_OPTIONS}
+          value={connectedVal}
+          onValueChange={setConnectedVal}
         />
       </section>
 
