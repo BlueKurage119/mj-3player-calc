@@ -16,8 +16,6 @@ TMP_DIR=$(mktemp -d)
 trap 'rm -rf "$TMP_DIR"' EXIT INT TERM
 
 TILES="
-Front.svg
-Back.svg
 Man1.svg
 Man9.svg
 Pin1.svg
@@ -61,4 +59,4 @@ done
 mkdir -p src/ui/tile/assets
 npx svgo --config svgo.tiles.config.mjs -f "$TMP_DIR" -o src/ui/tile/assets
 
-echo "Successfully optimized 31 tiles to src/ui/tile/assets."
+echo "Successfully optimized 29 tiles to src/ui/tile/assets."

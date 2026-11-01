@@ -1,7 +1,7 @@
 import type { TileOrBack } from '../../core/tile';
-import backUrl from './assets/Back.svg?no-inline';
+import backUrl from './base/Back.svg?no-inline';
 import chunUrl from './assets/Chun.svg?no-inline';
-import frontUrl from './assets/Front.svg?no-inline';
+import frontUrl from './base/Front.svg?no-inline';
 import hatsuUrl from './assets/Hatsu.svg?no-inline';
 import man1Url from './assets/Man1.svg?no-inline';
 import man9Url from './assets/Man9.svg?no-inline';
@@ -32,7 +32,7 @@ import tonUrl from './assets/Ton.svg?no-inline';
 
 /** 牌 1 枚の画像。face が null のときは base だけを描く(白・裏) */
 export interface TileImage {
-  base: string; // Front.svg または Back.svg の URL
+  base: string; // base/Front.svg または base/Back.svg の URL
   face: string | null; // 図柄の URL
 }
 
