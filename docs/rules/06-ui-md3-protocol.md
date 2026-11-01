@@ -11,6 +11,14 @@ products: [Claude, Codex, Antigravity]
 
 シード色・ライト/ダークの扱いなどの細目は、Epic C(デザイン基盤)のヒアリングで決め、決まったものからこの文書に追記する。
 
+## テーマ(C1 で確定)
+
+1. シード `#1B5E20`・SchemeTonalSpot・contrast 0・spec `'2021'`(明示指定)。利用者変更なし。
+2. ライト/ダーク: `'auto' | 'light' | 'dark'`、既定 auto、`<html data-theme>` で切替。CSS で `prefers-color-scheme` を直接使わない(解決は `src/ui/theme/apply-theme.ts` に集約)。
+3. 生成手順: シードやライブラリ版を変えたら `npm run gen:theme` で `src/ui/theme/tokens.css` を再生成してコミット。`tokens.css` は手編集禁止。CI の `check:theme` が差分を検出する。
+4. spring モーションは Expressive 方式(`--md-sys-motion-spring-*`)を使う。形状・モーション・タイポグラフィも `--md-sys-shape-*`・`--md-sys-motion-*`・`--md-sys-typescale-*` を使い、px・ms・cubic-bezier を部品に直書きしない。
+5. 桁の揃う数値には `tabular-nums` を使う。
+
 ## 必須の制約
 
 1. **色はHEX値をハードコードせず、MD3のトークン(`--md-sys-color-*`)を使用する。** トークンは`@material/material-color-utilities`で生成する。例外は次節に記載する。
