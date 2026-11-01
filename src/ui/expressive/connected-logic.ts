@@ -73,3 +73,22 @@ export function nextIndex<T extends object>(
       return current;
   }
 }
+
+/**
+ * Tab キーで止まる選択肢のインデックスを返す純関数
+ * - 選択中の値が有効な選択肢にあれば、その位置
+ * - 選択中の選択肢が無効化されているか見つからなければ、最初の有効な選択肢
+ * - 有効な選択肢が無ければ -1
+ */
+export function tabStopIndex<T extends string>(
+  options: readonly ConnectedOption<T>[],
+  value: T
+): number {
+  const selected = options.findIndex(
+    opt => opt.value === value && !opt.disabled
+  );
+  if (selected !== -1) {
+    return selected;
+  }
+  return options.findIndex(opt => !opt.disabled);
+}

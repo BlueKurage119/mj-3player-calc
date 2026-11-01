@@ -1,7 +1,11 @@
 import { useRef } from 'react';
 import type React from 'react';
 import { FocusRing, Ripple } from '../md';
-import { type ConnectedOption, nextIndex } from './connected-logic';
+import {
+  type ConnectedOption,
+  nextIndex,
+  tabStopIndex
+} from './connected-logic';
 import { SHAPE_MORPH_CLASS } from './shape-morph';
 import './connected-button-group.css';
 
@@ -23,6 +27,8 @@ export function ConnectedButtonGroup<T extends string>(
     ? `connected-button-group ${className}`
     : 'connected-button-group';
 
+  const tabStop = tabStopIndex(options, value);
+
   return (
     <div role="radiogroup" aria-label={label} className={containerClassName}>
       {options.map((opt, index) => {
@@ -37,7 +43,7 @@ export function ConnectedButtonGroup<T extends string>(
               buttonRefs.current[index] = el;
             }}
             aria-checked={isSelected}
-            tabIndex={isSelected ? 0 : -1}
+            tabIndex={index === tabStop ? 0 : -1}
             disabled={opt.disabled}
             className={`connected-button ${SHAPE_MORPH_CLASS}`}
             onClick={() => {

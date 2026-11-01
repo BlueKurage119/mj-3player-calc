@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { nextIndex } from './connected-logic';
+import { nextIndex, tabStopIndex } from './connected-logic';
 
 describe('C2: ConnectedButtonGroup のキー操作ロジック (C2-K01〜K06)', () => {
   const options = [
@@ -74,5 +74,23 @@ describe('C2: ConnectedButtonGroup のキー操作ロジック (C2-K01〜K06)', 
     expect(nextIndex(options, 1, 'Space')).toBe(1);
     expect(nextIndex(options, 1, 'Tab')).toBe(1);
     expect(nextIndex(options, 1, 'KeyA')).toBe(1);
+  });
+
+  it('C2-K07: Tab で止まる位置は、選択中が無効なら最初の有効な選択肢になる', () => {
+    expect(tabStopIndex(options, 'b')).toBe(1);
+    const disabledSelected = [
+      { value: 'a', label: 'A' },
+      { value: 'b', label: 'B', disabled: true },
+      { value: 'c', label: 'C' }
+    ];
+    expect(tabStopIndex(disabledSelected, 'b')).toBe(0);
+    const firstDisabled = [
+      { value: 'a', label: 'A', disabled: true },
+      { value: 'b', label: 'B' }
+    ];
+    expect(tabStopIndex(firstDisabled, 'a')).toBe(1);
+    expect(tabStopIndex(options, 'z' as string)).toBe(0);
+    const allDisabled = [{ value: 'a', label: 'A', disabled: true }];
+    expect(tabStopIndex(allDisabled, 'a')).toBe(-1);
   });
 });
