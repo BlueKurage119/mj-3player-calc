@@ -1,0 +1,316 @@
+/* 手書き静的トークン: 形状・モーション・タイポグラフィ・規約クラス */
+/* 出典照合元: (a) androidx.compose.material3.tokens (ShapeKeyTokens, MotionTokens, TypeScaleTokens), (b) m3.material.io (Shape, Motion, Typography) */
+
+:root {
+  /* 形状(標準 7) */
+  --md-sys-shape-corner-none: 0px;
+  --md-sys-shape-corner-extra-small: 4px;
+  --md-sys-shape-corner-small: 8px;
+  --md-sys-shape-corner-medium: 12px;
+  --md-sys-shape-corner-large: 16px;
+  --md-sys-shape-corner-extra-large: 28px;
+  --md-sys-shape-corner-full: 9999px;
+
+  /* 形状(Expressive 拡張 3) */
+  --md-sys-shape-corner-large-increased: 20px;
+  --md-sys-shape-corner-extra-large-increased: 32px;
+  --md-sys-shape-corner-extra-extra-large: 48px;
+
+  /* easing(10) */
+  --md-sys-motion-easing-standard: cubic-bezier(0.2, 0, 0, 1);
+  --md-sys-motion-easing-standard-accelerate: cubic-bezier(0.3, 0, 1, 1);
+  --md-sys-motion-easing-standard-decelerate: cubic-bezier(0, 0, 0, 1);
+  --md-sys-motion-easing-emphasized: cubic-bezier(0.2, 0, 0, 1);
+  --md-sys-motion-easing-emphasized-accelerate: cubic-bezier(0.3, 0, 0.8, 0.15);
+  --md-sys-motion-easing-emphasized-decelerate: cubic-bezier(0.05, 0.7, 0.1, 1);
+  --md-sys-motion-easing-legacy: cubic-bezier(0.4, 0, 0.2, 1);
+  --md-sys-motion-easing-legacy-accelerate: cubic-bezier(0.4, 0, 1, 1);
+  --md-sys-motion-easing-legacy-decelerate: cubic-bezier(0, 0, 0.2, 1);
+  --md-sys-motion-easing-linear: cubic-bezier(0, 0, 1, 1);
+
+  /* duration(16) */
+  --md-sys-motion-duration-short1: 50ms;
+  --md-sys-motion-duration-short2: 100ms;
+  --md-sys-motion-duration-short3: 150ms;
+  --md-sys-motion-duration-short4: 200ms;
+  --md-sys-motion-duration-medium1: 250ms;
+  --md-sys-motion-duration-medium2: 300ms;
+  --md-sys-motion-duration-medium3: 350ms;
+  --md-sys-motion-duration-medium4: 400ms;
+  --md-sys-motion-duration-long1: 450ms;
+  --md-sys-motion-duration-long2: 500ms;
+  --md-sys-motion-duration-long3: 550ms;
+  --md-sys-motion-duration-long4: 600ms;
+  --md-sys-motion-duration-extra-long1: 700ms;
+  --md-sys-motion-duration-extra-long2: 800ms;
+  --md-sys-motion-duration-extra-long3: 900ms;
+  --md-sys-motion-duration-extra-long4: 1000ms;
+
+  /* spring(12 変数) duration */
+  --md-sys-motion-spring-spatial-fast-duration: 360ms;
+  --md-sys-motion-spring-spatial-default-duration: 435ms;
+  --md-sys-motion-spring-spatial-slow-duration: 600ms;
+  --md-sys-motion-spring-effects-fast-duration: 150ms;
+  --md-sys-motion-spring-effects-default-duration: 231ms;
+  --md-sys-motion-spring-effects-slow-duration: 327ms;
+
+  /* spring easing 代替値 (linear() 非対応環境向け) */
+  --md-sys-motion-spring-spatial-fast-easing: cubic-bezier(0.2, 0, 0, 1);
+  --md-sys-motion-spring-spatial-default-easing: cubic-bezier(0.2, 0, 0, 1);
+  --md-sys-motion-spring-spatial-slow-easing: cubic-bezier(0.2, 0, 0, 1);
+  --md-sys-motion-spring-effects-fast-easing: cubic-bezier(0, 0, 0, 1);
+  --md-sys-motion-spring-effects-default-easing: cubic-bezier(0, 0, 0, 1);
+  --md-sys-motion-spring-effects-slow-easing: cubic-bezier(0, 0, 0, 1);
+
+  /* タイポグラフィ基底書体 */
+  --md-ref-typeface-brand: system-ui, -apple-system, "Hiragino Sans",
+    "Noto Sans JP", "Yu Gothic UI", sans-serif;
+  --md-ref-typeface-plain: system-ui, -apple-system, "Hiragino Sans",
+    "Noto Sans JP", "Yu Gothic UI", sans-serif;
+
+  /* typescale (15 役割 × 5 = 75 変数) */
+  --md-sys-typescale-display-large-font: var(--md-ref-typeface-brand);
+  --md-sys-typescale-display-large-size: 57px;
+  --md-sys-typescale-display-large-line-height: 64px;
+  --md-sys-typescale-display-large-weight: 400;
+  --md-sys-typescale-display-large-tracking: -0.25px;
+
+  --md-sys-typescale-display-medium-font: var(--md-ref-typeface-brand);
+  --md-sys-typescale-display-medium-size: 45px;
+  --md-sys-typescale-display-medium-line-height: 52px;
+  --md-sys-typescale-display-medium-weight: 400;
+  --md-sys-typescale-display-medium-tracking: 0px;
+
+  --md-sys-typescale-display-small-font: var(--md-ref-typeface-brand);
+  --md-sys-typescale-display-small-size: 36px;
+  --md-sys-typescale-display-small-line-height: 44px;
+  --md-sys-typescale-display-small-weight: 400;
+  --md-sys-typescale-display-small-tracking: 0px;
+
+  --md-sys-typescale-headline-large-font: var(--md-ref-typeface-brand);
+  --md-sys-typescale-headline-large-size: 32px;
+  --md-sys-typescale-headline-large-line-height: 40px;
+  --md-sys-typescale-headline-large-weight: 400;
+  --md-sys-typescale-headline-large-tracking: 0px;
+
+  --md-sys-typescale-headline-medium-font: var(--md-ref-typeface-brand);
+  --md-sys-typescale-headline-medium-size: 28px;
+  --md-sys-typescale-headline-medium-line-height: 36px;
+  --md-sys-typescale-headline-medium-weight: 400;
+  --md-sys-typescale-headline-medium-tracking: 0px;
+
+  --md-sys-typescale-headline-small-font: var(--md-ref-typeface-brand);
+  --md-sys-typescale-headline-small-size: 24px;
+  --md-sys-typescale-headline-small-line-height: 32px;
+  --md-sys-typescale-headline-small-weight: 400;
+  --md-sys-typescale-headline-small-tracking: 0px;
+
+  --md-sys-typescale-title-large-font: var(--md-ref-typeface-brand);
+  --md-sys-typescale-title-large-size: 22px;
+  --md-sys-typescale-title-large-line-height: 28px;
+  --md-sys-typescale-title-large-weight: 400;
+  --md-sys-typescale-title-large-tracking: 0px;
+
+  --md-sys-typescale-title-medium-font: var(--md-ref-typeface-plain);
+  --md-sys-typescale-title-medium-size: 16px;
+  --md-sys-typescale-title-medium-line-height: 24px;
+  --md-sys-typescale-title-medium-weight: 500;
+  --md-sys-typescale-title-medium-tracking: 0.15px;
+
+  --md-sys-typescale-title-small-font: var(--md-ref-typeface-plain);
+  --md-sys-typescale-title-small-size: 14px;
+  --md-sys-typescale-title-small-line-height: 20px;
+  --md-sys-typescale-title-small-weight: 500;
+  --md-sys-typescale-title-small-tracking: 0.1px;
+
+  --md-sys-typescale-body-large-font: var(--md-ref-typeface-plain);
+  --md-sys-typescale-body-large-size: 16px;
+  --md-sys-typescale-body-large-line-height: 24px;
+  --md-sys-typescale-body-large-weight: 400;
+  --md-sys-typescale-body-large-tracking: 0.5px;
+
+  --md-sys-typescale-body-medium-font: var(--md-ref-typeface-plain);
+  --md-sys-typescale-body-medium-size: 14px;
+  --md-sys-typescale-body-medium-line-height: 20px;
+  --md-sys-typescale-body-medium-weight: 400;
+  --md-sys-typescale-body-medium-tracking: 0.25px;
+
+  --md-sys-typescale-body-small-font: var(--md-ref-typeface-plain);
+  --md-sys-typescale-body-small-size: 12px;
+  --md-sys-typescale-body-small-line-height: 16px;
+  --md-sys-typescale-body-small-weight: 400;
+  --md-sys-typescale-body-small-tracking: 0.4px;
+
+  --md-sys-typescale-label-large-font: var(--md-ref-typeface-plain);
+  --md-sys-typescale-label-large-size: 14px;
+  --md-sys-typescale-label-large-line-height: 20px;
+  --md-sys-typescale-label-large-weight: 500;
+  --md-sys-typescale-label-large-tracking: 0.1px;
+
+  --md-sys-typescale-label-medium-font: var(--md-ref-typeface-plain);
+  --md-sys-typescale-label-medium-size: 12px;
+  --md-sys-typescale-label-medium-line-height: 16px;
+  --md-sys-typescale-label-medium-weight: 500;
+  --md-sys-typescale-label-medium-tracking: 0.5px;
+
+  --md-sys-typescale-label-small-font: var(--md-ref-typeface-plain);
+  --md-sys-typescale-label-small-size: 11px;
+  --md-sys-typescale-label-small-line-height: 16px;
+  --md-sys-typescale-label-small-weight: 500;
+  --md-sys-typescale-label-small-tracking: 0.5px;
+}
+
+@supports (transition-timing-function: linear(0, 1)) {
+  :root {
+    --md-sys-motion-spring-spatial-fast-easing: linear(
+      0,
+      0.105,
+      0.331,
+      0.581,
+      0.797,
+      0.952,
+      1.045,
+      1.088,
+      1.094,
+      1.079,
+      1.056,
+      1.033,
+      1.014,
+      1.001,
+      0.994,
+      0.991,
+      0.991,
+      0.993,
+      0.995,
+      0.997,
+      1
+    );
+    --md-sys-motion-spring-spatial-default-easing: linear(
+      0,
+      0.072,
+      0.227,
+      0.406,
+      0.573,
+      0.712,
+      0.82,
+      0.898,
+      0.951,
+      0.984,
+      1.003,
+      1.012,
+      1.015,
+      1.015,
+      1.013,
+      1.01,
+      1.007,
+      1.005,
+      1.003,
+      1.002,
+      1
+    );
+    --md-sys-motion-spring-spatial-slow-easing: linear(
+      0,
+      0.072,
+      0.227,
+      0.406,
+      0.573,
+      0.713,
+      0.821,
+      0.898,
+      0.951,
+      0.984,
+      1.003,
+      1.012,
+      1.015,
+      1.015,
+      1.013,
+      1.01,
+      1.007,
+      1.005,
+      1.003,
+      1.002,
+      1
+    );
+    --md-sys-motion-spring-effects-fast-easing: linear(
+      0,
+      0.079,
+      0.237,
+      0.404,
+      0.552,
+      0.672,
+      0.764,
+      0.833,
+      0.884,
+      0.92,
+      0.945,
+      0.962,
+      0.974,
+      0.983,
+      0.988,
+      0.992,
+      0.995,
+      0.997,
+      0.998,
+      0.999,
+      1
+    );
+    --md-sys-motion-spring-effects-default-easing: linear(
+      0,
+      0.079,
+      0.236,
+      0.403,
+      0.551,
+      0.671,
+      0.764,
+      0.833,
+      0.883,
+      0.919,
+      0.945,
+      0.962,
+      0.974,
+      0.983,
+      0.988,
+      0.992,
+      0.995,
+      0.997,
+      0.998,
+      0.998,
+      1
+    );
+    --md-sys-motion-spring-effects-slow-easing: linear(
+      0,
+      0.079,
+      0.237,
+      0.404,
+      0.552,
+      0.672,
+      0.765,
+      0.834,
+      0.884,
+      0.92,
+      0.945,
+      0.962,
+      0.975,
+      0.983,
+      0.988,
+      0.992,
+      0.995,
+      0.997,
+      0.998,
+      0.999,
+      1
+    );
+  }
+}
+
+/* 桁揃え規約クラス */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* 画面全体の基礎スタイル */
+body {
+  background: var(--md-sys-color-background);
+  color: var(--md-sys-color-on-background);
+  font-family: var(--md-ref-typeface-plain);
+}
