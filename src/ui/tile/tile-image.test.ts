@@ -47,6 +47,12 @@ describe('C3: 牌画像マッピング (tileImageOf)', () => {
     expect(s5Normal.face).toContain('Sou5.svg');
   });
 
+  it('C3-T11: 赤5索 (s5 red:true) は Sou5-Dora.svg', () => {
+    const s5Red = tileImageOf({ type: 's', n: 5, red: true });
+    expect(s5Red.base).toContain('base/Front.svg');
+    expect(s5Red.face).toContain('Sou5-Dora.svg');
+  });
+
   it('C3-T05: z1..z7 の 7 種 (白 z5 は face: null)', () => {
     const z1 = tileImageOf({ type: 'z', n: 1 });
     // Viteの解決パスプレフィックスに依存しないようbase配下のファイルパスおよび図柄ファイル名部分一致で検証
