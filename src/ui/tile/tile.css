@@ -1,0 +1,66 @@
+.tile {
+  --tile-width: 2.5rem;
+  width: var(--tile-width);
+  aspect-ratio: 3 / 4;
+  display: inline-grid;
+  position: relative;
+  border-radius: var(--md-sys-shape-corner-extra-small);
+  overflow: hidden;
+  background: transparent;
+  border: none;
+  padding: 0;
+  margin: 0;
+  box-sizing: border-box;
+  vertical-align: middle;
+}
+
+button.tile {
+  cursor: pointer;
+}
+
+.tile__base,
+.tile__face {
+  grid-area: 1 / 1;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* 押下可能時のホバー/押下の状態層 */
+button.tile::after {
+  content: "";
+  grid-area: 1 / 1;
+  background: var(--md-sys-color-on-surface);
+  opacity: 0;
+  pointer-events: none;
+}
+
+button.tile:hover::after {
+  opacity: 0.08;
+}
+
+button.tile:active::after {
+  opacity: 0.1;
+}
+
+/* フォーカス */
+.tile:focus-visible {
+  outline: 2px solid var(--md-sys-color-secondary);
+  outline-offset: 1px;
+}
+
+/* 選択状態 */
+.tile[aria-pressed="true"],
+.tile.tile--selected {
+  outline: 2px solid var(--md-sys-color-primary);
+  outline-offset: 1px;
+}
+
+/* 選択とフォーカスが重なる場合は選択を優先 */
+.tile[aria-pressed="true"]:focus-visible,
+.tile.tile--selected:focus-visible {
+  outline: 2px solid var(--md-sys-color-primary);
+  outline-offset: 1px;
+}
