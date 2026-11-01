@@ -1,6 +1,6 @@
 # Issue化ドラフト(Epic単位)
 
-更新日: 2026-10-31(Epic B の Sub-Issue を登録)
+更新日: 2026-11-01(Epic C の Sub-Issue を登録)
 
 [要件](requirements.md)を実装タスクに分けた下書き。Issue を登録したら、見出しを GitHub の Issue へのリンクにする。各 Epic は親 Issue とし、項目は着手時に Sub-Issue として登録する。マイルストーンは Epic ごとに設け(「Epic A: 計算コアの三麻化」など)、親 Issue とその Sub-Issue に付ける。識別番号(A1 など)は Issue 番号とは別で、どの Epic のどの項目かを示すために使う。各項目の未決事項は、着手前のヒアリングで決める。
 
@@ -47,11 +47,11 @@
 
 ## [Epic C: デザイン基盤](https://github.com/BlueKurage119/mj-3player-calc/issues/4)
 
-- **C1. MD3 テーマ基盤**
+- **[C1. MD3 テーマ基盤](https://github.com/BlueKurage119/mj-3player-calc/issues/39)**
   `@material/material-color-utilities` によるトークンの生成、ライト・ダーク、色トークンの規約。
-- **C2. Material Web のラッパーと自作コンポーネント**
+- **[C2. Material Web のラッパーと自作コンポーネント](https://github.com/BlueKurage119/mj-3player-calc/issues/40)**
   使える部品はラップ・改造し、Expressive 固有の部品(形状・モーション等)は自作する。部品の一覧はヒアリングで決める。
-- **C3. 牌画像**
+- **[C3. 牌画像](https://github.com/BlueKurage119/mj-3player-calc/issues/41)**
   FluffyStuff/riichi-mahjong-tiles(CC0)の取り込み。クレジット表示。
 
 ## [Epic D: 入力 UI](https://github.com/BlueKurage119/mj-3player-calc/issues/5)
@@ -65,6 +65,8 @@
 - **D4. 副露・抜き北・ドラ表示牌の入力**
 - **D5. 状況の入力**
   自風・場風・ツモ／ロン・立直などの偶然役・本場・供託。
+- **D6. ルール設定画面**
+  `RULE_ITEMS` から設定画面を組み立てる。プリセットの選択と一致表示(`RULE_PRESETS`・`findRulePreset`)、起動時の `loadRule` と変更時の `saveRule` の接続。未決: 項目の並び順・グループ・説明文、利用者プリセットの名前付き保存を含めるか。
 
 ## [Epic E: 結果表示](https://github.com/BlueKurage119/mj-3player-calc/issues/6)
 
