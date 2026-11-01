@@ -58,6 +58,10 @@ jobs:
         if: "!cancelled() && steps.install.outcome == 'success'"
         run: npm run build
 
+      - name: npm run check:theme
+        if: "!cancelled() && steps.install.outcome == 'success'"
+        run: npm run check:theme
+
       - name: npm run lint
         if: "!cancelled() && steps.install.outcome == 'success'"
         run: npm run lint

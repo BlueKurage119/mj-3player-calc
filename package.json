@@ -4,12 +4,17 @@
   "description": "三人麻雀特化の点数計算機",
   "type": "module",
   "private": true,
+  "sideEffects": [
+    "*.css"
+  ],
   "license": "MIT",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
     "build:wasm": "cd wasm/decomposer && wasm-pack build",
     "preview": "vite preview",
+    "gen:theme": "vite-node --options.deps.inline=@material/material-color-utilities scripts/gen-theme-tokens.ts",
+    "check:theme": "npm run gen:theme -- --check",
     "typecheck": "tsc -b",
     "lint": "biome lint",
     "format": "biome format --write",
@@ -23,6 +28,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "1.9.4",
+    "@material/material-color-utilities": "0.4.0",
     "@tsconfig/strictest": "^2.0.5",
     "@types/node": "^22.13.4",
     "@types/react": "^19.0.10",
