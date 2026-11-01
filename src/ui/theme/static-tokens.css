@@ -147,6 +147,13 @@
   --md-sys-typescale-label-large-weight: 500;
   --md-sys-typescale-label-large-tracking: 0.1px;
 
+  /* 出典: androidx.compose.material3.tokens.TypeScaleTokens (LabelLargeEmphasizedFontWeight = TypefaceTokens.WeightBold = 700) */
+  --md-sys-typescale-emphasized-label-large-font: var(--md-ref-typeface-plain);
+  --md-sys-typescale-emphasized-label-large-size: 14px;
+  --md-sys-typescale-emphasized-label-large-line-height: 20px;
+  --md-sys-typescale-emphasized-label-large-weight: 700;
+  --md-sys-typescale-emphasized-label-large-tracking: 0.1px;
+
   --md-sys-typescale-label-medium-font: var(--md-ref-typeface-plain);
   --md-sys-typescale-label-medium-size: 12px;
   --md-sys-typescale-label-medium-line-height: 16px;

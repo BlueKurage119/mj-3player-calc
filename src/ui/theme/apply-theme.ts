@@ -42,10 +42,14 @@ export function applyResolvedTheme(
   }
 }
 
+export interface SetPreferenceOptions {
+  persist?: boolean;
+}
+
 export interface ThemeController {
   getPreference(): ThemePreference;
   getResolved(): ResolvedTheme;
-  setPreference(pref: ThemePreference): void;
+  setPreference(pref: ThemePreference, options?: SetPreferenceOptions): void;
   subscribe(listener: (resolved: ResolvedTheme) => void): () => void;
   dispose(): void;
 }
@@ -113,9 +117,14 @@ export function createThemeController(
     getResolved(): ResolvedTheme {
       return resolved;
     },
-    setPreference(newPref: ThemePreference): void {
+    setPreference(
+      newPref: ThemePreference,
+      options?: SetPreferenceOptions
+    ): void {
       preference = newPref;
-      saveAppSettings({ theme: newPref }, storage);
+      if (options?.persist !== false) {
+        saveAppSettings({ theme: newPref }, storage);
+      }
 
       if (mediaQuery) {
         systemDark = mediaQuery.matches;
