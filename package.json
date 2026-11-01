@@ -23,6 +23,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@material/web": "2.5.0",
     "decomposer": "file:./wasm/decomposer/pkg",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
