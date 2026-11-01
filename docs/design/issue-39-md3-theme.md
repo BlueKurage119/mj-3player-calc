@@ -308,7 +308,7 @@ export const initTheme: () => ThemeController; // 既定依存でシングルト
 10. [ ] 同ページのコンソールで `localStorage.setItem('mj3calc.settings','{"version":1,"settings":{"theme":"dark"}}')` → 再読込で、エミュレーションが light でも `data-theme="dark"`。値を `'{broken'` にして再読込するとエミュレーション値に従い、例外がコンソールに出ない。
 11. [ ] `static-tokens.css` に、形状 10(標準 7+拡張 3)、easing 10、duration 16、spring 12、`--md-ref-typeface-brand/plain` 2、typescale 75、`.tabular-nums` が存在し、値が 2.7・2.8 の表(製造時の照合で修正した場合は製造報告の修正後の値)と一致する。spring 変数は `static-tokens.css` にだけあり `tokens.css` に無い。ファイル先頭に照合元のコメントがある。`tokens.test.ts` で変数名と数を検査する。
 12. [ ] spring easing 6 変数が `@supports (transition-timing-function: linear(0, 1))` 内で `linear(` の値を持ち、その外側で 2.7 の `cubic-bezier` 代替値を持つ。
-13. [ ] `git diff main -- src/ui ':!src/ui/theme/tokens.css' | grep -E '^\+.*#[0-9a-fA-F]{3,8}\b'` の出力が空。
+13. [ ] `git diff main -- src/ui ':!src/ui/theme/tokens.css' ':!*.test.ts' | grep -E '^\+.*#[0-9a-fA-F]{3,8}\b'` の出力が空(テストの期待値は UI コードではないため対象外)。
 14. [ ] `docs/rules/06-ui-md3-protocol.md` に 2.10 の5点が追記されている。
 15. [ ] `npm run lint` / `npm run typecheck` / `npm run format:check` / `npm test` / `npm run check:theme` がすべて成功(format:check と check:theme が**両方**通ること=生成物が Biome の整形結果と一致すること)。
 16. [ ] リポジトリ内に絶対パス・ホームディレクトリ名が増えていない(`git diff main | grep -nE '/Users/|/home/'` が空)。
