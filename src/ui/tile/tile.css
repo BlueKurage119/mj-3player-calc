@@ -1,6 +1,5 @@
 .tile {
-  --tile-width: 2.5rem;
-  width: var(--tile-width);
+  width: var(--tile-width, 2.5rem);
   aspect-ratio: 3 / 4;
   display: inline-grid;
   position: relative;
@@ -28,17 +27,25 @@ button.tile {
   user-select: none;
 }
 
-/* 押下可能時のホバー/押下の状態層 */
+.tile__face {
+  transform: scale(0.9);
+}
+
+/* 押下可能時のホバー/フォーカス/押下の状態層 */
 button.tile::after {
   content: "";
   grid-area: 1 / 1;
-  background: var(--md-sys-color-on-surface);
+  background: var(--md-sys-color-scrim);
   opacity: 0;
   pointer-events: none;
 }
 
 button.tile:hover::after {
   opacity: 0.08;
+}
+
+button.tile:focus-visible::after {
+  opacity: 0.1;
 }
 
 button.tile:active::after {

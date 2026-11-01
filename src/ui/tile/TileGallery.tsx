@@ -93,6 +93,42 @@ export function TileGallery(): JSX.Element {
       </section>
 
       <section style={{ marginBottom: '2rem' }}>
+        <h2>親要素による --tile-width 指定の確認 (1.5rem vs 4rem)</h2>
+        <div style={{ display: 'flex', gap: '2rem', alignItems: 'flex-end' }}>
+          <div>
+            <p>親要素で 1.5rem 指定</p>
+            <div
+              style={
+                {
+                  display: 'flex',
+                  gap: '0.5rem',
+                  '--tile-width': '1.5rem'
+                } as React.CSSProperties
+              }
+            >
+              <Tile tile={{ type: 'z', n: 1 }} />
+              <Tile tile={{ type: 'back' }} />
+            </div>
+          </div>
+          <div>
+            <p>親要素で 4rem 指定</p>
+            <div
+              style={
+                {
+                  display: 'flex',
+                  gap: '0.5rem',
+                  '--tile-width': '4rem'
+                } as React.CSSProperties
+              }
+            >
+              <Tile tile={{ type: 'z', n: 1 }} />
+              <Tile tile={{ type: 'back' }} />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section style={{ marginBottom: '2rem' }}>
         <h2>状態バリエーション</h2>
         <div
           style={{
