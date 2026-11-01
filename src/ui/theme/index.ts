@@ -12,5 +12,13 @@ export {
   resolveTheme,
   createThemeController,
   initTheme,
-  type ThemeController
+  type ThemeController,
+  type SetPreferenceOptions
 } from './apply-theme';
+
+export {
+  useTheme,
+  createThemeStore,
+  type ThemeState,
+  type ThemeStore
+} from './use-theme';

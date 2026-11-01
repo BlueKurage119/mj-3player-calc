@@ -1,0 +1,80 @@
+/*
+ * 後続の部品向けの注意:
+ * border-radius を spring で動かす部品は、full を 9999 ピクセルで表さず要素寸法の半分で表すこと。
+ * 寸法が不定(内容幅で高さが決まらない等)で半分を与えられない場合は、spring をやめて行き過ぎのない
+ * イージング(--md-sys-motion-easing-* の3次ベジェ系トークン。0〜1 を超えないもの)を border-radius に使うこと。
+ */
+
+.expressive-shape-morph {
+  --expressive-morph-full: calc(var(--expressive-morph-height) / 2);
+  --expressive-morph-rest: var(--expressive-morph-full);
+  --expressive-morph-selected: var(--expressive-morph-full);
+  --expressive-morph-pressed: var(--md-sys-shape-corner-small);
+
+  border-start-start-radius: var(
+    --expressive-morph-rest-ss,
+    var(--expressive-morph-rest)
+  );
+  border-start-end-radius: var(
+    --expressive-morph-rest-se,
+    var(--expressive-morph-rest)
+  );
+  border-end-start-radius: var(
+    --expressive-morph-rest-es,
+    var(--expressive-morph-rest)
+  );
+  border-end-end-radius: var(
+    --expressive-morph-rest-ee,
+    var(--expressive-morph-rest)
+  );
+
+  transition-property: border-radius;
+  transition-duration: var(--md-sys-motion-spring-spatial-fast-duration);
+  transition-timing-function: var(--md-sys-motion-spring-spatial-fast-easing);
+}
+
+.expressive-shape-morph[aria-checked="true"],
+.expressive-shape-morph[aria-pressed="true"],
+.expressive-shape-morph[aria-selected="true"] {
+  border-start-start-radius: var(
+    --expressive-morph-selected-ss,
+    var(--expressive-morph-selected)
+  );
+  border-start-end-radius: var(
+    --expressive-morph-selected-se,
+    var(--expressive-morph-selected)
+  );
+  border-end-start-radius: var(
+    --expressive-morph-selected-es,
+    var(--expressive-morph-selected)
+  );
+  border-end-end-radius: var(
+    --expressive-morph-selected-ee,
+    var(--expressive-morph-selected)
+  );
+}
+
+.expressive-shape-morph:active {
+  border-start-start-radius: var(
+    --expressive-morph-pressed-ss,
+    var(--expressive-morph-pressed)
+  );
+  border-start-end-radius: var(
+    --expressive-morph-pressed-se,
+    var(--expressive-morph-pressed)
+  );
+  border-end-start-radius: var(
+    --expressive-morph-pressed-es,
+    var(--expressive-morph-pressed)
+  );
+  border-end-end-radius: var(
+    --expressive-morph-pressed-ee,
+    var(--expressive-morph-pressed)
+  );
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .expressive-shape-morph {
+    transition: none;
+  }
+}

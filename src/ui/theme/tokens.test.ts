@@ -167,11 +167,11 @@ describe('トークン生成物の静的検査 (C1-K01〜K05)', () => {
     expect(codeOnly).toContain('--md-ref-typeface-brand:');
     expect(codeOnly).toContain('--md-ref-typeface-plain:');
 
-    // typescale 75 変数 (15 役割 × 5)
+    // typescale 80 変数 (15 役割 × 5 + emphasized label-large 5)
     const typescaleMatches = Array.from(
       new Set(codeOnly.match(/--md-sys-typescale-[a-z0-9-]+(?=:)/g))
     );
-    expect(typescaleMatches.length).toBe(75);
+    expect(typescaleMatches.length).toBe(80);
 
     // 規約クラス .tabular-nums
     expect(codeOnly).toContain('.tabular-nums {');

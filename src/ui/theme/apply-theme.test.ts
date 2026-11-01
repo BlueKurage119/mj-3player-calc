@@ -230,4 +230,40 @@ describe('テーマの適用 (C1-A01〜A08)', () => {
     expect(controller.getResolved()).toBe('light');
     expect(root.dataset.theme).toBe('light');
   });
+
+  it('C2-T01: setPreference で persist: false を指定すると storage に保存されず、未指定なら保存される', () => {
+    const root = createMockRoot();
+    const mockMql = new MockMediaQuery(false);
+    const { storage, map } = createMockStorage();
+    const setItemSpy = vi.spyOn(storage, 'setItem');
+
+    const controller = createThemeController({
+      storage,
+      matchMedia: () => mockMql,
+      root
+    });
+
+    // 初期状態は保存されない
+    expect(setItemSpy).toHaveBeenCalledTimes(0);
+
+    // persist: false で変更
+    controller.setPreference('dark', { persist: false });
+    expect(setItemSpy).toHaveBeenCalledTimes(0);
+    expect(controller.getPreference()).toBe('dark');
+    expect(controller.getResolved()).toBe('dark');
+    expect(root.dataset.theme).toBe('dark');
+    expect(map.get(APP_SETTINGS_STORAGE_KEY)).toBeUndefined();
+
+    // 通常の呼び出し(persist 未指定)では保存される
+    controller.setPreference('light');
+    expect(setItemSpy).toHaveBeenCalledTimes(1);
+    expect(controller.getPreference()).toBe('light');
+    expect(controller.getResolved()).toBe('light');
+    expect(root.dataset.theme).toBe('light');
+    const saved = map.get(APP_SETTINGS_STORAGE_KEY);
+    expect(JSON.parse(saved as string)).toEqual({
+      version: 1,
+      settings: { theme: 'light' }
+    });
+  });
 });

@@ -1,13 +1,21 @@
 import { Suspense, lazy } from 'react';
-import { isTileGalleryMode } from './app-mode';
+import { isMdGalleryMode, isTileGalleryMode } from './app-mode';
 
 const TileGallery = lazy(() => import('./tile/TileGallery'));
+const MdGallery = lazy(() => import('./md/MdGallery'));
 
 export const App = () => {
   if (isTileGalleryMode(window.location.search)) {
     return (
       <Suspense fallback={null}>
         <TileGallery />
+      </Suspense>
+    );
+  }
+  if (isMdGalleryMode(window.location.search)) {
+    return (
+      <Suspense fallback={null}>
+        <MdGallery />
       </Suspense>
     );
   }
