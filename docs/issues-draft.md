@@ -65,6 +65,8 @@
 - **D4. 副露・抜き北・ドラ表示牌の入力**
 - **D5. 状況の入力**
   自風・場風・ツモ／ロン・立直などの偶然役・本場・供託。
+- **D6. ルール設定画面**
+  `RULE_ITEMS` から設定画面を組み立てる。プリセットの選択と一致表示(`RULE_PRESETS`・`findRulePreset`)、起動時の `loadRule` と変更時の `saveRule` の接続。未決: 項目の並び順・グループ・説明文、利用者プリセットの名前付き保存を含めるか。
 
 ## [Epic E: 結果表示](https://github.com/BlueKurage119/mj-3player-calc/issues/6)
 
