@@ -225,47 +225,87 @@ export function isMdGalleryMode(search: string): boolean;
 
 ### 2.5 `src/ui/expressive/`(自作)
 
+> 改訂2(2026-11-01): 初版の segmented button の器(枠線共有・隙間なし)に Expressive の形の変化を足した混在をやめ、M3 Expressive の **connected button group** に揃える(ユーザー確定。M3 Expressive では segmented button は非推奨)。部品名を `ConnectedButtonGroup` に改める。
+
 ```
 src/ui/expressive/
-  index.ts                 バレル(ShapeMorph 系と SegmentedButtonGroup)
-  shape-morph.css          図形モーフの土台
-  shape-morph.ts           クラス名定数と型
-  SegmentedButtonGroup.tsx 単一選択の segmented(connected button group)
-  segmented-logic.ts       キー操作・選択の純関数
-  segmented-logic.test.ts
+  index.ts                    バレル(ShapeMorph 系と ConnectedButtonGroup)
+  shape-morph.css             図形モーフの土台
+  shape-morph.ts              クラス名定数と型
+  ConnectedButtonGroup.tsx    単一選択の connected button group
+  connected-button-group.css  部品の CSS(旧 segmented-button-group.css を改名・改訂)
+  connected-logic.ts          キー操作・選択の純関数(旧 segmented-logic.ts を改名。中身は維持)
+  connected-logic.test.ts     (旧 segmented-logic.test.ts を改名。テスト名の接頭辞 C2 は維持)
 ```
 
-図形モーフの土台:
+旧名のファイル(`SegmentedButtonGroup.tsx`・`segmented-button-group.css`・`segmented-logic.ts`・`segmented-logic.test.ts`)は `git mv` で改名し、旧名を残さない(`grep -rni segmented src` がヒット0)。
 
-- クラス `.expressive-shape-morph` を付けた要素は `border-radius: var(--expressive-morph-rest)`、`[aria-checked="true"]`・`[aria-pressed="true"]`・`[aria-selected="true"]` で `var(--expressive-morph-selected)`、`:active`(押下)で `var(--expressive-morph-pressed)` に変わる。**`:active` の規則は選択状態の規則より後ろに書く**(詳細度が同じため、後勝ちで選択中の押下でも pressed になるようにする)。
-- 3変数の既定値はいずれも `--md-sys-shape-*` を参照する(rest=`corner-full`、pressed=`corner-small`、selected=`corner-full`)。
-- `transition: border-radius var(--md-sys-motion-spring-spatial-fast-duration) var(--md-sys-motion-spring-spatial-fast-easing)`。px・ms・cubic-bezier を直書きしない。
+#### 2.5.1 出典と照合状況
+
+出典(androidx-main ブランチ、2026-11-01 取得。パス接頭辞 `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/`):
+
+| 値 | 本設計の値 | 出典(ファイル・定数) | 状況 |
+| --- | --- | --- | --- |
+| ボタン間の隙間 | 2dp → `0.125rem` | `tokens/ConnectedButtonGroupSmallTokens.kt` `BetweenSpace = 2.0.dp`、`ButtonGroup.kt` `ButtonGroupDefaults.ConnectedSpaceBetween` | 照合済み |
+| 高さ(Small) | 40dp → `2.5rem` | `ConnectedButtonGroupSmallTokens.ContainerHeight = 40.0.dp` | 照合済み |
+| 外側の角 | full(固定) | `ButtonGroupDefaults.connectedLeadingButtonShape`/`connectedTrailingButtonShape` の外側 = `ShapeDefaults.CornerFull`、押下形でも同じ | 照合済み |
+| 内側の角(通常) | small 8dp | `ConnectedButtonGroupSmallTokens.InnerCornerCornerSize = ShapeTokens.CornerValueSmall`(8.0.dp) | 照合済み |
+| 内側の角(押下) | extra-small 4dp | `PressedInnerCornerCornerSize = ShapeTokens.CornerValueExtraSmall`(4.0.dp) | 照合済み |
+| 中間ボタン(通常) | 4隅 small | `connectedMiddleButtonShapes(shape = ShapeDefaults.Small, ...)` | 照合済み |
+| 中間ボタン(押下) | 4隅 extra-small | `connectedMiddleButtonPressShape = RoundedCornerShape(PressedInnerCornerCornerSize)` | 照合済み |
+| 選択中の形 | 4隅 full(ピル) | `connectedButtonCheckedShape = ShapeTokens.CornerFull`(CircleShape)。トークン `SelectedInnerCornerCornerSizePercent = 50.0f` | 照合済み |
+| 優先順 | 押下 > 選択 > 通常 | `ToggleButton.kt` `shapeByInteraction`(pressed → checked → shape の順) | 照合済み |
+| 未選択の塗り/文字 | `surface-container` / `on-surface-variant` | `ToggleButton.kt` `defaultToggleButtonColors` → `tokens/FilledButtonTokens.kt` `UnselectedContainerColor = SurfaceContainer`、`UnselectedPressedLabelTextColor = OnSurfaceVariant` | 照合済み |
+| 選択中の塗り/文字 | `primary` / `on-primary` | 同 `SelectedContainerColor = Primary`、`SelectedPressedLabelTextColor = OnPrimary` | 照合済み |
+| 枠線 | なし | `defaultToggleButtonColors` は塗りのみ(枠線は Outlined 版だけ) | 照合済み |
+| 形の遷移 | spatial-fast | `ToggleButton.kt` `MotionSchemeKeyTokens.FastSpatial`(角の大きさを Float で補間) | 照合済み |
+| full の解決 | 要素の大きさに対する割合 | `ShapeTokens.CornerFull = CircleShape`(50%)。Compose は角を実寸 px に解決してから補間するため、行き過ぎは数 px 程度に留まる | 照合済み(ソース読解による) |
+| segmented button の非推奨、connected の図解 | — | m3.material.io(Button groups / Segmented buttons)。JS 描画のため本文を取得できず | **未照合**(非推奨はユーザー確定事項として扱う) |
+
+#### 2.5.2 図形モーフの土台(`shape-morph.css`)
+
+- クラス `.expressive-shape-morph` を付けた要素は、角ごとの変数で形を決める。各隅を `border-start-start-radius` 等の論理プロパティで個別に指定し、次の3状態 × 4隅の変数を参照する: rest(既定)・selected(`[aria-checked="true"]`・`[aria-pressed="true"]`・`[aria-selected="true"]`)・pressed(`:active`)。**`:active` の規則は選択状態の規則より後ろに書く**(押下 > 選択 > 通常。出典の優先順と一致)。
+- 変数名は `--expressive-morph-{rest|selected|pressed}-{ss|se|es|ee}`(start-start 等)を基本とし、4隅一括の `--expressive-morph-rest` 等を既定値に持たせてよい(製造の裁量)。既定値はいずれも `--md-sys-shape-*` か次の `--expressive-morph-full` を参照する(rest=full、pressed=small、selected=full)。
+- **full の表し方(直角化の対策)**: 土台の中では `--md-sys-shape-corner-full`(9999px)を使わず、`--expressive-morph-full`(既定 `calc(var(--expressive-morph-height) / 2)`)を使う。`--expressive-morph-height` は部品が自分の高さ(rem)で与える。理由: 9999px と spring(`--md-sys-motion-spring-spatial-fast-easing` の `linear()`、最大約 1.094 の行き過ぎ)を組み合わせると、9999px→8px の途中値が約 −930px になり、負の border-radius が 0 に切り詰められて一瞬直角になる。要素高さの半分なら変化幅は高々 16px で、行き過ぎは約 1.5px に収まり、最小値も正のまま(Compose が角を実寸に解決してから補間するのと同じ考え方)。
+- `transition: border-radius var(--md-sys-motion-spring-spatial-fast-duration) var(--md-sys-motion-spring-spatial-fast-easing)`(出典どおり spring を維持)。px・ms・cubic-bezier を直書きしない。
 - `@media (prefers-reduced-motion: reduce)` で `transition: none`。
-- CSS は `shape-morph.ts` から `import './shape-morph.css'` で読み込む(CSS の import は 06号6項の例外として可)。
+- CSS は `shape-morph.ts` から `import './shape-morph.css'` で読み込む(06号6項の例外として可)。
+- **後続の部品向けの注意(shape-morph.css 先頭のコメントにも書く)**: border-radius を spring で動かす部品は、full を 9999px で表さず要素寸法の半分で表すこと。寸法が不定(内容幅で高さが決まらない等)で半分を与えられない場合は、spring をやめて行き過ぎのない easing(`--md-sys-motion-easing-*` の cubic-bezier 系トークン。0〜1 を超えないもの)を border-radius に使うこと。
 
-`SegmentedButtonGroup`:
+#### 2.5.3 `ConnectedButtonGroup`
 
 ```ts
-export interface SegmentedOption<T extends string> { value: T; label: string; disabled?: boolean; }
-export interface SegmentedButtonGroupProps<T extends string> {
+export interface ConnectedOption<T extends string> { value: T; label: string; disabled?: boolean; }
+export interface ConnectedButtonGroupProps<T extends string> {
   label: string;                 // radiogroup の aria-label
-  options: readonly SegmentedOption<T>[]; // 2〜5 件を想定
+  options: readonly ConnectedOption<T>[]; // 2〜5 件を想定
   value: T;
   onValueChange: (value: T) => void;
 }
-export function SegmentedButtonGroup<T extends string>(p: SegmentedButtonGroupProps<T>): React.JSX.Element;
+export function ConnectedButtonGroup<T extends string>(p: ConnectedButtonGroupProps<T>): React.JSX.Element;
 ```
 
-- DOM: `<div role="radiogroup">` 内に各選択肢を `<button type="button" role="radio" aria-checked>` で並べる。各ボタンに `.expressive-shape-morph` と `Ripple`・`FocusRing`(md バレル経由)を入れる。
-- ローヴィングタブインデックス: 選択中のみ `tabIndex=0`、他は `-1`。←→(および ↑↓)で前後の有効な選択肢へ移動して選択(端で巡回)、Home/End で先頭/末尾。この計算は `segmented-logic.ts` の `nextIndex(options, current, key): number` 純関数にする。
-- 色: 選択中 `--md-sys-color-secondary-container` / `--md-sys-color-on-secondary-container`、非選択 `--md-sys-color-outline` の枠と `--md-sys-color-on-surface`。選択中ラベルは 2.4 の emphasized タイポ(追加しなかった場合は `label-large`)。
-- 寸法の書き方: `src/ui/md`・`src/ui/expressive` の CSS・TSX では px を書かない。枠線は `thin`(`border: thin solid ...`)または `0.0625rem`、余白・高さは `rem` で書く(4-12 の検査に合わせる)。
-- 外側の角は rest の形(`corner-full`)、内側の角は `--md-sys-shape-corner-extra-small`(`border-*-radius` の個別指定で割り当てる)。
+- DOM・役割は旧版を維持: `<div role="radiogroup">` 内に `<button type="button" role="radio" aria-checked>`。各ボタンに `.expressive-shape-morph` と `Ripple`・`FocusRing`(md バレル経由)。ローヴィングタブインデックス(選択中のみ `tabIndex=0`)。←→↑↓(端で巡回、disabled を飛ばす)・Home/End は `connected-logic.ts` の `nextIndex(options, current, key): number` 純関数(中身は変えない)。
+- 並び: `display: flex`、`gap: 0.125rem`(2dp)。枠線を共有しない・重ねない(負のマージンを使わない)。ボタンは等幅(`flex: 1 1 0`)。
+- 寸法: 高さ `2.5rem`(40dp)。`--expressive-morph-height: 2.5rem` を与える。左右の余白は `1rem` を目安(未照合。製造の裁量)。
+- 枠線: なし(`border: none`)。
+- 塗り: 未選択 `--md-sys-color-surface-container` / 文字 `--md-sys-color-on-surface-variant`。選択中 `--md-sys-color-primary` / 文字 `--md-sys-color-on-primary`。塗りの切替は `background-color` を `--md-sys-motion-spring-effects-fast-*` で遷移してよい(任意)。disabled は文字・塗りとも on-surface の不透明度(既存ラッパーの作法に合わせる。値は未照合)。
+- 選択中ラベルは 2.4 の emphasized タイポ(追加しなかった場合は `label-large`)。未選択は `label-large`。
+- 角(位置ごと。先頭/末尾は書字方向の start/end):
+
+| 位置 | 通常 | 押下 | 選択中 |
+| --- | --- | --- | --- |
+| 先頭 | 外側 full / 内側 small | 外側 full / 内側 extra-small | 4隅 full |
+| 中間 | 4隅 small | 4隅 extra-small | 4隅 full |
+| 末尾 | 外側 full / 内側 small | 外側 full / 内側 extra-small | 4隅 full |
+
+  full は `--expressive-morph-full`、small・extra-small は `--md-sys-shape-corner-small`・`-extra-small`。選択中に押下したときは押下の形(出典の優先順)。選択肢が1件だけのときは4隅 full。
+- 寸法の書き方: px を書かない。余白・高さ・隙間は `rem`(4-12 の検査に合わせる)。
 
 ### 2.6 確認画面 `?gallery=md`
 
 - `src/ui/App.tsx`(変更): C3 の分岐と並べて `isMdGalleryMode(window.location.search)` のとき `lazy(() => import('./md/MdGallery'))` を `<Suspense fallback={null}>` で表示する。両方のパラメーターが無いときの表示は従来どおり。
-- `MdGallery.tsx` はバレルから export しない。内容: 2.2 の全ラッパーを各1回以上(Button は4種、IconButton は4種、Dialog は開くボタン付き)と `SegmentedButtonGroup`(3選択肢)を並べ、`useTheme()` の `resolved` と `preference` を表示する。ライト/ダークの切替は `?theme=` で行う(画面内トグルは作らない)。
+- `MdGallery.tsx` はバレルから export しない。内容: 2.2 の全ラッパーを各1回以上(Button は4種、IconButton は4種、Dialog は開くボタン付き)と `ConnectedButtonGroup`(3選択肢)を並べ、`useTheme()` の `resolved` と `preference` を表示する。ライト/ダークの切替は `?theme=` で行う(画面内トグルは作らない)。
 - MdGallery 自身が `<md-*>` を直書きすることは禁止(ラッパー経由)。
 
 ### 2.7 バンドル予算
@@ -291,25 +331,25 @@ export function SegmentedButtonGroup<T extends string>(p: SegmentedButtonGroupPr
 4. **生タグの局所化**: `grep -rn "<md-" src --include='*.tsx' --include='*.ts' --exclude='*.test.ts'` のヒットがすべて `src/ui/md/` 配下かつ `MdGallery.tsx` 以外(`jsx.d.ts` の型宣言キーはタグでなく文字列なので対象外)。
 5. **bare import 禁止**: 以下はすべて `--exclude='*.test.ts'` を付けて実行する(4-6 の静的検査テスト自身が検査文字列を含むため)。`grep -rnE "^import\s+['\"]" src --exclude='*.test.ts'` のヒットが `.css` の import だけ。`grep -rn "@material/web/all" src --exclude='*.test.ts'` がヒット0。`grep -rn "@lit/react" src package.json --exclude='*.test.ts'` がヒット0。`grep -rn "labs/" src --exclude='*.test.ts'` がヒット0。
 6. **静的検査テスト**: `src/ui/md/md-static.test.ts` が存在し、上記 4・5 と同等(`src/` 走査で `<md-` の出現箇所、`@material/web` の bare import・`all.js`・`labs/` の不在)を検査している。テスト名は既存の命名規則(接頭辞 `C2`)に従う。故意に `src/ui/App.tsx` へ `<md-divider>` を一時的に追加すると失敗することを確認し、元に戻す(戻した後 `git status` が無差分)。
-7. **バレル**: `src/ui/md/index.ts` が 2.2 の部品(Button, IconButton, ChipSet, FilterChip, AssistChip, Switch, Dialog, Tabs, PrimaryTab, Select, SelectOption, Divider, Ripple, FocusRing)と Props 型を export し、`MdGallery` を export しない(`grep -n MdGallery src/ui/md/index.ts` がヒット0)。`src/ui/expressive/index.ts` が `SegmentedButtonGroup` を export する。
+7. **バレル**: `src/ui/md/index.ts` が 2.2 の部品(Button, IconButton, ChipSet, FilterChip, AssistChip, Switch, Dialog, Tabs, PrimaryTab, Select, SelectOption, Divider, Ripple, FocusRing)と Props 型を export し、`MdGallery` を export しない(`grep -n MdGallery src/ui/md/index.ts` がヒット0)。`src/ui/expressive/index.ts` が `ConnectedButtonGroup` を export し、`SegmentedButtonGroup` を export しない。`grep -rni segmented src` がヒット0。
 8. **app-mode**: `app-mode.test.ts` に C2 のケースがあり通る。`readThemeOverride`: `''`→`null`、`'?theme=dark'`→`'dark'`、`'?theme=light'`→`'light'`、`'?theme=auto'`→`'auto'`、`'?theme=DARK'`・`'?theme=foo'`→`null`、`'?gallery=md&theme=dark'`→`'dark'`。`isMdGalleryMode`: `''`・`'?gallery=tiles'`・`'?gallery=foo'`→`false`、`'?gallery=md'`・`'?theme=dark&gallery=md'`→`true`。C3 の既存ケースも通る。
 9. **保存しない経路**: `apply-theme.test.ts` に、モック storage で `setPreference('dark', { persist: false })` 後に storage の書き込みが0回かつ `getResolved()==='dark'`・`dataset.theme==='dark'`、`setPreference('dark')` では従来どおり1回書き込むケースがあり通る。
 10. **useTheme のストア**: `createThemeStore` のテストがあり通る。(a) 同じ状態で `getSnapshot()` を2回呼ぶと同一参照、(b) 解決値が変わらない preference 変更(システムライトで auto→light)でもストア経由の setter ならリスナーが呼ばれ snapshot の `preference` が更新される、(c) controller 側の解決値変化(メディア変化)でもリスナーが呼ばれる。
-11. **SegmentedButtonGroup のキー操作**: `segmented-logic.test.ts` が通り、→で次、←で前、末尾で→は先頭へ巡回、disabled を飛ばす、Home/End、無関係なキーは現在値のまま、を検査している。
+11. **ConnectedButtonGroup のキー操作**: `connected-logic.test.ts` が通り、→で次、←で前、末尾で→は先頭へ巡回、disabled を飛ばす、Home/End、無関係なキーは現在値のまま、を検査している。
 12. **トークン規約**: `grep -rnE "#[0-9a-fA-F]{3,8}\b" src/ui/md src/ui/expressive --include='*.ts' --include='*.tsx' --include='*.css' --exclude='*.test.ts'` がヒット0。`grep -rnE "[0-9]+ms|cubic-bezier|[0-9]px" src/ui/expressive src/ui/md --include='*.css' --include='*.tsx'` がヒット0(px は書かない。2.5 の寸法の書き方)。`grep -n "prefers-color-scheme" src/ui/expressive/*.css` がヒット0。
 13. **静的トークンの出典**: 2.4 の5変数を追加した場合、その近くに照合元のコメントがあり、名前と font・size・line-height・tracking が 2.4 の表どおり。照合できず追加しなかった場合は最終報告にその旨がある。どちらの場合も既存変数の値が変わっていない(`git diff main -- src/ui/theme/static-tokens.css` が追加行のみ)。`--md-sys-shape-` の変数が増えていない。
 14. **バンドル予算**: `npm run build` 後、`dist/index.html` の `<script type="module" src>` と `<link rel="modulepreload" href>` が指す JS をそれぞれ `gzip -9 -c <file> | wc -c` で測り、合計 ≤ 102,000。初回チャンクに `md-filled-button` の文字列が含まれない(`grep -c md-filled-button <初回JS>` が0)。`MdGallery` を含むチャンク(`md-filled-button` を含むチャンク)が別ファイルで存在し、その gzip サイズを記録する(合否対象外)。
 15. **既定表示の不変**: `npm run preview` でパラメーター無しの URL を開くと、従来どおりの表示(見出し「三麻点数計算機」)で、`customElements.get('md-filled-button')` が `undefined`。
 16. **仮切替**: (a) `?theme=dark` で `document.documentElement.dataset.theme==='dark'`、`localStorage.getItem('mj3calc.settings')` が開く前と同じ(開く前に `localStorage.clear()` しておけば `null`)。(b) `?theme=light` で `'light'`。(c) 不正値 `?theme=foo` では保存済み/既定どおりの解決値で、エラーがコンソールに出ない。
-17. **ギャラリー**: `?gallery=md` で、(a) `md-filled-button`・`md-filled-tonal-button`・`md-outlined-button`・`md-text-button`・`md-icon-button`・`md-filled-icon-button`・`md-filled-tonal-icon-button`・`md-outlined-icon-button`・`md-chip-set`・`md-filter-chip`・`md-assist-chip`・`md-switch`・`md-dialog`・`md-tabs`・`md-primary-tab`・`md-outlined-select`・`md-select-option`・`md-divider`・`md-ripple`・`md-focus-ring` のすべてで `customElements.get(...)` が定義済みで、DOM に1個以上存在する。(b) `[role="radiogroup"]` が存在し、その中の `[role="radio"]` が3個、`aria-checked="true"` がちょうど1個。2個目をクリックすると2個目だけが `aria-checked="true"`。(c) 選択中ボタン(自作の `<button role="radio">` なので light DOM のまま測れる)の `getComputedStyle(...).backgroundColor` が `rgb(214, 232, 206)`(ライトの `--md-sys-color-secondary-container` `#d6e8ce`。`src/ui/theme/tokens.css` 12行)。(d) 選択中ボタンの `transition-property` に `border-radius` を含む。(e) Dialog を開くボタンのクリックで `md-dialog` の `open` が `true` になる。ダイアログの閉じる操作で `onClose` が呼ばれたことがギャラリー上の表示(最後の returnValue の表示等)で確認できる(Browser pane 非表示でも `close` イベントはアニメーション前に出るため確認可能)。(f) 画面上に `useTheme()` の preference と resolved が表示される。(g) コンソールにエラーが無い。
+17. **ギャラリー**: `?gallery=md` で、(a) `md-filled-button`・`md-filled-tonal-button`・`md-outlined-button`・`md-text-button`・`md-icon-button`・`md-filled-icon-button`・`md-filled-tonal-icon-button`・`md-outlined-icon-button`・`md-chip-set`・`md-filter-chip`・`md-assist-chip`・`md-switch`・`md-dialog`・`md-tabs`・`md-primary-tab`・`md-outlined-select`・`md-select-option`・`md-divider`・`md-ripple`・`md-focus-ring` のすべてで `customElements.get(...)` が定義済みで、DOM に1個以上存在する。(b) `[role="radiogroup"]` が存在し、その中の `[role="radio"]` が3個、`aria-checked="true"` がちょうど1個。2個目をクリックすると2個目だけが `aria-checked="true"`。(c) 選択中ボタン(自作の `<button role="radio">` なので light DOM のまま測れる)の `getComputedStyle(...).backgroundColor` が `rgb(60, 105, 57)`(ライトの `--md-sys-color-primary` `#3c6939`。`src/ui/theme/tokens.css` 5行)、未選択ボタンが `rgb(236, 239, 230)`(`--md-sys-color-surface-container` `#ecefe6`。同 41行)。全ボタンの `borderTopWidth` が `0px`。隣り合うボタンの `getBoundingClientRect()` で、前の `right` と次の `left` の差が 2(±0.5)。(d) 選択中ボタンの `transition-property` に `border-radius` を含む。各ボタンの `getComputedStyle` の4隅の半径が 2.5.3 の表の「通常」「選択中」どおり(full は `20px`、small `8px`)で、`9999px` を含まない。`grep -n "corner-full" src/ui/expressive/*.css` のヒットが `--expressive-morph-full` の定義以外に無い(9999px を border-radius の遷移に使っていない)。(e) Dialog を開くボタンのクリックで `md-dialog` の `open` が `true` になる。ダイアログの閉じる操作で `onClose` が呼ばれたことがギャラリー上の表示(最後の returnValue の表示等)で確認できる(Browser pane 非表示でも `close` イベントはアニメーション前に出るため確認可能)。(f) 画面上に `useTheme()` の preference と resolved が表示される。(g) コンソールにエラーが無い。
 18. **ギャラリー+ダーク**: `?gallery=md&theme=dark` で `dataset.theme==='dark'`、`getComputedStyle(document.querySelector('md-filled-button').shadowRoot.querySelector('.background')).backgroundColor` が `rgb(161, 211, 153)`(ダークの `--md-sys-color-primary` `#a1d399`。`tokens.css` 58行)。ホスト要素自体には背景が無い(`button/internal/shared-styles` で背景は Shadow DOM 内の `.background`)ため、ホストを測らない。
-19. **逆発注(合否保留可)**: 図形モーフのアニメーションの見え方・ライト/ダークの主観評価は C-02 に従い、検収担当が実測不能項目として申告する。
+19. **逆発注(合否保留可)**: 次の観点の目視・ライト/ダークの主観評価は C-02 に従い、検収担当が実測不能項目として申告する。(i) 押下で内側の角だけが小さくなり、外側は丸いまま。(ii) 選択するとそのボタンがピル形になる。(iii) 押下・離す・選択切替のどの遷移でも一瞬直角にならない。(iv) ボタン同士が 2dp 離れ、枠線が無い。
 20. **差分範囲**: `git diff --stat main...HEAD` の変更が、`package.json`・`package-lock.json`・`src/main.tsx`・`src/ui/App.tsx`・`src/ui/app-mode.ts`・`src/ui/app-mode.test.ts`・`src/ui/theme/`(`apply-theme.ts`・`apply-theme.test.ts`・`use-theme.ts`・そのテスト・`index.ts`・`static-tokens.css`)・`src/ui/md/`・`src/ui/expressive/`・`docs/design/issue-40-md-wrappers.md`(設計書の資産化、01号)の範囲に収まる。2.4 の確定事項により `src/ui/theme/tokens.test.ts`(`C1-K04` の typescale 期待値の更新のみ)も可。ホームディレクトリ名・絶対パスが差分に無い(`git diff main...HEAD | grep -nE "/Users/|/home/"` がヒット0)。
 
 ## 5. 後続 Issue への引き継ぎ
 
 - **D 系・E 系**: 部品は `src/ui/md`・`src/ui/expressive` のバレルからのみ使う。足りない部品(list・menu・textfield・fab・progress 等)は使う Issue でラッパーを追加し、`md-static.test.ts` の対象一覧と 4-17 相当の確認を足す。イベント・状態プロパティは ref 経由の作法(2.2)に揃える。
-- **D5**: 自風・場風・ツモロンは `SegmentedButtonGroup` を想定。複数選択・アイコン付きが要れば D5 で拡張する。
+- **D5**: 自風・場風・ツモロンは `ConnectedButtonGroup` を想定。複数選択・アイコン付きが要れば D5 で拡張する。
 - **D6**: 列挙は `Select`、真偽は `Switch`。テーマ切替 UI は `useTheme().setPreference(pref)`(既定で保存)。`?theme=` は保存しない仮切替として残すかを D6 で判断する。
 - **D1**: 画面の骨格ができたら `?gallery=md` 分岐の扱い(撤去・開発時限定)を `?gallery=tiles` と合わせて見直す。撤去時は `MdGallery.tsx` と `isMdGalleryMode` も整理してよい。
 - **loading indicator・split button・FAB menu** などの Expressive 部品は、使い道が決まった Issue で `src/ui/expressive/` に自作する。
@@ -326,3 +366,9 @@ export function SegmentedButtonGroup<T extends string>(p: SegmentedButtonGroupPr
 - 初回 JS の実測値(本プロジェクトでのビルドは未実施。1.4 は repo 外の最小構成での値)。
 - `md-outlined-select` が `md-menu` を内部で取り込むことによるギャラリーチャンクの大きさ(枠外のため合否に影響しない)。
 - C3 マージ後の `app-mode.ts`・`App.tsx` の実物(0章)。
+- m3.material.io の Button groups / Segmented buttons の記載(JS 描画で取得できず未照合。値は androidx のソースで照合済み)。ConnectedButtonGroup の左右余白・disabled の不透明度(未照合)。
+
+## 7. 改訂履歴
+
+- 改訂2(2026-11-01): 2.5 を全面改訂。`SegmentedButtonGroup` を `ConnectedButtonGroup` に改名(ファイル名・型名・ロジック/テストのファイル名)。器を初版 segmented(枠線共有・隙間なし・secondary-container の塗り)から connected button group(隙間 2dp・枠線なし・未選択 surface-container/選択中 primary)に変更。角を出典どおりに変更(内側 small、押下は内側だけ extra-small、選択中は4隅 full。旧版は内側 extra-small・押下は4隅 small・選択で不変)。full を 9999px ではなく要素高さの半分で表し、spring の行き過ぎで直角になる問題を解消。後続部品向けの注意を追加。値ごとの出典表(2.5.1)を追加。受け入れ条件 7・11・17(c)(d)・19 と 2.6・5章の部品名を改訂。
+- 初版: 製造済み(コミット 3017ef9)。
