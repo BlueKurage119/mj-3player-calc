@@ -1,0 +1,26 @@
+.expressive-shape-morph {
+  --expressive-morph-rest: var(--md-sys-shape-corner-full);
+  --expressive-morph-selected: var(--md-sys-shape-corner-full);
+  --expressive-morph-pressed: var(--md-sys-shape-corner-small);
+
+  border-radius: var(--expressive-morph-rest);
+  transition-property: border-radius;
+  transition-duration: var(--md-sys-motion-spring-spatial-fast-duration);
+  transition-timing-function: var(--md-sys-motion-spring-spatial-fast-easing);
+}
+
+.expressive-shape-morph[aria-checked="true"],
+.expressive-shape-morph[aria-pressed="true"],
+.expressive-shape-morph[aria-selected="true"] {
+  border-radius: var(--expressive-morph-selected);
+}
+
+.expressive-shape-morph:active {
+  border-radius: var(--expressive-morph-pressed);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .expressive-shape-morph {
+    transition: none;
+  }
+}
