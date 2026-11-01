@@ -1,6 +1,6 @@
 # Issue化ドラフト(Epic単位)
 
-更新日: 2026-11-01(Epic C の Sub-Issue を登録)
+更新日: 2026-11-01(Epic D の Sub-Issue を登録)
 
 [要件](requirements.md)を実装タスクに分けた下書き。Issue を登録したら、見出しを GitHub の Issue へのリンクにする。各 Epic は親 Issue とし、項目は着手時に Sub-Issue として登録する。マイルストーンは Epic ごとに設け(「Epic A: 計算コアの三麻化」など)、親 Issue とその Sub-Issue に付ける。識別番号(A1 など)は Issue 番号とは別で、どの Epic のどの項目かを示すために使う。各項目の未決事項は、着手前のヒアリングで決める。
 
@@ -56,17 +56,18 @@
 
 ## [Epic D: 入力 UI](https://github.com/BlueKurage119/mj-3player-calc/issues/5)
 
-- **D1. 画面の骨格**
-  入力部と結果部の配置(mahjong-calc を参考に)。片手操作を前提にする。
-- **D2. パレット入力**
-  三麻の牌だけを表示する。枚数の上限、赤牌。
-- **D3. テンキー入力**
+- **[D1. 画面の骨格](https://github.com/BlueKurage119/mj-3player-calc/issues/51)**
+  入力部と結果部の配置(mahjong-calc を参考に)。片手操作を前提にする。入力状態の持ち方と計算の呼び出し口。`?gallery=tiles`・`?gallery=md` の分岐の扱いとバンドル予算の見直し。未決: 要件の【設計案】(和了牌の指定方式・タップ領域と配置・表示までの時間)の確定。
+- **[D2. パレット入力](https://github.com/BlueKurage119/mj-3player-calc/issues/46)**
+  三麻の牌だけを表示する。枚数の上限、赤牌。手牌の削除・並べ替え。
+- **[D3. テンキー入力](https://github.com/BlueKurage119/mj-3player-calc/issues/47)**
   mj-mighty-calc の自作部分(`Tenkey.tsx` 等)を移植する。物理キーボード対応。D2 と入力内容を共有する。
-- **D4. 副露・抜き北・ドラ表示牌の入力**
-- **D5. 状況の入力**
-  自風・場風・ツモ／ロン・立直などの偶然役・本場・供託。
-- **D6. ルール設定画面**
-  `RULE_ITEMS` から設定画面を組み立てる。プリセットの選択と一致表示(`RULE_PRESETS`・`findRulePreset`)、起動時の `loadRule` と変更時の `saveRule` の接続。未決: 項目の並び順・グループ・説明文、利用者プリセットの名前付き保存を含めるか。
+- **[D4. 副露・抜き北・ドラ表示牌の入力](https://github.com/BlueKurage119/mj-3player-calc/issues/48)**
+  副露はポン・明槓・暗槓・加槓(チーは出さない)。抜き北は北が共通役牌のルールでは無効にする。裏ドラ表示牌も入力し、計算コアには表裏をまとめて `dora` で渡す。計算コアの `Chii` 型等の削除は含まない。
+- **[D5. 状況の入力](https://github.com/BlueKurage119/mj-3player-calc/issues/49)**
+  自風・場風・ツモ／ロン・立直などの偶然役・本場・供託。ルールに応じた出し分け(オープン立直・燕返し・槓振り・一発なし)。抜き北へのロン・嶺上ツモの案内。
+- **[D6. ルール設定画面](https://github.com/BlueKurage119/mj-3player-calc/issues/50)**
+  `RULE_ITEMS` から設定画面を組み立てる。プリセットの選択と一致表示(`RULE_PRESETS`・`findRulePreset`)、起動時の `loadRule` と変更時の `saveRule` の接続。テーマ切替 UI。未決: 項目の並び順・グループ・説明文、利用者プリセットの名前付き保存を含めるか。
 
 ## [Epic E: 結果表示](https://github.com/BlueKurage119/mj-3player-calc/issues/6)
 
