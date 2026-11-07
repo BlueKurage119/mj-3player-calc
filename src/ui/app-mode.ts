@@ -1,5 +1,10 @@
 import { THEME_PREFERENCES, type ThemePreference } from './theme';
 
+/** ギャラリーが有効かどうかを判定する (DEV 時のみ true) */
+export function isGalleryEnabled(isDev: boolean): boolean {
+  return isDev;
+}
+
 /** URL クエリ文字列から牌ギャラリーモード (?gallery=tiles) かどうかを判定する */
 export function isTileGalleryMode(search: string): boolean {
   return new URLSearchParams(search).get('gallery') === 'tiles';
