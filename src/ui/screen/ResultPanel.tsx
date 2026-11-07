@@ -1,21 +1,28 @@
-import { useRef } from 'react';
+import { type MutableRefObject, useLayoutEffect, useRef } from 'react';
 import type React from 'react';
-import type { Result } from '../../core/result';
+import type { ResultState } from '../calc/result-state';
 import { useInView } from './use-in-view';
 
-export type ResultViewState =
-  | { status: 'loading' }
-  | { status: 'ok'; result: Result }
-  | { status: 'error'; error: unknown };
-
 export interface ResultPanelProps {
-  resultState: ResultViewState;
+  resultState: ResultState;
+  dispatchTimestampRef?: MutableRefObject<number | null> | undefined;
 }
 
 export function ResultPanel(props: ResultPanelProps): React.JSX.Element {
-  const { resultState } = props;
+  const { resultState, dispatchTimestampRef } = props;
   const sentinelRef = useRef<HTMLDivElement | null>(null);
   const sectionRef = useRef<HTMLElement | null>(null);
+
+  useLayoutEffect(() => {
+    if (import.meta.env.DEV && dispatchTimestampRef) {
+      const t0 = dispatchTimestampRef.current;
+      if (t0 !== null) {
+        dispatchTimestampRef.current = null;
+        const ms = performance.now() - t0;
+        console.debug('[d1-latency]', ms);
+      }
+    }
+  });
 
   const isExpanded = useInView(
     sentinelRef,

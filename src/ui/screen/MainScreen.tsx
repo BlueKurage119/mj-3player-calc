@@ -1,7 +1,9 @@
 import { useRef } from 'react';
 import type React from 'react';
+import { useResult } from '../calc/use-result';
 import { BottomSheet, Stepper } from '../expressive';
 import {
+  type AppAction,
   STEPPER_BOUNDS,
   type SheetTarget,
   isNukiEnabled,
@@ -10,12 +12,10 @@ import {
 } from '../state';
 import { AppHeader } from './AppHeader';
 import { HandCard } from './HandCard';
-import { ResultPanel, type ResultViewState } from './ResultPanel';
+import { ResultPanel } from './ResultPanel';
 import { SummaryCard } from './SummaryCard';
 import { useInView } from './use-in-view';
 import './main-screen.css';
-
-const STATIC_LOADING_RESULT: ResultViewState = { status: 'loading' };
 
 const getSheetSlotName = (target: SheetTarget | null): string => {
   if (!target) return 'sheet-empty';
@@ -36,6 +36,15 @@ const getSheetSlotName = (target: SheetTarget | null): string => {
 export function MainScreen(): React.JSX.Element {
   const { rule, table, input, inputFocus } = useAppState();
   const dispatch = useAppDispatch();
+  const resultState = useResult();
+  const dispatchTimestampRef = useRef<number | null>(null);
+
+  const trackedDispatch = (action: AppAction) => {
+    if (import.meta.env.DEV) {
+      dispatchTimestampRef.current = performance.now();
+    }
+    dispatch(action);
+  };
 
   const topSentinelRef = useRef<HTMLDivElement | null>(null);
   const isTopInView = useInView(topSentinelRef, undefined, true);
@@ -60,7 +69,7 @@ export function MainScreen(): React.JSX.Element {
               min={STEPPER_BOUNDS.continue[0]}
               max={STEPPER_BOUNDS.continue[1]}
               onStep={delta =>
-                dispatch({ type: 'step', field: 'continue', delta })
+                trackedDispatch({ type: 'step', field: 'continue', delta })
               }
             />
             <Stepper
@@ -69,7 +78,7 @@ export function MainScreen(): React.JSX.Element {
               min={STEPPER_BOUNDS.deposit[0]}
               max={STEPPER_BOUNDS.deposit[1]}
               onStep={delta =>
-                dispatch({ type: 'step', field: 'deposit', delta })
+                trackedDispatch({ type: 'step', field: 'deposit', delta })
               }
             />
             <Stepper
@@ -78,7 +87,9 @@ export function MainScreen(): React.JSX.Element {
               min={STEPPER_BOUNDS.nuki[0]}
               max={STEPPER_BOUNDS.nuki[1]}
               disabled={!isNukiEnabled(rule)}
-              onStep={delta => dispatch({ type: 'step', field: 'nuki', delta })}
+              onStep={delta =>
+                trackedDispatch({ type: 'step', field: 'nuki', delta })
+              }
             />
           </div>
           <div className="input-slot" data-slot="dora-uradora" />
@@ -87,7 +98,10 @@ export function MainScreen(): React.JSX.Element {
           <div className="input-slot" data-slot="situation" />
         </section>
         <SummaryCard visible={summaryVisible} sheetOpen={sheetOpen} />
-        <ResultPanel resultState={STATIC_LOADING_RESULT} />
+        <ResultPanel
+          resultState={resultState}
+          dispatchTimestampRef={dispatchTimestampRef}
+        />
         <div className="main-screen__bottom-spacer" aria-hidden="true" />
       </main>
       <BottomSheet
