@@ -14,3 +14,8 @@ export {
   Stepper,
   type StepperProps
 } from './Stepper';
+
+export {
+  BottomSheet,
+  type BottomSheetProps
+} from './BottomSheet';
