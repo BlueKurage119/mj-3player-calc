@@ -1,6 +1,9 @@
 # Issue #47 D3. テンキー入力 設計書
 
-- 状態: 設計案(未承認)
+- 状態: 設計案(未承認。v5)
+- 版履歴:
+  - v1〜v4: 初版〜ヒアリング反映。v4 は段階 1〜7 として実装済み(HEAD 9fc9818)。
+  - v5: UI 監修の確定事項を反映。(1)入力方式トグルの見た目の高さを 40dp(M3E の S)に縮小し、当たり判定は `::after` で上下 4dp ずつ拡張して 48dp を維持(ステッパーと同じ作り)。ヘッダー行の箱は 48dp のまま(上下 4dp の余白に当たり判定を収め、シート上端・テンキーへ食い込ませないため)。シート高 321・`sheet-hand` の `min-height: 16rem` は不変。✕ は変更なし(見た目 40・当たり 48 は Material Web の既定どおり)。(2)`dialpad` アイコンだけ 20dp(呼び出し側で `size="1.25rem"`)。(3)段階 8 を追加し、条件 6・7・10・21 を更新、条件 23 を追加。
 - 対象: 底部シートの中身としてのテンキー(mighty 準拠の 4 列 × 5 行)、パレットとテンキーの切替(シートのヘッダー行)、入力バッファの手牌カードへの表示、物理キーボード対応、`BottomSheet` の `header` スロット追加、共通アイコン部品(`src/ui/icons/`)
 - 範囲外: ドラ・裏ドラ・副露・抜き北の入力(D4)、状況役(D5)、D1 条件 21(要約カードの固定。保留)、牌タップ削除の接続、ヘルプ吹き出し、拒否の文言・トースト、長押しリピートの特別扱い、320px 幅への対応、既存 8 か所のアイコンの差し替え
 
@@ -261,9 +264,12 @@ export interface ConnectedOption<T extends string = string> {
 ```
 
 - `ConnectedButtonGroup` は `icon` があれば `<span>{opt.label}</span>` の代わりに `<span aria-hidden="true" class="connected-button__icon">{icon}</span>` を描き、button に `aria-label={opt.label}` を付ける。`icon` が無ければ従来どおり(`aria-label` も付けない)。
-- トグル: `<ConnectedButtonGroup label="入力方式" className="sheet-mode-toggle" value={sheetMode} options={[{ value: 'palette', label: 'パレット', icon: <SymbolIcon d={SYMBOL_KEYBOARD_KEYS} /> }, { value: 'tenkey', label: 'テンキー', icon: <SymbolIcon d={SYMBOL_DIALPAD} /> }]} onValueChange={mode => dispatch({ type: 'set-sheet-mode', mode })} />`
+- トグル: `<ConnectedButtonGroup label="入力方式" className="sheet-mode-toggle" value={sheetMode} options={[{ value: 'palette', label: 'パレット', icon: <SymbolIcon d={SYMBOL_KEYBOARD_KEYS} /> }, { value: 'tenkey', label: 'テンキー', icon: <SymbolIcon d={SYMBOL_DIALPAD} size="1.25rem" /> }]} onValueChange={mode => dispatch({ type: 'set-sheet-mode', mode })} />`
 - 選択状態: 視覚は既存の選択中スタイル(`primary` 背景・全丸への形状モーフ)。支援技術には既存の `role="radiogroup"`(`aria-label="入力方式"`)・`role="radio"`・`aria-checked`。フォーカスは既存の `FocusRing` とロービングタブインデックス(選択中のボタンが Tab 停止点、矢印で移動して即切替)。
-- タップ領域: `.sheet-mode-toggle .connected-button { height: 3rem; --expressive-morph-height: 3rem; }` で 48dp にする(既定は 2.5rem)。幅はヘッダー行の残り(375 幅で 375 − 16 − 8 − 8 − 48 = 約 295。ボタン 1 つ約 146)。ボタン間 2dp は要件§4 の Connected button group の例外内。
+- 高さとタップ領域(v5): 見た目は Connected button group の既定 2.5rem(40dp、M3E の S サイズ)に戻す。`main-screen.css` の `.sheet-mode-toggle .connected-button { height: 3rem; --expressive-morph-height: 3rem; }` を削除する(既定値 `height: 2.5rem`・`--expressive-morph-height: 2.5rem` が効く。形状モーフも既定値どおり)。当たり判定はステッパー(`stepper.css` の `.stepper__button::after`。透明な `::after` を絶対配置で外へ広げる)と同じ作りで、`main-screen.css` に `.sheet-mode-toggle .connected-button::after { content: ""; position: absolute; inset-inline: 0; top: calc(min(0px, (100% - 3rem) / 2)); bottom: calc(min(0px, (100% - 3rem) / 2)); }` を足す(40dp なら上下 −4px。`.connected-button` は既に `position: relative`。`::before`/`::after` は既存の connected-button では未使用、Ripple・FocusRing は子要素なので衝突しない)。左右は広げない(ボタン間 2dp で隣と重なるため)。拡張した上下 4dp はヘッダー行の箱(下記)の中に収まり、シート上端の外やテンキー 1 行目には食い込まない。
+- ヘッダー行(v5): `.bottom-sheet__header` は `min-height: 3rem` のまま変えない。中身(トグル 40・✕ の container 40)は `align-items: center` で上下 4dp の余白ができ、見た目はヘッダー帯の中に 40dp の部品が並ぶ。行の箱を 40 に縮めない理由: 縮めると 48dp の当たり判定がシート上端の外(背面のページ)か、テンキー 1 行目の当たり領域に 4〜8dp 食い込み、要件§4 の隣接ターゲット間隔 8dp・当たり領域の重なりの両方に反する。この判断は 8 章の要ヒアリングで確認する。
+- ✕(v5): 変更なし。`IconButton`(`md-icon-button`)は container 40dp が既定で、`.bottom-sheet__close-button { min-width: 3rem; min-height: 3rem; }` によりホストが 48 × 48(当たり判定)、見た目の丸は中央の 40dp。ヘッダー行 48 の箱に収まり、トグルとの間は header の `gap: 0.5rem`(8dp)で隣接ターゲット間隔を満たす。
+- 幅はヘッダー行の残り(375 幅で 375 − 16 − 8 − 8 − 48 = 約 295。ボタン 1 つ約 146)。ボタン間 2dp は要件§4 の Connected button group の例外内。
 
 共通アイコン部品(`src/ui/icons/`):
 
@@ -288,7 +294,8 @@ export const SYMBOL_KEYBOARD_RETURN: string;
 | ⌫ | `backspace` | テンキーの ⌫ |
 | Enter | `keyboard_return` | テンキーの Enter |
 
-- 出典: `https://github.com/google/material-design-icons` の `symbols/web/<名>/materialsymbolsoutlined/<名>_24px.svg`(Apache License 2.0)。viewBox は `0 -960 960 960`、`fill="currentColor"`、表示サイズ 1.5rem、`aria-hidden="true"`。
+- 出典: `https://github.com/google/material-design-icons` の `symbols/web/<名>/materialsymbolsoutlined/<名>_24px.svg`(Apache License 2.0)。viewBox は `0 -960 960 960`、`fill="currentColor"`、表示サイズ 1.5rem(`dialpad` のみ 1.25rem。下記)、`aria-hidden="true"`。
+- アイコンの大きさ(v5): `dialpad` だけ 20dp。`MainScreen.tsx` の `SheetModeToggle` で `<SymbolIcon d={SYMBOL_DIALPAD} size="1.25rem" />` とする。`keyboard_keys`(トグル)・`close`(`BottomSheet`)・`backspace`・`keyboard_return`(`Tenkey`)は既定 1.5rem のまま。方法の根拠: `ConnectedOption.icon` は ReactNode で、呼び出し側が組み立てた要素をそのまま描くので props で渡すのが最小。`.connected-button__icon` の CSS で指定する案は、SVG の `width`/`height` 属性を上書きする子孫セレクタと位置指定(`:nth-child` 等)が要り、選択肢の並びに依存するので採らない。
 - path は製造担当が上記の SVG からそのまま写す(本書に path を書くと写し間違いの元になるため書かない)。自作・改変しない。
 - `keyboard_keys` は 80 × 80(viewBox 単位)の正方形が 2 段 × 5 列+バー 1 本の塗りで、24dp 表示では 1 個あたり約 2dp 角になる(潰れの懸念。5 章)。
 - `SymbolIcon.tsx` の先頭コメントに出典(リポジトリ URL・パスの形)と Apache License 2.0 を書く。`docs/license-policy.md` の「1. ライセンスの実態」の表に、行「google/material-design-icons(Material Symbols)| Apache-2.0 | 上流の `LICENSE` | `src/ui/icons/` でインライン SVG として使用可(出典をコード先頭コメントに記載)」を追加する(行の文言は製造担当が表の列に合わせる)。
@@ -308,7 +315,8 @@ export const SYMBOL_KEYBOARD_RETURN: string;
 - キー幅 = (内幅 − 3 × 4) / 4 → 375: (343 − 12) / 4 = **82.75**、360: (328 − 12) / 4 = 79.0。いずれも 48dp 以上。
 - グリッド高 = 5 × 48 + 4 × 4 = **256**。パレット高 = 4 × 48 + 3 × 4 = 204。
 - `.sheet-slot[data-slot="sheet-hand"]` に `min-height: 16rem`(256)を付ける(確定事項 6)。パレットは上詰めで、下に 52 の空き。
-- シート高 = 上枠 1(thin) + ヘッダー 48 + 内容 256 + 下 padding 16 + safe-area = **321 + safe-area**。どちらの方式でも同じ。
+- シート高 = 上枠 1(thin) + ヘッダー 48 + 内容 256 + 下 padding 16 + safe-area = **321 + safe-area**。どちらの方式でも同じ。v5 でもヘッダー行の箱は 48(トグル 40 + 上下余白 4、✕ のホスト 48)なので不変。v4 実装の実測(headless Chrome): 375×812・375×667・360 幅とも 321、ヘッダー行 y=492・高さ 48。
+- `min-height: 16rem` は v5 でも据え置く。テンキーのグリッド高 256 は変わらず、`sheet-hand` の最小高はテンキーを基準に両方式を等高にする前提が保たれる(パレット 204 は上詰めで下に 52 の空き。トグルの縮小はヘッダー内の変更で内容高に影響しない)。
   - 50dvh: 812 高で 406、667 高で 333.5 → 収まる(667 高の余裕 12.5)。safe-area 34 を足すと 355 で、812 高の実機で収まる。667 高の機種(ホームボタン機)は safe-area 0 の想定(実機未確認)。
   - D2 の見込み 268 との差は +53(内容の最小高の差 52 + 枠 1。D2 の見込みは枠を数えていない)。
 - 隣接ターゲット間隔: テンキーのキー間 4dp は要件§4 の 8dp を下回るため、2.11 の例外を追記する。
@@ -342,6 +350,7 @@ export const SYMBOL_KEYBOARD_RETURN: string;
 5. `Tenkey.tsx`・`tenkey.css`、`sheet-hand` の最小高さ、方式による中身の切替、`docs/requirements.md` §4 の追記(2.4・2.10・2.11)
 6. 物理キーのフック(2.6)
 7. `HandCard` のバッファ表示(2.9)
+8. (v5)UI 監修の修正。変更ファイルは `src/ui/screen/main-screen.css`(`.sheet-mode-toggle .connected-button` の `height`/`--expressive-morph-height` 3rem を削除し、`::after` の当たり判定拡張を追加)と `src/ui/screen/MainScreen.tsx`(`dialpad` に `size="1.25rem"`)の 2 つだけ。`bottom-sheet.css`・`BottomSheet.tsx`・`SymbolIcon.tsx`・`connected-button-group.css`・`tenkey.css` は変えない。純関数・状態の変更が無く自動テストの対象外なので、テストの追加・赤確認は不要(条件 6・23 のブラウザ実測で確かめる)。1 コミットでよい
 
 各コミット前に `npm run lint`・`typecheck`・`format:check`・`test`。
 
@@ -357,7 +366,7 @@ export const SYMBOL_KEYBOARD_RETURN: string;
 ## 5. 実挙動未確認の一覧
 
 - 2.10 の寸法(キー幅 82.75、シート高 321、内容の最小高でパレットが上詰めになること)。
-- `.sheet-mode-toggle` で `connected-button` の高さを 3rem にしたときの形状モーフ(`--expressive-morph-height` の上書きで角丸が崩れないか)。
+- (v5)トグルの `::after` で上下に広げた当たり判定が、`elementFromPoint` でボタンの外 4dp(ヘッダー行の上端・下端付近)を拾うか。拾わない場合は製造担当が独断で直さず報告する。
 - `keyboard_keys` の 24dp 表示での視認性(小さな四角 1 個が約 2dp 角で、潰れて見分けにくい恐れ)。
 - shadow DOM 内の要素にフォーカスがあるときの `keydown` の `target`(`closest('.bottom-sheet')` で判定できるか)。
 - シート内のボタンにフォーカスがある状態で物理 Enter を押したとき、`preventDefault` でボタンの click が抑えられ、シートだけが閉じるか。
@@ -380,11 +389,11 @@ export const SYMBOL_KEYBOARD_RETURN: string;
 
 ブラウザ(DevTools):
 
-6. 手牌カードを押すとシートが開き、ヘッダー行に「入力方式」の radiogroup(radio 2 つ、アイコンのみで文字なし)と「閉じる」ボタンがある。ハンドルの棒が無い。開いた直後のフォーカスが「閉じる」ボタン(`document.activeElement` を shadow root まで辿って確認)。初回は「パレット」が `aria-checked="true"`。radio の各高さが 48(±0.5)、「閉じる」の当たり領域が 48 × 48 以上、各 radio の `aria-label` が「パレット」「テンキー」。
+6. 手牌カードを押すとシートが開き、ヘッダー行に「入力方式」の radiogroup(radio 2 つ、アイコンのみで文字なし)と「閉じる」ボタンがある。ハンドルの棒が無い。開いた直後のフォーカスが「閉じる」ボタン(`document.activeElement` を shadow root まで辿って確認)。初回は「パレット」が `aria-checked="true"`。(v5)radio の各 `getBoundingClientRect().height` が 40(±0.5)、ヘッダー行(`.bottom-sheet__header`)の高さが 48(±0.5)、radio の上端・下端がそれぞれヘッダー行の上端 +4・下端 −4(±0.5)。各 radio の当たり判定: radio の中心 x で、radio の上端 −3 と下端 +3 の点の `document.elementFromPoint` がその radio(またはその子孫)。「閉じる」のホスト(`md-icon-button`)の矩形が 48 × 48 以上でヘッダー行の内側に収まる。各 radio の `aria-label` が「パレット」「テンキー」。
 7. 「テンキー」を押すと中身がテンキーに替わり、手牌は変わらない。ヘッダー行の `top` が切替の前後で同じ(±0.5)。`--sheet-height` が両方式で同じ値。
 8. テンキーの配置が 2.4 の表のとおり(各キーの `aria-label` と `getBoundingClientRect()` の行・列で確認)。Enter が 4〜5 行目にまたがる。1〜7 に 東南西北白發中、0 に「赤5」、m・p・s・z に 萬子・筒子・索子・字牌 の補助表示がある。
 9. 375 幅でキー幅 82.25〜83.25、高さ 48(±0.5)、隣接キーの左端差 − 幅 = 4(±0.5)、上下の間隔 4(±0.5)。360 幅のキー幅を報告する。
-10. `--sheet-height` が 375×812 で 406 以下、375×667 で 333 以下。値を報告する(見込み 321)。パレット方式でも同じ値で、パレットのキーがヘッダー直下から始まる。
+10. `--sheet-height` が 375×812 で 406 以下、375×667 で 333 以下。値を報告する(見込み 321。v5 でも不変、v4 実測 321)。パレット方式でも同じ値で、パレットのキーがヘッダー直下から始まる。
 11. テンキーで `1` `2` `3` を押すと手牌カードの牌列末尾に `123‸` が出る。`m` を押すと 1m 2m 3m が入り、バッファ表示が消える。バッファが空のときバッファ要素が DOM に無い。
 12. `4` `0` `6` `p` で 4p・赤5p・6p が入る(赤の牌画像)。
 13. 確定できない場合、手牌が変わらずバッファ表示がそのまま残り、文言等は何も出ない: (a)`2` `m`(三麻で使わない牌)、(b)1s を 4 枚入れた後に `1` `s`(在庫不足)、(c)`1` `8` `z`(z に 8)・`1` `0` `z`、(d)手牌 13 枚で `1` `2` は入らないこと(手牌+バッファの上限で 2 つ目の数字キーが `disabled`)。いずれも続けて ⌫ でバッファを直して確定し直せる。
@@ -395,8 +404,9 @@ export const SYMBOL_KEYBOARD_RETURN: string;
 18. テンキー方式で閉じて再度開くとテンキー方式のまま。ページを再読み込みするとパレット方式に戻る。
 19. 物理キー(シートを開いた状態、フォーカスは閉じるボタン): テンキー方式で `1` `2` `3` `M` → 1m 2m 3m。`Backspace`・`Enter` が 2.6 の表のとおり働く。両方式で `Delete`・`a` を押しても手牌・バッファは変わらない。パレット方式で `1`・`m` は何も起きず、`Backspace` で末尾 1 枚削除、`Enter` で閉じる。`Cmd+Backspace`/`Ctrl+Backspace` で手牌が変わらない。
 20. テンキーの `5` をクリックした後(フォーカスがそのキー)に物理 `Enter` を押すとシートが閉じ、`5` は追加されない。シートを開いたまま背面のステッパーのボタンにフォーカスを移して `1` を押してもバッファが増えない。トグルにフォーカスして矢印キーで方式が切り替わる。
-21. D1 条件 20 の回帰: スクリムが無く背面のステッパーが押せる。開いている間ページ末尾の下余白がシート高と等しい。Esc で閉じ、フォーカスが手牌カードに戻る(テンキー方式でも)。「閉じる」で閉じる。シートを開いた後の `history.length` が開く前と同じ。
+21. D1 条件 20 の回帰(v5 の修正後に再実施): スクリムが無く背面のステッパーが押せる(シート上端の 1〜4px 上の点の `elementFromPoint` がシート内の要素でない、すなわち当たり判定がシートの外へはみ出していない)。開いている間ページ末尾の下余白がシート高と等しい。Esc で閉じ、フォーカスが手牌カードに戻る(テンキー方式でも)。「閉じる」で閉じる。シートを開いた後の `history.length` が開く前と同じ。
 22. バンドル予算(目標値。不合格にしない): D2 条件 18 と同じ測り方で合計を測り、102,000 B を超えたら超過量を最終報告と PR 本文に書く。
+23. (v5)アイコンの大きさ: 「テンキー」radio 内の svg の `getBoundingClientRect()` が 20 × 20(±0.5)、「パレット」radio・「閉じる」・テンキーの ⌫・Enter の svg が 24 × 24(±0.5)。`git diff 9fc9818 --name-only` が `src/ui/screen/main-screen.css`・`src/ui/screen/MainScreen.tsx`・本書だけ。
 
 実機確認(C-02 の逆発注): テンキーの押しやすさ(360 幅を含む)、方式トグルとアイコン(`keyboard_keys` の潰れ)の分かりやすさ、確定できないときに何も出ないことの分かりやすさ、外付けキーボードでの入力、667 高の機種でのシート高。
 
@@ -408,7 +418,7 @@ export const SYMBOL_KEYBOARD_RETURN: string;
 
 ## 8. 要ヒアリング事項(本書の【未確定】)
 
-なし。
+- (v5)ヘッダー行の箱の高さ: 本書は「部品の見た目 40dp・行の箱 48dp(上下 4dp の余白に当たり判定を収める)」とした(シート高 321 不変)。監修指示の「ヘッダー行 48→40」を行の箱まで 40 にする意味なら、シートは 8dp 低く(313)なる代わりに、当たり判定 48dp がシート上端の外かテンキー 1 行目に食い込む。どちらにするか確認する。本書の推奨は前者。
 
 ### ヒアリング履歴
 
