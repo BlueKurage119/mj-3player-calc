@@ -1,7 +1,7 @@
 import { type Meld, instantiateMeld } from '../../core/input';
 import type { Rule } from '../../core/rule';
 import { type Tile, compareTiles, isAvailableTiles } from '../../core/tile';
-import type { AppInput, AppState } from './app-state';
+import type { AppInput, AppState, TenkeySuit } from './app-state';
 
 const NORTH_TILE: Tile = { type: 'z', n: 4 };
 
@@ -71,4 +71,100 @@ export const splitWinningTile = (
     body: indexed.sort((a, b) => compareTiles(a.tile, b.tile)),
     winning: null
   };
+};
+
+/**
+ * テンキー入力バッファとスートから牌列を解決する。
+ * buffer が空なら null。
+ * suit === 'z': 全文字が 1〜7 なら { type: 'z', n } の列。0・8・9 を 1 つでも含めば null。
+ * 数牌: '0' → { type: suit, n: 5, red: true }、'5' → { n: 5, red: false }、他は { n }。
+ */
+export const resolveTenkeyBuffer = (
+  buffer: string,
+  suit: TenkeySuit
+): Tile[] | null => {
+  if (buffer.length === 0) return null;
+  if (suit === 'z') {
+    const tiles: Tile[] = [];
+    for (const char of buffer) {
+      const n = Number(char);
+      if (n >= 1 && n <= 7) {
+        tiles.push({ type: 'z', n: n as 1 | 2 | 3 | 4 | 5 | 6 | 7 });
+      } else {
+        return null;
+      }
+    }
+    return tiles;
+  }
+
+  const tiles: Tile[] = [];
+  for (const char of buffer) {
+    if (char === '0') {
+      tiles.push({ type: suit, n: 5, red: true });
+    } else if (char === '5') {
+      tiles.push({ type: suit, n: 5, red: false });
+    } else {
+      const n = Number(char);
+      if (n >= 1 && n <= 9) {
+        tiles.push({
+          type: suit,
+          n: n as 1 | 2 | 3 | 4 | 6 | 7 | 8 | 9
+        });
+      } else {
+        return null;
+      }
+    }
+  }
+  return tiles;
+};
+
+/**
+ * テンキー入力バッファに数字を追加できるか判定する。
+ * /^[0-9]$/ でなければ偽。
+ * hand.length + tenkeyBuffer.length >= maxHandLength(melds) なら偽(手牌+バッファが上限)。
+ * tenkeyBuffer 内の digit の個数が 4 以上なら偽(同じ数字の 5 つ目)。
+ */
+export const canAppendTenkeyDigit = (
+  state: Pick<AppState, 'input' | 'tenkeyBuffer'>,
+  digit: string
+): boolean => {
+  if (!/^[0-9]$/.test(digit)) return false;
+  if (
+    state.input.hand.length + state.tenkeyBuffer.length >=
+    maxHandLength(state.input.melds)
+  ) {
+    return false;
+  }
+  let count = 0;
+  for (const char of state.tenkeyBuffer) {
+    if (char === digit) count++;
+  }
+  if (count >= 4) return false;
+  return true;
+};
+
+/**
+ * 牌列を手牌に追加できるか判定する。
+ * 先頭から 1 枚ずつ逐次判定し、全牌受け付けられるなら tiles (そのままの順) を返す。
+ * 1 枚でも不可なら null。
+ */
+export const planAddTiles = (
+  state: Pick<AppState, 'input' | 'rule'>,
+  tiles: Tile[]
+): Tile[] | null => {
+  const currentHand = [...state.input.hand];
+  for (const tile of tiles) {
+    const nextState = {
+      rule: state.rule,
+      input: {
+        ...state.input,
+        hand: currentHand
+      }
+    };
+    if (!canAddHandTile(nextState, tile)) {
+      return null;
+    }
+    currentHand.push(tile);
+  }
+  return tiles;
 };

@@ -1,5 +1,6 @@
 import { type ReactNode, useEffect, useLayoutEffect, useRef } from 'react';
 import type React from 'react';
+import { SYMBOL_CLOSE, SymbolIcon } from '../icons';
 import { IconButton } from '../md';
 import './bottom-sheet.css';
 
@@ -7,6 +8,7 @@ export interface BottomSheetProps {
   open: boolean;
   onClose: () => void;
   'aria-label': string;
+  header?: ReactNode | undefined; // ヘッダー行の左側(D3)。中身は呼び出し側が決める
   children: ReactNode; // 中身スロット(D2・D3・D5)
   className?: string | undefined;
 }
@@ -20,7 +22,14 @@ const getDeepActiveElement = (): HTMLElement | null => {
 };
 
 export function BottomSheet(props: BottomSheetProps): React.JSX.Element {
-  const { open, onClose, 'aria-label': ariaLabel, children, className } = props;
+  const {
+    open,
+    onClose,
+    'aria-label': ariaLabel,
+    header,
+    children,
+    className
+  } = props;
 
   const sheetRef = useRef<HTMLElement | null>(null);
   const closeButtonRef = useRef<HTMLElement | null>(null);
@@ -118,6 +127,7 @@ export function BottomSheet(props: BottomSheetProps): React.JSX.Element {
       className={rootClassName}
     >
       <div className="bottom-sheet__header">
+        <div className="bottom-sheet__header-slot">{open ? header : null}</div>
         <IconButton
           ref={closeButtonRef}
           variant="standard"
@@ -125,7 +135,7 @@ export function BottomSheet(props: BottomSheetProps): React.JSX.Element {
           onClick={onClose}
           className="bottom-sheet__close-button"
         >
-          <span className="bottom-sheet__handle-bar" aria-hidden="true" />
+          <SymbolIcon d={SYMBOL_CLOSE} />
         </IconButton>
       </div>
       <div className="bottom-sheet__content">{open ? children : null}</div>

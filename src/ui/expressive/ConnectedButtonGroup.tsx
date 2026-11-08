@@ -43,6 +43,7 @@ export function ConnectedButtonGroup<T extends string>(
               buttonRefs.current[index] = el;
             }}
             aria-checked={isSelected}
+            aria-label={opt.icon ? opt.label : undefined}
             tabIndex={index === tabStop ? 0 : -1}
             disabled={opt.disabled}
             className={`connected-button ${SHAPE_MORPH_CLASS}`}
@@ -65,7 +66,13 @@ export function ConnectedButtonGroup<T extends string>(
           >
             <Ripple disabled={opt.disabled} />
             <FocusRing />
-            <span>{opt.label}</span>
+            {opt.icon ? (
+              <span aria-hidden="true" className="connected-button__icon">
+                {opt.icon}
+              </span>
+            ) : (
+              <span>{opt.label}</span>
+            )}
           </button>
         );
       })}

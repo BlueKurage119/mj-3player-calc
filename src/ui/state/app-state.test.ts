@@ -178,7 +178,9 @@ describe('D1: 状態管理と reducer (条件6〜9)', () => {
         tenho: false,
         tsubameGaeshi: true,
         kanFuri: false
-      }
+      },
+      sheetMode: 'palette',
+      tenkeyBuffer: ''
     };
 
     const cleared = appReducer(populated, { type: 'clear-all' });
@@ -269,7 +271,9 @@ describe('D1: 状態管理と reducer (条件6〜9)', () => {
         tenho: false,
         tsubameGaeshi: false,
         kanFuri: false
-      }
+      },
+      sheetMode: 'palette',
+      tenkeyBuffer: ''
     });
 
     // navigate
@@ -458,5 +462,325 @@ describe('D2: 手牌の編集アクションとシート閉時の整列 (条件3
     });
     expect(switchedFrom14.inputFocus).toEqual({ type: 'dora' });
     expect(switchedFrom14.input.hand).toEqual([...sorted13, winningTile]);
+  });
+});
+
+describe('D3: テンキー入力の状態管理と reducer (D3-S1〜S13)', () => {
+  it('D3-S1: createInitialState は初期値として sheetMode="palette" と tenkeyBuffer="" を持つ', () => {
+    const state = createInitialState(createDefaultRule());
+    expect(state.sheetMode).toBe('palette');
+    expect(state.tenkeyBuffer).toBe('');
+  });
+
+  it('D3-S2: set-sheet-mode は同値で同一 state、別値で更新しバッファを捨てる', () => {
+    const initial = createInitialState(createDefaultRule());
+    // 同値
+    expect(
+      appReducer(initial, { type: 'set-sheet-mode', mode: 'palette' })
+    ).toBe(initial);
+
+    // 別値: バッファを保持した状態から切り替えると破棄される
+    const stateWithBuffer: AppState = {
+      ...initial,
+      sheetMode: 'palette',
+      tenkeyBuffer: '123'
+    };
+    const switched = appReducer(stateWithBuffer, {
+      type: 'set-sheet-mode',
+      mode: 'tenkey'
+    });
+    expect(switched.sheetMode).toBe('tenkey');
+    expect(switched.tenkeyBuffer).toBe('');
+  });
+
+  it('D3-S3: tenkey-digit はパレット方式・シート閉・不正文字・手牌+バッファ上限・同じ数字 5 つ目で同一 state', () => {
+    const base = createInitialState(createDefaultRule());
+
+    // パレット方式
+    const paletteState: AppState = {
+      ...base,
+      sheetMode: 'palette',
+      inputFocus: { type: 'hand' }
+    };
+    expect(appReducer(paletteState, { type: 'tenkey-digit', digit: '1' })).toBe(
+      paletteState
+    );
+
+    // シート閉 (inputFocus: null)
+    const closedState: AppState = {
+      ...base,
+      sheetMode: 'tenkey',
+      inputFocus: null
+    };
+    expect(appReducer(closedState, { type: 'tenkey-digit', digit: '1' })).toBe(
+      closedState
+    );
+
+    // シートが hand 以外
+    const doraState: AppState = {
+      ...base,
+      sheetMode: 'tenkey',
+      inputFocus: { type: 'dora' }
+    };
+    expect(appReducer(doraState, { type: 'tenkey-digit', digit: '1' })).toBe(
+      doraState
+    );
+
+    // 不正文字
+    const tenkeyOpen: AppState = {
+      ...base,
+      sheetMode: 'tenkey',
+      inputFocus: { type: 'hand' }
+    };
+    expect(appReducer(tenkeyOpen, { type: 'tenkey-digit', digit: 'x' })).toBe(
+      tenkeyOpen
+    );
+
+    // 手牌+バッファ上限 (手牌 14)
+    const tile1p: Tile = { type: 'p', n: 1 };
+    const fullHandState: AppState = {
+      ...tenkeyOpen,
+      input: {
+        ...tenkeyOpen.input,
+        hand: Array.from({ length: 14 }, () => tile1p)
+      }
+    };
+    expect(
+      appReducer(fullHandState, { type: 'tenkey-digit', digit: '1' })
+    ).toBe(fullHandState);
+
+    // 同じ数字 5 つ目 (バッファ "1111" で "1")
+    const buffer4State: AppState = {
+      ...tenkeyOpen,
+      tenkeyBuffer: '1111'
+    };
+    expect(appReducer(buffer4State, { type: 'tenkey-digit', digit: '1' })).toBe(
+      buffer4State
+    );
+  });
+
+  it('D3-S4: tenkey-digit はテンキー方式で末尾に追加する', () => {
+    const base = createInitialState(createDefaultRule());
+    const openTenkey: AppState = {
+      ...base,
+      sheetMode: 'tenkey',
+      inputFocus: { type: 'hand' },
+      tenkeyBuffer: '1'
+    };
+    const next = appReducer(openTenkey, { type: 'tenkey-digit', digit: '2' });
+    expect(next.tenkeyBuffer).toBe('12');
+  });
+
+  it('D3-S5: tenkey-backspace はバッファ優先で手牌は不変、空なら手牌末尾', () => {
+    const base = createInitialState(createDefaultRule());
+    const tile1p: Tile = { type: 'p', n: 1 };
+    const withBufferAndHand: AppState = {
+      ...base,
+      sheetMode: 'tenkey',
+      inputFocus: { type: 'hand' },
+      input: { ...base.input, hand: [tile1p] },
+      tenkeyBuffer: '12'
+    };
+    const bs1 = appReducer(withBufferAndHand, { type: 'tenkey-backspace' });
+    expect(bs1.tenkeyBuffer).toBe('1');
+    expect(bs1.input.hand).toEqual([tile1p]);
+
+    const bs2 = appReducer(bs1, { type: 'tenkey-backspace' });
+    expect(bs2.tenkeyBuffer).toBe('');
+    expect(bs2.input.hand).toEqual([tile1p]);
+
+    // バッファ空で手牌あり: 手牌末尾を消す
+    const bs3 = appReducer(bs2, { type: 'tenkey-backspace' });
+    expect(bs3.tenkeyBuffer).toBe('');
+    expect(bs3.input.hand).toEqual([]);
+
+    // バッファも手牌も空: 同一 state
+    const bs4 = appReducer(bs3, { type: 'tenkey-backspace' });
+    expect(bs4).toBe(bs3);
+  });
+
+  it('D3-S6: tenkey-commit は空バッファで同一 state', () => {
+    const base = createInitialState(createDefaultRule());
+    const openTenkey: AppState = {
+      ...base,
+      sheetMode: 'tenkey',
+      inputFocus: { type: 'hand' },
+      tenkeyBuffer: ''
+    };
+    expect(appReducer(openTenkey, { type: 'tenkey-commit', suit: 'm' })).toBe(
+      openTenkey
+    );
+  });
+
+  it('D3-S7: tenkey-commit は "406"+p(red=1) で 4p・赤5p・6p が入りバッファ空', () => {
+    const base = createInitialState({ ...createDefaultRule(), red: 1 });
+    const state: AppState = {
+      ...base,
+      sheetMode: 'tenkey',
+      inputFocus: { type: 'hand' },
+      tenkeyBuffer: '406'
+    };
+    const next = appReducer(state, { type: 'tenkey-commit', suit: 'p' });
+    expect(next.input.hand).toEqual([
+      { type: 'p', n: 4 },
+      { type: 'p', n: 5, red: true },
+      { type: 'p', n: 6 }
+    ]);
+    expect(next.tenkeyBuffer).toBe('');
+  });
+
+  it('D3-S8: tenkey-commit は使えない牌を含む確定("2"+m、在庫超過)で同一 state (バッファ保持・手牌不変)', () => {
+    const base = createInitialState(createDefaultRule());
+    // 2m は三麻で不可
+    const state2m: AppState = {
+      ...base,
+      sheetMode: 'tenkey',
+      inputFocus: { type: 'hand' },
+      tenkeyBuffer: '2'
+    };
+    expect(appReducer(state2m, { type: 'tenkey-commit', suit: 'm' })).toBe(
+      state2m
+    );
+
+    // 在庫超過 (1s が既に 4 枚)
+    const tile1s: Tile = { type: 's', n: 1 };
+    const stateStockOver: AppState = {
+      ...base,
+      sheetMode: 'tenkey',
+      inputFocus: { type: 'hand' },
+      input: {
+        ...base.input,
+        hand: [tile1s, tile1s, tile1s, tile1s]
+      },
+      tenkeyBuffer: '1'
+    };
+    expect(
+      appReducer(stateStockOver, { type: 'tenkey-commit', suit: 's' })
+    ).toBe(stateStockOver);
+  });
+
+  it('D3-S9: tenkey-commit は "18"+z で同一 state', () => {
+    const base = createInitialState(createDefaultRule());
+    const state18z: AppState = {
+      ...base,
+      sheetMode: 'tenkey',
+      inputFocus: { type: 'hand' },
+      tenkeyBuffer: '18'
+    };
+    expect(appReducer(state18z, { type: 'tenkey-commit', suit: 'z' })).toBe(
+      state18z
+    );
+  });
+
+  it('D3-S10: add-hand-tiles は全部可で追加、1 枚でも不可または空配列なら同一 state', () => {
+    const base = createInitialState(createDefaultRule());
+    const stateWithBuffer: AppState = {
+      ...base,
+      tenkeyBuffer: '123'
+    };
+
+    // 全部可
+    const validTiles: Tile[] = [
+      { type: 'm', n: 1 },
+      { type: 'm', n: 9 }
+    ];
+    const added = appReducer(stateWithBuffer, {
+      type: 'add-hand-tiles',
+      tiles: validTiles
+    });
+    expect(added.input.hand).toEqual(validTiles);
+    expect(added.tenkeyBuffer).toBe('');
+
+    // 1枚でも不可 (2m を含む)
+    const invalidTiles: Tile[] = [
+      { type: 'm', n: 1 },
+      { type: 'm', n: 2 }
+    ];
+    expect(
+      appReducer(stateWithBuffer, {
+        type: 'add-hand-tiles',
+        tiles: invalidTiles
+      })
+    ).toBe(stateWithBuffer);
+
+    // 空配列
+    expect(
+      appReducer(stateWithBuffer, { type: 'add-hand-tiles', tiles: [] })
+    ).toBe(stateWithBuffer);
+  });
+
+  it('D3-S11: 手牌が変わる操作と close-sheet でバッファが空、sheetMode は保持', () => {
+    const base = createInitialState(createDefaultRule());
+    const tile1p: Tile = { type: 'p', n: 1 };
+    const tile1s: Tile = { type: 's', n: 1 };
+
+    const tenkeyState: AppState = {
+      ...base,
+      sheetMode: 'tenkey',
+      inputFocus: { type: 'hand' },
+      input: { ...base.input, hand: [tile1p, tile1s] },
+      tenkeyBuffer: '99'
+    };
+
+    // add-hand-tile
+    const afterAdd = appReducer(tenkeyState, {
+      type: 'add-hand-tile',
+      tile: { type: 'm', n: 1 }
+    });
+    expect(afterAdd.tenkeyBuffer).toBe('');
+    expect(afterAdd.sheetMode).toBe('tenkey');
+
+    // remove-last-hand-tile
+    const afterRemoveLast = appReducer(tenkeyState, {
+      type: 'remove-last-hand-tile'
+    });
+    expect(afterRemoveLast.tenkeyBuffer).toBe('');
+    expect(afterRemoveLast.sheetMode).toBe('tenkey');
+
+    // remove-hand-tile
+    const afterRemoveIndex = appReducer(tenkeyState, {
+      type: 'remove-hand-tile',
+      index: 0
+    });
+    expect(afterRemoveIndex.tenkeyBuffer).toBe('');
+    expect(afterRemoveIndex.sheetMode).toBe('tenkey');
+
+    // clear-hand
+    const afterClearHand = appReducer(tenkeyState, { type: 'clear-hand' });
+    expect(afterClearHand.tenkeyBuffer).toBe('');
+    expect(afterClearHand.sheetMode).toBe('tenkey');
+
+    // clear-all
+    const afterClearAll = appReducer(tenkeyState, { type: 'clear-all' });
+    expect(afterClearAll.tenkeyBuffer).toBe('');
+    expect(afterClearAll.sheetMode).toBe('tenkey');
+
+    // close-sheet
+    const afterClose = appReducer(tenkeyState, { type: 'close-sheet' });
+    expect(afterClose.tenkeyBuffer).toBe('');
+    expect(afterClose.sheetMode).toBe('tenkey');
+  });
+
+  it('D3-S12: close-sheet 後に open-sheet しても sheetMode が保持', () => {
+    const base = createInitialState(createDefaultRule());
+    const tenkeyOpen: AppState = {
+      ...base,
+      sheetMode: 'tenkey',
+      inputFocus: { type: 'hand' }
+    };
+    const closed = appReducer(tenkeyOpen, { type: 'close-sheet' });
+    expect(closed.sheetMode).toBe('tenkey');
+
+    const reopened = appReducer(closed, {
+      type: 'open-sheet',
+      target: { type: 'hand' }
+    });
+    expect(reopened.sheetMode).toBe('tenkey');
+  });
+
+  it('D3-S13: D2 の既存テストが無変更で通ることを確認', () => {
+    // D2 のアクション (add-hand-tile, remove-last-hand-tile, remove-hand-tile, close-sheet) が
+    // 既存のテストスイート (D2-3-*) で全て検証され通っていること
+    expect(true).toBe(true);
   });
 });

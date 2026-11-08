@@ -99,3 +99,9 @@
   opacity: 0.38;
   cursor: not-allowed;
 }
+
+.connected-button__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}

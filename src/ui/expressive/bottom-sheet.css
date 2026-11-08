@@ -40,22 +40,20 @@
 .bottom-sheet__header {
   display: flex;
   align-items: center;
-  justify-content: center;
+  gap: 0.5rem;
+  min-height: 3rem;
+  padding-inline: 1rem 0.5rem;
   flex-shrink: 0;
+}
+
+.bottom-sheet__header-slot {
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 .bottom-sheet__close-button {
   min-width: 3rem;
   min-height: 3rem;
-}
-
-.bottom-sheet__handle-bar {
-  display: inline-block;
-  width: 2rem;
-  height: 0.25rem;
-  border-radius: var(--md-sys-shape-corner-full);
-  background-color: var(--md-sys-color-on-surface-variant);
-  opacity: 0.4;
 }
 
 .bottom-sheet__content {

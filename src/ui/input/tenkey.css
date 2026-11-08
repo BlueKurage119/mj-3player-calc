@@ -1,0 +1,74 @@
+.tenkey {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-rows: repeat(5, 3rem);
+  gap: 0.25rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.tenkey__key {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  border-radius: var(--md-sys-shape-corner-medium);
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+.tenkey__key-main {
+  font-family: var(--md-sys-typescale-title-large-font);
+  font-size: var(--md-sys-typescale-title-large-size);
+  line-height: var(--md-sys-typescale-title-large-line-height);
+  font-weight: var(--md-sys-typescale-title-large-weight);
+  letter-spacing: var(--md-sys-typescale-title-large-tracking);
+}
+
+.tenkey__key-sub {
+  font-family: var(--md-sys-typescale-label-small-font);
+  font-size: var(--md-sys-typescale-label-small-size);
+  line-height: var(--md-sys-typescale-label-small-line-height);
+  font-weight: var(--md-sys-typescale-label-small-weight);
+  letter-spacing: var(--md-sys-typescale-label-small-tracking);
+}
+
+/* 数字キーの補助表示は右下に置く */
+.tenkey__key--digit .tenkey__key-sub {
+  position: absolute;
+  inset-block-end: 0.25rem;
+  inset-inline-end: 0.5rem;
+  line-height: 1;
+}
+
+.tenkey__key--digit {
+  background-color: var(--md-sys-color-surface-container-highest);
+  color: var(--md-sys-color-on-surface);
+}
+
+.tenkey__key--suit,
+.tenkey__key--action {
+  background-color: var(--md-sys-color-secondary-container);
+  color: var(--md-sys-color-on-secondary-container);
+}
+
+.tenkey__key--enter {
+  background-color: var(--md-sys-color-primary);
+  color: var(--md-sys-color-on-primary);
+  grid-column: 4;
+  grid-row: 4 / 6;
+}
+
+.tenkey__key--zero {
+  grid-column: 2;
+  grid-row: 5;
+}
+
+.tenkey__key:disabled {
+  opacity: 0.38;
+  cursor: not-allowed;
+}
