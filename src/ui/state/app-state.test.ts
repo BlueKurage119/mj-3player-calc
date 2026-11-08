@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createDefaultRule } from '../../core/rule';
+import type { Tile } from '../../core/tile';
 import {
   type AppState,
   STEPPER_BOUNDS,
@@ -314,5 +315,148 @@ describe('D1: 状態管理と reducer (条件6〜9)', () => {
     });
     expect(afterSetRule.rule).toEqual(yakuhaiRule);
     expect(afterSetRule.input.nuki).toBe(0);
+  });
+});
+
+describe('D2: 手牌の編集アクションとシート閉時の整列 (条件3)', () => {
+  it('D2-3-add: add-hand-tile は有効な牌を末尾に追加し、不可の牌では同一 state を返す', () => {
+    const initial = createInitialState(createDefaultRule());
+    const tile1p: Tile = { type: 'p', n: 1 };
+
+    const added1 = appReducer(initial, { type: 'add-hand-tile', tile: tile1p });
+    expect(added1.input.hand).toEqual([tile1p]);
+
+    // 2m (三麻で使わない牌) は同一 state
+    const invalidSanma = appReducer(added1, {
+      type: 'add-hand-tile',
+      tile: { type: 'm', n: 2 }
+    });
+    expect(invalidSanma).toBe(added1);
+
+    // 同じ牌 4 枚状態で 5 枚目は同一 state
+    const state4: AppState = {
+      ...initial,
+      input: { ...initial.input, hand: [tile1p, tile1p, tile1p, tile1p] }
+    };
+    const fifth = appReducer(state4, { type: 'add-hand-tile', tile: tile1p });
+    expect(fifth).toBe(state4);
+  });
+
+  it('D2-3-remove-last: remove-last-hand-tile は空で同一 state、非空で末尾 1 枚を除く', () => {
+    const initial = createInitialState(createDefaultRule());
+    expect(appReducer(initial, { type: 'remove-last-hand-tile' })).toBe(
+      initial
+    );
+
+    const stateWithHand: AppState = {
+      ...initial,
+      input: {
+        ...initial.input,
+        hand: [
+          { type: 's', n: 9 },
+          { type: 'm', n: 1 },
+          { type: 'p', n: 3 }
+        ]
+      }
+    };
+    const removed = appReducer(stateWithHand, {
+      type: 'remove-last-hand-tile'
+    });
+    expect(removed.input.hand).toEqual([
+      { type: 's', n: 9 },
+      { type: 'm', n: 1 }
+    ]);
+  });
+
+  it('D2-3-remove-index: remove-hand-tile は範囲外で同一 state、範囲内で並びを保って 1 枚除く', () => {
+    const initial = createInitialState(createDefaultRule());
+    const stateWithHand: AppState = {
+      ...initial,
+      input: {
+        ...initial.input,
+        hand: [
+          { type: 's', n: 9 },
+          { type: 'm', n: 1 },
+          { type: 'p', n: 3 }
+        ]
+      }
+    };
+
+    expect(
+      appReducer(stateWithHand, { type: 'remove-hand-tile', index: -1 })
+    ).toBe(stateWithHand);
+    expect(
+      appReducer(stateWithHand, { type: 'remove-hand-tile', index: 3 })
+    ).toBe(stateWithHand);
+
+    const removedMiddle = appReducer(stateWithHand, {
+      type: 'remove-hand-tile',
+      index: 1
+    });
+    expect(removedMiddle.input.hand).toEqual([
+      { type: 's', n: 9 },
+      { type: 'p', n: 3 }
+    ]);
+  });
+
+  it('D2-3-close-sheet: close-sheet (対象 hand) は 14 枚で末尾を残して整列し、13 枚で全体を整列する', () => {
+    const initial = createInitialState(createDefaultRule());
+    const unsorted13: Tile[] = [
+      { type: 'z', n: 7 },
+      { type: 's', n: 9 },
+      { type: 'p', n: 5, red: true },
+      { type: 'p', n: 5, red: false },
+      { type: 'm', n: 9 },
+      { type: 'm', n: 1 },
+      { type: 'z', n: 1 },
+      { type: 's', n: 1 },
+      { type: 'p', n: 1 },
+      { type: 'z', n: 5 },
+      { type: 's', n: 3 },
+      { type: 'p', n: 3 },
+      { type: 'm', n: 1 }
+    ];
+    const sorted13: Tile[] = [
+      { type: 'm', n: 1 },
+      { type: 'm', n: 1 },
+      { type: 'm', n: 9 },
+      { type: 'p', n: 1 },
+      { type: 'p', n: 3 },
+      { type: 'p', n: 5, red: false },
+      { type: 'p', n: 5, red: true },
+      { type: 's', n: 1 },
+      { type: 's', n: 3 },
+      { type: 's', n: 9 },
+      { type: 'z', n: 1 },
+      { type: 'z', n: 5 },
+      { type: 'z', n: 7 }
+    ];
+
+    const state13: AppState = {
+      ...initial,
+      input: { ...initial.input, hand: unsorted13 },
+      inputFocus: { type: 'hand' }
+    };
+    const closed13 = appReducer(state13, { type: 'close-sheet' });
+    expect(closed13.inputFocus).toBeNull();
+    expect(closed13.input.hand).toEqual(sorted13);
+
+    const winningTile: Tile = { type: 'm', n: 9 };
+    const state14: AppState = {
+      ...initial,
+      input: { ...initial.input, hand: [...unsorted13, winningTile] },
+      inputFocus: { type: 'hand' }
+    };
+    const closed14 = appReducer(state14, { type: 'close-sheet' });
+    expect(closed14.inputFocus).toBeNull();
+    expect(closed14.input.hand).toEqual([...sorted13, winningTile]);
+
+    // open-sheet で hand から別対象に切り替わる場合も整列される
+    const switchedFrom14 = appReducer(state14, {
+      type: 'open-sheet',
+      target: { type: 'dora' }
+    });
+    expect(switchedFrom14.inputFocus).toEqual({ type: 'dora' });
+    expect(switchedFrom14.input.hand).toEqual([...sorted13, winningTile]);
   });
 });

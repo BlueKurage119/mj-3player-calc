@@ -2,6 +2,7 @@ import type { HandOptions, Input } from '../../core/input';
 import type { Rule } from '../../core/rule';
 import type { Table } from '../../core/table';
 import type { Tile } from '../../core/tile';
+import { canAddHandTile, maxHandLength, sortHand } from './hand-rules';
 
 export type Screen = 'main' | 'settings';
 export type SheetTarget =
@@ -24,6 +25,9 @@ export type AppAction =
   | { type: 'open-sheet'; target: SheetTarget }
   | { type: 'close-sheet' }
   | { type: 'step'; field: 'continue' | 'deposit' | 'nuki'; delta: 1 | -1 }
+  | { type: 'add-hand-tile'; tile: Tile }
+  | { type: 'remove-last-hand-tile' }
+  | { type: 'remove-hand-tile'; index: number }
   | { type: 'clear-hand' }
   | { type: 'clear-all' }
   | { type: 'set-rule'; rule: Rule }; // D6 が使う。D1 では reducer とテストのみ
@@ -74,12 +78,75 @@ export const appReducer = (state: AppState, action: AppAction): AppState => {
       if (state.screen === action.screen) return state;
       return { ...state, screen: action.screen };
 
-    case 'open-sheet':
+    case 'open-sheet': {
+      if (state.inputFocus?.type === 'hand' && action.target.type !== 'hand') {
+        const sortedHand = sortHand(
+          state.input.hand,
+          maxHandLength(state.input.melds)
+        );
+        return {
+          ...state,
+          input: { ...state.input, hand: sortedHand },
+          inputFocus: action.target
+        };
+      }
       return { ...state, inputFocus: action.target };
+    }
 
-    case 'close-sheet':
+    case 'close-sheet': {
       if (state.inputFocus === null) return state;
+      if (state.inputFocus.type === 'hand') {
+        const sortedHand = sortHand(
+          state.input.hand,
+          maxHandLength(state.input.melds)
+        );
+        return {
+          ...state,
+          input: { ...state.input, hand: sortedHand },
+          inputFocus: null
+        };
+      }
       return { ...state, inputFocus: null };
+    }
+
+    case 'add-hand-tile': {
+      if (!canAddHandTile(state, action.tile)) return state;
+      return {
+        ...state,
+        input: {
+          ...state.input,
+          hand: [...state.input.hand, action.tile]
+        }
+      };
+    }
+
+    case 'remove-last-hand-tile': {
+      if (state.input.hand.length === 0) return state;
+      return {
+        ...state,
+        input: {
+          ...state.input,
+          hand: state.input.hand.slice(0, -1)
+        }
+      };
+    }
+
+    case 'remove-hand-tile': {
+      if (
+        !Number.isInteger(action.index) ||
+        action.index < 0 ||
+        action.index >= state.input.hand.length
+      ) {
+        return state;
+      }
+      return {
+        ...state,
+        input: {
+          ...state.input,
+          hand: state.input.hand.filter((_, i) => i !== action.index)
+        }
+      };
+    }
 
     case 'step': {
       const [min, max] = STEPPER_BOUNDS[action.field];
