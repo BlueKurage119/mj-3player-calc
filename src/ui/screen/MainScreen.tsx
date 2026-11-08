@@ -3,7 +3,7 @@ import type React from 'react';
 import { useResult } from '../calc/use-result';
 import { BottomSheet, ConnectedButtonGroup, Stepper } from '../expressive';
 import { SYMBOL_DIALPAD, SYMBOL_KEYBOARD_KEYS, SymbolIcon } from '../icons';
-import { TilePalette } from '../input';
+import { Tenkey, TilePalette } from '../input';
 import {
   type AppAction,
   STEPPER_BOUNDS,
@@ -140,7 +140,9 @@ export function MainScreen(): React.JSX.Element {
       >
         <div className="sheet-slot" data-slot={getSheetSlotName(inputFocus)}>
           {inputFocus?.type === 'hand' ? (
-            sheetMode === 'tenkey' ? null : (
+            sheetMode === 'tenkey' ? (
+              <Tenkey />
+            ) : (
               <TilePalette />
             )
           ) : null}

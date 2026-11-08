@@ -254,3 +254,7 @@ body {
   height: 3rem;
   --expressive-morph-height: 3rem;
 }
+
+.sheet-slot[data-slot="sheet-hand"] {
+  min-height: 16rem;
+}
