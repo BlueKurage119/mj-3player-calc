@@ -37,6 +37,14 @@
   letter-spacing: var(--md-sys-typescale-label-small-tracking);
 }
 
+/* 数字キーの補助表示は右下に置く */
+.tenkey__key--digit .tenkey__key-sub {
+  position: absolute;
+  inset-block-end: 0.25rem;
+  inset-inline-end: 0.5rem;
+  line-height: 1;
+}
+
 .tenkey__key--digit {
   background-color: var(--md-sys-color-surface-container-highest);
   color: var(--md-sys-color-on-surface);
