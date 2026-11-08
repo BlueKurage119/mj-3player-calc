@@ -3,7 +3,7 @@ import type React from 'react';
 import { useResult } from '../calc/use-result';
 import { BottomSheet, ConnectedButtonGroup, Stepper } from '../expressive';
 import { SYMBOL_DIALPAD, SYMBOL_KEYBOARD_KEYS, SymbolIcon } from '../icons';
-import { Tenkey, TilePalette } from '../input';
+import { Tenkey, TilePalette, useTenkeyKeyboard } from '../input';
 import {
   type AppAction,
   STEPPER_BOUNDS,
@@ -66,6 +66,8 @@ export function MainScreen(): React.JSX.Element {
   const dispatch = useAppDispatch();
   const resultState = useResult();
   const dispatchTimestampRef = useRef<number | null>(null);
+
+  useTenkeyKeyboard();
 
   const trackedDispatch = (action: AppAction) => {
     if (import.meta.env.DEV) {
