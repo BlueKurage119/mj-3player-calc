@@ -1,10 +1,11 @@
 # Issue #47 D3. テンキー入力 設計書
 
-- 状態: 設計案(未承認。v6)
+- 状態: 設計案(未承認。v7)
 - 版履歴:
   - v1〜v4: 初版〜ヒアリング反映。v4 は段階 1〜7 として実装済み(HEAD 9fc9818)。
   - v5: UI 監修の確定事項を反映。(1)入力方式トグルの見た目の高さを 40dp(M3E の S)に縮小し、当たり判定は `::after` で上下 4dp ずつ拡張して 48dp を維持(ステッパーと同じ作り)。ヘッダー行の箱は 48dp のまま(上下 4dp の余白に当たり判定を収め、シート上端・テンキーへ食い込ませないため)。シート高 321・`sheet-hand` の `min-height: 16rem` は不変。✕ は変更なし(見た目 40・当たり 48 は Material Web の既定どおり)。(2)`dialpad` アイコンだけ 20dp(呼び出し側で `size="1.25rem"`)。(3)段階 8 を追加し、条件 6・7・10・21 を更新、条件 23 を追加。
   - v6: パレット方式の縦配置を変更(ユーザー決定)。`sheet-hand` 内のパレットに `padding-block: 0.8rem`・`row-gap: 0.8rem`(各 12.8dp)を与え、内容領域 256dp いっぱいに均等分散する(12.8×2 + 48×4 + 12.8×3 = 256)。v5 までの「上詰め・下に 52 の空き」を廃止。シート高 321・`--sheet-height`・ヘッダー行 y=492 は不変。段階 9 を追加し、条件 10 を更新、条件 24 を追加。
+  - v7: 数字キーの補助表示の配置を変更(ユーザー決定。案 A)。数字キー(`.tenkey__key--digit`)の補助表示をキーの右下に小さく絶対配置し(mighty-calc の採用方式)、数字は全数字キーでキー中央に置く(v6 までは補助表示のあるキーだけ数字が上に寄り、8・9 と高さが揃わなかった)。スートキー・アクションは不変。キー寸法・シート高 321 は不変。段階 10 を追加し、条件 8 を更新、条件 25 を追加。
 - 対象: 底部シートの中身としてのテンキー(mighty 準拠の 4 列 × 5 行)、パレットとテンキーの切替(シートのヘッダー行)、入力バッファの手牌カードへの表示、物理キーボード対応、`BottomSheet` の `header` スロット追加、共通アイコン部品(`src/ui/icons/`)
 - 範囲外: ドラ・裏ドラ・副露・抜き北の入力(D4)、状況役(D5)、D1 条件 21(要約カードの固定。保留)、牌タップ削除の接続、ヘルプ吹き出し、拒否の文言・トースト、長押しリピートの特別扱い、320px 幅への対応、既存 8 か所のアイコンの差し替え
 
@@ -175,7 +176,10 @@ export const canAppendTenkeyDigit = (
 | 5 | (空) | 0(赤5) | (空) | (Enter の続き) |
 
 - キーは自作の `<button type="button" class="tenkey__key">` に `md` の `Ripple`・`FocusRing` を入れる(`ConnectedButtonGroup` と同じ作り。md の Button は 2 段の文字と 48dp 高さの制御が未確認のため避ける)。`padding: 0; border: 0`、`height: 100%`。
-- 文字: 主表示は `--md-sys-typescale-title-large-*`、補助表示は `--md-sys-typescale-label-small-*` を下に小さく(mighty の `<small>` 相当)。⌫・Enter は `SymbolIcon`(2.8)。
+- 文字: 主表示は `--md-sys-typescale-title-large-*`、補助表示は `--md-sys-typescale-label-small-*`(mighty の `<small>` 相当)。スートキー(`.tenkey__key--suit`)は主表示の下に補助表示を縦に並べる(flex column の中央寄せ。v6 までと同じ)。
+- (v7)数字キー(`.tenkey__key--digit`)の補助表示は、キーの右下に小さく絶対配置する(案 A。mighty-calc 採用方式)。`tenkey.css` に `.tenkey__key--digit .tenkey__key-sub { position: absolute; inset-block-end: 0.25rem; inset-inline-end: 0.5rem; line-height: 1; }` を足す。`.tenkey__key` は既に `position: relative` なので包含ブロックはキー自身になり、flex の流れから補助表示が外れるため、数字(`.tenkey__key-main`)は補助表示の有無によらず全数字キーでキー中央に来る。`line-height` を `1` に上書きするのは、絶対配置では行ボックスの高さ(label-small の行高 16)が配置に不要で、下端からの 0.25rem を文字の見た目どおりに効かせるため。`Tenkey.tsx` は変更不要(数字キーは既に `tenkey__key--digit` クラスと `tenkey__key-sub` の `<span aria-hidden="true">` を持つ)。
+- (v7)不採用案: 案 B(8・9 の下に空の補助表示行を入れて縦並びに揃える)。全数字キーの高さは揃うが、8・9 の数字が上に寄って下が空いた見た目になるため採らない。
+- ⌫・Enter は `SymbolIcon`(2.8)。
 - 色(すべてトークン): 数字キー `surface-container-highest` / `on-surface`、スートキー・⌫・AC `secondary-container` / `on-secondary-container`、Enter `primary` / `on-primary`。角は `--md-sys-shape-corner-medium`。`disabled` は不透明度 0.38(D2 と同じ)。
 - スートキーの補助表示(萬子・筒子・索子・字牌)【確定】(確定事項 5)。
 - `aria-label`: 数字 `"1"`〜`"9"`・`"0"`(補助表示は `aria-hidden`)、スート `"萬子"`・`"筒子"`・`"索子"`・`"字牌"`、⌫ `"1 文字削除"`、AC `"手牌をクリア"`、Enter `"入力を終える"`(後 2 つは D2 のパレットと同じ)。
@@ -314,6 +318,7 @@ export const SYMBOL_KEYBOARD_RETURN: string;
 
 - シート内幅 = 375 − 16 × 2 = **343**(`.bottom-sheet__content` の左右 padding)。360 幅は 328。
 - キー幅 = (内幅 − 3 × 4) / 4 → 375: (343 − 12) / 4 = **82.75**、360: (328 − 12) / 4 = 79.0。いずれも 48dp 以上。
+- (v7)数字キーの補助表示はキーの右端から 0.5rem(8)、下端から 0.25rem(4)の位置に右下揃えで置く。最長の「赤5」(label-small 11px 相当で幅約 25)でも、キー幅 79〜82.75 の中央にある数字(title-large 1 文字で幅約 12〜14)と横方向に重ならない見込み(算出。条件 25 で実測)。キー寸法・間隔・シート高は不変。
 - グリッド高 = 5 × 48 + 4 × 4 = **256**。パレットの素の高さ = 4 × 48 + 3 × 4 = 204(`tile-palette.css` の既定。v6 の上書き後はシート内で 256)。
 - `.sheet-slot[data-slot="sheet-hand"]` に `min-height: 16rem`(256)を付ける(確定事項 6)。
 - (v6)パレットの縦配置: `main-screen.css` に `.sheet-slot[data-slot="sheet-hand"] .tile-palette { padding-block: 0.8rem; row-gap: 0.8rem; }` を足す。0.8rem = 12.8dp で、12.8 × 2 + 48 × 4 + 12.8 × 3 = **256** となり内容領域ちょうどに収まる(ヘッダー下端〜先頭キー 12.8、行間 12.8、最終行〜内容下端 12.8)。`tile-palette.css`(D2)は変更しない(詳細度 0-3-0 が既定の 0-1-0 に勝つ)。メディアクエリ・px 直書きは使わない。キー 48dp は不変で、行間 4 → 12.8 により隣接ターゲット間隔は要件§4 の 8dp を満たすようになる(改善。列間 2px は D2 のまま変えない)。
@@ -357,6 +362,8 @@ export const SYMBOL_KEYBOARD_RETURN: string;
 
 9. (v6)パレットの縦配置。変更ファイルは `src/ui/screen/main-screen.css` のみ(2.10 の規則を 1 つ足す)。`TilePalette.tsx` はクラス名 `tile-palette` を持つ既存の要素をそのまま使え、`MainScreen.tsx`・`tile-palette.css`・`bottom-sheet.css` の変更は不要。純関数・状態の変更が無いのでテストの追加・赤確認は不要(条件 10・24 のブラウザ実測で確かめる)。1 コミットでよい
 
+10. (v7)数字キーの補助表示の右下配置。変更ファイルは `src/ui/input/tenkey.css` のみ(2.4 の規則を 1 つ足す)。`Tenkey.tsx` は既存のクラス・`aria-hidden` をそのまま使え変更不要。スートキー・アクションの規則は変えない。純関数・状態の変更が無いのでテストの追加・赤確認は不要(条件 8・25 のブラウザ実測で確かめる)。1 コミットでよい
+
 各コミット前に `npm run lint`・`typecheck`・`format:check`・`test`。
 
 ### 4.1 製造担当(AGY 含む)への境界
@@ -371,6 +378,7 @@ export const SYMBOL_KEYBOARD_RETURN: string;
 ## 5. 実挙動未確認の一覧
 
 - 2.10 の寸法(キー幅 82.75、シート高 321、内容の最小高で両方式が等高になること。v6: パレットの padding・行間 12.8 で 256 ちょうどになり、はみ出し・スクロールが出ないこと)。
+- (v7)数字キーの右下の補助表示が、375・360 幅でキーの境界・数字と重ならないこと(「赤5」が最長)。重なる場合は製造担当が独断で直さず報告する。
 - (v5)トグルの `::after` で上下に広げた当たり判定が、`elementFromPoint` でボタンの外 4dp(ヘッダー行の上端・下端付近)を拾うか。拾わない場合は製造担当が独断で直さず報告する。
 - `keyboard_keys` の 24dp 表示での視認性(小さな四角 1 個が約 2dp 角で、潰れて見分けにくい恐れ)。
 - shadow DOM 内の要素にフォーカスがあるときの `keydown` の `target`(`closest('.bottom-sheet')` で判定できるか)。
@@ -396,7 +404,7 @@ export const SYMBOL_KEYBOARD_RETURN: string;
 
 6. 手牌カードを押すとシートが開き、ヘッダー行に「入力方式」の radiogroup(radio 2 つ、アイコンのみで文字なし)と「閉じる」ボタンがある。ハンドルの棒が無い。開いた直後のフォーカスが「閉じる」ボタン(`document.activeElement` を shadow root まで辿って確認)。初回は「パレット」が `aria-checked="true"`。(v5)radio の各 `getBoundingClientRect().height` が 40(±0.5)、ヘッダー行(`.bottom-sheet__header`)の高さが 48(±0.5)、radio の上端・下端がそれぞれヘッダー行の上端 +4・下端 −4(±0.5)。各 radio の当たり判定: radio の中心 x で、radio の上端 −3 と下端 +3 の点の `document.elementFromPoint` がその radio(またはその子孫)。「閉じる」のホスト(`md-icon-button`)の矩形が 48 × 48 以上でヘッダー行の内側に収まる。各 radio の `aria-label` が「パレット」「テンキー」。
 7. 「テンキー」を押すと中身がテンキーに替わり、手牌は変わらない。ヘッダー行の `top` が切替の前後で同じ(±0.5)。`--sheet-height` が両方式で同じ値。
-8. テンキーの配置が 2.4 の表のとおり(各キーの `aria-label` と `getBoundingClientRect()` の行・列で確認)。Enter が 4〜5 行目にまたがる。1〜7 に 東南西北白發中、0 に「赤5」、m・p・s・z に 萬子・筒子・索子・字牌 の補助表示がある。
+8. テンキーの配置が 2.4 の表のとおり(各キーの `aria-label` と `getBoundingClientRect()` の行・列で確認)。Enter が 4〜5 行目にまたがる。1〜7 に 東南西北白發中、0 に「赤5」、m・p・s・z に 萬子・筒子・索子・字牌 の補助表示がある(いずれも `aria-hidden="true"`)。(v7)数字キーの補助表示は右下、スートキーの補助表示は主表示の下(縦並び)。
 9. 375 幅でキー幅 82.25〜83.25、高さ 48(±0.5)、隣接キーの左端差 − 幅 = 4(±0.5)、上下の間隔 4(±0.5)。360 幅のキー幅を報告する。
 10. `--sheet-height` が 375×812 で 406 以下、375×667 で 333 以下。値を報告する(見込み 321。v5 でも不変、v4 実測 321)。パレット方式でも同じ値。(v6)パレットの先頭キーはヘッダー下端から 12.8 下(375×812 の見込みで先頭キー top ≈ 552.8。v5 までの 540 から変更)。
 11. テンキーで `1` `2` `3` を押すと手牌カードの牌列末尾に `123‸` が出る。`m` を押すと 1m 2m 3m が入り、バッファ表示が消える。バッファが空のときバッファ要素が DOM に無い。
@@ -413,6 +421,7 @@ export const SYMBOL_KEYBOARD_RETURN: string;
 22. バンドル予算(目標値。不合格にしない): D2 条件 18 と同じ測り方で合計を測り、102,000 B を超えたら超過量を最終報告と PR 本文に書く。
 23. (v5)アイコンの大きさ: 「テンキー」radio 内の svg の `getBoundingClientRect()` が 20 × 20(±0.5)、「パレット」radio・「閉じる」・テンキーの ⌫・Enter の svg が 24 × 24(±0.5)。`git diff 9fc9818 --name-only` が `src/ui/screen/main-screen.css`・`src/ui/screen/MainScreen.tsx`・本書だけ。
 24. (v6)パレットの縦配置(パレット方式、375×812・375×667・360×800 の各々): 先頭行キーの top = ヘッダー行の下端 + 12.8(±0.5)。最終行(⌫/AC/Enter)の下端とシート(`.bottom-sheet`)下端の間 = 12.8 + 下 padding 16 + safe-area(±0.5)。各行の間隔(上の行の下端〜下の行の top)が 12.8(±0.5)。`--sheet-height` は 321。テンキー方式に切り替えたときのシート高・キー位置は v5 と同じ(不変)。`git diff f273fab --name-only` が `src/ui/screen/main-screen.css`・本書だけ。
+25. (v7)数字キーの補助表示(テンキー方式、375×812・360×800 の各々): 1〜9・0 の全キーで `.tenkey__key-main` の矩形の縦中心がキー矩形の縦中心と一致(±1)、横中心も一致(±1)。補助表示のある 1〜7・0 で `.tenkey__key-sub` の矩形がキー矩形の内側にあり、右端がキー右端 − 8(±1)、下端がキー下端 − 4(±2)。`.tenkey__key-sub` と `.tenkey__key-main` の矩形が重ならない(「赤5」を含む)。スートキー(m・p・s・z)の補助表示は主表示の下にあり(sub の top ≥ main の bottom − 0.5)、v6 から位置が変わらない。キーの寸法・間隔(条件 9)とシート高 321 は不変。`git diff e206aa6 --name-only` が `src/ui/input/tenkey.css`・本書だけ。
 
 実機確認(C-02 の逆発注): テンキーの押しやすさ(360 幅を含む)、方式トグルとアイコン(`keyboard_keys` の潰れ)の分かりやすさ、確定できないときに何も出ないことの分かりやすさ、外付けキーボードでの入力、667 高の機種でのシート高。
 
