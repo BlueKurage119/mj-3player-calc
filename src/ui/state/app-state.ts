@@ -5,6 +5,7 @@ import type { Tile } from '../../core/tile';
 import { canAddHandTile, maxHandLength, sortHand } from './hand-rules';
 
 export type Screen = 'main' | 'settings';
+export type SheetMode = 'palette' | 'tenkey';
 export type TenkeySuit = 'm' | 'p' | 's' | 'z';
 export type SheetTarget =
   | { type: 'hand' }

@@ -1,5 +1,6 @@
 export {
   type Screen,
+  type SheetMode,
   type TenkeySuit,
   type SheetTarget,
   type AppInput,
