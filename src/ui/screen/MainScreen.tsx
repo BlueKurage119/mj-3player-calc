@@ -2,6 +2,7 @@ import { useRef } from 'react';
 import type React from 'react';
 import { useResult } from '../calc/use-result';
 import { BottomSheet, Stepper } from '../expressive';
+import { TilePalette } from '../input';
 import {
   type AppAction,
   STEPPER_BOUNDS,
@@ -109,7 +110,9 @@ export function MainScreen(): React.JSX.Element {
         onClose={() => dispatch({ type: 'close-sheet' })}
         aria-label="入力パネル"
       >
-        <div className="sheet-slot" data-slot={getSheetSlotName(inputFocus)} />
+        <div className="sheet-slot" data-slot={getSheetSlotName(inputFocus)}>
+          {inputFocus?.type === 'hand' ? <TilePalette /> : null}
+        </div>
       </BottomSheet>
     </div>
   );

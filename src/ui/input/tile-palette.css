@@ -1,0 +1,77 @@
+.tile-palette {
+  display: grid;
+  grid-template-columns: repeat(9, minmax(0, 1fr));
+  column-gap: 2px;
+  row-gap: 0.25rem;
+  grid-auto-rows: 3rem;
+}
+
+.tile-palette__key {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 3rem;
+  padding: 0;
+  border: 0;
+  margin: 0;
+  background-color: transparent;
+  border-radius: var(--md-sys-shape-corner-small);
+  cursor: pointer;
+  box-sizing: border-box;
+  --tile-width: min(100%, 2.25rem);
+}
+
+.tile-palette__key::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background-color: var(--md-sys-color-on-surface);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.tile-palette__key:hover:not(:disabled)::after {
+  opacity: 0.08;
+}
+
+.tile-palette__key:focus-visible:not(:disabled)::after,
+.tile-palette__key:active:not(:disabled)::after {
+  opacity: 0.1;
+}
+
+.tile-palette__key:focus-visible {
+  outline: 2px solid var(--md-sys-color-secondary);
+  outline-offset: 1px;
+}
+
+.tile-palette__key:disabled {
+  opacity: 0.38;
+  cursor: not-allowed;
+}
+
+.tile-palette__action {
+  width: 100%;
+  height: 100%;
+  min-height: 3rem;
+  --md-filled-button-container-height: 3rem;
+  --md-filled-tonal-button-container-height: 3rem;
+  --md-filled-icon-button-container-height: 3rem;
+  --md-filled-tonal-icon-button-container-height: 3rem;
+  --md-filled-icon-button-container-width: 100%;
+  --md-filled-tonal-icon-button-container-width: 100%;
+}
+
+.tile-palette__action--span-2 {
+  grid-column: span 2;
+}
+
+.tile-palette__action--span-3 {
+  grid-column: span 3;
+}
+
+.tile-palette__action--span-4 {
+  grid-column: span 4;
+}
