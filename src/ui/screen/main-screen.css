@@ -272,3 +272,8 @@ body {
 .sheet-slot[data-slot="sheet-hand"] {
   min-height: 16rem;
 }
+
+.sheet-slot[data-slot="sheet-hand"] .tile-palette {
+  padding-block: 0.8rem;
+  row-gap: 0.8rem;
+}
