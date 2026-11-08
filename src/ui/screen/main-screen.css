@@ -100,6 +100,8 @@ body {
   color: var(--md-sys-color-on-surface);
   border-radius: var(--md-sys-shape-corner-large);
   box-sizing: border-box;
+  scroll-margin-top: 0.5rem;
+  scroll-margin-bottom: calc(var(--sheet-height) + 0.5rem);
 }
 
 .hand-card__top-row {
@@ -131,13 +133,25 @@ body {
 }
 
 .hand-card__tiles {
+  container-type: inline-size;
   display: flex;
   flex-wrap: nowrap;
   align-items: center;
-  gap: 0.125rem;
+  gap: 1px;
   width: 100%;
   overflow-x: auto;
-  --tile-width: 1.4375rem;
+  --tile-width: min(
+    1.75rem,
+    calc(
+      (100cqi - (var(--hand-max, 14) - 1) * 1px - 0.5rem) /
+      var(--hand-max, 14)
+    )
+  );
+}
+
+.hand-card__winning-tile {
+  display: inline-flex;
+  margin-inline-start: 0.5rem;
 }
 
 /* 要約カード (sticky top: 0、非表示時は高さ 0 でレイアウトの跳ねを避ける) */

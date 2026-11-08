@@ -1,0 +1,1 @@
+export { TilePalette } from './TilePalette';

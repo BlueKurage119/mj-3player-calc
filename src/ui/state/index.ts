@@ -11,6 +11,15 @@ export {
 } from './app-state';
 
 export {
+  maxHandLength,
+  usedTiles,
+  canAddHandTile,
+  isHandFull,
+  sortHand,
+  splitWinningTile
+} from './hand-rules';
+
+export {
   AppStateProvider,
   type AppStateProviderProps,
   useAppState,
