@@ -53,7 +53,7 @@ function SheetModeToggle(): React.JSX.Element {
         {
           value: 'tenkey',
           label: 'テンキー',
-          icon: <SymbolIcon d={SYMBOL_DIALPAD} />
+          icon: <SymbolIcon d={SYMBOL_DIALPAD} size="1.25rem" />
         }
       ]}
       onValueChange={mode => dispatch({ type: 'set-sheet-mode', mode })}

@@ -261,9 +261,12 @@ body {
   flex-shrink: 0;
 }
 
-.sheet-mode-toggle .connected-button {
-  height: 3rem;
-  --expressive-morph-height: 3rem;
+.sheet-mode-toggle .connected-button::after {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  top: calc(min(0px, (100% - 3rem) / 2));
+  bottom: calc(min(0px, (100% - 3rem) / 2));
 }
 
 .sheet-slot[data-slot="sheet-hand"] {
