@@ -1,9 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import {
+  isGalleryEnabled,
   isMdGalleryMode,
   isTileGalleryMode,
   readThemeOverride
 } from './app-mode';
+
+describe('D1: ギャラリーの DEV 限定化 (isGalleryEnabled)', () => {
+  it('D1-5: isGalleryEnabled は DEV 時のみ true を返す', () => {
+    expect(isGalleryEnabled(true)).toBe(true);
+    expect(isGalleryEnabled(false)).toBe(false);
+  });
+});
 
 describe('C3: アプリモード判定 (isTileGalleryMode)', () => {
   it('C3-T09: gallery=tiles が指定されていない場合は false を返す', () => {

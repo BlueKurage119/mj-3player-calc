@@ -9,3 +9,13 @@ export {
   nextIndex,
   type ConnectedOption
 } from './connected-logic';
+
+export {
+  Stepper,
+  type StepperProps
+} from './Stepper';
+
+export {
+  BottomSheet,
+  type BottomSheetProps
+} from './BottomSheet';

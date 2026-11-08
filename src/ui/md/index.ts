@@ -54,3 +54,10 @@ export {
   FocusRing,
   type FocusRingProps
 } from './FocusRing';
+
+export {
+  Menu,
+  type MenuProps,
+  MenuItem,
+  type MenuItemProps
+} from './Menu';

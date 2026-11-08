@@ -1,12 +1,11 @@
-import type React from 'react';
 import type {
   MdFilledButton,
   MdFilledTonalButton,
   MdOutlinedButton,
   MdTextButton
 } from '@material/web/button/filled-button.js';
-import type { MdChipSet } from '@material/web/chips/chip-set.js';
 import type { MdAssistChip } from '@material/web/chips/assist-chip.js';
+import type { MdChipSet } from '@material/web/chips/chip-set.js';
 import type { MdFilterChip } from '@material/web/chips/filter-chip.js';
 import type { MdDialog } from '@material/web/dialog/dialog.js';
 import type { MdDivider } from '@material/web/divider/divider.js';
@@ -17,12 +16,15 @@ import type {
   MdIconButton,
   MdOutlinedIconButton
 } from '@material/web/iconbutton/icon-button.js';
+import type { MdMenuItem } from '@material/web/menu/menu-item.js';
+import type { MdMenu } from '@material/web/menu/menu.js';
 import type { MdRipple } from '@material/web/ripple/ripple.js';
 import type { MdOutlinedSelect } from '@material/web/select/outlined-select.js';
 import type { MdSelectOption } from '@material/web/select/select-option.js';
 import type { MdSwitch } from '@material/web/switch/switch.js';
 import type { MdPrimaryTab } from '@material/web/tabs/primary-tab.js';
 import type { MdTabs } from '@material/web/tabs/tabs.js';
+import type React from 'react';
 
 interface CustomElementBaseProps<T extends HTMLElement> {
   ref?: React.Ref<T> | undefined;
@@ -124,6 +126,15 @@ declare module 'react' {
       };
       'md-focus-ring': CustomElementBaseProps<MdFocusRing> & {
         inward?: boolean | undefined;
+      };
+
+      'md-menu': CustomElementBaseProps<MdMenu> & {
+        open?: boolean | undefined;
+        positioning?: 'absolute' | 'fixed' | 'document' | 'popover' | undefined;
+        anchor?: string | undefined;
+      };
+      'md-menu-item': CustomElementBaseProps<MdMenuItem> & {
+        disabled?: boolean | undefined;
       };
     }
   }

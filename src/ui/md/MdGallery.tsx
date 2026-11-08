@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import type React from 'react';
 import { ConnectedButtonGroup, type ConnectedOption } from '../expressive';
 import { useTheme } from '../theme';
@@ -11,6 +11,8 @@ import {
   FilterChip,
   FocusRing,
   IconButton,
+  Menu,
+  MenuItem,
   PrimaryTab,
   Ripple,
   Select,
@@ -35,6 +37,9 @@ export default function MdGallery(): React.JSX.Element {
   const [activeTab, setActiveTab] = useState(0);
   const [selectVal, setSelectVal] = useState('apple');
   const [connectedVal, setConnectedVal] = useState('opt1');
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [menuSelected, setMenuSelected] = useState('');
+  const menuAnchorRef = useRef<HTMLElement | null>(null);
 
   const sampleIcon = (
     <svg viewBox="0 0 24 24" width="1.5rem" height="1.5rem" aria-hidden="true">
@@ -44,6 +49,7 @@ export default function MdGallery(): React.JSX.Element {
 
   return (
     <main
+      className="md-gallery"
       style={{
         padding: '1rem',
         display: 'flex',
@@ -161,6 +167,33 @@ export default function MdGallery(): React.JSX.Element {
         >
           これはダイアログの内容です。
         </Dialog>
+      </section>
+
+      <section>
+        <h2>Menu</h2>
+        <div style={{ position: 'relative', display: 'inline-block' }}>
+          <Button
+            ref={menuAnchorRef}
+            variant="outlined"
+            onClick={() => setMenuOpen(prev => !prev)}
+          >
+            メニューを開く
+          </Button>
+          <Menu
+            open={menuOpen}
+            anchor={menuAnchorRef}
+            onClose={() => setMenuOpen(false)}
+          >
+            <MenuItem onSelect={() => setMenuSelected('設定')}>設定</MenuItem>
+            <Divider />
+            <MenuItem onSelect={() => setMenuSelected('オールクリア')}>
+              オールクリア
+            </MenuItem>
+          </Menu>
+        </div>
+        <span id="menu-selected-value" style={{ marginLeft: '1rem' }}>
+          Selected: {menuSelected}
+        </span>
       </section>
 
       <section>
