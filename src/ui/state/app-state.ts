@@ -5,6 +5,7 @@ import type { Tile } from '../../core/tile';
 import { canAddHandTile, maxHandLength, sortHand } from './hand-rules';
 
 export type Screen = 'main' | 'settings';
+export type TenkeySuit = 'm' | 'p' | 's' | 'z';
 export type SheetTarget =
   | { type: 'hand' }
   | { type: 'dora' }
@@ -19,6 +20,7 @@ export interface AppState {
   input: AppInput;
   inputFocus: SheetTarget | null; // null = シートを閉じている
   handOptions: HandOptions;
+  tenkeyBuffer: string; // '0'〜'9' のみ。既定 ''
 }
 export type AppAction =
   | { type: 'navigate'; screen: Screen }
@@ -69,7 +71,8 @@ export const createInitialState = (rule: Rule): AppState => ({
   },
   input: createInitialInput(),
   inputFocus: null,
-  handOptions: createInitialHandOptions()
+  handOptions: createInitialHandOptions(),
+  tenkeyBuffer: ''
 });
 
 export const appReducer = (state: AppState, action: AppAction): AppState => {

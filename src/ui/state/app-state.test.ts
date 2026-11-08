@@ -178,7 +178,8 @@ describe('D1: 状態管理と reducer (条件6〜9)', () => {
         tenho: false,
         tsubameGaeshi: true,
         kanFuri: false
-      }
+      },
+      tenkeyBuffer: ''
     };
 
     const cleared = appReducer(populated, { type: 'clear-all' });
@@ -269,7 +270,8 @@ describe('D1: 状態管理と reducer (条件6〜9)', () => {
         tenho: false,
         tsubameGaeshi: false,
         kanFuri: false
-      }
+      },
+      tenkeyBuffer: ''
     });
 
     // navigate

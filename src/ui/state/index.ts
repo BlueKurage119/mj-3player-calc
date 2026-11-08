@@ -1,5 +1,6 @@
 export {
   type Screen,
+  type TenkeySuit,
   type SheetTarget,
   type AppInput,
   type AppState,
@@ -16,7 +17,10 @@ export {
   canAddHandTile,
   isHandFull,
   sortHand,
-  splitWinningTile
+  splitWinningTile,
+  resolveTenkeyBuffer,
+  canAppendTenkeyDigit,
+  planAddTiles
 } from './hand-rules';
 
 export {
