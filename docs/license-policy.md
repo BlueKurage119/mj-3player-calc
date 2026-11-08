@@ -16,6 +16,7 @@
 | ┗ riichi-rs-bundlers | 未記載（実体 riichi-rust に LICENSE なし） | npm registry／過去の調査 | 問題の原因 |
 | ┗ riichi-mahjong-tiles（React SVG） | MIT | npm registry | 使用可 |
 | FluffyStuff/riichi-mahjong-tiles（牌画像） | **CC0（パブリックドメイン）** | 上流の `LICENSE.md` | 使用可。mahjong-calc の README には「CC BY」とあるが、上流は現在 CC0。クレジットは礼儀として残す |
+| google/material-design-icons（Material Symbols） | **Apache-2.0** | 上流の `LICENSE` | `src/ui/icons/` でインライン SVG として使用可（出典をコード先頭コメントに記載） |
 
 ### mj-mighty-calc について
 riichi 系ライブラリを import しているのは次のファイルです: `App.tsx`, `ui/LuckSheet.tsx`, `ui/TileImage.tsx`, `core/{almighty,tiles,analysis,yakuNames,backend}.ts`。

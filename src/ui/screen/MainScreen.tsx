@@ -1,7 +1,8 @@
 import { useRef } from 'react';
 import type React from 'react';
 import { useResult } from '../calc/use-result';
-import { BottomSheet, Stepper } from '../expressive';
+import { BottomSheet, ConnectedButtonGroup, Stepper } from '../expressive';
+import { SYMBOL_DIALPAD, SYMBOL_KEYBOARD_KEYS, SymbolIcon } from '../icons';
 import { TilePalette } from '../input';
 import {
   type AppAction,
@@ -34,8 +35,34 @@ const getSheetSlotName = (target: SheetTarget | null): string => {
   }
 };
 
+function SheetModeToggle(): React.JSX.Element {
+  const { sheetMode } = useAppState();
+  const dispatch = useAppDispatch();
+
+  return (
+    <ConnectedButtonGroup
+      label="入力方式"
+      className="sheet-mode-toggle"
+      value={sheetMode}
+      options={[
+        {
+          value: 'palette',
+          label: 'パレット',
+          icon: <SymbolIcon d={SYMBOL_KEYBOARD_KEYS} />
+        },
+        {
+          value: 'tenkey',
+          label: 'テンキー',
+          icon: <SymbolIcon d={SYMBOL_DIALPAD} />
+        }
+      ]}
+      onValueChange={mode => dispatch({ type: 'set-sheet-mode', mode })}
+    />
+  );
+}
+
 export function MainScreen(): React.JSX.Element {
-  const { rule, table, input, inputFocus } = useAppState();
+  const { rule, table, input, inputFocus, sheetMode } = useAppState();
   const dispatch = useAppDispatch();
   const resultState = useResult();
   const dispatchTimestampRef = useRef<number | null>(null);
@@ -109,9 +136,14 @@ export function MainScreen(): React.JSX.Element {
         open={sheetOpen}
         onClose={() => dispatch({ type: 'close-sheet' })}
         aria-label="入力パネル"
+        header={inputFocus?.type === 'hand' ? <SheetModeToggle /> : undefined}
       >
         <div className="sheet-slot" data-slot={getSheetSlotName(inputFocus)}>
-          {inputFocus?.type === 'hand' ? <TilePalette /> : null}
+          {inputFocus?.type === 'hand' ? (
+            sheetMode === 'tenkey' ? null : (
+              <TilePalette />
+            )
+          ) : null}
         </div>
       </BottomSheet>
     </div>

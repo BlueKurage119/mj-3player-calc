@@ -1,6 +1,9 @@
+import type { ReactNode } from 'react';
+
 export interface ConnectedOption<T extends string = string> {
   value: T;
-  label: string;
+  label: string; // icon があるときは aria-label に使う
+  icon?: ReactNode | undefined;
   disabled?: boolean | undefined;
 }
 

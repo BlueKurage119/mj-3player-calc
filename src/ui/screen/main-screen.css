@@ -249,3 +249,8 @@ body {
   height: var(--sheet-height, 0px);
   flex-shrink: 0;
 }
+
+.sheet-mode-toggle .connected-button {
+  height: 3rem;
+  --expressive-morph-height: 3rem;
+}
