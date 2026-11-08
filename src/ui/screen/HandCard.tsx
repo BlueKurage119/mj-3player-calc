@@ -40,7 +40,7 @@ const renderHandTile = (
 };
 
 export function HandCard(): React.JSX.Element {
-  const { input, inputFocus } = useAppState();
+  const { input, inputFocus, tenkeyBuffer } = useAppState();
   const dispatch = useAppDispatch();
   const cardRef = useRef<HTMLDivElement | null>(null);
   const isHandFocused = inputFocus?.type === 'hand';
@@ -144,6 +144,11 @@ export function HandCard(): React.JSX.Element {
         <div className="hand-card__tiles" style={tilesStyle}>
           {body.map(item => renderHandTile(item))}
           {winning ? renderHandTile(winning, true) : null}
+          {tenkeyBuffer.length > 0 ? (
+            <span className="hand-card__buffer" aria-hidden="true">
+              {tenkeyBuffer}‸
+            </span>
+          ) : null}
         </div>
       </div>
     </div>
