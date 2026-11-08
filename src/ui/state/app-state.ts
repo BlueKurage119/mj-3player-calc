@@ -2,7 +2,14 @@ import type { HandOptions, Input } from '../../core/input';
 import type { Rule } from '../../core/rule';
 import type { Table } from '../../core/table';
 import type { Tile } from '../../core/tile';
-import { canAddHandTile, maxHandLength, sortHand } from './hand-rules';
+import {
+  canAddHandTile,
+  canAppendTenkeyDigit,
+  maxHandLength,
+  planAddTiles,
+  resolveTenkeyBuffer,
+  sortHand
+} from './hand-rules';
 
 export type Screen = 'main' | 'settings';
 export type SheetMode = 'palette' | 'tenkey';
@@ -21,6 +28,7 @@ export interface AppState {
   input: AppInput;
   inputFocus: SheetTarget | null; // null = シートを閉じている
   handOptions: HandOptions;
+  sheetMode: SheetMode; // 既定 'palette'。開閉をまたいで保持
   tenkeyBuffer: string; // '0'〜'9' のみ。既定 ''
 }
 export type AppAction =
@@ -33,7 +41,12 @@ export type AppAction =
   | { type: 'remove-hand-tile'; index: number }
   | { type: 'clear-hand' }
   | { type: 'clear-all' }
-  | { type: 'set-rule'; rule: Rule }; // D6 が使う。D1 では reducer とテストのみ
+  | { type: 'set-rule'; rule: Rule } // D6 が使う。D1 では reducer とテストのみ
+  | { type: 'set-sheet-mode'; mode: SheetMode }
+  | { type: 'tenkey-digit'; digit: string } // '0'〜'9' の 1 文字
+  | { type: 'tenkey-backspace' }
+  | { type: 'tenkey-commit'; suit: TenkeySuit }
+  | { type: 'add-hand-tiles'; tiles: Tile[] };
 export const STEPPER_BOUNDS = {
   continue: [0, 99],
   deposit: [0, 99],
@@ -73,6 +86,7 @@ export const createInitialState = (rule: Rule): AppState => ({
   input: createInitialInput(),
   inputFocus: null,
   handOptions: createInitialHandOptions(),
+  sheetMode: 'palette',
   tenkeyBuffer: ''
 });
 
@@ -91,7 +105,8 @@ export const appReducer = (state: AppState, action: AppAction): AppState => {
         return {
           ...state,
           input: { ...state.input, hand: sortedHand },
-          inputFocus: action.target
+          inputFocus: action.target,
+          tenkeyBuffer: ''
         };
       }
       return { ...state, inputFocus: action.target };
@@ -107,10 +122,11 @@ export const appReducer = (state: AppState, action: AppAction): AppState => {
         return {
           ...state,
           input: { ...state.input, hand: sortedHand },
-          inputFocus: null
+          inputFocus: null,
+          tenkeyBuffer: ''
         };
       }
-      return { ...state, inputFocus: null };
+      return { ...state, inputFocus: null, tenkeyBuffer: '' };
     }
 
     case 'add-hand-tile': {
@@ -120,7 +136,8 @@ export const appReducer = (state: AppState, action: AppAction): AppState => {
         input: {
           ...state.input,
           hand: [...state.input.hand, action.tile]
-        }
+        },
+        tenkeyBuffer: ''
       };
     }
 
@@ -131,7 +148,8 @@ export const appReducer = (state: AppState, action: AppAction): AppState => {
         input: {
           ...state.input,
           hand: state.input.hand.slice(0, -1)
-        }
+        },
+        tenkeyBuffer: ''
       };
     }
 
@@ -148,7 +166,8 @@ export const appReducer = (state: AppState, action: AppAction): AppState => {
         input: {
           ...state.input,
           hand: state.input.hand.filter((_, i) => i !== action.index)
-        }
+        },
+        tenkeyBuffer: ''
       };
     }
 
@@ -175,7 +194,8 @@ export const appReducer = (state: AppState, action: AppAction): AppState => {
     case 'clear-hand':
       return {
         ...state,
-        input: { ...state.input, hand: [] }
+        input: { ...state.input, hand: [] },
+        tenkeyBuffer: ''
       };
 
     case 'clear-all':
@@ -183,7 +203,8 @@ export const appReducer = (state: AppState, action: AppAction): AppState => {
         ...state,
         input: createInitialInput(),
         handOptions: createInitialHandOptions(),
-        inputFocus: null
+        inputFocus: null,
+        tenkeyBuffer: ''
       };
 
     case 'set-rule': {
@@ -197,6 +218,72 @@ export const appReducer = (state: AppState, action: AppAction): AppState => {
         ...state,
         rule: nextRule,
         input: nextInput
+      };
+    }
+
+    case 'set-sheet-mode': {
+      if (state.sheetMode === action.mode) return state;
+      return {
+        ...state,
+        sheetMode: action.mode,
+        tenkeyBuffer: ''
+      };
+    }
+
+    case 'tenkey-digit': {
+      if (state.inputFocus?.type !== 'hand') return state;
+      if (state.sheetMode !== 'tenkey') return state;
+      if (!canAppendTenkeyDigit(state, action.digit)) return state;
+      return {
+        ...state,
+        tenkeyBuffer: state.tenkeyBuffer + action.digit
+      };
+    }
+
+    case 'tenkey-backspace': {
+      if (state.tenkeyBuffer.length > 0) {
+        return {
+          ...state,
+          tenkeyBuffer: state.tenkeyBuffer.slice(0, -1)
+        };
+      }
+      if (state.input.hand.length === 0) return state;
+      return {
+        ...state,
+        input: {
+          ...state.input,
+          hand: state.input.hand.slice(0, -1)
+        },
+        tenkeyBuffer: ''
+      };
+    }
+
+    case 'tenkey-commit': {
+      const tiles = resolveTenkeyBuffer(state.tenkeyBuffer, action.suit);
+      if (tiles === null) return state;
+      const planned = planAddTiles(state, tiles);
+      if (planned === null) return state;
+      return {
+        ...state,
+        input: {
+          ...state.input,
+          hand: [...state.input.hand, ...planned]
+        },
+        tenkeyBuffer: ''
+      };
+    }
+
+    case 'add-hand-tiles': {
+      if (action.tiles.length === 0) return state;
+      const planned = planAddTiles(state, action.tiles);
+      if (planned === null) return state;
+      return {
+        ...state,
+        input: {
+          ...state.input,
+          hand: [...state.input.hand, ...planned]
+        },
+        tenkeyBuffer: ''
       };
     }
   }
