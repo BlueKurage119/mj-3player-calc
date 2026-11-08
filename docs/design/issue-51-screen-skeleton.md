@@ -238,19 +238,36 @@ export interface StepperProps {
 - **レイアウト【確定(ユーザー)】**: 1行目=見出し(`stepper__label`、label-medium、`aria-hidden`、1行固定 `white-space: nowrap`)、2行目=`[ − | 値 | + ]` がつながった1つのピル(Expressive の Connected button group 風)。
 - **ピルの構造**: `stepper__controls` を `display: flex; gap: 0.125rem`(`connected-button-group` と同じ 2dp)にし、子は左から −ボタン・値・+ボタンの3つ。−・+ は `IconButton`(Material Web)をやめ、素の `<button type="button">` に `expressive-shape-morph` クラス(`src/ui/expressive/shape-morph.css`)を付けて自作する。`shape-morph.css` は全丸を `--expressive-morph-height` の半分で作るため、−・+ に `--expressive-morph-height: 2.75rem` を必ず設定する。06号必須制約4(同役割の二重部品禁止)との関係: これは Connected button group の端のボタンという別役割の自作であり、`IconButton` の代替ではない(角・形変化の変数の組み方は `connected-button-group.css` を流用する)。理由: `md-icon-button` は角の個別指定と押下時の形の変化ができず、また内部の touch target が 48px 固定(`@material/web/iconbutton/internal/_shared.scss` の `max(48px, 100%)`)でピルの寸法と食い違うため。`aria-label` は従来どおり「{ラベル}を減らす」「{ラベル}を増やす」。アイコン SVG は現行のものを流用。
   - 角: −は外側(左)2角=`--expressive-morph-full`、内側(右)2角=`--md-sys-shape-corner-small`。+ は左右逆。押下時は内側の角を `--md-sys-shape-corner-extra-small` にする(`connected-button-group.css` の `:first-child`・`:last-child` の `rest`/`pressed` 変数と同じ組み方。`selected` は使わない)。
-  - 値: `<output aria-live="polite">`、`tabular-nums`、title-small(14px。title-medium 16px では 2ch≈20.7px で 360 幅に収まらないため)、`padding-inline: 0`、背景 `--md-sys-color-surface-container-highest`、角は4角とも `--md-sys-shape-corner-small`(押下で変形しない。ボタンではないため)。
+  - 値: `<output aria-live="polite">`、`tabular-nums`、文字は title-small より大きくする【確定(ユーザー): 値を目立たせる】。具体の書体トークンは下記「値の表示」の候補から決める【設計案。推奨 title-medium、未確定】。`padding-inline: 0`、背景 `--md-sys-color-surface-container-highest`、角は4角とも `--md-sys-shape-corner-small`(押下で変形しない。ボタンではないため)。
   - 色: ボタン背景 `--md-sys-color-secondary-container`・前景 `--md-sys-color-on-secondary-container`。無効時は前景・背景とも MD3 の disabled 規定(on-surface の 38%/12%)を `color-mix` 等でトークンから作る。HEX 直書き禁止(06号)。無効表現はボタンの色だけで行い、現行 `stepper.css` の `.stepper[data-disabled="true"] { opacity: 0.38 }` は外す(二重に薄くなるため。見出しは無効時に `color` を on-surface 38% にする)。
-  - 状態表示(素の `<button>` で失う分を自作): hover は前景色の 8%、押下は 10% の state layer を `::before` 等に `color-mix(in srgb, currentColor 8%, transparent)` で重ねる(当たり判定は広げない)。`:focus-visible` で `outline: 0.1875rem solid var(--md-sys-color-secondary); outline-offset: 0.125rem`。数値は rem、色はトークン。
+  - 状態表示(素の `<button>` で失う分を自作): hover は前景色の 8%、押下は 10% の state layer を `::before` 等に `color-mix(in srgb, currentColor 8%, transparent)` で重ねる(state layer は見た目の矩形の内側だけ。`::before` は `pointer-events: none` のまま。当たり判定の拡張は別の `::after` で行う。下記「当たり判定」)。`:focus-visible` で `outline: 0.1875rem solid var(--md-sys-color-secondary); outline-offset: 0.125rem`。数値は rem、色はトークン。
   - モーション: 角の変化は `shape-morph.css` 既存の遷移(`--md-sys-motion-spring-spatial-fast-duration`・`-easing`)を使う。ms・cubic-bezier の直書き禁止(06号)。
-- **寸法【設計案。タップ領域の緩和はユーザー確定事項2に基づく】**: ピルの高さ 44dp(`2.75rem`)。−・+ は `flex: 0 1 2.75rem; min-width: 2.5rem`(目標 44dp、狭い幅でも最悪 40dp)。値は `flex: 1 0 auto; min-width: 2ch`(title-small で約 18.1px。2ch を超える加算をしない)。収まりの式: 列幅 ≥ 40×2 + 2×2(ピル内の隙間)+ 2ch ≈ 102.1dp。360 幅の列幅 104dp に対し余裕約 1.9dp。当たり判定=ボタンの見た目の矩形そのもの(疑似要素で外へ広げない。隣のボタン・値と当たり判定が重ならないようにするため)。
+- **方針【確定(ユーザー、UI 監修)】**: 目立つべきはボタンより数値。幅が狭いときはボタンの見た目を先に縮めて値の幅を保つ。ボタンの見た目の下限は XS=32dp(出典: https://m3.material.io/components/button-groups/specs 、ユーザー提供)。当たり判定は値の側(内側)にだけ広げ、−・+ とも 40dp 以上(目標 44dp)。列間側(外側)には広げない。
+- **寸法【設計案。上記確定事項の具体化】**: ピルの高さ 44dp(`2.75rem`)。−・+ の見た目は `flex: 0 1 2.75rem; min-width: 2rem`(目標 44dp、狭い幅で 32dp まで縮む)。値は `flex: 1 0 auto; min-width: 3ch`(3ch は値の書体での `ch`。`min-width` に加算をしない。値の箱は 3ch を下限に、ボタンが 44dp に達して余った幅も受け取る)。
+- **収まりの式(列幅から)**: 列幅 ≥ 32×2(ボタン見た目下限)+ 2×2(ピル内の隙間)+ 3ch(値の書体)。ボタン見た目幅 = min(44, (列幅 − 4 − 3ch)/2)。値の箱幅 = 列幅 − 4 − ボタン見た目幅×2。列幅 = (画面幅 − 16×2 − 8×2)/3、すなわち画面幅 ≥ 3×(必要列幅)+ 48 で収まる。
+- **当たり判定【設計案】**: −・+ に `::after { content: ""; position: absolute; top: 0; bottom: 0; }` を置き、内側(−は inline-end、+ は inline-start)だけ `calc(min(0px, 100% − 2.75rem))` だけ負にはみ出させる(`position: relative` の button が包含ブロックなので `100%` は button の見た目幅。見た目 w のとき拡張量 = 44 − w、当たり判定の幅はちょうど 44dp。w = 44 なら拡張0)。外側の inset は 0、上下も 0(高さ 44dp のまま)。`pointer-events` は既定(auto)、背景なし。`:first-child::after { inset-inline-start: 0; inset-inline-end: calc(min(0px, 100% - 2.75rem)); }`、`:last-child::after` は左右逆。`elementFromPoint` は疑似要素上の点で親の button を返す。
+  - − と + が重ならないこと: 2つの当たり判定の幅の和 = 88dp ≤ 列幅(360 幅で 104dp、375 幅で 109dp)なので、内側へ広げても間に 16dp 以上残り重ならない(値は押せない要素で、拡張部分がその上に乗るだけ)。
+  - 拡張部分は値の箱の上に乗るため、値の端の数 dp を押すと隣のボタンが反応する。値は押せない要素なので実害は無い(ユーザー確定事項2)。
+- **値の表示(書体候補)【設計案、ユーザーが見た目で決める】**: 実測は dev(Browser pane、`src/ui/theme/static-tokens.css` の実トークン、`tabular-nums`)。「99」幅と 3ch 幅は実測(各トークンの実値の font-family・size・weight・tracking と `tabular-nums` を当てた span の `getBoundingClientRect().width`)、配分は 3ch 実測値を収まりの式に入れた計算値。
+
+| 候補トークン | 文字 px / 行高 | 「99」実幅 | 3ch 実幅 | 文字高さ/ピル44 | 375(列109) ボタン見た目 / 値の箱 | 360(列104) ボタン見た目 / 値の箱 | 収まる最小画面幅 |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| title-small(現行) | 14 / 20 | 17.72 | 27.2 | 0.32(行高 0.45) | 38.9 / 27.2 | 36.4 / 27.2 | 約334 |
+| **title-medium(推奨)** | 16 / 24 | 19.97 | 31.1 | 0.36(0.55) | 36.9 / 31.1 | 34.4 / 31.1 | 約346 |
+| title-large | 22 / 28 | 26.6 | 40.8 | 0.50(0.64) | 32.1 / 40.8 | 収まらない(必要 108.8、4.8 超過) | 約375 |
+| headline-small | 24 / 32 | 29.4 | 44.0 | 0.55(0.73) | 収まらない(必要 112.0、3.0 超過) | 収まらない(8.0 超過) | 約384 |
+
+  - 推奨 title-medium の理由: 検収幅 360・375 の両方でボタン見た目 32dp 以上を保ちつつ、現行より文字を 2px 大きくできる。title-large は 375 では余裕 0.25dp(3ch 実測 40.75 を使い 109 − (64 + 4 + 40.75) で計算。表の「必要 108.8」は丸め表示)でぎりぎり、360 では収まらない(ボタン下限 32 を破るか、値の 3ch を割る必要があり確定事項に反する)。title-large を選ぶ場合は値の最小幅を 2ch(実測「99」26.6)に下げるか縦積みが前提になり、確定事項1(3ch)と衝突するためユーザー確認が要る。
+  - 見比べの手段【設計案、採否はユーザー判断】: `stepper.css` の `.stepper__value` の書体を CSS 変数 `--stepper-value-type-size` 等(font・size・weight・tracking の4つ。既定値は採用トークン)経由で指定する形にしておき、dev の console で `document.documentElement.style.setProperty('--stepper-value-type-size', 'var(--md-sys-typescale-title-large-size)')` 等を実行して切り替える。切替用の UI・クエリ・コードは本番にもリポジトリにも追加しない(console の操作だけなので撤去作業が不要。リロードで元に戻る)。`min-width: 3ch` は値の箱自身の `font-size` 基準なので、変数で書体を変えると最小幅も追随する。統括担当がユーザーと見比べる際は、各候補で 360/375 の2幅を表示して確認する。
 - **配置(`main-screen.css` の `.stepper-group`)【設計案】: 横3列固定**。`grid-template-columns: repeat(3, minmax(0, 1fr)); column-gap: 0.5rem`(現行の `auto-fit, minmax(9.5rem, 1fr)` を置き換える)。各 `.stepper` は `display: flex; flex-direction: column; gap: 0.25rem`、`padding: 0`、背景なし(ピル自体が面になるため、現行の surface-container-low の箱は外す)。
-  - 計算(375×812): 実効コンテンツ幅 = 375 − 左右 16dp×2(`.main-screen` の `padding-inline: 1rem`、main-screen.css)= 343dp。列幅 = (343 − 8×2)/3 = 109dp。109 − 4 − 18.1 = 86.9 → ボタン各約 43.4dp。
-  - 360 幅(条件15・16の検収幅): (328 − 16)/3 = 104dp。104 − 4 − 18.1 = 81.9 → ボタン各約 40.9dp(下限 40 の内側、はみ出し無し)。
-  - 列間 8dp・ピル内 2dp は詰めない(列間は隣接ターゲット間隔 8dp を保つため)。それでも収まらない実測が出た場合は横3列固定を見直し、縦積み案(5A #10)へ切り替えるかを統括担当経由で確認する。
+  - 計算(375×812): 実効コンテンツ幅 = 375 − 左右 16dp×2(`.main-screen` の `padding-inline: 1rem`、main-screen.css)= 343dp。列幅 = (343 − 8×2)/3 = 109dp。title-medium なら (109 − 4 − 31.1)/2 ≈ 36.9 → ボタン見た目各約 36.9dp、当たり判定 44dp。
+  - 360 幅(条件15・16の検収幅): (328 − 16)/3 = 104dp。title-medium なら (104 − 4 − 31.1)/2 ≈ 34.4 → ボタン見た目各約 34.4dp(下限 32 の内側、はみ出し無し)、当たり判定 44dp。他の候補は上表。
+  - 列間 8dp・ピル内 2dp は詰めない(列間は隣接ターゲット間隔 8dp を保つため)。設計上の検収幅は 360・375 のみ。
+  - **320 幅(事実と【設計案】、D1 では対応しない)【確定(ユーザー): 縦積みは現時点で設計に入れない】**: 列幅 = (320 − 48)/3 ≈ 90.7dp。a25dc63 時点の実装(ボタン下限 40・値 2ch)では必要 102.1dp で約 11.4dp はみ出し、ピルが隣の列に重なる(実測事実)。改訂後も必要列幅は title-small 3ch で約 95.2、title-medium で約 99.1 となり 320 では収まらない(それぞれ約 4.5・8.4 超過)。後から縦積みを入れる場合の案【設計案、採否は監修後にユーザーが決める】: 「ボタン見た目下限 32 で値 3ch が収まる最小幅」(上表の「収まる最小画面幅」。title-small で約 334、title-medium で約 346)未満で `.stepper-group` を1列にする。手段は `@media (width < 21.625rem)`(title-medium の場合。346dp)か、`.stepper-group` に `container-type: inline-size` を付けた `@container`。縦積みでは入力側が約 136dp 高くなる(下記)。
   - 見出し: 「抜き北」等3文字 × label-medium(12px)≈ 36dp で 104dp に1行で収まる(現行の縦3行の折り返しは解消)。
-  - 縦積み(1列)を採らない理由: 1行 = 見出し約 16 + 4 + 44 ≈ 64dp を3段で約 200dp、横3列の約 64dp に比べ 136dp 余計に入力側を伸ばし、812 の画面で結果側が下に押される。横3列は幅が下限 40dp に触れるが、ユーザー確定事項2の範囲内。
-  - 値が3桁になることは無い(上限 99・4)ので、これ以上の幅は要らない。
-- **隣接ターゲット間隔【設計案】**: ステッパー外の要素との間は従来どおり 8dp 以上(列間 `column-gap` 8dp、ステッパー群と上下の要素の間も 8dp 以上)。ピル内部の − と + は値(17〜20dp)+隙間 2dp×2 を挟むので中心間は 40+21 以上離れ、互いの 44dp(最悪 40dp)の当たり判定矩形は重ならない(WCAG 2.2 の 2.5.8 は 24px 円が重ならないことを求め、これを満たす)。ボタンと値の隙間 2dp は Connected button group の見た目上の規定として 8dp 規則の例外とする(値は押せる要素ではないため、誤タップしても何も起きない)。
+  - 縦積み(1列)を採らない理由: 1行 = 見出し約 16 + 4 + 44 ≈ 64dp を3段で約 200dp、横3列の約 64dp に比べ 136dp 余計に入力側を伸ばし、812 の画面で結果側が下に押される。横3列ではボタンの見た目が 360 幅で 32〜37dp 程度に縮むが、当たり判定は内側拡張で 44dp を保つ(ユーザー確定事項2の範囲内)。
+  - 値が3桁になることは無い(上限 99・4)。3ch は2桁に左右の余白を持たせ数値を目立たせるための幅(ユーザー確定事項1)。
+- **隣接ターゲット間隔【設計案】**: ステッパー外の要素との間は従来どおり 8dp 以上(列間 `column-gap` 8dp、ステッパー群と上下の要素の間も 8dp 以上)。当たり判定は外側(列間側)へ広げないので、隣の列のボタンの当たり判定との間隔は列間 8dp のまま。ピル内部の − と + は当たり判定の幅の和 88dp ≤ 列幅なので互いに重ならない(WCAG 2.2 の 2.5.8 は 24px 円が重ならないことを求め、これを満たす)。ボタンと値の隙間 2dp は Connected button group の見た目上の規定として 8dp 規則の例外とする(値は押せる要素ではないため、誤タップしても何も起きない)。
 - `value <= min` で −、`value >= max` で + を無効化。`disabled` のとき両方無効。抜き北のステッパーは `disabled={!isNukiEnabled(rule)}`。
 
 ### 2.9 手牌カード(`HandCard`)
@@ -302,8 +319,8 @@ export interface StepperProps {
 - 計算部の lazy 分離後の実バンドル(初回 JS の gzip、WASM 初期化のタイミング、チャンク分割)
 - 底部シートの `dvh`・`safe-area-inset-bottom`(iOS Safari・Android Chrome)
 - 初回描画のちらつき(issue-39)が D1 の画面で目立つか
-- ステッパーのピル: 360 幅でボタンが下限 40dp まで縮むこと、押下時の角の spring モーションの見え方(実機は C-02)
-- M3 Expressive のボタンの**見た目寸法**は XS=32dp・S=40dp(出典: https://m3.material.io/components/button-groups/specs 、ユーザー提供で確認済み)。一方、**当たり判定(タッチターゲット)に関する規定の所在は未確認**(`@material/web` 2.5.0 のトークン `tokens/versions/v0_192` に XS/S のボタンサイズは無い)。本設計の 44/40dp はユーザー判断で、M3 の規定から導いたものではない(判断の目安: 7〜10mm 程度あれば実用上タップ可能。換算値の目安として、160dpi 基準で 44dp≒7.0mm、40dp≒6.4mm)。事実(見た目寸法の出典)と判断(当たり判定の値)を分けて扱うこと
+- ステッパーのピル: 改訂後の CSS での実際のボタン見た目幅(2.8 の表は 3ch・「99」の実測値からの計算値で、組み上げた実物では未測定)、`::after` の内側拡張が `elementFromPoint` で button を返すこと(仕様上は返すが本件の実物では未確認)、内側拡張と `expressive-shape-morph` の `overflow`・`clip-path` 等との干渉の有無(干渉して拡張が切り取られる場合は統括担当へ報告)、押下時の角の spring モーションの見え方(実機は C-02)。320 幅ではみ出すのは既知(2.8)
+- M3 Expressive のボタンの**見た目寸法**は XS=32dp・S=40dp(出典: https://m3.material.io/components/button-groups/specs 、ユーザー提供で確認済み)。一方、**当たり判定(タッチターゲット)に関する規定の所在は未確認**(`@material/web` 2.5.0 のトークン `tokens/versions/v0_192` に XS/S のボタンサイズは無い)。本設計の当たり判定 44/40dp と見た目下限 32dp の組み合わせはユーザー判断で、M3 の規定から導いたものではない(判断の目安: 7〜10mm 程度あれば実用上タップ可能。換算値の目安として、160dpi 基準で 44dp≒7.0mm、40dp≒6.4mm)。事実(見た目寸法の出典)と判断(当たり判定の値)を分けて扱うこと
 - 100ms の実機での達成(Browser pane は hidden のため rAF・アニメーションが進まない。C-01)
 
 ## 5. 受け入れ条件
@@ -327,11 +344,16 @@ export interface StepperProps {
 12. **バンドル予算**: `npm run build` 後、`dist/index.html` が参照する初回 JS(`<script type="module" src>`・`<link rel="modulepreload" href>`)をそれぞれ `gzip -9 -c <file> | wc -c` で測り合計 ≤ 102,000。初回 JS に `generateResult` 由来のチャンクと `.wasm` の参照が含まれない(計算部が別チャンクで存在し、そのサイズを記録)。
 13. **牌 SVG**: `ls dist/assets/*.svg | wc -l` が 30 以上で、牌 SVG 30 種(`src/ui/tile/assets` のファイル名に対応)が出力されている。`dist/sw.js`(または生成された precache マニフェスト)に 30 種すべての URL が含まれる。
 14. **計算部と WASM の precache**: `dist/sw.js` に計算部チャンクと `.wasm` の URL が含まれる。
-15. **画面骨格の並び**(dev、Browser pane、幅 360px と 375px): 上からヘッダー → 入力側(ステッパー3つ、手牌カード等の枠)→ 結果側。ステッパー3つが横1行に並ぶ(3つの `.stepper` の `top` の差 ≤ 1px)。各ステッパーで見出しの高さが label-medium の行高1行分(`stepper__label` の高さ ≤ line-height + 1px)、ピル(`stepper__controls`)が見出しより下にあり高さ ≥ 43.5 かつ ≤ 45、ピルの右端がステッパーの右端を超えない(はみ出し無し)。値「99」の状態でも同じ(reducer を通さず確かめられないため、+ を押し続けず `output` の文字幅=2桁ぶんを `min-width` で確保していることをコードで確認)。幅 1024px でメイン領域の幅が `--app-max-width` 以下で左右中央にある(`getBoundingClientRect` で左右の余白差 ≤ 1px)。
+15. **画面骨格の並び**(dev、Browser pane、幅 360px と 375px): 上からヘッダー → 入力側(ステッパー3つ、手牌カード等の枠)→ 結果側。ステッパー3つが横1行に並ぶ(3つの `.stepper` の `top` の差 ≤ 1px)。各ステッパーで見出しの高さが label-medium の行高1行分(`stepper__label` の高さ ≤ line-height + 1px)、ピル(`stepper__controls`)が見出しより下にあり高さ ≥ 43.5 かつ ≤ 45、ピルの右端がステッパーの右端を超えない(はみ出し無し)。値の箱(`.stepper__value`)の幅 ≥ その要素の `3ch` の実幅 − 0.5(`3ch` の実幅は、値の箱と同じ `getComputedStyle` の font を当てた幅 `3ch` の一時 span で測り、測定後に削除する)、かつ値の `font-size` が title-small(14px)より大きい。値「99」の状態でも同じ(reducer を通さず確かめられないため、+ を押し続けず `min-width: 3ch` で確保していることをコードで確認)。幅 320px は検収対象外(はみ出しは 2.8 の既知事項)。幅 1024px でメイン領域の幅が `--app-max-width` 以下で左右中央にある(`getBoundingClientRect` で左右の余白差 ≤ 1px)。
 16. **タップ領域**(dev、Browser pane。幅 375×812 と 360×812 の2回):
     (a) ステッパー以外(手牌カード・バケツ・メニューボタン・シートの閉じるボタン・メニュー項目)は従来どおり `getBoundingClientRect` の幅・高さがいずれも ≥ 48。
-    (b) ステッパーの −・+(3組×2=6個)は、各ボタン `b` について `r = b.getBoundingClientRect()`、`h = r.width ≥ 44 ? 22 : 20`、`v = r.height ≥ 44 ? 22 : 20` とし、中心 `(cx, cy)` から `(cx±(h−1), cy)`・`(cx, cy±(v−1))` の4点で `document.elementFromPoint(x, y)?.closest('button') === b` がすべて真。かつ `r.width ≥ 39.5`・`r.height ≥ 43.5`(丸め誤差込み。条件15と同じ基準。合格=全点が真。幅 375 では約 43.4、360 では約 40.9 が計算上の目安で、実測値を記録する。40〜44 は合格だが値を報告に書く)。−1 は境界の丸め誤差を避けるため。要約カード等が上に重なっていない位置へ先にスクロールしてから測る。この4点判定は 44dp 達成そのものの確認ではなく、「見た目の矩形=当たり判定(疑似要素で広げていない・他要素に覆われていない)」の確認であり、寸法は矩形の幅・高さで確かめる。
-    (c) 同じステッパーの − と + の矩形が重ならず、値要素の矩形と各ボタンの矩形の間隔が ≥ 0(重ならない)。隣の列のステッパーとのボタン間隔が ≥ 8。
+    (b) ステッパーの −・+(3組×2=6個)。要約カード等が上に重なっていない位置へ先にスクロールしてから、各ボタン `b` について `r = b.getBoundingClientRect()`、`cy = r.top + r.height/2`、`hit(x, y) = document.elementFromPoint(x, y)?.closest('button') === b` とする。内側の向き `d` は − なら +1(右)、+ なら −1(左)。外側の端 `xo` は − なら `r.left`、+ なら `r.right`。
+       - 見た目: `r.width ≥ 31.5`(見た目下限 32、丸め誤差込み)かつ `r.height ≥ 43.5`。実測の `r.width` を記録する(計算上の目安は 2.8 の表。title-medium なら 375 で約 36.9、360 で約 34.4)。
+       - 当たり判定の幅 ≥ 40: 外側の端から1px内側の点 `x1 = xo + d`(− なら `r.left + 1`、+ なら `r.right − 1`)と、そこから内側へ 39px 進んだ点 `x2 = x1 + d×39` の2点が、`y = cy` で `hit` が真(2点間は 39px、両端の1pxを足して当たり判定の幅 ≥ 40 を意味する)。目標 44 の記録として、`x1 + d×42`(外側の端から 43px 内側)の `hit` の真偽も記録する。端から 43px 内側が真なら当たり判定の幅は 44 に達する(設計上は真。偽でも 40 を満たせば合格だが報告に書く。44px 目は境界上で丸めにより左右非対称になるため測らない)。
+       - 外側へ広がっていない: 外側の端の1px外 `x = xo − d`(− なら `r.left − 1`、+ なら `r.right + 1`)で `hit` が偽。
+       - 上下へ広がっていない・覆われていない: `(r.left + r.width/2, r.top + 1)`・`(同, r.bottom − 1)` で `hit` が真、`(同, r.top − 1)`・`(同, r.bottom + 1)` で偽。
+       - 合格=上記がすべて成り立つ(6個×2幅)。
+    (c) − と + の当たり判定が重ならない: 同じステッパーで、− の当たり判定の内側の端と + の当たり判定の内側の端の間に、どちらの button も返さない点がある。手順: − の `r.left + 1` から + の `r.right − 1`(+ の外側の端から1px内側)まで右へ 1px ずつ `elementFromPoint(x, cy)?.closest('button')` を調べ、− → (− でも + でもない点が1つ以上)→ + の順に変わり、− と + が交互に現れたり逆順になったりしない。加えて隣の列のステッパーとのボタンの見た目の間隔(左の列の + の `right` と右の列の − の `left` の差)≥ 8 で、左の列の + を `a`、右の列の − を `b` として `a.right + 1` から `b.left − 1` まで(両端を除く)の各点(1px 刻み、`y = cy`)で `elementFromPoint` がどちらの button も返さない(列間側に当たり判定が無い)。
 16a. **ステッパーのフォーカス表示**: dev で Tab キーを押してステッパーの −・+ にフォーカスを移すと、`:focus-visible` のリングが見える(`getComputedStyle(b).outlineStyle !== 'none'` かつ `outlineWidth` > 0)。マウスで押しただけでは出ない。
 17. **メニュー**: 3点リーダーを押すとメニューが開き、項目が上から「設定」・区切り線・「オールクリア」の順。「設定」で設定画面に切り替わり、戻るボタンでメイン画面に戻る。「オールクリア」は確認ダイアログを出さずに実行される。D1 の画面で値を入れられるのはステッパー(積み棒・供託・抜き北)だけなので、画面での確認範囲は「積み棒2・供託1・抜き北3 にしてオールクリア → 抜き北が 0、積み棒2・供託1 のまま、場風・自風の初期値も不変」に限る。手牌・副露・ドラ・裏ドラ・状況役のリセットは reducer テスト(条件7)で担保する。
 18. **ステッパー表示**: 積み棒を 0 にすると − が無効、99 で + が無効(dev で 99 回押す代わりに reducer テスト 6 で担保し、画面では 0 の無効と 1 回の増減を確認)。北を役牌にしたルール: Browser pane の console で `localStorage.setItem('mj3calc.rule', JSON.stringify({ version: 1, rule: { north: 'yakuhai' } }))` を実行してリロードすると、抜き北のステッパーの −・+ がどちらも無効(他の項目は `loadRule` が既定値で補完する。`src/core/rule-storage.ts` の `RULE_STORAGE_KEY`・`RULE_STORAGE_VERSION`・`restoreRule` の形式)。確認後 `localStorage.removeItem('mj3calc.rule')` で戻す。
@@ -354,9 +376,10 @@ export interface StepperProps {
 | 7 | 北=役牌への変更で抜き北を0に戻す(2.2) | 戻す | 残す | 戻すと無効な値が残らない。残すと再変更で復元できる |
 | 8 | バナーのタップで結果側へスクロール(2.7) | する | しない | するとバナーが入口になる。しないと誤タップの移動が無い |
 | 9 | シートのドラッグ開閉(2.6) | D1 に含めない | 含める | 含めると規模が増え、実機確認も増える |
-| 10 | ステッパー3つの配置(2.8) | 横3列固定 | 縦積み1列 | 横3列は入力側が低いがボタンが 360 幅で 40dp まで縮む。縦積みは 44dp を保てるが約 136dp 高い |
-| 11 | ステッパーの当たり判定(2.8) | 見た目の矩形=当たり判定(44、最悪40) | 疑似要素で外側へ拡張 | 拡張しないと隣接要素と重ならず測りやすい。拡張は見た目を小さくできるが重なりの管理が要る |
+| 10 | ステッパー3つの配置(2.8) | 横3列固定(縦積み切替は現時点で入れない。ユーザー確定) | 一定幅未満(title-medium なら約 346dp 未満)で縦積み1列に切替 | 横3列は入力側が低いが 320 幅ではみ出す(検収幅は 360/375 のみ)。切替を入れると狭い端末でも崩れないが、その幅では入力側が約 136dp 高い。採否は監修後にユーザーが決める |
+| 11 | ステッパーの当たり判定(2.8) | 見た目は 32dp まで縮め、`::after` で内側(値の側)だけ広げて当たり判定 44dp(下限 40)。外側へは広げない(ユーザー確定) | 見た目の矩形=当たり判定(旧案) | 値の幅を保ちつつ当たり判定を確保できる。拡張部分が値の端に乗るが値は押せないので実害なし。測定は elementFromPoint で行う(条件16) |
 | 12 | タップ領域緩和の対象(2.8) | ステッパーの −・+ のみ | 他の入力欄の細部にも広げる | ユーザー指示は「入力欄の細々とした部分」限定。D2 以降の入力欄(パレット等)は各 Issue で個別に判断 |
+| 13 | 値の書体(2.8) | title-medium(推奨、未確定) | title-small・title-large・headline-small | 大きいほど数値が目立つが、title-large 以上は 360 幅でボタン見た目 32dp と値 3ch が両立しない(2.8 の表)。ユーザーが dev で見比べて決める |
 
 確定(一覧から除外): シート・設定画面の切替は履歴に介入しない(Issue #51 のヒアリング)。
 
@@ -365,7 +388,7 @@ export interface StepperProps {
 - **D2**: シート中身(`data-slot="sheet-hand"`)にパレット。手牌の1行表示・並べ替え、シート内 AC(`clear-hand` を再利用)。**牌を1枚ずつ消す手段が別に必要**(牌タップ削除は不採用、バケツは全消し)。手牌・副露・ドラを書き換えるアクションを `AppAction` に追加。
 - **D3**: 同じシートにテンキー。AC・バックスペース。物理キーボードはシートの Esc 処理と衝突しないよう調整。
 - **D4**: ドラ・裏ドラのカード(`open-sheet { type: 'dora' | 'uradora' }`)、副露の追加ボタン(`{ type: 'meld', i }`)。抜き北は D1 の `Stepper` と `isNukiEnabled` を使う。計算コアへは `computeResult` が表裏をまとめる。
-- **D4・D5 共通**: ステッパーは 2.8 の改訂後の形(見出し+ピル、ボタン 44dp・最悪 40dp)。タップ領域 44/40dp の緩和はステッパーの −・+ に限る(5A #12)。他の入力欄へ広げるには別途ユーザー確認が要る。requirements.md の 48dp 記載の改訂は統括担当経由で別途判断される。
+- **D4・D5 共通**: ステッパーは 2.8 の改訂後の形(見出し+ピル、ボタン見た目は 32dp まで縮め、当たり判定は内側拡張で 44dp・下限 40dp、値は 3ch 以上)。320 幅で横3列がはみ出す件と縦積み切替の採否は未決(5A #10)。タップ領域 44/40dp の緩和はステッパーの −・+ に限る(5A #12)。他の入力欄へ広げるには別途ユーザー確認が要る。requirements.md の 48dp 記載の改訂は統括担当経由で別途判断される。
 - **D5**: 風セグメント(`ConnectedButtonGroup`)と `table.round`・`seat` のアクション、積み棒・供託のステッパーの配置・文言、状況役シート(`{ type: 'situation' }`)、要約カード1行目の文言。
 - **D6**: 設定画面の中身。`set-rule` アクションと `saveRule` の接続。`SettingsScreen` を置き換える。
 - **Epic E**: `ResultPanel` の中身(ツモ・ロン併記、F3)、要約カードの結果1行。`useResult` の `ResultState` を受け取る。
