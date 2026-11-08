@@ -1,12 +1,39 @@
 import type React from 'react';
+import type { Tile as CoreTile } from '../../core/tile';
 import { IconButton } from '../md';
-import { useAppDispatch, useAppState } from '../state';
+import {
+  maxHandLength,
+  splitWinningTile,
+  useAppDispatch,
+  useAppState
+} from '../state';
 import { Tile } from '../tile';
+
+const renderHandTile = (
+  item: { tile: CoreTile; index: number },
+  isWinning = false
+): React.JSX.Element => {
+  const { tile, index } = item;
+  const key = `${tile.type}${tile.n}${
+    tile.type !== 'z' && tile.n === 5 && tile.red ? 'r' : ''
+  }-${index}`;
+  if (isWinning) {
+    return (
+      <span key={key} className="hand-card__winning-tile">
+        <Tile tile={tile} />
+      </span>
+    );
+  }
+  return <Tile key={key} tile={tile} />;
+};
 
 export function HandCard(): React.JSX.Element {
   const { input } = useAppState();
   const dispatch = useAppDispatch();
   const isEmpty = input.hand.length === 0;
+  const max = maxHandLength(input.melds);
+  const { body, winning } = splitWinningTile(input.hand, max);
+  const tilesStyle = { '--hand-max': max } as React.CSSProperties;
 
   return (
     <div className="hand-card">
@@ -52,13 +79,9 @@ export function HandCard(): React.JSX.Element {
           }
         }}
       >
-        <div className="hand-card__tiles">
-          {input.hand.map((tile, idx) => {
-            const key = `${tile.type}${tile.n}${
-              tile.type !== 'z' && tile.n === 5 && tile.red ? 'r' : ''
-            }-${idx}`;
-            return <Tile key={key} tile={tile} />;
-          })}
+        <div className="hand-card__tiles" style={tilesStyle}>
+          {body.map(item => renderHandTile(item))}
+          {winning ? renderHandTile(winning, true) : null}
         </div>
       </div>
     </div>
