@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import type React from 'react';
 import type { Tile as CoreTile } from '../../core/tile';
-import { IconButton } from '../md';
+import { FocusRing, Ripple } from '../md';
 import {
   maxHandLength,
   splitWinningTile,
@@ -9,6 +9,10 @@ import {
   useAppState
 } from '../state';
 import { Tile } from '../tile';
+
+export function formatHandCardTitle(handLength: number, max: number): string {
+  return `手牌 (${handLength}/${max})`;
+}
 
 const getScrollBehavior = (): ScrollBehavior => {
   if (
@@ -43,11 +47,11 @@ export function HandCard(): React.JSX.Element {
   const { input, inputFocus, tenkeyBuffer } = useAppState();
   const dispatch = useAppDispatch();
   const cardRef = useRef<HTMLDivElement | null>(null);
+  const bodyRef = useRef<HTMLDivElement | null>(null);
   const isHandFocused = inputFocus?.type === 'hand';
   const isEmpty = input.hand.length === 0;
   const max = maxHandLength(input.melds);
   const { body, winning } = splitWinningTile(input.hand, max);
-  const tilesStyle = { '--hand-max': max } as React.CSSProperties;
 
   useEffect(() => {
     if (!isHandFocused) return;
@@ -97,51 +101,72 @@ export function HandCard(): React.JSX.Element {
     };
   }, [isHandFocused]);
 
+  const handleCardClick = (event: React.MouseEvent<HTMLDivElement>) => {
+    const target = event.target as Element | null;
+    if (target?.closest('.hand-card__clear-zone')) {
+      return;
+    }
+    bodyRef.current?.focus({ preventScroll: true });
+    dispatch({ type: 'open-sheet', target: { type: 'hand' } });
+  };
+
+  const handleClearClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.stopPropagation();
+    if (!isEmpty) {
+      dispatch({ type: 'clear-hand' });
+      bodyRef.current?.focus({ preventScroll: true });
+    }
+  };
+
+  const handleBodyKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      dispatch({ type: 'open-sheet', target: { type: 'hand' } });
+    }
+  };
+
   return (
-    <div ref={cardRef} className="hand-card">
+    // biome-ignore lint/a11y/useKeyWithClickEvents: キーボード操作は .hand-card__body(role=button)が担う。外枠のクリックはポインタの当たり判定拡張(設計書 issue-55 2.1)
+    <div ref={cardRef} className="hand-card" onClick={handleCardClick}>
       <div className="hand-card__top-row">
-        <IconButton
-          variant="standard"
-          label="手牌をクリア"
-          disabled={isEmpty}
-          className="hand-card__clear-button"
-          onClick={event => {
-            event.stopPropagation();
-            if (!isEmpty) {
-              dispatch({ type: 'clear-hand' });
-            }
-          }}
-        >
-          <svg
-            viewBox="0 0 24 24"
-            width="1.5rem"
-            height="1.5rem"
-            aria-hidden="true"
+        <span className="hand-card__title">
+          {formatHandCardTitle(input.hand.length, max)}
+        </span>
+        <div className="hand-card__clear-zone">
+          <button
+            type="button"
+            aria-label="手牌をクリア"
+            disabled={isEmpty}
+            className="hand-card__clear-button"
+            onClick={handleClearClick}
           >
-            <path
-              d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"
-              fill="currentColor"
-            />
-          </svg>
-        </IconButton>
+            <Ripple disabled={isEmpty} />
+            <FocusRing />
+            <svg
+              viewBox="0 0 24 24"
+              width="1.5rem"
+              height="1.5rem"
+              aria-hidden="true"
+            >
+              <path
+                d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"
+                fill="currentColor"
+              />
+            </svg>
+          </button>
+        </div>
       </div>
-      {/* biome-ignore lint/a11y/useSemanticElements: 設計書2.9で role="button"・tabIndex=0 の指定があるため */}
+      {/* biome-ignore lint/a11y/useSemanticElements: 設計書2.1で role="button"・tabIndex=0 の指定があるため */}
       <div
         role="button"
+        ref={bodyRef}
         tabIndex={0}
         aria-label="手牌を入力"
         className="hand-card__body"
-        onClick={() => {
-          dispatch({ type: 'open-sheet', target: { type: 'hand' } });
-        }}
-        onKeyDown={event => {
-          if (event.key === 'Enter' || event.key === ' ') {
-            event.preventDefault();
-            dispatch({ type: 'open-sheet', target: { type: 'hand' } });
-          }
-        }}
+        style={{ '--hand-max': max } as React.CSSProperties}
+        onKeyDown={handleBodyKeyDown}
       >
-        <div className="hand-card__tiles" style={tilesStyle}>
+        <div className="hand-card__tiles">
           {body.map(item => renderHandTile(item))}
           {winning ? renderHandTile(winning, true) : null}
           {tenkeyBuffer.length > 0 ? (
