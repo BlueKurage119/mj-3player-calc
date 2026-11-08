@@ -1,5 +1,5 @@
 import type React from 'react';
-import { IconButton } from '../md';
+import { SHAPE_MORPH_CLASS } from './shape-morph';
 import './stepper.css';
 
 export interface StepperProps {
@@ -38,11 +38,11 @@ export function Stepper(props: StepperProps): React.JSX.Element {
         {ariaLabel}
       </span>
       <div className="stepper__controls">
-        <IconButton
-          variant="outlined"
-          label={`${ariaLabel}を減らす`}
+        <button
+          type="button"
+          aria-label={`${ariaLabel}を減らす`}
           disabled={isMinusDisabled}
-          className="stepper__button"
+          className={`stepper__button ${SHAPE_MORPH_CLASS}`}
           onClick={() => {
             if (!isMinusDisabled) {
               onStep(-1);
@@ -57,15 +57,15 @@ export function Stepper(props: StepperProps): React.JSX.Element {
           >
             <path d="M19 13H5v-2h14v2z" fill="currentColor" />
           </svg>
-        </IconButton>
+        </button>
         <output className="stepper__value tabular-nums" aria-live="polite">
           {value}
         </output>
-        <IconButton
-          variant="outlined"
-          label={`${ariaLabel}を増やす`}
+        <button
+          type="button"
+          aria-label={`${ariaLabel}を増やす`}
           disabled={isPlusDisabled}
-          className="stepper__button"
+          className={`stepper__button ${SHAPE_MORPH_CLASS}`}
           onClick={() => {
             if (!isPlusDisabled) {
               onStep(1);
@@ -80,7 +80,7 @@ export function Stepper(props: StepperProps): React.JSX.Element {
           >
             <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" fill="currentColor" />
           </svg>
-        </IconButton>
+        </button>
       </div>
     </fieldset>
   );
