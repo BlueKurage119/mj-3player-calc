@@ -100,6 +100,8 @@ body {
   color: var(--md-sys-color-on-surface);
   border-radius: var(--md-sys-shape-corner-large);
   box-sizing: border-box;
+  scroll-margin-top: 0.5rem;
+  scroll-margin-bottom: calc(var(--sheet-height) + 0.5rem);
 }
 
 .hand-card__top-row {
