@@ -104,3 +104,47 @@ describe('D4: UI監修2 (確定事項 17・19・20, C14d・C14f)', () => {
     expect(block.includes('title-small')).toBe(true);
   });
 });
+
+describe('D4: UI監修4 (横ライン揃えと牌スペース確保)', () => {
+  const css = readSrc('./main-screen.css');
+  const block = (sel: string) =>
+    css.match(new RegExp(`${sel} \\{([^}]*)\\}`))?.[1] ?? '';
+
+  it('D4-ALIGN1: ドラ・副露カードでは死角paddingを持たず疑似要素で確保する', () => {
+    const zone = block(
+      '\\.indicator-card \\.card-clear-zone,\\s*\\.meld-card \\.card-clear-zone'
+    );
+    expect(zone.includes('padding-block-end: 0;')).toBe(true);
+    const after = block(
+      '\\.indicator-card \\.card-clear-zone::after,\\s*\\.meld-card \\.card-clear-zone::after'
+    );
+    expect(after.includes('inset-block-end: -0.5rem;')).toBe(true);
+    // 手牌カード側の死角paddingは据え置き
+    expect(
+      block('\\.hand-card__clear-zone').includes('padding-block-end: 0.5rem;')
+    ).toBe(true);
+  });
+
+  it('D4-ALIGN2: 見出しは padding で中心がずれず、副露行は中央揃え', () => {
+    expect(
+      block('\\.indicator-card__title').includes('padding-block-start')
+    ).toBe(false);
+    expect(
+      block('\\.indicator-card__top-row').includes('align-items: center;')
+    ).toBe(true);
+    expect(block('\\.meld-card__row').includes('align-items: center;')).toBe(
+      true
+    );
+  });
+
+  it('D4-SPACE1: ドラ牌行と副露空枠は牌1行分の高さを常に確保する', () => {
+    expect(
+      block('\\.indicator-card__tiles').includes(
+        'min-height: calc(var(--tile-width) * 4 / 3);'
+      )
+    ).toBe(true);
+    expect(
+      block('\\.meld-card__empty').includes('height: calc(1.5rem * 4 / 3);')
+    ).toBe(true);
+  });
+});

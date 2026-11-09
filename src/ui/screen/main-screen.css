@@ -348,7 +348,21 @@ body {
   letter-spacing: var(--md-sys-typescale-label-medium-tracking);
   color: var(--md-sys-color-on-surface-variant);
   white-space: nowrap;
-  padding-block-start: 2px;
+}
+
+.indicator-card .card-clear-zone,
+.meld-card .card-clear-zone {
+  position: relative;
+  padding-block-end: 0;
+}
+
+.indicator-card .card-clear-zone::after,
+.meld-card .card-clear-zone::after {
+  content: "";
+  position: absolute;
+  inset-block-end: -0.5rem;
+  inset-inline: 0;
+  block-size: 0.5rem;
 }
 
 .indicator-card__body {
@@ -373,6 +387,7 @@ body {
   align-items: center;
   justify-content: flex-start;
   width: 100%;
+  min-height: calc(var(--tile-width) * 4 / 3);
 }
 
 .meld-area {
@@ -392,7 +407,7 @@ body {
 
 .meld-card__row {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
 }
 
 .meld-card__body {
@@ -422,7 +437,7 @@ body {
 }
 
 .meld-card__empty {
-  height: 2rem;
+  height: calc(1.5rem * 4 / 3);
   width: 100%;
 }
 
