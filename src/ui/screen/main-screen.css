@@ -390,14 +390,15 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 
-.meld-card__top-row {
+.meld-card__row {
   display: flex;
-  align-items: center;
-  justify-content: flex-end;
+  align-items: flex-start;
 }
 
 .meld-card__body {
   container-type: inline-size;
+  flex: 1 1 auto;
+  min-width: 0;
   display: flex;
   align-items: center;
   border-radius: var(--md-sys-shape-corner-medium);
@@ -412,7 +413,7 @@ body {
 }
 
 .meld-card__tiles {
-  --tile-width: min(1.75rem, calc((100cqi - 4px - 3 * 1px) / 4));
+  --tile-width: min(1.5rem, calc((100cqi - 3 * 1px) / 4));
   display: flex;
   gap: 1px;
   align-items: center;
@@ -421,7 +422,7 @@ body {
 }
 
 .meld-card__empty {
-  height: calc(1.75rem * 1.34);
+  height: 2rem;
   width: 100%;
 }
 

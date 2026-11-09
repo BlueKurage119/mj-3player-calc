@@ -1,4 +1,4 @@
-import type { SheetMode, TenkeySuit } from '../state';
+import type { AppAction, AppState, SheetMode, TenkeySuit } from '../state';
 
 export type TenkeyKeyCommand =
   | { kind: 'digit'; digit: string }
@@ -74,4 +74,46 @@ export const shouldHandleKeyTarget = (target: EventTarget | null): boolean => {
     return true;
   }
   return false;
+};
+
+export interface TenkeyActionKeys {
+  backspace: { disabled: boolean };
+  clear: { action: AppAction | null; label: string; disabled: boolean };
+}
+
+/**
+ * テンキーの「1 文字削除」・ACの対象別の状態(設計書2.3のテンキー表)。
+ */
+export const tenkeyActionKeysFor = (
+  state: Pick<AppState, 'input' | 'tenkeyBuffer' | 'inputFocus'>
+): TenkeyActionKeys => {
+  const bufferEmpty = state.tenkeyBuffer.length === 0;
+  const focus = state.inputFocus;
+  if (focus?.type === 'dora' || focus?.type === 'uradora') {
+    const target = focus.type;
+    const empty = state.input[target].length === 0;
+    return {
+      backspace: { disabled: bufferEmpty && empty },
+      clear: {
+        action: { type: 'clear-indicators', target },
+        label:
+          target === 'dora' ? 'ドラ表示牌をクリア' : '裏ドラ表示牌をクリア',
+        disabled: empty && bufferEmpty
+      }
+    };
+  }
+  if (focus?.type === 'meld') {
+    return {
+      backspace: { disabled: bufferEmpty },
+      clear: { action: null, label: '副露をクリア', disabled: true }
+    };
+  }
+  return {
+    backspace: { disabled: bufferEmpty && state.input.hand.length === 0 },
+    clear: {
+      action: { type: 'clear-hand' },
+      label: '手牌をクリア',
+      disabled: false
+    }
+  };
 };

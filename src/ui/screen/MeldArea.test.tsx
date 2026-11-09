@@ -80,4 +80,22 @@ describe('D4: 副露領域・副露カード・追加ボタンの構造と表示
     // 暗槓 (melds[3]) の両端裏牌: Back.svg が含まれること
     expect(html.includes('Back.svg')).toBe(true);
   });
+
+  it('D4-C14g-4: 副露カードは1行(meld-card__row 内で牌の行の後ろに消すボタン)で上段の行が無い', () => {
+    const html = renderToStaticMarkup(
+      <MeldAreaContent
+        melds={[{ type: 'pon', tile: { type: 'p', n: 1 } }]}
+        onSelectMeld={() => {}}
+        onRemoveMeld={() => {}}
+        onAddMeld={() => {}}
+      />
+    );
+    expect(html.includes('meld-card__top-row')).toBe(false);
+    const row = html.indexOf('meld-card__row');
+    const body = html.indexOf('meld-card__body');
+    const clear = html.indexOf('card-clear-zone');
+    expect(row).toBeGreaterThan(-1);
+    expect(body).toBeGreaterThan(row);
+    expect(clear).toBeGreaterThan(body);
+  });
 });

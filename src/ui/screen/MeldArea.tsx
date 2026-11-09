@@ -70,34 +70,33 @@ export function MeldAreaContent({
             className="meld-card"
             onClick={e => handleCardClick(i, e)}
           >
-            <div className="meld-card__top-row">
-              <span className="meld-card__spacer" aria-hidden="true" />
+            <div className="meld-card__row">
+              {/* biome-ignore lint/a11y/useSemanticElements: 設計書2.5で role="button"・tabIndex=0 の指定があるため */}
+              <div
+                role="button"
+                ref={el => {
+                  bodyRefs.current[i] = el;
+                }}
+                tabIndex={0}
+                aria-label={`副露${i + 1}を入力`}
+                className="meld-card__body"
+                onKeyDown={e => handleBodyKeyDown(i, e)}
+              >
+                {meld.tile === null ? (
+                  <div className="meld-card__empty" aria-hidden="true" />
+                ) : (
+                  <div className="meld-card__tiles">
+                    {tiles.map((t, idx) => (
+                      <Tile key={idx} tile={t} />
+                    ))}
+                  </div>
+                )}
+              </div>
               <CardClearButton
                 aria-label={`副露${i + 1}を削除`}
                 disabled={false}
                 onClear={() => onRemoveMeld(i)}
               />
-            </div>
-            {/* biome-ignore lint/a11y/useSemanticElements: 設計書2.5で role="button"・tabIndex=0 の指定があるため */}
-            <div
-              role="button"
-              ref={el => {
-                bodyRefs.current[i] = el;
-              }}
-              tabIndex={0}
-              aria-label={`副露${i + 1}を入力`}
-              className="meld-card__body"
-              onKeyDown={e => handleBodyKeyDown(i, e)}
-            >
-              {meld.tile === null ? (
-                <div className="meld-card__empty" aria-hidden="true" />
-              ) : (
-                <div className="meld-card__tiles">
-                  {tiles.map((t, idx) => (
-                    <Tile key={idx} tile={t} />
-                  ))}
-                </div>
-              )}
             </div>
           </div>
         );
