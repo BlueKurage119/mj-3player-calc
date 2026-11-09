@@ -30,9 +30,13 @@ Epic D(#5)の Sub-Issue。依存: D1(#51)・D2(#46)・D3(#47)・D1-1(#55)。
 | 11 | (Q2=A案)副露の追加ボタンを押した時点で手牌を切り捨てる。何も入れずに閉じても戻さない(A5) |
 | 12 | (Q3)確定済み副露の種類変更は牌を保持(A2)、牌タップで置き換え(A3)、牌確定でシートを閉じない(A4) |
 | 13 | (Q4)副露のシートでは「1 枚削除」・「AC」・物理 Backspace を無効にし、副露の削除はカードのゴミ箱だけで行う(2.3) |
-| 14 | (UI 監修)全カード(手牌・ドラ・裏ドラ・副露)のゴミ箱のアイコンを Material Symbols「disabled_by_default」(四角囲みのバツ)に統一する。HandCard はアイコンの差し替えだけで、issue-55 の構造・当たり判定・aria-label・40×24dp・無反応帯・disabled 条件は変えない。空のときは従来どおり disabled 表示(非表示にしない) |
+| 14 | 【確定事項 19 で置換(アイコン)】(UI 監修)全カード(手牌・ドラ・裏ドラ・副露)のゴミ箱のアイコンを Material Symbols「disabled_by_default」(四角囲みのバツ)に統一する。HandCard はアイコンの差し替えだけで、issue-55 の構造・当たり判定・aria-label・40×24dp・無反応帯・disabled 条件は変えない。空のときは従来どおり disabled 表示(非表示にしない) |
 | 15 | (UI 監修)ドラ・裏ドラの表示牌は幅 20dp(目安)に縮小する。副露の牌は現状の大きさのまま |
-| 16 | (UI 監修)カードの構造(上段=見出し+ボタン、無反応帯、牌の行)は保ち、余白だけを削って高さを減らす。ゴミ箱 40×24dp・左と下の 8dp 無反応帯・各タップ領域は守る |
+| 16 | (UI 監修)カードの構造(上段=見出し+ボタン、無反応帯、牌の行)は保ち、余白だけを削って高さを減らす。ゴミ箱 40×24dp・左と下の 8dp 無反応帯・各タップ領域は守る(副露カードの構造は確定事項 18 で変更予定。ただし保留中) |
+| 17 | (UI 監修2)ドラ・裏ドラの見出し `.indicator-card__title` をステッパーの見出し `.stepper__label` と同じ書体(typescale **label-medium** の font/size/line-height/weight トークン)にする。ユーザーの指示は「風牌の見出しと同じ大きさ」で、現存する入力欄の見出しはステッパーのものだけなので label-medium と解釈した。風セグメント(D5)の見出しも将来この書体に揃える想定。手牌の見出し(title-small)は変えない |
+| 18 | (UI 監修2)副露カードの「牌の行」と「消すボタン」を1行にする(上段のボタンだけの行を無くす)。**算出の結果、槓4枚では1行に収まらないため保留**(2.5・6 章 Q5)。保留中は確定事項 16 の構造(上段にボタン)のまま |
+| 19 | (UI 監修2)全カード(手牌・ドラ・裏ドラ・副露)の消すボタンのアイコンを既存 `SYMBOL_CLOSE`(Material Symbols の close、ただの✕)にする。HandCard.tsx はアイコンの差し替えのみ。`SYMBOL_DISABLED_BY_DEFAULT` は未使用になるので削除し、テスト D4-ICON も更新する。確定事項 14 のアイコン部分を置換(「空でも disabled で表示」は維持) |
+| 20 | (UI 監修2)底部シートの閉じるボタン(`BottomSheet.tsx`、aria-label「閉じる」)のアイコンを Material Symbols Outlined の `cancel`(丸囲みの✕)にする。定数 `SYMBOL_CANCEL` を追加する |
 
 ### 1.3 要件・下書きの改訂(製造で反映)
 
@@ -192,7 +196,11 @@ export const canAppendTenkeyDigitFor = (state: Pick<AppState,'input'|'tenkeyBuff
 
 ### 2.7 色・形
 
-**ゴミ箱のアイコン(確定事項 14)**: `src/ui/icons/symbol-paths.ts` に `SYMBOL_DISABLED_BY_DEFAULT` を追加する。取得元は既存定数と同じ google/material-design-icons の `symbols/web/disabled_by_default/materialsymbolsoutlined/disabled_by_default_24px.svg`(Material Symbols Outlined、weight 400・fill 0)。ライセンスはファイル冒頭の既存のヘッダー(Apache License 2.0・出典)でまかなえるため、個別の表記は追加しない。`CardClearButton` と `HandCard` のインライン svg を `<SymbolIcon d={SYMBOL_DISABLED_BY_DEFAULT} size="1.25rem" />` に差し替える。【設計案】アイコン表示を 20dp(`1.25rem`)にする: 四角の外形はグリフの 120〜840/960 の範囲で表示 15dp 角となり、40×24dp の当たり判定の中に上下 4.5dp 以上の余白を残して収まる。色は `--md-sys-color-on-surface-variant`、disabled 時は `--md-sys-color-on-surface` 不透明度 0.38(従来どおり)。
+**消すボタンのアイコン(確定事項 19。確定事項 14 の記述を置換)**: `CardClearButton` と `HandCard` のアイコンを `<SymbolIcon d={SYMBOL_CLOSE} size="1.25rem" />` にする(既存定数。新規取得は不要)。表示 20dp は確定事項 14 の設計案を引き継ぐ(✕のグリフは 200〜760/960 の範囲で表示約 11.7dp 角となり、40×24dp の当たり判定に余裕で収まる)。色・disabled の扱いは従来どおり。`SYMBOL_DISABLED_BY_DEFAULT` は `symbol-paths.ts`・`index.ts` から削除し、それを参照するテスト(D4-ICON)を `SYMBOL_CLOSE` の確認に改める。
+
+**見出しの書体(確定事項 17)**: `.indicator-card__title` の `font-family`・`font-size`・`line-height`・`font-weight` を `--md-sys-typescale-label-medium-*` にする(`.stepper__label` と同じトークン)。色は現状のまま。上段の高さはゴミ箱の 24dp で決まるため、カードの高さは変わらない(算出)。
+
+**シートの閉じるボタン(確定事項 20)**: `src/ui/icons/symbol-paths.ts` に `SYMBOL_CANCEL` を追加する。取得元は既存定数と同じ google/material-design-icons の `symbols/web/cancel/materialsymbolsoutlined/cancel_24px.svg`(Outlined、weight 400・fill 0)。パスは製造が公式 SVG から書き写す。ライセンスは既存のファイル冒頭ヘッダーでまかなう。`BottomSheet.tsx` の閉じるボタンの `<SymbolIcon d={SYMBOL_CLOSE} />` を `d={SYMBOL_CANCEL}` に替える。**変更はアイコンの `d` だけ**で、ボタンの寸法・当たり判定・aria-label・フォーカス処理・アイコンの size は変えない。`SYMBOL_CLOSE` はカードの消すボタンで引き続き使う。
 
 色は `--md-sys-color-*` トークンのみ(HEX 禁止、06 号)。カード背景・角丸は手牌カードと同じトークンを使う。暗槓の裏牌は既存の `Tile` の裏画像。
 
@@ -211,7 +219,10 @@ export const canAppendTenkeyDigitFor = (state: Pick<AppState,'input'|'tenkeyBuff
 | テスト(`app-state.test.ts`・`hand-rules.test.ts`・新規コンポーネントのテスト) | 追加 | 4 章の自動テスト |
 | `docs/requirements.md`・`docs/issues-draft.md` | 変更 | 1.3 |
 
-| `src/ui/icons/symbol-paths.ts`・`index.ts` | 変更(UI 監修) | `SYMBOL_DISABLED_BY_DEFAULT` の追加と再輸出 |
+| `src/ui/icons/symbol-paths.ts`・`index.ts` | 変更(UI 監修・監修2) | `SYMBOL_CANCEL` の追加と再輸出、`SYMBOL_DISABLED_BY_DEFAULT` の削除(確定事項 19・20) |
+| `src/ui/expressive/BottomSheet.tsx` | 変更(UI 監修2) | 閉じるボタンのアイコンの `d` を `SYMBOL_CANCEL` に差し替えるのみ(確定事項 20)。expressive 配下は従来変更しない方針だったが、この確定により加える |
+| `.indicator-card__title` の CSS(`main-screen.css`) | 変更(UI 監修2) | 書体を label-medium に(確定事項 17) |
+| D4-ICON のテスト | 変更(UI 監修2) | `SYMBOL_CLOSE` の確認に改める |
 | `src/ui/screen/HandCard.tsx` | 変更(UI 監修) | **ゴミ箱アイコンの差し替えのみ**(2.7) |
 | `src/ui/screen/CardClearButton.tsx`・`main-screen.css` | 変更(UI 監修) | アイコン差し替え、2.4・2.6 の余白と牌幅 |
 
@@ -231,6 +242,7 @@ UI 監修の修正(既存3コミットは変えず、追加で1〜2コミット)
 
 4. `fix`: ゴミ箱アイコンを disabled_by_default に統一(`symbol-paths.ts`・`CardClearButton`・`HandCard`)
 5. `fix`: ドラ・裏ドラの牌幅 20dp とカードの余白削減(`main-screen.css`)。4 と 5 は1コミットにまとめてもよい
+6. `fix`: UI 監修2(確定事項 17・19・20): 消すボタンを `SYMBOL_CLOSE` に、シートの閉じるボタンを `SYMBOL_CANCEL` に、ドラ・裏ドラ見出しを label-medium に。`SYMBOL_DISABLED_BY_DEFAULT` とその参照の削除、D4-ICON の更新。確定事項 18(副露の1行化)は Q5 の回答後に別コミットで行う
 
 ## 3. 実挙動未確認の一覧
 
@@ -268,7 +280,8 @@ UI 監修の修正(既存3コミットは変えず、追加で1〜2コミット)
 - [ ] **C14a ゴミ箱の矩形(375px、dev)**: ドラ・裏ドラ・副露(1つ以上)の各カードについて、ゴミ箱の `getBoundingClientRect()` の `width` が 40±0.5、`height` が 24±0.5。無反応帯(`.hand-card__clear-zone` 相当のクラス。A11 の部品の要素)の矩形 z とゴミ箱の矩形 r について `z.left = r.left − 8 ± 0.5`、`z.bottom = r.bottom + 8 ± 0.5`、`z.right = r.right ± 0.5`、`z.top = r.top ± 0.5`。
 - [ ] **C14b 当たり判定(375px、dev、各カード別)**: ドラ(表示牌3枚)・裏ドラ(1枚)・副露(ポン確定済み)の各カードで、issue-55 C6 の表と同じ点(ゴミ箱中央、角丸の内側の四隅 ±4px、真上の外 r.top−1、真下の外 r.bottom+1・+7、無反応帯の外(下)z.bottom+1、左の外 r.left−1・−7、無反応帯の外(左)z.left−1、左下の角 (r.left−4, r.bottom+4))を `document.elementFromPoint` で評価し、同表と同じ期待(ゴミ箱/無反応帯/カード本体)になる。`.hand-card` は各カードの外枠に読み替える。
 - [ ] **C14c 押下の結果(375px、dev)**: 各カードで、無反応帯の2点(真下 +1・左 −1)の要素へ `click()` を送るとシートが開かず状態が変わらない。真上の外・無反応帯の外(下・左)へ送るとシートがそのカードの対象で開く(各回の前に Esc)。ゴミ箱中央へ送ると、ドラ・裏ドラは表示牌が0枚、副露はその副露が消え、シートは開かない。表示牌0枚のドラ・裏ドラでゴミ箱(disabled)中央へ `click()` を送ってもシートが開かない。
-- [ ] **C14d ゴミ箱アイコン(375px、dev)**: 手牌・ドラ・裏ドラ・副露の各ゴミ箱の svg の `path` の `d` 属性が `SYMBOL_DISABLED_BY_DEFAULT` と一致する(旧ゴミ箱のパス `M6 19c0 1.1…` がコードに残っていない)。svg の矩形が 20±0.5 × 20±0.5 で、ゴミ箱ボタンの矩形の内側にある。空のときもゴミ箱が描画され `disabled` 属性を持つ。色の計算値が従来(on-surface-variant、disabled 時 不透明度 0.38)と同じ。
+- [ ] **C14d 消すボタンとシートのアイコン(375px、dev)**: 手牌・ドラ・裏ドラ・副露の各消すボタンの svg の `path` の `d` 属性が `SYMBOL_CLOSE` と一致する。`SYMBOL_DISABLED_BY_DEFAULT` と旧ゴミ箱のパス `M6 19c0 1.1…` がコードに残っていない(`grep`)。svg の矩形が 20±0.5 × 20±0.5 で、ボタンの矩形の内側にある。空のときもボタンが描画され `disabled` 属性を持つ。色の計算値が従来(on-surface-variant、disabled 時 不透明度 0.38)と同じ。底部シートを開き、`[aria-label="閉じる"]` 内の svg の `path` の `d` が `SYMBOL_CANCEL` と一致し、閉じるボタンの `getBoundingClientRect()` の幅・高さが main(本 Issue 前)と同じで、押すとシートが閉じる。`BottomSheet.tsx` の差分がアイコン定数の差し替え(import と `d`)だけである(`git diff`)。
+- [ ] **C14f 見出しの書体(375px、dev)**: `.indicator-card__title` の計算値 `font-size`・`font-weight`・`line-height`・`font-family` が `.stepper__label` の計算値と一致する。`.hand-card__title` の計算値が本 Issue 前(title-small)から変わらない。ドラ・裏ドラカードの高さが C14 の合格値の範囲のまま。
 - [ ] **C14e 手牌カードの非回帰**: issue-55 の C5(ゴミ箱 40×24)・C6(当たり判定の点)・C7(押下の結果)を再実行し合格。HandCard.tsx の差分がアイコン部分(import と svg 要素)だけである(`git diff` で確認)。
 - [ ] **C15 ドラのシート**: ドラカードの本体を押すとシートが開き、ヘッダーにパレット/テンキー切替がある。パレットの 1m・9m・字牌が押せ、2m〜8m のキーは存在しない(D2 のまま)。5 枚入れると全牌キーが disabled。テンキーで `1` `9` → `m` で 1m・9m が入る。パレットモードで「1 枚削除」と物理キー Backspace でそれぞれ末尾1枚が消え、手牌は変わらない。「AC」の aria-label が「ドラ表示牌をクリア」で、押すとドラだけが空になり手牌は変わらない。0 枚で「1 枚削除」「AC」が `disabled` 属性を持つ。Enter でシートが閉じる。裏ドラも同様(aria-label「裏ドラ表示牌をクリア」)。手牌のシートでは「1 枚削除」・物理 Backspace・「手牌をクリア」が従来どおり手牌に効く。ゴミ箱で全消しされ、シートは開かない。
 - [ ] **C16 副露の削除**: 副露カードのゴミ箱で副露が消え、手牌カードの見出しの m が 3 増える。開いている副露のゴミ箱を押すとシートが閉じる。
@@ -288,4 +301,9 @@ UI 監修の修正(既存3コミットは変えず、追加で1〜2コミット)
 
 ## 6. 要ヒアリング事項(統括担当へ)
 
-なし。設計時の Q1〜Q4 はユーザー回答で解決済み(1.2 の確定事項 10〜13)。
+設計時の Q1〜Q4 はユーザー回答で解決済み(1.2 の確定事項 10〜13)。
+
+- **Q5(確定事項 18、副露の1行化)**: 算出では槓4枚が1行に収まらない。375px で副露カード幅 167.5px、左右 padding 8dp を除く本体幅 151.5px。必要幅 = 牌 28×4 + gap 1×3 + 牌列 padding 2×2 = 119px、+ 無反応帯(左)8dp + ボタン 40dp = **167px** で、**15.5px 超過**(ポン3枚なら 90+48 = 138px で収まる)。どれを採るか:
+  - A: 副露の牌を縮める。1行に収まる牌幅は (151.5 − 48 − 4 − 3)/4 ≈ **24.1px 以下**(目安 24dp。ドラの 20dp と手牌の約 21.9px より大きい)。高さは 6 + max(24, 32 + 4) + 6 ≈ 48px(算出)。
+  - B: 副露カードを1列(全幅 343px)に並べる。本体幅 327px で 28px のまま収まり、高さは 6 + (37.3 + 4) + 6 ≈ 53px(算出)。副露4つで縦に4段になり、入力側が伸びる。
+  - C: 1行化を見送り、上段にボタンを置く現状(約 85px)のまま。
