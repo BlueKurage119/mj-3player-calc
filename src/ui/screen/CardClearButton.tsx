@@ -1,5 +1,5 @@
 import type React from 'react';
-import { SYMBOL_DISABLED_BY_DEFAULT, SymbolIcon } from '../icons';
+import { SYMBOL_CLOSE, SymbolIcon } from '../icons';
 import { FocusRing, Ripple } from '../md';
 
 export interface CardClearButtonProps {
@@ -31,7 +31,7 @@ export function CardClearButton(
       >
         <Ripple disabled={disabled} />
         <FocusRing />
-        <SymbolIcon d={SYMBOL_DISABLED_BY_DEFAULT} size="1.25rem" />
+        <SymbolIcon d={SYMBOL_CLOSE} size="1.25rem" />
       </button>
     </div>
   );

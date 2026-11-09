@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import type React from 'react';
 import type { Tile as CoreTile } from '../../core/tile';
-import { SYMBOL_DISABLED_BY_DEFAULT, SymbolIcon } from '../icons';
+import { SYMBOL_CLOSE, SymbolIcon } from '../icons';
 import { FocusRing, Ripple } from '../md';
 import {
   maxHandLength,
@@ -143,7 +143,7 @@ export function HandCard(): React.JSX.Element {
           >
             <Ripple disabled={isEmpty} />
             <FocusRing />
-            <SymbolIcon d={SYMBOL_DISABLED_BY_DEFAULT} size="1.25rem" />
+            <SymbolIcon d={SYMBOL_CLOSE} size="1.25rem" />
           </button>
         </div>
       </div>
