@@ -20,6 +20,7 @@ export interface ButtonProps {
   ref?: React.Ref<HTMLElement> | undefined;
   variant: ButtonVariant;
   disabled?: boolean | undefined;
+  'aria-label'?: string | undefined;
   type?: 'button' | 'submit' | 'reset' | undefined;
   onClick?: React.MouseEventHandler<HTMLElement> | undefined;
   className?: string | undefined;
@@ -31,6 +32,7 @@ export function Button(props: ButtonProps): React.JSX.Element {
     ref,
     variant,
     disabled,
+    'aria-label': ariaLabel,
     type = 'button',
     onClick,
     className,
@@ -48,6 +50,7 @@ export function Button(props: ButtonProps): React.JSX.Element {
         <md-filled-button
           ref={handleRef}
           disabled={disabled}
+          aria-label={ariaLabel}
           type={type}
           onClick={onClick}
           className={className}
@@ -61,6 +64,7 @@ export function Button(props: ButtonProps): React.JSX.Element {
         <md-filled-tonal-button
           ref={handleRef}
           disabled={disabled}
+          aria-label={ariaLabel}
           type={type}
           onClick={onClick}
           className={className}
@@ -74,6 +78,7 @@ export function Button(props: ButtonProps): React.JSX.Element {
         <md-outlined-button
           ref={handleRef}
           disabled={disabled}
+          aria-label={ariaLabel}
           type={type}
           onClick={onClick}
           className={className}
@@ -87,6 +92,7 @@ export function Button(props: ButtonProps): React.JSX.Element {
         <md-text-button
           ref={handleRef}
           disabled={disabled}
+          aria-label={ariaLabel}
           type={type}
           onClick={onClick}
           className={className}
