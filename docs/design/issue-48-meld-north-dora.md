@@ -30,6 +30,9 @@ Epic D(#5)の Sub-Issue。依存: D1(#51)・D2(#46)・D3(#47)・D1-1(#55)。
 | 11 | (Q2=A案)副露の追加ボタンを押した時点で手牌を切り捨てる。何も入れずに閉じても戻さない(A5) |
 | 12 | (Q3)確定済み副露の種類変更は牌を保持(A2)、牌タップで置き換え(A3)、牌確定でシートを閉じない(A4) |
 | 13 | (Q4)副露のシートでは「1 枚削除」・「AC」・物理 Backspace を無効にし、副露の削除はカードのゴミ箱だけで行う(2.3) |
+| 14 | (UI 監修)全カード(手牌・ドラ・裏ドラ・副露)のゴミ箱のアイコンを Material Symbols「disabled_by_default」(四角囲みのバツ)に統一する。HandCard はアイコンの差し替えだけで、issue-55 の構造・当たり判定・aria-label・40×24dp・無反応帯・disabled 条件は変えない。空のときは従来どおり disabled 表示(非表示にしない) |
+| 15 | (UI 監修)ドラ・裏ドラの表示牌は幅 20dp(目安)に縮小する。副露の牌は現状の大きさのまま |
+| 16 | (UI 監修)カードの構造(上段=見出し+ボタン、無反応帯、牌の行)は保ち、余白だけを削って高さを減らす。ゴミ箱 40×24dp・左と下の 8dp 無反応帯・各タップ領域は守る |
 
 ### 1.3 要件・下書きの改訂(製造で反映)
 
@@ -146,7 +149,7 @@ export const canAppendTenkeyDigitFor = (state: Pick<AppState,'input'|'tenkeyBuff
 
 - `data-slot="dora-uradora"` の置き場を `<div className="indicator-row">` にし、`IndicatorCard target="dora"` と `target="uradora"` を横並び(`display:grid; grid-template-columns: 1fr 1fr; gap: 8dp`)で置く。
 - 構造は手牌カード(issue-55 2.1)に倣う: 外枠 `.indicator-card`(クリックでシートを開く、`role` なし)、上段に見出し(「ドラ」/「裏ドラ」)とゴミ箱、下段に `role="button"`・`tabIndex=0`・`aria-label="ドラ表示牌を入力"`/`"裏ドラ表示牌を入力"` の本体。ゴミ箱は `aria-label="ドラ表示牌をクリア"`/`"裏ドラ表示牌をクリア"`、0 枚で disabled、押下で `clear-indicators`(シートは開かない)。
-- 牌幅: `--tile-width: min(1.75rem, calc((100cqi - 4px - 4 * 1px) / 5))`(本体に `container-type: inline-size`)。375px 幅でカード幅 (343 − 8)/2 = 167.5px、本体幅 167.5 − 16 = 151.5px、牌幅 = min(28, (151.5 − 8)/5 = 28.7) = **28px**(算出、実挙動未確認)。
+- 牌幅(確定事項 15): `--tile-width: 1.25rem`(**20px** 固定)。375px 幅でカード幅 (343 − 8)/2 = 167.5px、本体幅 167.5 − 16 = 151.5px。5 枚の行幅 = 20 × 5 + gap 1 × 4 + 牌列 padding 2 × 2 = **108px** < 151.5px で1行に収まる(算出)。牌の高さ = 20 × 4/3 ≈ 26.7px。
 - 抜き北・ステッパーは変更しない。
 
 ### 2.5 副露カードと追加ボタン(`src/ui/screen/MeldArea.tsx`、新規)
@@ -160,17 +163,36 @@ export const canAppendTenkeyDigitFor = (state: Pick<AppState,'input'|'tenkeyBuff
 
 | 要素 | 大きさ | 根拠 |
 | --- | --- | --- |
-| ドラ・裏ドラ・副露カードの本体と外枠 | 高さ 48dp 以上(本体の牌列 + カード padding で満たす) | §4 原則 |
+| ドラ・裏ドラ・副露カードの外枠(シートを開く領域) | 高さ 48dp 以上(外枠全体で満たす。本体単独の 48dp は求めない。2.4 の削減後も約 75〜85px) | §4 原則 |
 | 各カードのゴミ箱 | **40×24dp**、左と下に 8dp の無反応帯(A11、issue-55 2.3 と同じ値)。上段の見出しの右に置く | 確定事項 10。要件 §4 改訂(1.3) |
 | 追加ボタン | セル幅 × 48dp 以上 | §4 原則 |
 | 種類バー | ConnectedButtonGroup 既定(高さ 48dp、ピル内隙間 2dp は §4 の例外) | §4 既定の例外 |
 | パレット・テンキー | D2・D3 の規定のまま | §4 既存の例外 |
 
-カードの高さの見込み(375px): 8 + 24(上段)+ 8(無反応帯)+ 約 41(牌 37 + padding 4)+ 8 ≈ **89px**(算出、実挙動未確認。C14 で実測)。
+**高さの削減(確定事項 16、【設計案】)**: 削るのは余白だけとする。
+
+| 項目 | 監修前(製造済み) | 新 |
+| --- | --- | --- |
+| カード(`.indicator-card`・`.meld-card`)の padding | 8dp 四方 | **上下 6dp**・左右 8dp(`padding: 0.375rem 0.5rem`)。ゴミ箱の右・上はカード本体のタップ領域のままで、当たり判定は変わらない |
+| 本体(`__body`)の `min-height: 3rem` | あり | **削除**。シートを開くタップ領域はカード外枠全体(高さ ≥ 48dp)が担うため、本体単独で 48dp は不要 |
+| 本体の padding 2px(和了牌枠・フォーカスリングの逃げ) | 2px | 維持(削らない) |
+| 上段 24dp・無反応帯 8dp | — | 維持(確定事項 10) |
+
+削減後の高さの目安(375px、算出、実測前):
+
+| カード | 内訳 | 高さ |
+| --- | --- | --- |
+| ドラ・裏ドラ(牌 20dp) | 6 + 24 + 8 + (26.7 + 4) + 6 | **≈ 75px**(監修前 約 89px 以上) |
+| 副露(牌 28dp、槓4枚 = 28×4+3+4 = 119px < 151.5px で1行) | 6 + 24 + 8 + (37.3 + 4) + 6 | **≈ 85px** |
+| 副露(空、牌1枚分の空枠) | 同上 | ≈ 85px |
+
+いずれもカード外枠は 48dp 以上で §4 原則を満たす。
 
 当たり判定(各カード共通): ゴミ箱の矩形=押下で削除/クリア(シートは開かない)、ゴミ箱の左 8dp・下 8dp=何も起きない、それ以外のカード内=シートを開く。
 
 ### 2.7 色・形
+
+**ゴミ箱のアイコン(確定事項 14)**: `src/ui/icons/symbol-paths.ts` に `SYMBOL_DISABLED_BY_DEFAULT` を追加する。取得元は既存定数と同じ google/material-design-icons の `symbols/web/disabled_by_default/materialsymbolsoutlined/disabled_by_default_24px.svg`(Material Symbols Outlined、weight 400・fill 0)。ライセンスはファイル冒頭の既存のヘッダー(Apache License 2.0・出典)でまかなえるため、個別の表記は追加しない。`CardClearButton` と `HandCard` のインライン svg を `<SymbolIcon d={SYMBOL_DISABLED_BY_DEFAULT} size="1.25rem" />` に差し替える。【設計案】アイコン表示を 20dp(`1.25rem`)にする: 四角の外形はグリフの 120〜840/960 の範囲で表示 15dp 角となり、40×24dp の当たり判定の中に上下 4.5dp 以上の余白を残して収まる。色は `--md-sys-color-on-surface-variant`、disabled 時は `--md-sys-color-on-surface` 不透明度 0.38(従来どおり)。
 
 色は `--md-sys-color-*` トークンのみ(HEX 禁止、06 号)。カード背景・角丸は手牌カードと同じトークンを使う。暗槓の裏牌は既存の `Tile` の裏画像。
 
@@ -189,7 +211,11 @@ export const canAppendTenkeyDigitFor = (state: Pick<AppState,'input'|'tenkeyBuff
 | テスト(`app-state.test.ts`・`hand-rules.test.ts`・新規コンポーネントのテスト) | 追加 | 4 章の自動テスト |
 | `docs/requirements.md`・`docs/issues-draft.md` | 変更 | 1.3 |
 
-`src/core/` は変更しない。`HandCard.tsx` は変更しない(見出しの m は `maxHandLength(melds)` で既に副露に追従する)。
+| `src/ui/icons/symbol-paths.ts`・`index.ts` | 変更(UI 監修) | `SYMBOL_DISABLED_BY_DEFAULT` の追加と再輸出 |
+| `src/ui/screen/HandCard.tsx` | 変更(UI 監修) | **ゴミ箱アイコンの差し替えのみ**(2.7) |
+| `src/ui/screen/CardClearButton.tsx`・`main-screen.css` | 変更(UI 監修) | アイコン差し替え、2.4・2.6 の余白と牌幅 |
+
+`src/core/` は変更しない。`HandCard.tsx` はアイコンの差し替え以外を変更しない(見出しの m は `maxHandLength(melds)` で既に副露に追従する)。
 
 ### 2.9 バンドル
 
@@ -200,6 +226,11 @@ export const canAppendTenkeyDigitFor = (state: Pick<AppState,'input'|'tenkeyBuff
 1. 状態・判定関数と単体テスト(2.1・2.2。UI なしで C1〜C8 が通る)
 2. シート(種類バー・パレット/テンキーの対象の一般化・物理キー)とカード(2.3〜2.7)、コンポーネントテスト
 3. `docs/requirements.md`(§2 副露・§4 ゴミ箱・更新日)・`docs/issues-draft.md` の改訂(1.3)
+
+UI 監修の修正(既存3コミットは変えず、追加で1〜2コミット):
+
+4. `fix`: ゴミ箱アイコンを disabled_by_default に統一(`symbol-paths.ts`・`CardClearButton`・`HandCard`)
+5. `fix`: ドラ・裏ドラの牌幅 20dp とカードの余白削減(`main-screen.css`)。4 と 5 は1コミットにまとめてもよい
 
 ## 3. 実挙動未確認の一覧
 
@@ -233,10 +264,12 @@ export const canAppendTenkeyDigitFor = (state: Pick<AppState,'input'|'tenkeyBuff
 - [ ] **C11 追加ボタン**: 初期表示で `[aria-label="副露を追加"]` が1つあり、計算値 `border-style` が `dashed`。押すとシートが開き、`[role="radiogroup"][aria-label="副露の種類"]` 内の `role="radio"`「ポン」が `aria-checked="true"`(実物 `ConnectedButtonGroup.tsx` の選択表現)。副露カードが1枚増える。副露が4枚で追加ボタンが存在しない。
 - [ ] **C12 種類バーと牌の確定**: 種類バーがパレット(またはテンキー)の上にある(`getBoundingClientRect().bottom` < パレット先頭の `top`)。ポンのまま 1p をタップすると副露カードに 1p が3枚表示され、シートは開いたまま。明槓を押すと 4 枚、暗槓を押すと 4 枚で両端が裏(`img` の alt/クラスで裏牌を確認)。手牌に 1p が 1 枚ある状態で明槓・暗槓の `role="radio"` 要素が `disabled` 属性を持つ。1p を使い切った後のパレットで 1p のキーが `disabled` 属性を持つ。副露のシートで「1 枚削除」と「副露をクリア」が `disabled` 属性を持ち、物理 Backspace で副露の牌が消えない。
 - [ ] **C13 切り捨て(画面)**: 手牌 14 枚の状態で追加ボタンを押すと、手牌カードの見出しが `手牌 (11/11)`。
-- [ ] **C14 寸法と配置**: ドラ・裏ドラカードが同じ `top` で横並び、各幅 167.5±1px。満杯 5 枚で牌幅 28±0.5px、本体の `scrollWidth === clientWidth`。副露カードに槓4枚で `scrollWidth === clientWidth`。各カード本体・追加ボタンの高さ ≥ 48px。CSS に HEX 値を追加していない(`git diff` で `#[0-9a-fA-F]{3,8}` の追加が無い)。
+- [ ] **C14 寸法と配置**: ドラ・裏ドラカードが同じ `top` で横並び、各幅 167.5±1px。ドラ満杯 5 枚で牌の `width` が 20±0.5px、本体の `scrollWidth === clientWidth`(1行)。副露の牌の `width` が 28±0.5px、槓4枚で `scrollWidth === clientWidth`。カード外枠の高さ: ドラ・裏ドラ 75±3px、副露 85±3px(算出値。外れた場合は実測値を報告し統括が判断)。各カード外枠・追加ボタンの高さ ≥ 48px。カードの `padding-top`・`padding-bottom` が 6px。CSS に HEX 値を追加していない(`git diff` で `#[0-9a-fA-F]{3,8}` の追加が無い)。
 - [ ] **C14a ゴミ箱の矩形(375px、dev)**: ドラ・裏ドラ・副露(1つ以上)の各カードについて、ゴミ箱の `getBoundingClientRect()` の `width` が 40±0.5、`height` が 24±0.5。無反応帯(`.hand-card__clear-zone` 相当のクラス。A11 の部品の要素)の矩形 z とゴミ箱の矩形 r について `z.left = r.left − 8 ± 0.5`、`z.bottom = r.bottom + 8 ± 0.5`、`z.right = r.right ± 0.5`、`z.top = r.top ± 0.5`。
 - [ ] **C14b 当たり判定(375px、dev、各カード別)**: ドラ(表示牌3枚)・裏ドラ(1枚)・副露(ポン確定済み)の各カードで、issue-55 C6 の表と同じ点(ゴミ箱中央、角丸の内側の四隅 ±4px、真上の外 r.top−1、真下の外 r.bottom+1・+7、無反応帯の外(下)z.bottom+1、左の外 r.left−1・−7、無反応帯の外(左)z.left−1、左下の角 (r.left−4, r.bottom+4))を `document.elementFromPoint` で評価し、同表と同じ期待(ゴミ箱/無反応帯/カード本体)になる。`.hand-card` は各カードの外枠に読み替える。
 - [ ] **C14c 押下の結果(375px、dev)**: 各カードで、無反応帯の2点(真下 +1・左 −1)の要素へ `click()` を送るとシートが開かず状態が変わらない。真上の外・無反応帯の外(下・左)へ送るとシートがそのカードの対象で開く(各回の前に Esc)。ゴミ箱中央へ送ると、ドラ・裏ドラは表示牌が0枚、副露はその副露が消え、シートは開かない。表示牌0枚のドラ・裏ドラでゴミ箱(disabled)中央へ `click()` を送ってもシートが開かない。
+- [ ] **C14d ゴミ箱アイコン(375px、dev)**: 手牌・ドラ・裏ドラ・副露の各ゴミ箱の svg の `path` の `d` 属性が `SYMBOL_DISABLED_BY_DEFAULT` と一致する(旧ゴミ箱のパス `M6 19c0 1.1…` がコードに残っていない)。svg の矩形が 20±0.5 × 20±0.5 で、ゴミ箱ボタンの矩形の内側にある。空のときもゴミ箱が描画され `disabled` 属性を持つ。色の計算値が従来(on-surface-variant、disabled 時 不透明度 0.38)と同じ。
+- [ ] **C14e 手牌カードの非回帰**: issue-55 の C5(ゴミ箱 40×24)・C6(当たり判定の点)・C7(押下の結果)を再実行し合格。HandCard.tsx の差分がアイコン部分(import と svg 要素)だけである(`git diff` で確認)。
 - [ ] **C15 ドラのシート**: ドラカードの本体を押すとシートが開き、ヘッダーにパレット/テンキー切替がある。パレットの 1m・9m・字牌が押せ、2m〜8m のキーは存在しない(D2 のまま)。5 枚入れると全牌キーが disabled。テンキーで `1` `9` → `m` で 1m・9m が入る。パレットモードで「1 枚削除」と物理キー Backspace でそれぞれ末尾1枚が消え、手牌は変わらない。「AC」の aria-label が「ドラ表示牌をクリア」で、押すとドラだけが空になり手牌は変わらない。0 枚で「1 枚削除」「AC」が `disabled` 属性を持つ。Enter でシートが閉じる。裏ドラも同様(aria-label「裏ドラ表示牌をクリア」)。手牌のシートでは「1 枚削除」・物理 Backspace・「手牌をクリア」が従来どおり手牌に効く。ゴミ箱で全消しされ、シートは開かない。
 - [ ] **C16 副露の削除**: 副露カードのゴミ箱で副露が消え、手牌カードの見出しの m が 3 増える。開いている副露のゴミ箱を押すとシートが閉じる。
 - [ ] **C17 空の副露**: 追加ボタン→何も押さずに Esc → 副露カードが消える。シートを開いている間、結果パネルにコンソールエラーが出ない(`read_console_messages` で error が 0)。
