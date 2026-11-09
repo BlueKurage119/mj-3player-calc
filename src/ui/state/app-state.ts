@@ -112,7 +112,12 @@ export const appReducer = (state: AppState, action: AppAction): AppState => {
     case 'open-sheet': {
       let currentMelds = state.input.melds;
       let target = action.target;
+      const sameMeld =
+        state.inputFocus?.type === 'meld' &&
+        target.type === 'meld' &&
+        target.i === state.inputFocus.i;
       if (
+        !sameMeld &&
         state.inputFocus?.type === 'meld' &&
         currentMelds[state.inputFocus.i]?.tile === null
       ) {

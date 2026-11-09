@@ -1315,3 +1315,58 @@ describe('D3: テンキー入力の状態管理と reducer (D3-S1〜S13)', () =>
     });
   });
 });
+
+describe('D4-C23: open-sheet の同一副露再選択 (確定事項 30)', () => {
+  const tile1p: Tile = { type: 'p', n: 1 };
+  const make = (): AppState => {
+    const base = createInitialState(createDefaultRule());
+    return {
+      ...base,
+      input: {
+        ...base.input,
+        melds: [
+          { type: 'pon', tile: tile1p },
+          { type: 'pon', tile: null }
+        ]
+      },
+      inputFocus: { type: 'meld', i: 1 }
+    };
+  };
+
+  it('D4-C23a: 空の副露を再選択しても消えず、続けて set-meld-tile が成立する', () => {
+    const s = appReducer(make(), {
+      type: 'open-sheet',
+      target: { type: 'meld', i: 1 }
+    });
+    expect(s.input.melds).toHaveLength(2);
+    expect(s.inputFocus).toEqual({ type: 'meld', i: 1 });
+    const s2 = appReducer(s, {
+      type: 'set-meld-tile',
+      i: 1,
+      tile: { type: 's', n: 2 }
+    });
+    expect(s2.input.melds[1]).toEqual({
+      type: 'pon',
+      tile: { type: 's', n: 2 }
+    });
+  });
+
+  it('D4-C23b: 別の副露へ移ると空の副露が消え index が補正される', () => {
+    const s = appReducer(make(), {
+      type: 'open-sheet',
+      target: { type: 'meld', i: 0 }
+    });
+    expect(s.input.melds).toEqual([{ type: 'pon', tile: tile1p }]);
+    expect(s.inputFocus).toEqual({ type: 'meld', i: 0 });
+  });
+
+  it('D4-C23c: 同じ副露の再選択の後に close-sheet すると空の副露が消える', () => {
+    const s = appReducer(make(), {
+      type: 'open-sheet',
+      target: { type: 'meld', i: 1 }
+    });
+    const closed = appReducer(s, { type: 'close-sheet' });
+    expect(closed.input.melds).toEqual([{ type: 'pon', tile: tile1p }]);
+    expect(closed.inputFocus).toBeNull();
+  });
+});

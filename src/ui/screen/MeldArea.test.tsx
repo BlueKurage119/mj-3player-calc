@@ -7,6 +7,7 @@ describe('D4: 副露領域・副露カード・追加ボタンの構造と表示
   it('D4-MA1: 初期状態で追加ボタンが存在し副露カードが0枚 (renderToStaticMarkup)', () => {
     const html = renderToStaticMarkup(
       <MeldAreaContent
+        red={1}
         melds={[]}
         onSelectMeld={() => {}}
         onRemoveMeld={() => {}}
@@ -26,19 +27,19 @@ describe('D4: 副露領域・副露カード・追加ボタンの構造と表示
     const tile1p = { type: 'p' as const, n: 1 as const };
 
     // meldTiles の純関数テスト
-    expect(meldTiles({ type: 'pon', tile: null })).toEqual([]);
-    expect(meldTiles({ type: 'pon', tile: tile1p })).toEqual([
+    expect(meldTiles({ type: 'pon', tile: null }, 1)).toEqual([]);
+    expect(meldTiles({ type: 'pon', tile: tile1p }, 1)).toEqual([
       tile1p,
       tile1p,
       tile1p
     ]);
-    expect(meldTiles({ type: 'kan', tile: tile1p, closed: false })).toEqual([
+    expect(meldTiles({ type: 'kan', tile: tile1p, closed: false }, 1)).toEqual([
       tile1p,
       tile1p,
       tile1p,
       tile1p
     ]);
-    expect(meldTiles({ type: 'kan', tile: tile1p, closed: true })).toEqual([
+    expect(meldTiles({ type: 'kan', tile: tile1p, closed: true }, 1)).toEqual([
       { type: 'back' },
       tile1p,
       tile1p,
@@ -54,6 +55,7 @@ describe('D4: 副露領域・副露カード・追加ボタンの構造と表示
 
     const html = renderToStaticMarkup(
       <MeldAreaContent
+        red={1}
         melds={melds}
         onSelectMeld={() => {}}
         onRemoveMeld={() => {}}
@@ -84,6 +86,7 @@ describe('D4: 副露領域・副露カード・追加ボタンの構造と表示
   it('D4-C14g-4: 副露カードは1行(meld-card__row 内で牌の行の後ろに消すボタン)で上段の行が無い', () => {
     const html = renderToStaticMarkup(
       <MeldAreaContent
+        red={1}
         melds={[{ type: 'pon', tile: { type: 'p', n: 1 } }]}
         onSelectMeld={() => {}}
         onRemoveMeld={() => {}}
@@ -97,5 +100,45 @@ describe('D4: 副露領域・副露カード・追加ボタンの構造と表示
     expect(row).toBeGreaterThan(-1);
     expect(body).toBeGreaterThan(row);
     expect(clear).toBeGreaterThan(body);
+  });
+
+  it('D4-C22: meldTiles が instantiateMeld の展開結果に合わせる (red=0/1/2、5p)', () => {
+    const p5 = { type: 'p' as const, n: 5 as const, red: false };
+    const p5r = { type: 'p' as const, n: 5 as const, red: true };
+    const back = { type: 'back' as const };
+    const pon = (red: boolean): Meld => ({
+      type: 'pon',
+      tile: red ? p5r : p5
+    });
+    const minkan: Meld = { type: 'kan', tile: p5, closed: false };
+    const ankan: Meld = { type: 'kan', tile: p5, closed: true };
+
+    // red=0: 赤なし
+    expect(meldTiles(pon(false), 0)).toEqual([p5, p5, p5]);
+    expect(meldTiles(pon(true), 0)).toEqual([p5, p5, p5]);
+    expect(meldTiles(minkan, 0)).toEqual([p5, p5, p5, p5]);
+    expect(meldTiles(ankan, 0)).toEqual([back, p5, p5, back]);
+
+    // red=1
+    expect(meldTiles(pon(false), 1)).toEqual([p5, p5, p5]);
+    expect(meldTiles(pon(true), 1)).toEqual([p5, p5, p5r]);
+    expect(meldTiles(minkan, 1)).toEqual([p5, p5, p5, p5r]);
+    expect(meldTiles(ankan, 1)).toEqual([back, p5, p5r, back]);
+
+    // red=2
+    expect(meldTiles(pon(false), 2)).toEqual([p5, p5, p5r]);
+    expect(meldTiles(pon(true), 2)).toEqual([p5, p5r, p5r]);
+    expect(meldTiles(minkan, 2)).toEqual([p5, p5, p5r, p5r]);
+    expect(meldTiles(ankan, 2)).toEqual([back, p5r, p5r, back]);
+
+    // 5 以外は従来どおり
+    const s1 = { type: 's' as const, n: 1 as const };
+    expect(meldTiles({ type: 'pon', tile: s1 }, 2)).toEqual([s1, s1, s1]);
+    expect(meldTiles({ type: 'kan', tile: s1, closed: true }, 2)).toEqual([
+      back,
+      s1,
+      s1,
+      back
+    ]);
   });
 });

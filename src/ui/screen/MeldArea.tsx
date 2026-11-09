@@ -1,6 +1,7 @@
 import { useRef } from 'react';
 import type React from 'react';
-import type { Meld } from '../../core/input';
+import { instantiateMeld, type Meld } from '../../core/input';
+import type { Rule } from '../../core/rule';
 import type { TileOrBack } from '../../core/tile';
 import { SYMBOL_ADD, SymbolIcon } from '../icons';
 import { FocusRing, Ripple } from '../md';
@@ -8,19 +9,20 @@ import { useAppDispatch, useAppState } from '../state';
 import { Tile } from '../tile';
 import { CardClearButton } from './CardClearButton';
 
-export const meldTiles = (meld: Meld): TileOrBack[] => {
+export const meldTiles = (meld: Meld, red: Rule['red']): TileOrBack[] => {
   if (meld.tile === null) return [];
-  if (meld.type === 'pon') {
-    return [meld.tile, meld.tile, meld.tile];
+  const xs = instantiateMeld(meld, red);
+  if (meld.type === 'kan' && meld.closed) {
+    const [, , third, fourth] = xs;
+    if (third === undefined || fourth === undefined) return xs;
+    return [{ type: 'back' }, third, fourth, { type: 'back' }];
   }
-  if (meld.closed) {
-    return [{ type: 'back' }, meld.tile, meld.tile, { type: 'back' }];
-  }
-  return [meld.tile, meld.tile, meld.tile, meld.tile];
+  return xs;
 };
 
 export interface MeldAreaContentProps {
   melds: Meld[];
+  red: Rule['red'];
   onSelectMeld: (i: number) => void;
   onRemoveMeld: (i: number) => void;
   onAddMeld: () => void;
@@ -28,6 +30,7 @@ export interface MeldAreaContentProps {
 
 export function MeldAreaContent({
   melds,
+  red,
   onSelectMeld,
   onRemoveMeld,
   onAddMeld
@@ -62,7 +65,7 @@ export function MeldAreaContent({
   return (
     <div className="meld-area">
       {melds.map((meld, i) => {
-        const tiles = meldTiles(meld);
+        const tiles = meldTiles(meld, red);
         return (
           // biome-ignore lint/a11y/useKeyWithClickEvents: キーボード操作は .meld-card__body(role=button)が担う
           <div
@@ -118,12 +121,13 @@ export function MeldAreaContent({
 }
 
 export function MeldArea(): React.JSX.Element {
-  const { input } = useAppState();
+  const { input, rule } = useAppState();
   const dispatch = useAppDispatch();
 
   return (
     <MeldAreaContent
       melds={input.melds}
+      red={rule.red}
       onSelectMeld={i =>
         dispatch({ type: 'open-sheet', target: { type: 'meld', i } })
       }
