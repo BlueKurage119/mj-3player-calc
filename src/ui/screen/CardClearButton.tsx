@@ -1,4 +1,5 @@
 import type React from 'react';
+import { SYMBOL_DISABLED_BY_DEFAULT, SymbolIcon } from '../icons';
 import { FocusRing, Ripple } from '../md';
 
 export interface CardClearButtonProps {
@@ -30,17 +31,7 @@ export function CardClearButton(
       >
         <Ripple disabled={disabled} />
         <FocusRing />
-        <svg
-          viewBox="0 0 24 24"
-          width="1.5rem"
-          height="1.5rem"
-          aria-hidden="true"
-        >
-          <path
-            d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"
-            fill="currentColor"
-          />
-        </svg>
+        <SymbolIcon d={SYMBOL_DISABLED_BY_DEFAULT} size="1.25rem" />
       </button>
     </div>
   );
