@@ -1,7 +1,15 @@
 import type React from 'react';
 import type { Tile as CoreTile } from '../../core/tile';
 import { Button, IconButton } from '../md';
-import { canAddHandTile, useAppDispatch, useAppState } from '../state';
+import {
+  canAddHandTile,
+  canAddIndicatorTile,
+  canSetMeld,
+  kindOfMeld,
+  meldOfKind,
+  useAppDispatch,
+  useAppState
+} from '../state';
 import { Tile, tileLabelOf } from '../tile';
 import './tile-palette.css';
 
@@ -59,9 +67,31 @@ export function TilePalette(): React.JSX.Element {
   const state = useAppState();
   const dispatch = useAppDispatch();
   const hasRed = state.rule.red > 0;
+  const focus = state.inputFocus;
 
   const renderTileKey = (tile: CoreTile) => {
-    const disabled = !canAddHandTile(state, tile);
+    let disabled = true;
+    let onTileClick = () => {};
+
+    if (focus?.type === 'hand') {
+      disabled = !canAddHandTile(state, tile);
+      onTileClick = () => dispatch({ type: 'add-hand-tile', tile });
+    } else if (focus?.type === 'dora' || focus?.type === 'uradora') {
+      const target = focus.type;
+      disabled = !canAddIndicatorTile(state, target, tile);
+      onTileClick = () =>
+        dispatch({ type: 'add-indicator-tile', target, tile });
+    } else if (focus?.type === 'meld') {
+      const meldIndex = focus.i;
+      const currentMeld = state.input.melds[meldIndex];
+      if (currentMeld) {
+        const currentKind = kindOfMeld(currentMeld);
+        disabled = !canSetMeld(state, meldIndex, meldOfKind(currentKind, tile));
+        onTileClick = () =>
+          dispatch({ type: 'set-meld-tile', i: meldIndex, tile });
+      }
+    }
+
     return (
       <button
         key={tileKeyOf(tile)}
@@ -71,7 +101,7 @@ export function TilePalette(): React.JSX.Element {
         disabled={disabled}
         onClick={() => {
           if (!disabled) {
-            dispatch({ type: 'add-hand-tile', tile });
+            onTileClick();
           }
         }}
       >
@@ -79,6 +109,38 @@ export function TilePalette(): React.JSX.Element {
       </button>
     );
   };
+
+  let backspaceDisabled = true;
+  let onBackspaceClick = () => {};
+  let acDisabled = true;
+  let onAcClick = () => {};
+  let acAriaLabel = '手牌をクリア';
+
+  if (focus?.type === 'hand') {
+    backspaceDisabled = state.input.hand.length === 0;
+    onBackspaceClick = () => dispatch({ type: 'remove-last-hand-tile' });
+    acDisabled = state.input.hand.length === 0;
+    onAcClick = () => dispatch({ type: 'clear-hand' });
+    acAriaLabel = '手牌をクリア';
+  } else if (focus?.type === 'dora') {
+    backspaceDisabled = state.input.dora.length === 0;
+    onBackspaceClick = () =>
+      dispatch({ type: 'remove-last-indicator-tile', target: 'dora' });
+    acDisabled = state.input.dora.length === 0;
+    onAcClick = () => dispatch({ type: 'clear-indicators', target: 'dora' });
+    acAriaLabel = 'ドラ表示牌をクリア';
+  } else if (focus?.type === 'uradora') {
+    backspaceDisabled = state.input.uradora.length === 0;
+    onBackspaceClick = () =>
+      dispatch({ type: 'remove-last-indicator-tile', target: 'uradora' });
+    acDisabled = state.input.uradora.length === 0;
+    onAcClick = () => dispatch({ type: 'clear-indicators', target: 'uradora' });
+    acAriaLabel = '裏ドラ表示牌をクリア';
+  } else if (focus?.type === 'meld') {
+    backspaceDisabled = true;
+    acDisabled = true;
+    acAriaLabel = '副露をクリア';
+  }
 
   const backspaceSpanClass = hasRed
     ? 'tile-palette__action--span-2'
@@ -94,8 +156,9 @@ export function TilePalette(): React.JSX.Element {
       <IconButton
         variant="tonal"
         label="1 枚削除"
+        disabled={backspaceDisabled}
         className={`tile-palette__action ${backspaceSpanClass}`}
-        onClick={() => dispatch({ type: 'remove-last-hand-tile' })}
+        onClick={onBackspaceClick}
       >
         <svg
           viewBox="0 0 24 24"
@@ -111,9 +174,10 @@ export function TilePalette(): React.JSX.Element {
       </IconButton>
       <Button
         variant="tonal"
-        aria-label="手牌をクリア"
+        aria-label={acAriaLabel}
+        disabled={acDisabled}
         className="tile-palette__action tile-palette__action--span-2"
-        onClick={() => dispatch({ type: 'clear-hand' })}
+        onClick={onAcClick}
       >
         AC
       </Button>

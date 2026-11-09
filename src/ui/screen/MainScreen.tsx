@@ -3,7 +3,13 @@ import type React from 'react';
 import { useResult } from '../calc/use-result';
 import { BottomSheet, ConnectedButtonGroup, Stepper } from '../expressive';
 import { SYMBOL_DIALPAD, SYMBOL_KEYBOARD_KEYS, SymbolIcon } from '../icons';
-import { Tenkey, TilePalette, useTenkeyKeyboard } from '../input';
+import {
+  MeldKindBar,
+  Tenkey,
+  TilePalette,
+  isSheetKeyboardTarget,
+  useTenkeyKeyboard
+} from '../input';
 import {
   type AppAction,
   STEPPER_BOUNDS,
@@ -14,6 +20,8 @@ import {
 } from '../state';
 import { AppHeader } from './AppHeader';
 import { HandCard } from './HandCard';
+import { IndicatorCard } from './IndicatorCard';
+import { MeldArea } from './MeldArea';
 import { ResultPanel } from './ResultPanel';
 import { SummaryCard } from './SummaryCard';
 import { useInView } from './use-in-view';
@@ -122,9 +130,14 @@ export function MainScreen(): React.JSX.Element {
               }
             />
           </div>
-          <div className="input-slot" data-slot="dora-uradora" />
+          <div className="input-slot indicator-row" data-slot="dora-uradora">
+            <IndicatorCard target="dora" />
+            <IndicatorCard target="uradora" />
+          </div>
           <HandCard />
-          <div className="input-slot" data-slot="melds" />
+          <div className="input-slot" data-slot="melds">
+            <MeldArea />
+          </div>
           <div className="input-slot" data-slot="situation" />
         </section>
         <SummaryCard visible={summaryVisible} sheetOpen={sheetOpen} />
@@ -138,15 +151,26 @@ export function MainScreen(): React.JSX.Element {
         open={sheetOpen}
         onClose={() => dispatch({ type: 'close-sheet' })}
         aria-label="入力パネル"
-        header={inputFocus?.type === 'hand' ? <SheetModeToggle /> : undefined}
+        header={
+          inputFocus && isSheetKeyboardTarget(inputFocus) ? (
+            <SheetModeToggle />
+          ) : undefined
+        }
       >
         <div className="sheet-slot" data-slot={getSheetSlotName(inputFocus)}>
-          {inputFocus?.type === 'hand' ? (
+          {inputFocus?.type === 'hand' ||
+          inputFocus?.type === 'dora' ||
+          inputFocus?.type === 'uradora' ? (
             sheetMode === 'tenkey' ? (
               <Tenkey />
             ) : (
               <TilePalette />
             )
+          ) : inputFocus?.type === 'meld' ? (
+            <div className="sheet-meld-content">
+              <MeldKindBar i={inputFocus.i} />
+              {sheetMode === 'tenkey' ? <Tenkey /> : <TilePalette />}
+            </div>
           ) : null}
         </div>
       </BottomSheet>

@@ -1,7 +1,7 @@
 import type React from 'react';
 import { SYMBOL_BACKSPACE, SYMBOL_KEYBOARD_RETURN, SymbolIcon } from '../icons';
 import { FocusRing, Ripple } from '../md';
-import { canAppendTenkeyDigit, useAppDispatch, useAppState } from '../state';
+import { canAppendTenkeyDigitFor, useAppDispatch, useAppState } from '../state';
 import { TENKEY_HONOR_HINTS } from './tenkey-logic';
 import './tenkey.css';
 
@@ -10,7 +10,7 @@ export function Tenkey(): React.JSX.Element {
   const dispatch = useAppDispatch();
 
   const renderDigitKey = (digit: string, sub?: string, extraClass = '') => {
-    const disabled = !canAppendTenkeyDigit(state, digit);
+    const disabled = !canAppendTenkeyDigitFor(state, digit);
     return (
       <button
         type="button"

@@ -318,3 +318,144 @@ body {
   padding-block: 0.8rem;
   row-gap: 0.8rem;
 }
+
+.indicator-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+}
+
+.indicator-card {
+  background: var(--md-sys-color-surface-container);
+  border-radius: var(--md-sys-shape-corner-large);
+  padding: 0.5rem;
+  box-sizing: border-box;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.indicator-card__top-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.indicator-card__title {
+  font-family: var(--md-sys-typescale-title-small-font);
+  font-size: var(--md-sys-typescale-title-small-size);
+  line-height: var(--md-sys-typescale-title-small-line-height);
+  font-weight: var(--md-sys-typescale-title-small-weight);
+  letter-spacing: var(--md-sys-typescale-title-small-tracking);
+  color: var(--md-sys-color-on-surface-variant);
+  white-space: nowrap;
+  padding-block-start: 2px;
+}
+
+.indicator-card__body {
+  container-type: inline-size;
+  display: flex;
+  align-items: center;
+  border-radius: var(--md-sys-shape-corner-medium);
+  min-height: 3rem;
+  padding: 0.125rem;
+  box-sizing: border-box;
+  outline: none;
+}
+
+.indicator-card__body:focus-visible {
+  outline: 2px solid var(--md-sys-color-primary);
+  outline-offset: 2px;
+}
+
+.indicator-card__tiles {
+  --tile-width: min(1.75rem, calc((100cqi - 4px - 4 * 1px) / 5));
+  display: flex;
+  gap: 1px;
+  align-items: center;
+  justify-content: flex-start;
+  width: 100%;
+}
+
+.meld-area {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+}
+
+.meld-card {
+  background: var(--md-sys-color-surface-container);
+  border-radius: var(--md-sys-shape-corner-large);
+  padding: 0.5rem;
+  box-sizing: border-box;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.meld-card__top-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.meld-card__body {
+  container-type: inline-size;
+  display: flex;
+  align-items: center;
+  border-radius: var(--md-sys-shape-corner-medium);
+  min-height: 3rem;
+  padding: 0.125rem;
+  box-sizing: border-box;
+  outline: none;
+}
+
+.meld-card__body:focus-visible {
+  outline: 2px solid var(--md-sys-color-primary);
+  outline-offset: 2px;
+}
+
+.meld-card__tiles {
+  --tile-width: min(1.75rem, calc((100cqi - 4px - 3 * 1px) / 4));
+  display: flex;
+  gap: 1px;
+  align-items: center;
+  justify-content: flex-start;
+  width: 100%;
+}
+
+.meld-card__empty {
+  height: calc(1.75rem * 1.34);
+  width: 100%;
+}
+
+.meld-add {
+  min-height: 3rem;
+  border: 1px dashed var(--md-sys-color-outline);
+  border-radius: var(--md-sys-shape-corner-medium);
+  background: transparent;
+  color: var(--md-sys-color-on-surface-variant);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  position: relative;
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.meld-add:focus-visible {
+  outline: 2px solid var(--md-sys-color-primary);
+  outline-offset: 2px;
+}
+
+.sheet-meld-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.sheet-slot[data-slot^="sheet-dora"],
+.sheet-slot[data-slot^="sheet-uradora"],
+.sheet-slot[data-slot^="sheet-meld"] {
+  min-height: 16rem;
+}

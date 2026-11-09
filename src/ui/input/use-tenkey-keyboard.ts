@@ -1,44 +1,85 @@
 import { useEffect } from 'react';
+import type {
+  AppAction,
+  IndicatorTarget,
+  SheetMode,
+  SheetTarget
+} from '../state';
 import { useAppDispatch, useAppState } from '../state';
-import { mapTenkeyKey, shouldHandleKeyTarget } from './tenkey-logic';
+import {
+  type TenkeyKeyCommand,
+  mapTenkeyKey,
+  shouldHandleKeyTarget
+} from './tenkey-logic';
+
+export const isSheetKeyboardTarget = (
+  target: SheetTarget | null
+): target is
+  | { type: 'hand' }
+  | { type: 'dora' }
+  | { type: 'uradora' }
+  | { type: 'meld'; i: number } => {
+  if (!target) return false;
+  return (
+    target.type === 'hand' ||
+    target.type === 'dora' ||
+    target.type === 'uradora' ||
+    target.type === 'meld'
+  );
+};
+
+export const resolveKeyboardAction = (
+  command: TenkeyKeyCommand | null,
+  sheetMode: SheetMode,
+  inputFocus: SheetTarget | null
+): AppAction | null => {
+  if (command === null || !isSheetKeyboardTarget(inputFocus)) return null;
+
+  switch (command.kind) {
+    case 'digit':
+      return { type: 'tenkey-digit', digit: command.digit };
+    case 'suit':
+      return { type: 'tenkey-commit', suit: command.suit };
+    case 'backspace':
+      if (sheetMode === 'tenkey') {
+        return { type: 'tenkey-backspace' };
+      }
+      if (inputFocus.type === 'hand') {
+        return { type: 'remove-last-hand-tile' };
+      }
+      if (inputFocus.type === 'dora' || inputFocus.type === 'uradora') {
+        return {
+          type: 'remove-last-indicator-tile',
+          target: inputFocus.type as IndicatorTarget
+        };
+      }
+      return null;
+    case 'enter':
+      return { type: 'close-sheet' };
+  }
+};
 
 /**
- * 手牌入力シートが開いている間、物理キー入力をテンキー・パレット操作へ中継するフック。
- * 対象が hand 以外のとき、またはシート外の要素にフォーカスがあるときはキーを奪わない。
+ * シートが開いている間、物理キー入力をテンキー・パレット操作へ中継するフック。
+ * 対象が hand・dora・uradora・meld 以外のとき、またはシート外の要素にフォーカスがあるときはキーを奪わない。
  */
 export function useTenkeyKeyboard(): void {
   const { inputFocus, sheetMode } = useAppState();
   const dispatch = useAppDispatch();
 
-  const isHandFocused = inputFocus?.type === 'hand';
+  const isFocused = isSheetKeyboardTarget(inputFocus);
 
   useEffect(() => {
-    if (!isHandFocused) return;
+    if (!isFocused) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (!shouldHandleKeyTarget(e.target)) return;
 
       const command = mapTenkeyKey(e, sheetMode);
-      if (command === null) return;
-
-      e.preventDefault();
-      switch (command.kind) {
-        case 'digit':
-          dispatch({ type: 'tenkey-digit', digit: command.digit });
-          break;
-        case 'suit':
-          dispatch({ type: 'tenkey-commit', suit: command.suit });
-          break;
-        case 'backspace':
-          if (sheetMode === 'tenkey') {
-            dispatch({ type: 'tenkey-backspace' });
-          } else {
-            dispatch({ type: 'remove-last-hand-tile' });
-          }
-          break;
-        case 'enter':
-          dispatch({ type: 'close-sheet' });
-          break;
+      const action = resolveKeyboardAction(command, sheetMode, inputFocus);
+      if (action !== null) {
+        e.preventDefault();
+        dispatch(action);
       }
     };
 
@@ -46,5 +87,5 @@ export function useTenkeyKeyboard(): void {
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [isHandFocused, sheetMode, dispatch]);
+  }, [isFocused, inputFocus, sheetMode, dispatch]);
 }
