@@ -183,7 +183,7 @@ body {
   width: 100%;
   overflow-x: auto;
   padding: 2px;
-  min-height: calc(var(--tile-width) * 4 / 3);
+  min-height: calc(var(--tile-width) * 4 / 3 + 4px);
   box-sizing: border-box;
 }
 
