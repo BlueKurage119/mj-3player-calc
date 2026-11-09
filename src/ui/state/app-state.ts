@@ -1,11 +1,15 @@
-import type { HandOptions, Input } from '../../core/input';
+import type { HandOptions, Input, Meld } from '../../core/input';
 import type { Rule } from '../../core/rule';
 import type { Table } from '../../core/table';
 import type { Tile } from '../../core/tile';
 import {
+  MAX_MELDS,
   canAddHandTile,
-  canAppendTenkeyDigit,
+  canAddIndicatorTile,
+  canAppendTenkeyDigitFor,
+  canSetMeld,
   maxHandLength,
+  meldOfKind,
   planAddTiles,
   resolveTenkeyBuffer,
   sortHand
@@ -14,6 +18,8 @@ import {
 export type Screen = 'main' | 'settings';
 export type SheetMode = 'palette' | 'tenkey';
 export type TenkeySuit = 'm' | 'p' | 's' | 'z';
+export type MeldKind = 'pon' | 'minkan' | 'ankan';
+export type IndicatorTarget = 'dora' | 'uradora';
 export type SheetTarget =
   | { type: 'hand' }
   | { type: 'dora' }
@@ -46,7 +52,14 @@ export type AppAction =
   | { type: 'tenkey-digit'; digit: string } // '0'〜'9' の 1 文字
   | { type: 'tenkey-backspace' }
   | { type: 'tenkey-commit'; suit: TenkeySuit }
-  | { type: 'add-hand-tiles'; tiles: Tile[] };
+  | { type: 'add-hand-tiles'; tiles: Tile[] }
+  | { type: 'add-meld' }
+  | { type: 'set-meld-kind'; i: number; kind: MeldKind }
+  | { type: 'set-meld-tile'; i: number; tile: Tile }
+  | { type: 'remove-meld'; i: number }
+  | { type: 'add-indicator-tile'; target: IndicatorTarget; tile: Tile }
+  | { type: 'remove-last-indicator-tile'; target: IndicatorTarget }
+  | { type: 'clear-indicators'; target: IndicatorTarget };
 export const STEPPER_BOUNDS = {
   continue: [0, 99],
   deposit: [0, 99],
@@ -97,36 +110,63 @@ export const appReducer = (state: AppState, action: AppAction): AppState => {
       return { ...state, screen: action.screen };
 
     case 'open-sheet': {
-      if (state.inputFocus?.type === 'hand' && action.target.type !== 'hand') {
-        const sortedHand = sortHand(
-          state.input.hand,
-          maxHandLength(state.input.melds)
-        );
-        return {
-          ...state,
-          input: { ...state.input, hand: sortedHand },
-          inputFocus: action.target,
-          tenkeyBuffer: ''
-        };
+      let currentMelds = state.input.melds;
+      let target = action.target;
+      if (
+        state.inputFocus?.type === 'meld' &&
+        currentMelds[state.inputFocus.i]?.tile === null
+      ) {
+        const emptyIdx = state.inputFocus.i;
+        currentMelds = currentMelds.filter((_, k) => k !== emptyIdx);
+        if (target.type === 'meld' && target.i > emptyIdx) {
+          target = { type: 'meld', i: target.i - 1 };
+        }
       }
-      return { ...state, inputFocus: action.target };
+
+      let currentHand = state.input.hand;
+      if (state.inputFocus?.type === 'hand' && target.type !== 'hand') {
+        currentHand = sortHand(currentHand, maxHandLength(currentMelds));
+      }
+
+      return {
+        ...state,
+        input: {
+          ...state.input,
+          hand: currentHand,
+          melds: currentMelds
+        },
+        inputFocus: target,
+        tenkeyBuffer: ''
+      };
     }
 
     case 'close-sheet': {
       if (state.inputFocus === null) return state;
-      if (state.inputFocus.type === 'hand') {
-        const sortedHand = sortHand(
-          state.input.hand,
-          maxHandLength(state.input.melds)
-        );
-        return {
-          ...state,
-          input: { ...state.input, hand: sortedHand },
-          inputFocus: null,
-          tenkeyBuffer: ''
-        };
+
+      let currentMelds = state.input.melds;
+      if (
+        state.inputFocus.type === 'meld' &&
+        currentMelds[state.inputFocus.i]?.tile === null
+      ) {
+        const emptyIdx = state.inputFocus.i;
+        currentMelds = currentMelds.filter((_, k) => k !== emptyIdx);
       }
-      return { ...state, inputFocus: null, tenkeyBuffer: '' };
+
+      let currentHand = state.input.hand;
+      if (state.inputFocus.type === 'hand') {
+        currentHand = sortHand(currentHand, maxHandLength(currentMelds));
+      }
+
+      return {
+        ...state,
+        input: {
+          ...state.input,
+          hand: currentHand,
+          melds: currentMelds
+        },
+        inputFocus: null,
+        tenkeyBuffer: ''
+      };
     }
 
     case 'add-hand-tile': {
@@ -231,9 +271,18 @@ export const appReducer = (state: AppState, action: AppAction): AppState => {
     }
 
     case 'tenkey-digit': {
-      if (state.inputFocus?.type !== 'hand') return state;
+      if (!state.inputFocus) return state;
+      const focusType = state.inputFocus.type;
+      if (
+        focusType !== 'hand' &&
+        focusType !== 'dora' &&
+        focusType !== 'uradora' &&
+        focusType !== 'meld'
+      ) {
+        return state;
+      }
       if (state.sheetMode !== 'tenkey') return state;
-      if (!canAppendTenkeyDigit(state, action.digit)) return state;
+      if (!canAppendTenkeyDigitFor(state, action.digit)) return state;
       return {
         ...state,
         tenkeyBuffer: state.tenkeyBuffer + action.digit
@@ -247,30 +296,109 @@ export const appReducer = (state: AppState, action: AppAction): AppState => {
           tenkeyBuffer: state.tenkeyBuffer.slice(0, -1)
         };
       }
-      if (state.input.hand.length === 0) return state;
-      return {
-        ...state,
-        input: {
-          ...state.input,
-          hand: state.input.hand.slice(0, -1)
-        },
-        tenkeyBuffer: ''
-      };
+      if (!state.inputFocus) return state;
+      if (state.inputFocus.type === 'hand') {
+        if (state.input.hand.length === 0) return state;
+        return {
+          ...state,
+          input: {
+            ...state.input,
+            hand: state.input.hand.slice(0, -1)
+          },
+          tenkeyBuffer: ''
+        };
+      }
+      if (
+        state.inputFocus.type === 'dora' ||
+        state.inputFocus.type === 'uradora'
+      ) {
+        const target = state.inputFocus.type;
+        if (state.input[target].length === 0) return state;
+        return {
+          ...state,
+          input: {
+            ...state.input,
+            [target]: state.input[target].slice(0, -1)
+          },
+          tenkeyBuffer: ''
+        };
+      }
+      if (state.inputFocus.type === 'meld') {
+        return state;
+      }
+      return state;
     }
 
     case 'tenkey-commit': {
+      if (!state.inputFocus) return state;
       const tiles = resolveTenkeyBuffer(state.tenkeyBuffer, action.suit);
       if (tiles === null) return state;
-      const planned = planAddTiles(state, tiles);
-      if (planned === null) return state;
-      return {
-        ...state,
-        input: {
-          ...state.input,
-          hand: [...state.input.hand, ...planned]
-        },
-        tenkeyBuffer: ''
-      };
+
+      if (state.inputFocus.type === 'hand') {
+        const planned = planAddTiles(state, tiles);
+        if (planned === null) return state;
+        return {
+          ...state,
+          input: {
+            ...state.input,
+            hand: [...state.input.hand, ...planned]
+          },
+          tenkeyBuffer: ''
+        };
+      }
+
+      if (
+        state.inputFocus.type === 'dora' ||
+        state.inputFocus.type === 'uradora'
+      ) {
+        const target = state.inputFocus.type;
+        const currentIndicators = [...state.input[target]];
+        let tempState = {
+          ...state,
+          input: { ...state.input, [target]: currentIndicators }
+        };
+        for (const tile of tiles) {
+          if (!canAddIndicatorTile(tempState, target, tile)) {
+            return state;
+          }
+          currentIndicators.push(tile);
+          tempState = {
+            ...tempState,
+            input: { ...tempState.input, [target]: currentIndicators }
+          };
+        }
+        return {
+          ...state,
+          input: {
+            ...state.input,
+            [target]: currentIndicators
+          },
+          tenkeyBuffer: ''
+        };
+      }
+
+      if (state.inputFocus.type === 'meld') {
+        if (tiles.length !== 1) return state;
+        const meldTile = tiles[0];
+        if (!meldTile) return state;
+        const meldIdx = state.inputFocus.i;
+        const meld = state.input.melds[meldIdx];
+        if (!meld) return state;
+        const nextMeld: Meld = { ...meld, tile: meldTile };
+        if (!canSetMeld(state, meldIdx, nextMeld)) return state;
+        return {
+          ...state,
+          input: {
+            ...state.input,
+            melds: state.input.melds.map((m, idx) =>
+              idx === meldIdx ? nextMeld : m
+            )
+          },
+          tenkeyBuffer: ''
+        };
+      }
+
+      return state;
     }
 
     case 'add-hand-tiles': {
@@ -286,5 +414,134 @@ export const appReducer = (state: AppState, action: AppAction): AppState => {
         tenkeyBuffer: ''
       };
     }
+
+    case 'add-meld': {
+      let currentMelds = state.input.melds;
+      if (
+        state.inputFocus?.type === 'meld' &&
+        currentMelds[state.inputFocus.i]?.tile === null
+      ) {
+        const emptyIdx = state.inputFocus.i;
+        currentMelds = currentMelds.filter((_, k) => k !== emptyIdx);
+      }
+      if (currentMelds.length >= MAX_MELDS) return state;
+
+      let currentHand = state.input.hand;
+      if (state.inputFocus?.type === 'hand') {
+        currentHand = sortHand(currentHand, maxHandLength(currentMelds));
+      }
+
+      const nextMeldsLength = currentMelds.length + 1;
+      const nextMaxHand = 14 - 3 * nextMeldsLength;
+      currentHand = currentHand.slice(0, nextMaxHand);
+
+      const nextMelds: Meld[] = [...currentMelds, { type: 'pon', tile: null }];
+
+      return {
+        ...state,
+        input: {
+          ...state.input,
+          hand: currentHand,
+          melds: nextMelds
+        },
+        inputFocus: { type: 'meld', i: nextMelds.length - 1 },
+        tenkeyBuffer: ''
+      };
+    }
+
+    case 'set-meld-kind': {
+      const meld = state.input.melds[action.i];
+      if (!meld) return state;
+      const nextMeld = meldOfKind(action.kind, meld.tile);
+      if (!canSetMeld(state, action.i, nextMeld)) return state;
+      return {
+        ...state,
+        input: {
+          ...state.input,
+          melds: state.input.melds.map((m, idx) =>
+            idx === action.i ? nextMeld : m
+          )
+        }
+      };
+    }
+
+    case 'set-meld-tile': {
+      const meld = state.input.melds[action.i];
+      if (!meld) return state;
+      const nextMeld: Meld = { ...meld, tile: action.tile };
+      if (!canSetMeld(state, action.i, nextMeld)) return state;
+      return {
+        ...state,
+        input: {
+          ...state.input,
+          melds: state.input.melds.map((m, idx) =>
+            idx === action.i ? nextMeld : m
+          )
+        },
+        tenkeyBuffer: ''
+      };
+    }
+
+    case 'remove-meld': {
+      if (
+        !Number.isInteger(action.i) ||
+        action.i < 0 ||
+        action.i >= state.input.melds.length
+      ) {
+        return state;
+      }
+      const nextMelds = state.input.melds.filter((_, idx) => idx !== action.i);
+      let nextFocus = state.inputFocus;
+      if (state.inputFocus?.type === 'meld') {
+        if (state.inputFocus.i === action.i) {
+          nextFocus = null;
+        } else if (state.inputFocus.i > action.i) {
+          nextFocus = { type: 'meld', i: state.inputFocus.i - 1 };
+        }
+      }
+      return {
+        ...state,
+        input: {
+          ...state.input,
+          melds: nextMelds
+        },
+        inputFocus: nextFocus,
+        tenkeyBuffer: ''
+      };
+    }
+
+    case 'add-indicator-tile': {
+      if (!canAddIndicatorTile(state, action.target, action.tile)) return state;
+      return {
+        ...state,
+        input: {
+          ...state.input,
+          [action.target]: [...state.input[action.target], action.tile]
+        },
+        tenkeyBuffer: ''
+      };
+    }
+
+    case 'remove-last-indicator-tile': {
+      if (state.input[action.target].length === 0) return state;
+      return {
+        ...state,
+        input: {
+          ...state.input,
+          [action.target]: state.input[action.target].slice(0, -1)
+        },
+        tenkeyBuffer: ''
+      };
+    }
+
+    case 'clear-indicators':
+      return {
+        ...state,
+        input: {
+          ...state.input,
+          [action.target]: []
+        },
+        tenkeyBuffer: ''
+      };
   }
 };

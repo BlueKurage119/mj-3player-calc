@@ -1,9 +1,61 @@
 import { type Meld, instantiateMeld } from '../../core/input';
 import type { Rule } from '../../core/rule';
 import { type Tile, compareTiles, isAvailableTiles } from '../../core/tile';
-import type { AppInput, AppState, TenkeySuit } from './app-state';
+import type {
+  AppInput,
+  AppState,
+  IndicatorTarget,
+  MeldKind,
+  TenkeySuit
+} from './app-state';
 
 const NORTH_TILE: Tile = { type: 'z', n: 4 };
+
+export const MAX_MELDS = 4;
+export const MAX_INDICATORS = 5;
+
+export const meldOfKind = (kind: MeldKind, tile: Tile | null): Meld => {
+  switch (kind) {
+    case 'pon':
+      return { type: 'pon', tile };
+    case 'minkan':
+      return { type: 'kan', tile, closed: false };
+    case 'ankan':
+      return { type: 'kan', tile, closed: true };
+  }
+};
+
+export const kindOfMeld = (meld: Meld): MeldKind => {
+  if (meld.type === 'pon') return 'pon';
+  return meld.closed ? 'ankan' : 'minkan';
+};
+
+/** melds[i] を next に置き換えても使用枚数が超えないか(melds[i] 自身は除いて数える) */
+export const canSetMeld = (
+  state: Pick<AppState, 'input' | 'rule'>,
+  i: number,
+  next: Meld
+): boolean => {
+  if (next.tile === null) return true;
+  const filteredMelds = state.input.melds.filter((_, k) => k !== i);
+  const currentUsed = usedTiles(
+    { ...state.input, melds: filteredMelds },
+    state.rule.red
+  );
+  const nextTiles = instantiateMeld(next, state.rule.red);
+  return isAvailableTiles(state.rule.red, currentUsed, nextTiles);
+};
+
+/** 表示牌を1枚足せるか(枚数 < 5 かつ isAvailableTiles) */
+export const canAddIndicatorTile = (
+  state: Pick<AppState, 'input' | 'rule'>,
+  target: IndicatorTarget,
+  tile: Tile
+): boolean => {
+  if (state.input[target].length >= MAX_INDICATORS) return false;
+  const currentUsed = usedTiles(state.input, state.rule.red);
+  return isAvailableTiles(state.rule.red, currentUsed, [tile]);
+};
 
 /** 手牌の最大枚数 (14 - 3 × 副露数) */
 export const maxHandLength = (melds: Meld[]): number => 14 - 3 * melds.length;
@@ -140,6 +192,39 @@ export const canAppendTenkeyDigit = (
     if (char === digit) count++;
   }
   if (count >= 4) return false;
+  return true;
+};
+
+/** 対象別のテンキー桁追加判定。既存 canAppendTenkeyDigit は手牌の場合として残す */
+export const canAppendTenkeyDigitFor = (
+  state: Pick<AppState, 'input' | 'tenkeyBuffer' | 'inputFocus'>,
+  digit: string
+): boolean => {
+  if (!/^[0-9]$/.test(digit)) return false;
+  if (!state.inputFocus) return false;
+
+  let capacity = 0;
+  if (state.inputFocus.type === 'hand') {
+    capacity = maxHandLength(state.input.melds) - state.input.hand.length;
+  } else if (
+    state.inputFocus.type === 'dora' ||
+    state.inputFocus.type === 'uradora'
+  ) {
+    capacity = MAX_INDICATORS - state.input[state.inputFocus.type].length;
+  } else if (state.inputFocus.type === 'meld') {
+    capacity = 1;
+  } else {
+    return false;
+  }
+
+  if (state.tenkeyBuffer.length >= capacity) return false;
+
+  let count = 0;
+  for (const char of state.tenkeyBuffer) {
+    if (char === digit) count++;
+  }
+  if (count >= 4) return false;
+
   return true;
 };
 

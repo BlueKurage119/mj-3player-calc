@@ -2,6 +2,8 @@ export {
   type Screen,
   type SheetMode,
   type TenkeySuit,
+  type MeldKind,
+  type IndicatorTarget,
   type SheetTarget,
   type AppInput,
   type AppState,
@@ -13,6 +15,12 @@ export {
 } from './app-state';
 
 export {
+  MAX_MELDS,
+  MAX_INDICATORS,
+  meldOfKind,
+  kindOfMeld,
+  canSetMeld,
+  canAddIndicatorTile,
   maxHandLength,
   usedTiles,
   canAddHandTile,
@@ -21,6 +29,7 @@ export {
   splitWinningTile,
   resolveTenkeyBuffer,
   canAppendTenkeyDigit,
+  canAppendTenkeyDigitFor,
   planAddTiles
 } from './hand-rules';
 

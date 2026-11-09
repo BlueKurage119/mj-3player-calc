@@ -4,9 +4,14 @@ import type { Tile } from '../../core/tile';
 import { type AppState, createInitialState } from './app-state';
 import {
   canAddHandTile,
+  canAddIndicatorTile,
   canAppendTenkeyDigit,
+  canAppendTenkeyDigitFor,
+  canSetMeld,
   isHandFull,
+  kindOfMeld,
   maxHandLength,
+  meldOfKind,
   planAddTiles,
   resolveTenkeyBuffer,
   sortHand,
@@ -534,5 +539,228 @@ describe('D3: テンキー入力の純関数 (D3-R・B・P)', () => {
         expect(result).toBeNull();
       }
     }
+  });
+
+  describe('D4: 副露・ドラ表示牌の判定関数 (2.2)', () => {
+    it('D4-R1: meldOfKind と kindOfMeld の相互変換', () => {
+      const tile1p: Tile = { type: 'p', n: 1 };
+      expect(meldOfKind('pon', tile1p)).toEqual({ type: 'pon', tile: tile1p });
+      expect(meldOfKind('minkan', tile1p)).toEqual({
+        type: 'kan',
+        tile: tile1p,
+        closed: false
+      });
+      expect(meldOfKind('ankan', tile1p)).toEqual({
+        type: 'kan',
+        tile: tile1p,
+        closed: true
+      });
+
+      expect(kindOfMeld({ type: 'pon', tile: null })).toBe('pon');
+      expect(kindOfMeld({ type: 'kan', tile: null, closed: false })).toBe(
+        'minkan'
+      );
+      expect(kindOfMeld({ type: 'kan', tile: null, closed: true })).toBe(
+        'ankan'
+      );
+    });
+
+    it('D4-R2: canSetMeld は null で真・自身除外カウント・上限超過で偽', () => {
+      const base = createInitialState(createDefaultRule());
+      const tile1p: Tile = { type: 'p', n: 1 };
+      const tile2p: Tile = { type: 'p', n: 2 };
+      const tile2m: Tile = { type: 'm', n: 2 };
+
+      // tile: null は常に真
+      expect(canSetMeld(base, 0, { type: 'pon', tile: null })).toBe(true);
+
+      // 手牌に 1p が 1 枚あるとき、副露 0 にポン 1p (3枚) は 1+3=4 枚で真
+      const stateWith1p = {
+        ...base,
+        input: { ...base.input, hand: [tile1p] }
+      };
+      expect(canSetMeld(stateWith1p, 0, { type: 'pon', tile: tile1p })).toBe(
+        true
+      );
+
+      // 手牌に 1p が 2 枚あるとき、副露 0 にポン 1p (3枚) は 2+3=5 枚で偽
+      const stateWith2_1p = {
+        ...base,
+        input: { ...base.input, hand: [tile1p, tile1p] }
+      };
+      expect(canSetMeld(stateWith2_1p, 0, { type: 'pon', tile: tile1p })).toBe(
+        false
+      );
+
+      // 存在しない 2m は偽
+      expect(canSetMeld(base, 0, { type: 'pon', tile: tile2m })).toBe(false);
+
+      // 確定済みのポン 1p に対し、自身 (index 0) の牌を 1p のままにすることは真
+      const stateWithPon1p = {
+        ...base,
+        input: {
+          ...base.input,
+          melds: [{ type: 'pon' as const, tile: tile1p }]
+        }
+      };
+      expect(canSetMeld(stateWithPon1p, 0, { type: 'pon', tile: tile1p })).toBe(
+        true
+      );
+      // 確定済みのポン 1p を 2p に変更することは真
+      expect(canSetMeld(stateWithPon1p, 0, { type: 'pon', tile: tile2p })).toBe(
+        true
+      );
+      // 手牌に 1p が 1 枚ある状態でポン 1p を明槓 (4枚) に変更しようとすると 1+4=5 枚で偽
+      const stateWithPonAndHand = {
+        ...base,
+        input: {
+          ...base.input,
+          hand: [tile1p],
+          melds: [{ type: 'pon' as const, tile: tile1p }]
+        }
+      };
+      expect(
+        canSetMeld(stateWithPonAndHand, 0, {
+          type: 'kan',
+          tile: tile1p,
+          closed: false
+        })
+      ).toBe(false);
+    });
+
+    it('D4-R3: canAddIndicatorTile は 5 枚未満で在庫内なら真・5 枚以上や在庫切れで偽', () => {
+      const base = createInitialState(createDefaultRule());
+      const tile1p: Tile = { type: 'p', n: 1 };
+      const tile2m: Tile = { type: 'm', n: 2 };
+
+      expect(canAddIndicatorTile(base, 'dora', tile1p)).toBe(true);
+      expect(canAddIndicatorTile(base, 'uradora', tile1p)).toBe(true);
+      // 2m は偽
+      expect(canAddIndicatorTile(base, 'dora', tile2m)).toBe(false);
+
+      // ドラ 4 枚なら 5 枚目を追加可能
+      const state4 = {
+        ...base,
+        input: {
+          ...base.input,
+          dora: [
+            { type: 'p' as const, n: 1 as const },
+            { type: 'p' as const, n: 2 as const },
+            { type: 'p' as const, n: 3 as const },
+            { type: 'p' as const, n: 4 as const }
+          ]
+        }
+      };
+      expect(canAddIndicatorTile(state4, 'dora', tile1p)).toBe(true);
+
+      // ドラ 5 枚なら偽
+      const state5 = {
+        ...base,
+        input: {
+          ...base.input,
+          dora: [
+            { type: 'p' as const, n: 1 as const },
+            { type: 'p' as const, n: 2 as const },
+            { type: 'p' as const, n: 3 as const },
+            { type: 'p' as const, n: 4 as const },
+            { type: 'p' as const, n: 5 as const, red: false }
+          ]
+        }
+      };
+      expect(canAddIndicatorTile(state5, 'dora', tile1p)).toBe(false);
+
+      // ドラ 3 枚 + 裏ドラ 1 枚で 1p を 4 枚使っている場合、ドラに 1p は偽
+      const state4Used = {
+        ...base,
+        input: {
+          ...base.input,
+          dora: [tile1p, tile1p, tile1p],
+          uradora: [tile1p]
+        }
+      };
+      expect(canAddIndicatorTile(state4Used, 'dora', tile1p)).toBe(false);
+    });
+
+    it('D4-R4: canAppendTenkeyDigitFor は対象別の容量と数字制限に従う', () => {
+      const base = createInitialState(createDefaultRule());
+
+      // 不正文字は偽
+      expect(
+        canAppendTenkeyDigitFor({ ...base, inputFocus: { type: 'hand' } }, 'a')
+      ).toBe(false);
+
+      // inputFocus が null または situation のときは偽
+      expect(canAppendTenkeyDigitFor({ ...base, inputFocus: null }, '1')).toBe(
+        false
+      );
+      expect(
+        canAppendTenkeyDigitFor(
+          { ...base, inputFocus: { type: 'situation' } },
+          '1'
+        )
+      ).toBe(false);
+
+      // hand: 11 枚 + バッファ 2 桁で真、3 桁 (計 14 枚) で偽
+      const hand11State = {
+        ...base,
+        input: {
+          ...base.input,
+          hand: Array.from({ length: 11 }, () => ({
+            type: 'p' as const,
+            n: 1 as const
+          }))
+        },
+        inputFocus: { type: 'hand' as const },
+        tenkeyBuffer: '12'
+      };
+      expect(canAppendTenkeyDigitFor(hand11State, '3')).toBe(true);
+      const hand11FullBufState = {
+        ...hand11State,
+        tenkeyBuffer: '123'
+      };
+      expect(canAppendTenkeyDigitFor(hand11FullBufState, '4')).toBe(false);
+
+      // dora: 3 枚のときバッファ 1 桁で真 (計 4 枚)、2 桁 (計 5 枚) で偽
+      const dora3State = {
+        ...base,
+        input: {
+          ...base.input,
+          dora: Array.from({ length: 3 }, () => ({
+            type: 'p' as const,
+            n: 1 as const
+          }))
+        },
+        inputFocus: { type: 'dora' as const },
+        tenkeyBuffer: '1'
+      };
+      expect(canAppendTenkeyDigitFor(dora3State, '2')).toBe(true);
+      const dora3FullBufState = {
+        ...dora3State,
+        tenkeyBuffer: '12'
+      };
+      expect(canAppendTenkeyDigitFor(dora3FullBufState, '3')).toBe(false);
+
+      // meld: 容量は常に 1。バッファ空で真、1 桁で偽
+      const meldState = {
+        ...base,
+        inputFocus: { type: 'meld' as const, i: 0 },
+        tenkeyBuffer: ''
+      };
+      expect(canAppendTenkeyDigitFor(meldState, '1')).toBe(true);
+      const meldFullState = {
+        ...meldState,
+        tenkeyBuffer: '1'
+      };
+      expect(canAppendTenkeyDigitFor(meldFullState, '2')).toBe(false);
+
+      // 同じ数字 5 つ目は偽
+      const fourOnesState = {
+        ...base,
+        inputFocus: { type: 'hand' as const },
+        tenkeyBuffer: '1111'
+      };
+      expect(canAppendTenkeyDigitFor(fourOnesState, '1')).toBe(false);
+      expect(canAppendTenkeyDigitFor(fourOnesState, '2')).toBe(true);
+    });
   });
 });
