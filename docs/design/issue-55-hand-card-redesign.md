@@ -141,6 +141,8 @@ div.hand-card                         … onClick でシートを開く(ポイ�
 | ゴミ箱の左 8dp・下 8dp(`.hand-card__clear-zone` の padding。左下の角 8×8 も含む) | 何も起きない |
 | それ以外のカード内すべて(見出し・牌・和了牌・バッファ・カードの余白・ゴミ箱の上と右の余白) | シートを開く |
 
+ゴミ箱の当たり判定は角丸(`--md-sys-shape-corner-full`)の形状に従う。矩形の四隅でも角丸の外側(最大でもおよそ半径 12dp の円の外)は無反応帯側になり、誤ってシートが開くことはない(検収の実測で判明)。
+
 ### 2.7 要件 §4 への追記(製造で `docs/requirements.md` に反映)
 
 §4 のタップ領域の段落の、テンキーの文の直後に次を追記する。冒頭の「更新日」行にも Issue #55 の追記を加える。
@@ -197,7 +199,7 @@ div.hand-card                         … onClick でシートを開く(ポイ�
   | 点 | 座標 | 期待 |
   | --- | --- | --- |
   | ゴミ箱中央 | (r.left + r.width/2, r.top + r.height/2) | `closest('.hand-card__clear-button')` が `btn` |
-  | ゴミ箱の内側の四隅 | (r.left+1, r.top+1)・(r.right−1, r.top+1)・(r.left+1, r.bottom−1)・(r.right−1, r.bottom−1) | 4点とも `btn` |
+  | ゴミ箱の内側の四隅(角丸の内側) | (r.left+4, r.top+4)・(r.right−4, r.top+4)・(r.left+4, r.bottom−4)・(r.right−4, r.bottom−4) | 4点とも `btn` |
   | ゴミ箱の真上の外 | (r.left + r.width/2, r.top − 1) | `btn` でない(`.hand-card` の内側でシートを開く領域) |
   | ゴミ箱の真下の外(無反応帯) | (r.left + r.width/2, r.bottom + 1) と (…, r.bottom + 7) | `btn` でなく、`closest('.hand-card__clear-zone')` が非 null |
   | 無反応帯の外(下) | (r.left + r.width/2, z.bottom + 1) | `closest('.hand-card__clear-zone')` が null、`closest('.hand-card')` が非 null |
