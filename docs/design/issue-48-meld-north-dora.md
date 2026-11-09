@@ -48,6 +48,12 @@ Epic D(#5)の Sub-Issue。依存: D1(#51)・D2(#46)・D3(#47)・D1-1(#55)。
 | 28 | 槓(明槓・暗槓。加槓は明槓と同一)は常に全赤(r 枚)で、切替は不要。赤は表示だけに反映する |
 | 29 | 副露の牌の表示は `instantiateMeld(meld, rule.red)` の展開結果に合わせる(Codex 指摘2の解消)。`src/core` は変更しない |
 | 30 | (Codex 指摘1)空の副露を対象にしているときに**同じ副露カードを再選択しても削除しない**(対象 index を不整合にしない)。空の副露から別の対象へ移るときに消す既存仕様(A5)は維持する |
+| 31 | (オーナー確認済み、Q6=C)確定事項 25 の「縦2マス」は「横2マス」と読み替える。副露シートのパレットは 9 列のまま、4 行目の赤5(赤5p・赤5s)の2セルをそのまま1つの赤牌切替ボタンにする。10 列化・5 行目の追加・牌キーの明示配置は行わない |
+| 32 | (オーナー確認済み、Q7=A)ボタンは赤5の牌画像+「×n」(副露に含まれる赤の枚数)、`aria-pressed`、aria-label「赤牌」 |
+| 33 | (オーナー確認済み、Q8=A)赤ありのルールでは副露シートに常に出し、5p・5s のポン以外・在庫超過のときは disabled |
+| 34 | (オーナー確認済み、Q9=A)テンキーモードには切替ボタンを出さず、`0`=赤5・`5`=普通の5 で選ぶ(`tenkey-commit` の meld 分岐。`'0'` 経路は赤のまま) |
+| 35 | (オーナー確認済み、Q10=A)赤4ルールで普通の5のポンに赤が1枚含まれることの補足説明は出さない |
+| 36 | (オーナー確認済み)暗槓の表向き2枚は赤を見せる(`[裏, xs[2], xs[3], 裏]`=展開結果の末尾2枚。例 [裏, 5p, 赤5p, 裏]) |
 
 ### 1.3 要件・下書きの改訂(製造で反映)
 
@@ -237,18 +243,19 @@ export const canAppendTenkeyDigitFor = (state: Pick<AppState,'input'|'tenkeyBuff
 | --- | --- |
 | ポン | `xs` の3枚をそのまま(赤は末尾に並ぶ) |
 | 明槓 | `xs` の4枚をそのまま |
-| 暗槓 | `[back, xs[2], xs[3], back]`(表向き2枚は展開結果の末尾2枚=赤を優先して見せる)。【設計案】 |
+| 暗槓 | `[back, xs[2], xs[3], back]`(表向き2枚は展開結果の末尾2枚=赤を優先して見せる)。確定事項 36 |
 | 空 | 従来どおり空枠 |
 
 例(5p): red=1 のポン赤なし=5p×3、赤あり=5p,5p,赤5p。red=2 のポン赤なし=5p,5p,赤5p、赤あり=5p,赤5p,赤5p。槓は red=1 で赤1枚、red=2 で赤2枚(暗槓 red=1 の表向きは 5p,赤5p)。
 
 **(2) パレット(確定事項 25・27、`TilePalette.tsx`)**: `inputFocus.type==='meld'` かつ `rule.red>0` のとき、`RED_TILES` を描かず、赤牌切替ボタンを描く。手牌・ドラ・裏ドラでは従来どおり(赤5キーあり、切替ボタンなし)。`rule.red===0` の副露シートは切替ボタンを出さない(現状と同じ9列の配置)。
-- 配置【設計案、Q6】: 副露シートに限り 10 列グリッドにし、10 列目の1・2行目(索子・筒子の行の右端)に `grid-column: 10; grid-row: 1 / span 2` で置く。既存の `tile-palette.css` は `repeat(9, …)` で牌キーは位置未指定(auto-placement)のため、`grid-row` だけでは先頭キーが10列目に流れ込んで崩れる。副露シート(10列)では牌キーを1〜9列に収めるため、各行の先頭キーに `grid-column: 1`、行を `grid-row: n`(1〜3行目)で明示配置する(または行ごとに `grid-column: 1 / span 1`〜を付与する等、1〜9列に固定されれば手段は問わない)。4 行目の機能キーは赤5キー2マス分を振り直し、「1 枚削除」span3・AC span3・「入力を終える」span4(計 10 列)とする。3 行目は 9 キー+10 列目空き。
-- 要素【設計案、Q7】: ネイティブ `<button type="button" class="tile-palette__key tile-palette__red-toggle">`、`aria-pressed={meld.tile.red===true}`、`aria-label="赤牌"`。見た目は中央に赤5の牌画像(`<Tile tile={{type: 種類, n:5, red:true}}/>`、種類未確定時は 5p)と、その下に現在の副露の赤枚数「×n」(`instantiateMeld` の赤の数)。押下中(aria-pressed=true)は背景を `--md-sys-color-secondary-container`(トークンのみ)。
-- 有効条件【設計案、Q8】: 判定関数 `meldRedToggle(state, i): { visible: boolean; disabled: boolean; next: Tile | null }` を `hand-rules.ts` に追加する。`visible = rule.red>0`。`disabled` は次の否定: 「`melds[i]` がポン、`tile` が 5p/5s、かつ `canSetMeld(state, i, {...meld, tile:{...tile, red: !tile.red}})`」。それ以外(牌未確定・5 以外・槓)は disabled。`next` は反転後の牌。押下で既存の `set-meld-tile {i, tile: next}` を dispatch する(新アクションは足さない)。
+- 配置(確定事項 31): グリッドは 9 列のまま(`tile-palette.css` の `repeat(9, …)` を変えない)。副露シートでは `RED_TILES` の2キーの位置(4 行目の先頭2セル)に、切替ボタン1つを `grid-column: span 2` で置く(既存の `tile-palette__action--span-2` 相当のクラスを付けるか同等の指定)。後続の「1 枚削除」span2・AC span2・「入力を終える」span3 は `hasRed` の既存分岐のまま変えない(計 9 列)。1〜3 行目の牌キーの配置・寸法も変わらない。手牌・ドラ・裏ドラのパレットは従来どおり赤5キー2つ。
+- 赤なしルール(`rule.red===0`): 既存コードは `hasRed` が偽のとき赤5キーを描かず、「1 枚削除」span3・AC span2・「入力を終える」span4 になる。副露シートでも同じとし、切替ボタンは出さない(現状と同一)。
+- 要素(確定事項 32): ネイティブ `<button type="button" class="tile-palette__key tile-palette__red-toggle">`、`aria-pressed={meld.tile.red===true}`、`aria-label="赤牌"`。見た目は赤5の牌画像(`<Tile tile={{type: 種類, n:5, red:true}}/>`、種類未確定・5p/5s 以外のときは 5p)と、その横に現在の副露の赤枚数「×n」(`instantiateMeld` の赤の数、牌未確定は ×0)。高さは他キーと同じ 3rem のため画像と「×n」は横並びにする。押下中(aria-pressed=true)は背景を `--md-sys-color-secondary-container`(トークンのみ)。disabled の見た目は既存の牌キーの disabled と同じ規則に合わせる。
+- 有効条件(確定事項 33): 判定関数 `meldRedToggle(state, i): { visible: boolean; disabled: boolean; next: Tile | null }` を `hand-rules.ts` に追加する。`visible = rule.red>0`。`disabled` は次の否定: 「`melds[i]` がポン、`tile` が 5p/5s、かつ `canSetMeld(state, i, {...meld, tile:{...tile, red: !tile.red}})`」。それ以外(牌未確定・5 以外・槓)は disabled。`next` は反転後の牌。押下で既存の `set-meld-tile {i, tile: next}` を dispatch する(新アクションは足さない)。
 - 5p・5s キーのタップ(副露・ポン): 【設計案】`meldTileForKey(state, i, kind, tile)` を追加する。キーの牌は `red:false`。まず `red:false` で `canSetMeld`、だめなら `red:true` で試し、通った方を `set-meld-tile` に渡す。両方だめなら disabled。既に同じ種類の 5 が入っている副露で同じキーを押したときは現在の `red` を保持する(押し直しで赤が外れない)。例: red=1・手牌に普通の 5p が1枚 → 赤なしポン(普通 3 枚)は不可、赤ありポン(普通 2+赤 1)は可なので、キーは有効で赤ありポンになる。槓では `red` は計算に影響しないので `red:false` のまま。
 
-**(3) テンキー(副露、【設計案、Q9】)**: 既存の解決規則(`'0'`=赤5、`'5'`=普通の5)を維持する。副露で `'0'`→p/s のポンは `tile.red=true`、`'5'` は `red:false`(ただし (2) と同じ代替: `red:false` で不可なら `red:true`)。実装位置は `app-state.ts` の `tenkey-commit` の meld 分岐(`if (state.inputFocus.type === 'meld')` 内、現状 `canSetMeld` を1回呼んで不可なら `return state`)。`'5'` 由来の牌は `meldTileForKey` を通して決め、`'0'` 由来は `red:true` のまま従来どおり `canSetMeld` で判定する(`meldTileForKey` は「キーの牌は `red:false`」前提なので `'0'` 経路では使わない)。`tenkey-logic.ts` は機能キー判定のみで、この変更の対象ではない。テンキーモードには切替ボタンを出さない(切り替えたい場合は `0`/`5` で入れ直すか、パレットへ切替える)。
+**(3) テンキー(副露、確定事項 34)**: 既存の解決規則(`'0'`=赤5、`'5'`=普通の5)を維持する。副露で `'0'`→p/s のポンは `tile.red=true`、`'5'` は `red:false`(ただし (2) と同じ代替: `red:false` で不可なら `red:true`)。実装位置は `app-state.ts` の `tenkey-commit` の meld 分岐(`if (state.inputFocus.type === 'meld')` 内、現状 `canSetMeld` を1回呼んで不可なら `return state`)。`'5'` 由来の牌は `meldTileForKey` を通して決め、`'0'` 由来は `red:true` のまま従来どおり `canSetMeld` で判定する(`meldTileForKey` は「キーの牌は `red:false`」前提なので `'0'` 経路では使わない)。`tenkey-logic.ts` は機能キー判定のみで、この変更の対象ではない。テンキーモードには切替ボタンを出さない(切り替えたい場合は `0`/`5` で入れ直すか、パレットへ切替える)。
 
 **(4) 在庫との整合**: 判定はすべて既存の `canSetMeld`(`usedTiles`+`instantiateMeld`+`isAvailableTiles`)で行い、赤の在庫(手牌の赤+他の副露の赤+表示牌の赤 ≤ r)も普通の5の在庫(4−r)もこれで守られる。種類バーで ポン(赤)→槓 の変更も従来どおり `canSetMeld` で disabled になる。`usedTiles`・`canSetMeld` 自体は変更しない。
 
@@ -276,9 +283,9 @@ export const canAppendTenkeyDigitFor = (state: Pick<AppState,'input'|'tenkeyBuff
 | `src/ui/screen/HandCard.tsx` | 変更(UI 監修) | **ゴミ箱アイコンの差し替えのみ**(2.7) |
 | `src/ui/screen/CardClearButton.tsx`・`main-screen.css` | 変更(UI 監修) | アイコン差し替え、2.4・2.6 の余白と牌幅 |
 | `src/ui/screen/MeldArea.tsx`(+テスト) | 変更(確定事項 29) | `meldTiles(meld, red)` を `instantiateMeld` ベースに、`red` の受け渡し(2.11(1)) |
-| `src/ui/input/TilePalette.tsx`・`tile-palette.css`(+テスト) | 変更(確定事項 25・27) | 副露シートで赤5キーを外し赤牌切替ボタン、10 列配置(2.11(2)) |
+| `src/ui/input/TilePalette.tsx`・`tile-palette.css`(+テスト) | 変更(確定事項 25・27) | 副露シートで赤5キー2つを赤牌切替ボタン1つ(span 2)に置き換える(2.11(2))。`tile-palette.css` はグリッド定義を変えず、`.tile-palette__red-toggle` の押下中の背景・画像と「×n」の横並びの指定を足すのみ |
 | `src/ui/state/hand-rules.ts`・`index.ts`(+テスト) | 変更(確定事項 27) | `meldRedToggle`・`meldTileForKey` の追加 |
-| `src/ui/state/app-state.ts`(+テスト) | 変更(確定事項 30・Q9) | open-sheet の同一副露再選択、`tenkey-commit` の meld 分岐でのテンキーの赤5代替(2.11(3)(5))。`tenkey-logic.ts` は 2.11 では変更しない |
+| `src/ui/state/app-state.ts`(+テスト) | 変更(確定事項 30・34) | open-sheet の同一副露再選択、`tenkey-commit` の meld 分岐でのテンキーの赤5代替(2.11(3)(5))。`tenkey-logic.ts` は 2.11 では変更しない |
 | `src/ui/md/Button.tsx` | 変更(検収指摘、例外承認) | `ButtonProps` に `'aria-label'?: string` を追加し、4 バリアントのカスタム要素に渡すのみ(確定事項 24) |
 
 `src/core/` は変更しない(確定事項 29 でも同じ)。`src/ui/md/` は `Button.tsx` の確定事項 24 の範囲以外を変更しない(他ラッパー・`index.ts`・スタイルは不可)。`HandCard.tsx` はアイコンの差し替え以外を変更しない(見出しの m は `maxHandLength(melds)` で既に副露に追従する)。
@@ -302,7 +309,7 @@ UI 監修の修正(既存3コミットは変えず、追加で1〜2コミット)
 8. `fix`: UI 監修4(確定事項 22・23): 見出し・牌行と✕の縦中心揃え、無反応帯の `::after` 化、ドラ・裏ドラの牌スペース常時確保(`main-screen.css`・`CardClearButton.test.tsx`)
 
 9. `fix`: Codex 指摘(確定事項 29・30): 副露の表示を `instantiateMeld` に合わせる、open-sheet の同一副露再選択で削除しない。C22・C23
-10. `feat`: 赤牌切替(確定事項 25・27・28): 判定関数とテスト → パレット・テンキー。C24〜C27。Q6〜Q10 の回答後に着手する
+10. `feat`: 赤牌切替(確定事項 25・27・28): 判定関数とテスト → パレット・テンキー。C24〜C27。Q6〜Q10 は回答済み(確定事項 31〜36)
 
 経緯: 設計書の初版コミット後、UI 監修1〜4 として、✕アイコン(`SYMBOL_CLOSE`)と見出し書体(確定事項 17・19・20)、副露の1行化と牌幅 24dp・テンキー機能キーの対象別化(確定事項 18'・21)、縦中心揃えと牌スペースの常時確保(確定事項 22・23)を順に反映した。本書は実装(UI 監修4 まで)に合わせて改訂済み。
 
@@ -352,8 +359,8 @@ UI 監修の修正(既存3コミットは変えず、追加で1〜2コミット)
 - [ ] **C23 open-sheet(自動テスト、確定事項 30)**: `melds=[{pon,1p},{pon,null}]`・`inputFocus=meld 1` で `open-sheet meld 1` → `melds` 2 つのまま・`inputFocus=meld 1`。続けて `set-meld-tile i:1` が成立する。`open-sheet meld 0` → 空の副露が消え `inputFocus=meld 0`。`close-sheet` → 空の副露が消える(C6 も合格のまま)。`open-sheet meld 1` で同じ副露を再選択した後に `close-sheet` → 空の副露が消える。
 - [ ] **C24 赤牌切替の判定(自動テスト)**: `meldRedToggle` が、red=0 で `visible=false`。red=1・ポン 5p(赤なし)で有効・`next.red=true`、反転後に切替えて赤なしへ戻る。手牌に赤5p がある red=1 では赤なし→赤ありが disabled。red=2・ポン 5p(赤なし=赤1枚)で有効、手牌に赤5p 1枚なら disabled(赤 1+2=3>2)。槓・1p・牌未確定で disabled。reducer で `next` を `set-meld-tile` すると `usedTiles` の赤の数が 0↔1(red=1)・1↔2(red=2)に変わる。red=2 の確認はすべて reducer で `set-rule`(red:2)を dispatch した状態で行う(ルール設定UIは D6 で、dev 画面では red=2 にできないため)。
 - [ ] **C25 5キーの代替(自動テスト)**: red=1・手牌に普通の 5p 1枚で、副露ポンへの 5p キーが有効で、押すと `tile.red=true`。赤ありの 5p ポンに 5p キーを押しても `red=true` のまま。テンキー `'5'`→p でも同じ。`'0'`→p で `red=true`。
-- [ ] **C26 パレット(375px、dev、mobile、確定事項 25。幾何は Q6・Q7 が A案で確定した場合の条件。回答に応じて改訂する)**: 副露のシート(red=1。`DEFAULT_RED=1` のため既定状態)で、`[aria-label]` に赤5の2キーが無く、`.tile-palette__red-toggle` が1つあり、その矩形の高さ ≈ 2 × キーの高さ + row-gap(3rem×2+0.25rem=100±1px)、`left` が 5s キーの `right` より右、`top` が 5s キーの `top` と ±0.5px。1〜3行目の各行の先頭キーの `left` が ±0.5px で揃う(10列目に牌キーが流れ込んでいない)。ポン 5p 確定後に押すと `aria-pressed` が反転し、副露カードの牌が 5p,5p,赤5p ↔ 5p×3 になる。槓・1p で `disabled`。手牌・ドラ・裏ドラのシートでは赤5キーが2つあり切替ボタンが無い(従来どおり)。`document.documentElement.scrollWidth === clientWidth`。
-- [ ] **C27 表示(375px、dev、red=1 のみ。暗槓の表示は 2.11(1) の設計案が確定した場合の条件。回答に応じて改訂する)**: red=1(`DEFAULT_RED=1` の既定状態)で、暗槓 5p の副露カードの牌が [裏, 5p, 赤5p, 裏]、明槓 5p が赤1枚を含む。red=2 の表示は dev 画面に設定UIが無い(D6)ため確認せず、C22 の自動テストで代える。
+- [ ] **C26 パレット(375px、dev、mobile、確定事項 25・31〜33)**: 基準として手牌のシート(red=1。`DEFAULT_RED=1` の既定状態)で赤5p・赤5s キーの矩形と全牌キー・機能キーの矩形を記録する。副露のシートで、`[aria-label]` に赤5の2キーが無く、`.tile-palette__red-toggle` が1つあり、その `left`・`top` が基準の赤5p キーと ±0.5px、`right` が基準の赤5s キーの `right` と ±0.5px、高さが基準キーと ±0.5px(=2セル分と一致)。他の牌キー・「1 枚削除」・AC・「入力を終える」の矩形が基準と ±0.5px で一致し、`.tile-palette` の `grid-template-columns` の列数が 9。切替ボタンの幅 ≥ 44px かつ高さが既存の牌キーと同じ(3rem=48px)。`aria-label="赤牌"`、牌画像(赤5)と「×n」の文字を含む。ポン 5p 確定後に押すと `aria-pressed` が false↔true に反転し、「×0」↔「×1」、副露カードの牌が 5p×3 ↔ 5p,5p,赤5p になる。槓・1p・牌未確定で `disabled`。テンキーモードの副露シートに `.tile-palette__red-toggle` が無い。手牌・ドラ・裏ドラのシートでは赤5キーが2つあり切替ボタンが無い(従来どおり)。`document.documentElement.scrollWidth === clientWidth`。red=0 の配置は C24・コンポーネントテストで確認する(dev 画面では red=0 にできないため。コンポーネントテストで red=0 の副露シートに切替ボタンも赤5キーも無いことを確認する)。
+- [ ] **C27 表示(375px、dev、red=1 のみ、確定事項 29・36)**: red=1(`DEFAULT_RED=1` の既定状態)で、暗槓 5p の副露カードの牌が [裏, 5p, 赤5p, 裏]、明槓 5p が赤1枚を含む。red=2 の表示は dev 画面に設定UIが無い(D6)ため確認せず、C22 の自動テストで代える。
 - [ ] **C14e 手牌カードの非回帰**: issue-55 の C5(ゴミ箱 40×24)・C6(当たり判定の点)・C7(押下の結果)ほか手牌カード・パレットの条件を再実行し合格(確定事項 24 の `Button.tsx` 変更後に実施)。HandCard.tsx の差分がアイコン部分(import と svg 要素)だけである(`git diff` で確認)。
 - [ ] **C14g テンキーの機能キー(自動テスト)**: `tenkeyActionKeysFor` について 2.3 のテンキー表の全行(hand/dora/uradora/meld × バッファ空/あり × 対象の牌0枚/あり)の `label`・`action`・`disabled` が表どおり。reducer で `inputFocus=dora`・手牌 13 枚・ドラ 2 枚から AC の `action` を dispatch すると、ドラが0枚・手牌 13 枚のまま。`tenkey-backspace` で dora はバッファ空ならドラ末尾1枚、meld はバッファ空で不変、バッファありなら末尾1文字。
 - [ ] **C14h テンキーの機能キー(375px、dev)**: テンキーモードでドラのシートを開き、AC の aria-label が「ドラ表示牌をクリア」、押すとドラだけが空になり手牌カードの見出しの n が変わらない。ドラ0枚・バッファ空で AC と「1 文字削除」が `disabled` 属性を持つ。裏ドラも同様(「裏ドラ表示牌をクリア」)。副露のシートで AC が `disabled`(aria-label「副露をクリア」)、「1 文字削除」はバッファ空で `disabled`、数字を1つ入れると有効になり押すとバッファが消える。手牌のシートの AC は従来どおり「手牌をクリア」で手牌を消す。
@@ -380,11 +387,6 @@ UI 監修の修正(既存3コミットは変えず、追加で1〜2コミット)
 
 - Q5 は A 案で解決済み(確定事項 18')。
 
-### 赤牌切替の【設計案】(確定事項 25〜30 に付随。オーナー未回答)
+### 赤牌切替(Q6〜Q10・暗槓の表示): 回答済み(確定)
 
-- **Q6 ボタンの位置・寸法(縦2マス)**: A案(推奨)=副露シートだけ 10 列にし、10 列目の1・2行目(索子・筒子の右端)に置く。5s・5p の行の隣で対象が直感的。代償はキー幅が約 36.3px→32.5px(375px)に縮み、手牌のパレットと幅が変わること。B案=9 列のまま4行目の赤5の2マスの位置を使い、5行目を足して 1 列目の4〜5行目に置く。キー幅は同じだが、シートが1行(約 52px)高くなる。C案=「縦2マス」を「横2マス」と読み、4行目の赤5の2マスをそのまま1つのボタンにする。配置変更が最小。「縦2マス(1×2)」の意図がどれか確認したい。
-- **Q7 ラベル・現在の赤枚数**: A案(推奨)=赤5の牌画像+「×n」(副露に含まれる赤の数)、`aria-pressed`、aria-label「赤牌」。B案=文字「赤」のみで押下状態の色だけで示す(r=2 の 1↔2 枚が分かりにくい)。
-- **Q8 有効条件**: A案(推奨)=赤ありのルールでは副露シートに常に出し、5p/5s のポン以外と在庫超過では disabled。B案=該当しないときは非表示(配置がちらつく)。
-- **Q9 テンキーモード**: A案(推奨)=テンキーには出さず、既存の `0`=赤5・`5`=普通の5 で選ぶ(ポンの `red` に対応)。B案=種類バーの右に切替ボタンを置き両モードで使う(種類バーの幅が縮む)。
-- **Q10 red=2 の普通の5のポンに赤1枚が含まれる説明**: A案(推奨)=説明文は出さない(ボタンの「×1」と牌の表示で分かる。見ればわかる説明は省略)。B案=初回だけ補足を出す。
-- 判断材料: 暗槓の表向き2枚に赤を優先して見せる(2.11(1))のも設計案。異論があれば併せて。
+オーナー確認済み。Q6=C(横2マス・9 列のまま)→確定事項 31、Q7=A→32、Q8=A→33、Q9=A→34、Q10=A→35、暗槓の表向きに赤を見せる→36。未確定事項として残すものはない。
