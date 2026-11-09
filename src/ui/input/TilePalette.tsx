@@ -1,12 +1,13 @@
 import type React from 'react';
+import { instantiateMeld } from '../../core/input';
 import type { Tile as CoreTile } from '../../core/tile';
 import { Button, IconButton } from '../md';
 import {
   canAddHandTile,
   canAddIndicatorTile,
-  canSetMeld,
   kindOfMeld,
-  meldOfKind,
+  meldRedToggle,
+  meldTileForKey,
   useAppDispatch,
   useAppState
 } from '../state';
@@ -85,10 +86,18 @@ export function TilePalette(): React.JSX.Element {
       const meldIndex = focus.i;
       const currentMeld = state.input.melds[meldIndex];
       if (currentMeld) {
-        const currentKind = kindOfMeld(currentMeld);
-        disabled = !canSetMeld(state, meldIndex, meldOfKind(currentKind, tile));
-        onTileClick = () =>
-          dispatch({ type: 'set-meld-tile', i: meldIndex, tile });
+        const placed = meldTileForKey(
+          state,
+          meldIndex,
+          kindOfMeld(currentMeld),
+          tile
+        );
+        disabled = placed === null;
+        onTileClick = () => {
+          if (placed !== null) {
+            dispatch({ type: 'set-meld-tile', i: meldIndex, tile: placed });
+          }
+        };
       }
     }
 
@@ -106,6 +115,37 @@ export function TilePalette(): React.JSX.Element {
         }}
       >
         <Tile tile={tile} />
+      </button>
+    );
+  };
+
+  const renderRedToggle = (meldIndex: number) => {
+    const meld = state.input.melds[meldIndex];
+    const { disabled, next } = meldRedToggle(state, meldIndex);
+    const redCount = meld
+      ? instantiateMeld(meld, state.rule.red).filter(
+          t => t.type !== 'z' && t.n === 5 && t.red === true
+        ).length
+      : 0;
+    const mt = meld?.tile ?? null;
+    const suit = mt?.type === 's' ? 's' : 'p';
+    const pressed = mt !== null && 'red' in mt && mt.red === true;
+    return (
+      <button
+        key="red-toggle"
+        type="button"
+        className="tile-palette__key tile-palette__red-toggle tile-palette__action--span-2"
+        aria-label="赤牌"
+        aria-pressed={pressed}
+        disabled={disabled}
+        onClick={() => {
+          if (!disabled && next !== null) {
+            dispatch({ type: 'set-meld-tile', i: meldIndex, tile: next });
+          }
+        }}
+      >
+        <Tile tile={{ type: suit, n: 5, red: true }} />
+        <span className="tile-palette__red-count">×{redCount}</span>
       </button>
     );
   };
@@ -152,7 +192,11 @@ export function TilePalette(): React.JSX.Element {
   return (
     <div className="tile-palette">
       {BASE_ROWS.map(renderTileKey)}
-      {hasRed ? RED_TILES.map(renderTileKey) : null}
+      {hasRed
+        ? focus?.type === 'meld'
+          ? renderRedToggle(focus.i)
+          : RED_TILES.map(renderTileKey)
+        : null}
       <IconButton
         variant="tonal"
         label="1 枚削除"

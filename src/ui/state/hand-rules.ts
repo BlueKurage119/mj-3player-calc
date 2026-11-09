@@ -46,6 +46,55 @@ export const canSetMeld = (
   return isAvailableTiles(state.rule.red, currentUsed, nextTiles);
 };
 
+type RedableTile = { type: 'p' | 's'; n: 5; red: boolean };
+
+const isRedable = (tile: Tile | null): tile is RedableTile =>
+  tile !== null && (tile.type === 'p' || tile.type === 's') && tile.n === 5;
+
+/**
+ * 副露のシートで牌キーを押したときに置く牌を決める(置けなければ null)。
+ * キーの牌は red:false 前提。5p・5s のポンは、まず red:false、だめなら red:true を試す。
+ * 既に同じ種類の 5 が入っている副露では現在の red を優先して保持する。
+ */
+export const meldTileForKey = (
+  state: Pick<AppState, 'input' | 'rule'>,
+  i: number,
+  kind: MeldKind,
+  tile: Tile
+): Tile | null => {
+  if (!isRedable(tile) || kind !== 'pon') {
+    return canSetMeld(state, i, meldOfKind(kind, tile)) ? tile : null;
+  }
+  const current = state.input.melds[i]?.tile ?? null;
+  const keepRed =
+    isRedable(current) && current.type === tile.type
+      ? current.red === true
+      : false;
+  for (const red of [keepRed, !keepRed]) {
+    const next: Tile = { ...tile, red };
+    if (canSetMeld(state, i, meldOfKind(kind, next))) return next;
+  }
+  return null;
+};
+
+/** 副露のシートの赤牌切替ボタンの状態。next は押下で置く(赤を反転した)牌 */
+export const meldRedToggle = (
+  state: Pick<AppState, 'input' | 'rule'>,
+  i: number
+): { visible: boolean; disabled: boolean; next: Tile | null } => {
+  const visible = state.rule.red > 0;
+  const meld = state.input.melds[i];
+  if (!meld || meld.type !== 'pon' || !isRedable(meld.tile)) {
+    return { visible, disabled: true, next: null };
+  }
+  const next: Tile = { ...meld.tile, red: !meld.tile.red };
+  return {
+    visible,
+    disabled: !canSetMeld(state, i, { ...meld, tile: next }),
+    next
+  };
+};
+
 /** 表示牌を1枚足せるか(枚数 < 5 かつ isAvailableTiles) */
 export const canAddIndicatorTile = (
   state: Pick<AppState, 'input' | 'rule'>,

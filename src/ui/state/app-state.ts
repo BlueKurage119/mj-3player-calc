@@ -8,8 +8,10 @@ import {
   canAddIndicatorTile,
   canAppendTenkeyDigitFor,
   canSetMeld,
+  kindOfMeld,
   maxHandLength,
   meldOfKind,
+  meldTileForKey,
   planAddTiles,
   resolveTenkeyBuffer,
   sortHand
@@ -389,8 +391,15 @@ export const appReducer = (state: AppState, action: AppAction): AppState => {
         const meldIdx = state.inputFocus.i;
         const meld = state.input.melds[meldIdx];
         if (!meld) return state;
-        const nextMeld: Meld = { ...meld, tile: meldTile };
-        if (!canSetMeld(state, meldIdx, nextMeld)) return state;
+        // '5' 由来(red:false)は赤の代替を含めて決め、'0' 由来(red:true)は従来どおり
+        let placed: Tile | null = meldTile;
+        if (meldTile.type !== 'z' && meldTile.n === 5 && !meldTile.red) {
+          placed = meldTileForKey(state, meldIdx, kindOfMeld(meld), meldTile);
+        } else if (!canSetMeld(state, meldIdx, { ...meld, tile: meldTile })) {
+          placed = null;
+        }
+        if (placed === null) return state;
+        const nextMeld: Meld = { ...meld, tile: placed };
         return {
           ...state,
           input: {

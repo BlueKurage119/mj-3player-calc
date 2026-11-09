@@ -20,6 +20,8 @@ export {
   meldOfKind,
   kindOfMeld,
   canSetMeld,
+  meldTileForKey,
+  meldRedToggle,
   canAddIndicatorTile,
   maxHandLength,
   usedTiles,
