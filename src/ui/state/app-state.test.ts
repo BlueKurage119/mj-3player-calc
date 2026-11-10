@@ -1396,3 +1396,301 @@ describe('D4-C23: open-sheet の同一副露再選択 (確定事項 30)', () => 
     expect(closed.inputFocus).toBeNull();
   });
 });
+
+describe('D5: 状況入力の reducer と結果連動 (C5〜C8, C13)', () => {
+  it('D5-C5: reducer: set-wind round/seat', () => {
+    const initial = createInitialState(createDefaultRule());
+    // 1. table が更新される
+    const roundSouth = appReducer(initial, {
+      type: 'set-wind',
+      field: 'round',
+      wind: 'south'
+    });
+    expect(roundSouth.table.round).toBe('south');
+    expect(roundSouth.table.seat).toBe('east');
+
+    // 2. 同値なら同一 state
+    const roundSouthAgain = appReducer(roundSouth, {
+      type: 'set-wind',
+      field: 'round',
+      wind: 'south'
+    });
+    expect(roundSouthAgain).toBe(roundSouth);
+
+    // 3. handOptions, input, inputFocus, tenkeyBuffer は参照同一
+    expect(roundSouth.handOptions).toBe(initial.handOptions);
+    expect(roundSouth.input).toBe(initial.input);
+    expect(roundSouth.inputFocus).toBe(initial.inputFocus);
+    expect(roundSouth.tenkeyBuffer).toBe(initial.tenkeyBuffer);
+
+    // seat の更新
+    const seatWest = appReducer(roundSouth, {
+      type: 'set-wind',
+      field: 'seat',
+      wind: 'west'
+    });
+    expect(seatWest.table.seat).toBe('west');
+    const seatWestAgain = appReducer(seatWest, {
+      type: 'set-wind',
+      field: 'seat',
+      wind: 'west'
+    });
+    expect(seatWestAgain).toBe(seatWest);
+  });
+
+  it('D5-C6: reducer: set-riichi', () => {
+    const ruleWithoutOpen = createDefaultRule(); // openRiichi: false
+    const initial = createInitialState(ruleWithoutOpen);
+
+    // 1. openRiichi=false で 'open-riichi' を送ると 'riichi' になる
+    const s1 = appReducer(initial, {
+      type: 'set-riichi',
+      riichi: 'open-riichi'
+    });
+    expect(s1.handOptions.riichi).toBe('riichi');
+
+    // 2. 一発が true の状態で 'none' を送ると ippatsu=false になる
+    const sWithIppatsu: AppState = {
+      ...s1,
+      handOptions: { ...s1.handOptions, riichi: 'riichi', ippatsu: true }
+    };
+    const sNone = appReducer(sWithIppatsu, {
+      type: 'set-riichi',
+      riichi: 'none'
+    });
+    expect(sNone.handOptions.riichi).toBe('none');
+    expect(sNone.handOptions.ippatsu).toBe(false);
+
+    // 3. 現在値と同じ値を送ると同一 state
+    const sNoneAgain = appReducer(sNone, {
+      type: 'set-riichi',
+      riichi: 'none'
+    });
+    expect(sNoneAgain).toBe(sNone);
+
+    // 4. input, inputFocus, tenkeyBuffer, table は参照同一
+    expect(s1.input).toBe(initial.input);
+    expect(s1.inputFocus).toBe(initial.inputFocus);
+    expect(s1.tenkeyBuffer).toBe(initial.tenkeyBuffer);
+    expect(s1.table).toBe(initial.table);
+  });
+
+  it('D5-C7: reducer: set-situation', () => {
+    const defaultRule = createDefaultRule(); // ippatsu: true, localYaku: false
+    const initial = createInitialState(defaultRule); // riichi: 'none'
+
+    // 1. 立直なしで ippatsu=true は無視(同一 state)
+    const ignoreIppatsu = appReducer(initial, {
+      type: 'set-situation',
+      key: 'ippatsu',
+      value: true
+    });
+    expect(ignoreIppatsu).toBe(initial);
+
+    // 2. localYaku=false で 燕返し true は無視(同一 state)
+    const ignoreTsubame = appReducer(initial, {
+      type: 'set-situation',
+      key: 'tsubameGaeshi',
+      value: true
+    });
+    expect(ignoreTsubame).toBe(initial);
+
+    // 3. false はいつでも受ける (現在値が true の状態から false へ)
+    const sWithRinshan: AppState = {
+      ...initial,
+      handOptions: { ...initial.handOptions, rinshan: true }
+    };
+    const sRinshanFalse = appReducer(sWithRinshan, {
+      type: 'set-situation',
+      key: 'rinshan',
+      value: false
+    });
+    expect(sRinshanFalse.handOptions.rinshan).toBe(false);
+
+    // 4. 現在値と同じ値で同一 state
+    const sRinshanFalseAgain = appReducer(sRinshanFalse, {
+      type: 'set-situation',
+      key: 'rinshan',
+      value: false
+    });
+    expect(sRinshanFalseAgain).toBe(sRinshanFalse);
+
+    // 5. input, inputFocus, tenkeyBuffer, table は参照同一
+    expect(sRinshanFalse.input).toBe(sWithRinshan.input);
+    expect(sRinshanFalse.inputFocus).toBe(sWithRinshan.inputFocus);
+    expect(sRinshanFalse.tenkeyBuffer).toBe(sWithRinshan.tenkeyBuffer);
+    expect(sRinshanFalse.table).toBe(sWithRinshan.table);
+  });
+
+  it('D5-C8: reducer: set-rule / clear-all', () => {
+    const ruleAll = {
+      ...createDefaultRule(),
+      openRiichi: true,
+      ippatsu: true,
+      localYaku: true
+    };
+    const initial = createInitialState(ruleAll);
+    const stateWithYaku: AppState = {
+      ...initial,
+      handOptions: {
+        ...initial.handOptions,
+        riichi: 'open-double-riichi',
+        ippatsu: true,
+        tsubameGaeshi: true,
+        kanFuri: true
+      },
+      input: {
+        ...initial.input,
+        nuki: 2
+      },
+      table: {
+        ...initial.table,
+        round: 'south',
+        seat: 'west',
+        continue: 3,
+        deposit: 2
+      }
+    };
+
+    // 1. openRiichi 真→偽で 'open-double-riichi'→'double-riichi'、続けて偽→真にしても 'double-riichi' のまま
+    const ruleNoOpen = { ...ruleAll, openRiichi: false };
+    const sNoOpen = appReducer(stateWithYaku, {
+      type: 'set-rule',
+      rule: ruleNoOpen
+    });
+    expect(sNoOpen.handOptions.riichi).toBe('double-riichi');
+
+    const sRestoreOpen = appReducer(sNoOpen, {
+      type: 'set-rule',
+      rule: ruleAll
+    });
+    expect(sRestoreOpen.handOptions.riichi).toBe('double-riichi');
+
+    // 2. ippatsu ルール偽で ippatsu=false、真に戻しても false のまま
+    const ruleNoIppatsu = { ...ruleAll, ippatsu: false };
+    const sNoIppatsu = appReducer(stateWithYaku, {
+      type: 'set-rule',
+      rule: ruleNoIppatsu
+    });
+    expect(sNoIppatsu.handOptions.ippatsu).toBe(false);
+
+    const sRestoreIppatsu = appReducer(sNoIppatsu, {
+      type: 'set-rule',
+      rule: ruleAll
+    });
+    expect(sRestoreIppatsu.handOptions.ippatsu).toBe(false);
+
+    // 3. localYaku 偽で 燕返し・槓振り false、真に戻しても false のまま
+    const ruleNoLocal = { ...ruleAll, localYaku: false };
+    const sNoLocal = appReducer(stateWithYaku, {
+      type: 'set-rule',
+      rule: ruleNoLocal
+    });
+    expect(sNoLocal.handOptions.tsubameGaeshi).toBe(false);
+    expect(sNoLocal.handOptions.kanFuri).toBe(false);
+
+    const sRestoreLocal = appReducer(sNoLocal, {
+      type: 'set-rule',
+      rule: ruleAll
+    });
+    expect(sRestoreLocal.handOptions.tsubameGaeshi).toBe(false);
+    expect(sRestoreLocal.handOptions.kanFuri).toBe(false);
+
+    // 4. nuki の既存正規化も維持 (north: 'yakuhai' なら nuki は 0 になる)
+    const ruleNorthYakuhai = { ...ruleAll, north: 'yakuhai' as const };
+    const sYakuhai = appReducer(stateWithYaku, {
+      type: 'set-rule',
+      rule: ruleNorthYakuhai
+    });
+    expect(sYakuhai.input.nuki).toBe(0);
+
+    // 5. clear-all 後 handOptions が初期値で table 不変
+    const sCleared = appReducer(stateWithYaku, { type: 'clear-all' });
+    expect(sCleared.handOptions).toEqual({
+      riichi: 'none',
+      ippatsu: false,
+      rinshan: false,
+      chankan: false,
+      haitei: false,
+      tenho: false,
+      tsubameGaeshi: false,
+      kanFuri: false
+    });
+    expect(sCleared.table).toEqual({
+      round: 'south',
+      seat: 'west',
+      continue: 3,
+      deposit: 2
+    });
+  });
+
+  it('D5-C13: 自動テスト: 結果連動 (computeResult で立直・一発・天和が反映される)', () => {
+    const defaultRule = createDefaultRule();
+    const initial = createInitialState(defaultRule);
+
+    // 111p 234p 567p 999p 11s の和了手牌 (14枚)
+    const horaHand: Tile[] = [
+      { type: 'p', n: 1 },
+      { type: 'p', n: 1 },
+      { type: 'p', n: 1 },
+      { type: 'p', n: 2 },
+      { type: 'p', n: 3 },
+      { type: 'p', n: 4 },
+      { type: 'p', n: 5, red: false },
+      { type: 'p', n: 6 },
+      { type: 'p', n: 7 },
+      { type: 'p', n: 9 },
+      { type: 'p', n: 9 },
+      { type: 'p', n: 9 },
+      { type: 's', n: 1 },
+      { type: 's', n: 1 }
+    ];
+
+    const stateHora: AppState = {
+      ...initial,
+      input: {
+        ...initial.input,
+        hand: horaHand
+      }
+    };
+
+    // 1. set-riichi 'riichi' -> set-situation ippatsu true
+    const withRiichi = appReducer(stateHora, {
+      type: 'set-riichi',
+      riichi: 'riichi'
+    });
+    const withIppatsu = appReducer(withRiichi, {
+      type: 'set-situation',
+      key: 'ippatsu',
+      value: true
+    });
+
+    const result = computeResult(withIppatsu);
+    expect(result?.type).toBe('hora-shanten');
+    if (result?.type === 'hora-shanten' && result.info.type === 'hora') {
+      const allYakuNames = result.info.hora.flatMap(h =>
+        h.yaku.map(y => y.name)
+      );
+      expect(allYakuNames).toContain('riichi');
+      expect(allYakuNames).toContain('ippatsu');
+    }
+
+    // 2. seat='east'・副露なし・和了形で set-situation tenho true -> tenho が含まれる
+    const withTenho = appReducer(stateHora, {
+      type: 'set-situation',
+      key: 'tenho',
+      value: true
+    });
+    const resultTenho = computeResult(withTenho);
+    expect(resultTenho?.type).toBe('hora-shanten');
+    if (
+      resultTenho?.type === 'hora-shanten' &&
+      resultTenho.info.type === 'hora'
+    ) {
+      const allYakuNames = resultTenho.info.hora.flatMap(h =>
+        h.yaku.map(y => y.name)
+      );
+      expect(allYakuNames).toContain('tenho');
+    }
+  });
+});
