@@ -26,7 +26,7 @@ export const RULE_HELP_TEXTS: Partial<Record<RuleItem['key'], string>> = {
   multipleYakuman: 'オフにすると、点数の高い役満で計算されます。'
 };
 
-/** ツモ損ダイアログの選択肢ごとの説明 (docs/mahjong-rules.md §4.2.2 の確定事項) */
+/** ツモ損ダイアログの選択肢ごとの説明 (docs/mahjong-rules.md §3.1 の確定事項) */
 export const TSUMO_LOSS_DESCRIPTIONS: Record<Rule['tsumoLoss'], string> = {
   loss: '通常どおり計算し、北家の負担分は誰も払わない',
   'north-split': '北家の負担額を、ツモられた2人で折半して上乗せする',

@@ -105,7 +105,7 @@ describe('D6-RuleSection (§4.1〜§4.3)', () => {
     expect(html5.includes('積み棒・供託・数え役満ほか2件')).toBe(true);
   });
 
-  it('D6-RuleSection-open-accordion: 開時にダブル役満の子見出し・補足・4項目およびhelpが7項目のみ出力される', () => {
+  it('D6-RuleSection-open-accordion: 開時にダブル役満の子見出し・補足・4項目およびhelpが8項目のみ出力される', () => {
     const html = renderToStaticMarkup(
       <HelpTooltipScope>
         <RuleSection
