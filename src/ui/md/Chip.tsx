@@ -30,12 +30,17 @@ export interface FilterChipProps {
   label: string;
   selected: boolean;
   disabled?: boolean | undefined;
+  /** 単一選択(ラジオ)として振る舞う。選択中のchipを押しても解除せず、通知もしない */
+  radio?: boolean | undefined;
   onSelectedChange?: ((selected: boolean) => void) | undefined;
   className?: string | undefined;
 }
 
 export function FilterChip(props: FilterChipProps): React.JSX.Element {
-  const { ref, label, selected, disabled, onSelectedChange, className } = props;
+  const { ref, label, selected, disabled, radio, onSelectedChange, className } =
+    props;
+  const selectedRef = useRef(selected);
+  selectedRef.current = selected;
   const innerRef = useRef<MdFilterChip | null>(null);
 
   const handleRef = (el: MdFilterChip | null) => {
@@ -56,6 +61,10 @@ export function FilterChip(props: FilterChipProps): React.JSX.Element {
     }
 
     const handleClick = () => {
+      if (radio && selectedRef.current) {
+        el.selected = true;
+        return;
+      }
       // md-filter-chip は click で自ら selected を反転するため、反転後の値を通知する
       onSelectedChange(el.selected);
     };
@@ -64,7 +73,7 @@ export function FilterChip(props: FilterChipProps): React.JSX.Element {
     return () => {
       el.removeEventListener('click', handleClick);
     };
-  }, [onSelectedChange]);
+  }, [onSelectedChange, radio]);
 
   return (
     <md-filter-chip

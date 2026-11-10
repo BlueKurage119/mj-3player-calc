@@ -22,25 +22,27 @@ describe('SituationSheet (D5)', () => {
       />
     );
 
-    // 理由: 立直3択グループ situation-riichi-group が含まれることを検証するため
-    expect(htmlWithOpen.includes('situation-riichi-group')).toBe(true);
-    // 理由: 立直3択のボタン(なし・立直・ダブル立直)が含まれることを検証するため
+    // 理由: 立直の単一選択 chip 列 situation-riichi が含まれることを検証するため
+    expect(htmlWithOpen.includes('situation-riichi')).toBe(true);
+    // 理由: 立直3択の chip(なし・立直・ダブル立直)が含まれることを検証するため
     expect(htmlWithOpen.includes('>なし<')).toBe(true);
     expect(htmlWithOpen.includes('>立直<')).toBe(true);
     expect(htmlWithOpen.includes('>ダブル立直<')).toBe(true);
 
-    // 理由: situation-chips コンテナが含まれることを検証するため
-    expect(htmlWithOpen.includes('situation-chips')).toBe(true);
+    // 理由: 偶然役の chip 列(situation-chips)が立直の列とは別に含まれることを検証するため
+    expect(
+      (htmlWithOpen.match(/situation-chips/g) ?? []).length
+    ).toBeGreaterThanOrEqual(2);
     // 理由: 偶然役の各ラベルが含まれることを検証するため
     expect(htmlWithOpen.includes('>一発<')).toBe(true);
     expect(htmlWithOpen.includes('>嶺上開花<')).toBe(true);
     expect(htmlWithOpen.includes('>海底/河底<')).toBe(true);
 
-    // オープン chip が situation-riichi-group の中にあり、situation-chips の外にあることを構造から検証
-    const riichiGroupEndIndex = htmlWithOpen.indexOf('situation-chips');
+    // オープン chip が立直の列の中(偶然役の列より前)にあることを構造から検証
+    const lastChipsIndex = htmlWithOpen.lastIndexOf('situation-chips');
     const openChipIndex = htmlWithOpen.indexOf('>オープン<');
     expect(openChipIndex).toBeGreaterThan(-1);
-    expect(openChipIndex).toBeLessThan(riichiGroupEndIndex);
+    expect(openChipIndex).toBeLessThan(lastChipsIndex);
 
     // 2. openRiichiAllowed = false
     const htmlWithoutOpen = renderToStaticMarkup(

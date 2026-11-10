@@ -77,24 +77,10 @@ describe('situation-css (D5)', () => {
     // 理由: situation-chips の row-gap が 1.5rem に指定されていることを検証するため
     expect(sheetCss.includes('row-gap: 1.5rem;')).toBe(true);
 
-    // 2. .situation-riichi-group の gap が 1rem、背景色が surface-container-low
-    // 理由: situation-riichi-group の gap が 1rem であることを検証するため
-    expect(sheetCss.includes('gap: 1rem;')).toBe(true);
-    // 理由: situation-riichi-group の背景色が surface-container-low であることを検証するため
-    expect(
-      sheetCss.includes(
-        'background-color: var(--md-sys-color-surface-container-low);'
-      )
-    ).toBe(true);
-
     // 3. 当たり判定拡張 ::after の定義
     // 理由: wind-segment の ::after 拡張が存在することを検証するため
     expect(mainCss.includes('.wind-segment .connected-button::after')).toBe(
       true
     );
-    // 理由: situation-riichi の ::after 拡張が存在することを検証するため
-    expect(
-      sheetCss.includes('.situation-riichi .connected-button::after')
-    ).toBe(true);
   });
 });

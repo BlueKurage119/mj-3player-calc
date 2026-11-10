@@ -1,6 +1,5 @@
 import type React from 'react';
 import type { HandOptions } from '../../core/input';
-import { ConnectedButtonGroup, type ConnectedOption } from '../expressive';
 import { ChipSet, FilterChip } from '../md';
 import {
   type RiichiBase,
@@ -22,11 +21,11 @@ export interface SituationSheetContentProps {
   onChipChange: (key: SituationToggleKey, value: boolean) => void;
 }
 
-const RIICHI_BASE_OPTIONS: readonly ConnectedOption<RiichiBase>[] = [
+const RIICHI_BASE_OPTIONS: readonly { value: RiichiBase; label: string }[] = [
   { value: 'none', label: 'なし' },
   { value: 'riichi', label: '立直' },
   { value: 'double-riichi', label: 'ダブル立直' }
-] as const;
+];
 
 export function SituationSheetContent({
   riichi,
@@ -39,29 +38,29 @@ export function SituationSheetContent({
 
   return (
     <div className="situation-sheet">
-      <div className="situation-riichi-group">
-        <ConnectedButtonGroup<RiichiBase>
-          label="立直"
-          options={RIICHI_BASE_OPTIONS}
-          value={base}
-          onValueChange={nextBase => {
-            onRiichiChange(composeRiichi(nextBase, open));
-          }}
-          className="situation-riichi"
-        />
+      <ChipSet className="situation-chips situation-riichi">
+        {RIICHI_BASE_OPTIONS.map(option => (
+          <FilterChip
+            key={option.value}
+            label={option.label}
+            selected={base === option.value}
+            radio
+            onSelectedChange={() => {
+              onRiichiChange(composeRiichi(option.value, open));
+            }}
+          />
+        ))}
         {openRiichiAllowed ? (
-          <div className="situation-riichi-open-row">
-            <FilterChip
-              label="オープン"
-              selected={open}
-              disabled={base === 'none'}
-              onSelectedChange={nextOpen => {
-                onRiichiChange(composeRiichi(base, nextOpen));
-              }}
-            />
-          </div>
+          <FilterChip
+            label="オープン"
+            selected={open}
+            disabled={base === 'none'}
+            onSelectedChange={nextOpen => {
+              onRiichiChange(composeRiichi(base, nextOpen));
+            }}
+          />
         ) : null}
-      </div>
+      </ChipSet>
 
       <ChipSet className="situation-chips">
         {chips.map(item => (
