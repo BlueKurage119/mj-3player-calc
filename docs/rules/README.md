@@ -39,6 +39,7 @@ AGENTS.md（権限と責任: 絶対禁止事項、役割と担当の対応表）
 - [06-ui-md3-protocol.md](06-ui-md3-protocol.md) — `src/ui/`で必ず守る技術制約(色トークン・Material Webのラッパー経由・自作部品の置き場所・バージョン固定・bare import禁止)、牌画像の色の例外
 - [07-mahjong-rule-protocol.md](07-mahjong-rule-protocol.md) — ルール仕様の確定/未確定の扱い、所定値の変更禁止、三麻の不変条件、点数の期待値の出典
 - [08-independent-review-protocol.md](08-independent-review-protocol.md) — マージ提案前の独立レビュー1本以上のゲートと省略条件、レビュー担当の読み取り専用の権限境界、指摘の真偽判定の義務
+- [09-bundle-budget-protocol.md](09-bundle-budget-protocol.md) — 初回 JS の目標値運用(基準値の実測・増分の積算・実測と超過量のPR記載。絶対値の上限なし・不合格にしない)
 
 各ファイルの「必須事項」は上から順に実行できる構成にしてある。手法の詳細・具体例は該当する[docs/rules/advisory/](advisory/README.md)のファイルにリンクする。
 
