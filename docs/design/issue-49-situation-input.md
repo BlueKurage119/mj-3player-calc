@@ -27,7 +27,7 @@
 | 1 | 状況役シートは LuckSheet 型(立直系グループ+偶然役トグル群、シート1枚で完結)。参照リポジトリのコードは流用せず、構成だけ参考にする | Q1 |
 | 2 | 立直系は「なし・立直・ダブル立直」の3択 + 「オープン」トグル。オープンは `rule.openRiichi` が真のときだけ出す。組合せを `HandOptions.riichi` の5値に写像する | Q2・仕様 §4.2.2「オープンリーチは立直の選択肢に加えて与える」 |
 | 3 | ルールにない項目は非表示(`rule.ippatsu=false`→一発、`rule.openRiichi=false`→オープン、`rule.localYaku=false`→燕返し・槓振り)。排他・無効化は最小限: **立直なしなら一発は無効**。それ以外の排他(天和・地和選択時の他役クリア、副露ありで立直無効等)は入れない(§3) | Q3 |
-| 4 | 天和・地和は自風でラベル切替(親=「天和」)。子は `rule.localYaku` 真なら「地和・人和」、偽なら「地和」。1ボタンで内部は `tenho`。人和の専用入力は設けない。燕返し・槓振りは `rule.localYaku` 真のときのみ | Q4・仕様 §4.2.2 |
+| 4 | 天和・地和は自風でラベル切替(親=「天和」)。子は `rule.localYaku` 真なら「地和/人和」(表記は Q-10 回答で更新)、偽なら「地和」。1ボタンで内部は `tenho`。人和の専用入力は設けない。燕返し・槓振りは `rule.localYaku` 真のときのみ | Q4・仕様 §4.2.2 |
 | 5 | 抜き北へのロン(槍槓を選ばない)・抜き北の嶺上牌ツモ(嶺上開花を選ぶ)の案内は**出さない**。issue-12 §8 の「UI で案内」は、本 Issue でユーザーが不要と判断した | Q5 |
 | 6 | 要約カード1行目は「風(例: 東場・南家)」と「積み棒・供託」のみ。状況役は載せない。積み棒・供託はアイコン+数値にしてよい | Q6 |
 | 7 | 風セグメント(場風・自風)は横並び2グループ。375px 幅で収まらなければ縦2段。見出しは label-medium | Q7・issue-48 確定17 |
@@ -42,7 +42,10 @@
 | 16 | 予算改訂の文書は D5 に含めない(別途、別の統括と協議) | Q-A'(同) |
 | 17 | 偶然役トグルは `md-filter-chip`+`md-chip-set`(既存ラッパー `FilterChip`/`ChipSet` 経由)。自作トグルは作らない | §9.3 案A(同) |
 | 18 | 状況役カードは入力どおりに表示する(livewing の「効く役だけ表示」は採らない) | Q-8(同) |
-| 19 | 海底・河底の chip ラベルは「海底・河底」 | Q-9(同) |
+| 19 | 海底・河底の chip ラベルは「海底/河底」(以前は「海底・河底」。Q-10 回答で項目内の区切りを半角スラッシュに変更) | Q-9・Q-10(同) |
+| 20 | 区切り: 項目内は半角スラッシュ(「海底/河底」「地和/人和」)、項目間は中黒(例「立直・一発・海底/河底」) | Q-10(同) |
+| 21 | 点棒アイコン: 供託=千点棒(赤点1つ)、積み棒=百点棒(黒点 縦2×横4=8個) | Q-11(同) |
+| 22 | chip 折り返し時のタップ領域は行間 1.5rem で確保する(§6.3)。requirements への例外追記はしない | Q-12(同) |
 
 ## 3. 排他・無効化の照合結果(07号)
 
@@ -91,9 +94,9 @@ export function isSituationKeyVisible(key: SituationToggleKey, rule: Rule): bool
 export function isSituationKeyEnabled(key: SituationToggleKey, opts: HandOptions, rule: Rule): boolean;
 //   visible かつ (key==='ippatsu' なら opts.riichi !== 'none')
 export function tenhoLabel(table: Table, rule: Rule): string;
-//   親 '天和' / 子かつ localYaku '地和・人和' / 子 '地和'
+//   親 '天和' / 子かつ localYaku '地和/人和' / 子 '地和'
 export function situationLabels(opts: HandOptions, table: Table, rule: Rule): string[];
-//   カード表示用。順序: 立直系 → 一発 → 嶺上開花 → 槍槓 → 海底・河底 → 天和系 → 燕返し → 槓振り
+//   カード表示用。順序: 立直系 → 一発 → 嶺上開花 → 槍槓 → 海底/河底 → 天和系 → 燕返し → 槓振り
 //   立直系の文言: 立直 / ダブル立直 / オープン立直 / オープンダブル立直
 //   非表示・無効の項目は含めない(正規化済みの値なら自然にそうなる)
 export function normalizeHandOptions(opts: HandOptions, rule: Rule): HandOptions;
@@ -145,7 +148,7 @@ export function formatWinds(table: Table): string; // 例 '東場・南家'
 - 構造は D4 のカード(IndicatorCard)に揃える。クラス `situation-card`、選択中(`inputFocus.type==='situation'`)は `situation-card--selected` を付け、`main-screen.css` の既存の選択中規則(`.hand-card.hand-card--selected, .indicator-card.indicator-card--selected, .meld-card.meld-card--selected`)に `.situation-card.situation-card--selected` を追加する(基底規則に詳細度で負けないこと)
 - 見出し「状況役」(title-small)。本文は `role="button"`・`tabIndex=0`・aria-label「状況役を入力」の要素(`situation-card__body`)
 - `data-sheet-opener` は付けない(物理キーの入力先でないため)
-- 本文: `situationLabels` を「、」で連結(長ければ折り返し)。「立直、一発、海底・河底」のように、項目内の「・」と区切りを区別する(§10 Q-10)。空なら「なし」(色 `--md-sys-color-on-surface-variant`。§2 #13)
+- 本文: `situationLabels` を「・」で連結(長ければ折り返し)。例「立直・一発・海底/河底」。項目内の区切りは半角スラッシュ(§2 #20)。空なら「なし」(色 `--md-sys-color-on-surface-variant`。§2 #13)
 - 操作: 本体クリック、および非選択中の Enter/Space で `open-sheet {type:'situation'}`(Space は preventDefault)。**選択中の Enter/Space は何もしない**(situation は `isSheetKeyboardTarget` の対象外で `useTenkeyKeyboard` が登録されないため、D4 の「選択中は素通し→フックが閉じる」を写すと無処理になる。それを明示的な仕様とする)
 - クリア用ゴミ箱は置かない(オールクリアで足りるため)
 
@@ -154,7 +157,7 @@ export function formatWinds(table: Table): string; // 例 '東場・南家'
 - ヘッダーの入力方式切替は出さない。物理キー入力(テンキー)も対象外。**このシートは Enter で閉じない**(他のシートは物理キーのフック経由で閉じる)。閉じる操作は Esc と✕(および既存の BottomSheet の閉じ方)のみ
 - 構成(上から):
   1. 立直行: `ConnectedButtonGroup`(aria「立直」、なし・立直・ダブル立直。クラス `situation-riichi`)。1行に3択だけを置く(内容幅 343px÷3 ≒ 114px で「ダブル立直」約 102px が収まる)
-  2. 偶然役: `ChipSet`(className `situation-chips`)内に `FilterChip` を並べる。先頭に「オープン」(`rule.openRiichi` 真のときのみ。base='none' で disabled)、続いて一発(`isSituationKeyVisible` で出し分け、`isSituationKeyEnabled` で disabled)・嶺上開花・槍槓・海底・河底・`tenhoLabel(...)`・燕返し・槓振り(後2つは localYaku 時のみ)。オープン操作は `splitRiichi`/`composeRiichi` で5値にして `set-riichi`
+  2. 偶然役: `ChipSet`(className `situation-chips`)内に `FilterChip` を並べる。先頭に「オープン」(`rule.openRiichi` 真のときのみ。base='none' で disabled)、続いて一発(`isSituationKeyVisible` で出し分け、`isSituationKeyEnabled` で disabled)・嶺上開花・槍槓・海底/河底・`tenhoLabel(...)`・燕返し・槓振り(後2つは localYaku 時のみ)。オープン操作は `splitRiichi`/`composeRiichi` で5値にして `set-riichi`
 - 見ればわかるため、行見出し・説明文は付けない。案内文も出さない(§2 #5)
 - Material Web の chip は `src/ui/md` の `ChipSet`/`FilterChip` ラッパー経由(06号 3。§2 #17)
 - タップ領域と折り返し: chip の host は高さ 32dp、shadow 内のタッチ領域は 48dp、`md-chip-set` の既定 gap は 8dp。6個以上で約 400px となり内容幅 343px を超えるため折り返しはほぼ確実で、既定の行ピッチ 40dp では上下行のタッチ領域が 8dp 重なる。対処として `situation-sheet.css` で `.situation-chips` の `row-gap` を 1.5rem(タッチ領域どうしの間隔 8dp)にする。CSS は className 経由で `situation-sheet.css` に書き、`src/ui/md` は変更しない
@@ -167,7 +170,11 @@ export function formatWinds(table: Table): string; // 例 '東場・南家'
   - 右: 2つのピル(背景 `--md-sys-color-surface-container-highest`、角 `--md-sys-shape-corner-full`)。各ピル = アイコン 16dp + 数値(`tabular-nums`)。ピルは `role="img"`・aria-label「積み棒 N」「供託 N」、中身は `aria-hidden`。**値が 0 でも表示する**
 - 手牌牌列行はそのまま残す(2行構成)
 - アイコン(§2 #14。自作):
-  - 題材: 点棒。**供託=1000点棒(中央に点1つ)、積み棒=100点棒(点を複数並べる)**。実物の点棒の意匠に合わせた(一般知識。リポジトリ内に出典なし)。ユーザーの参考画像(積み棒が1点に見える)と食い違う可能性があるため §10 Q-11 で確認する。棒は水平〜わずかに斜めで、16dp でも2種が判別できること
+  - 題材(§2 #21): 供託=千点棒で赤点1つ、積み棒=百点棒で黒点が縦2×横4(計8個)。棒は水平〜わずかに斜め
+  - 赤の表し方(設計判断): **単一 path・塗りのみで、点の大きさと配置で区別する**(千点棒=中央に大きな点1つ、百点棒=小さな点 2×4)。色で赤を出す2層案は採らない
+    - 比較: 2層案(棒の輪郭 path は `currentColor`、赤点 path は色トークン)は実物に近いが、(1) `SymbolIcon` の「viewBox 固定・path 1本・塗り」の前提を崩し、2色用の別部品が要る (2) MD3 のトークンに「赤」の意味の色は無く、近いのは `--md-sys-color-error` だけで、エラーの意味の色を装飾に流用することになる (3) 16dp では赤点が約 2〜3px になり、色だけでの識別は色覚差の影響を受ける。単一 path 案は既存部品のまま使え、形の違いで識別できる
+    - 単一 path での表現: 点は棒の輪郭の内側を「抜く」(evenodd 相当の穴、または輪郭化した塗りの中の空白)形で描く。千点棒の点は直径を棒の高さの約 6 割、百点棒の点は約 2 割とする
+    - 16dp での判別条件: 「大きな点1つ」と「小さな点の並び(または並びがつぶれた筋)」が見分けられること。百点棒の8点が 16dp で個々に分離して見えることまでは求めない(UI監修で確認)
   - 様式: `SymbolIcon` は `viewBox="0 -960 960 960"` 固定で path 1本を塗りで描く。よって **`0 -960 960 960` 座標系・単一 path・塗りのみ(線は輪郭化して塗りにする)** で作図する。太さは Material Symbols outlined の 400 weight 相当、角は丸める
   - 色: `SymbolIcon` の `currentColor` に任せ、色は親のトークン(`--md-sys-color-on-surface-variant` 等)で与える。HEX を書かない
   - サイズ: 要約では 16dp(`SymbolIcon` の `size` で指定)
@@ -184,7 +191,7 @@ export function formatWinds(table: Table): string; // 例 '東場・南家'
 | --- | --- | --- |
 | C1 | `situation-rules.test.ts`: `composeRiichi`/`splitRiichi` を base3×open2 で往復 | 6通りが仕様どおり。`composeRiichi('none', true)==='none'` |
 | C2 | `isSituationKeyVisible`/`Enabled` を rule.ippatsu・localYaku の真偽と riichi none/riichi で網羅 | §5.1 の定義どおり |
-| C3 | `tenhoLabel`: seat east/south/west × localYaku 真偽 | 東=「天和」、南・西=「地和・人和」(真)/「地和」(偽) |
+| C3 | `tenhoLabel`: seat east/south/west × localYaku 真偽 | 東=「天和」、南・西=「地和/人和」(真)/「地和」(偽) |
 | C4 | `normalizeHandOptions`: openRiichi=false で open-riichi/open-double-riichi、ippatsu=false ルール、riichi='none'+ippatsu=true、localYaku=false+燕返し/槓振り真 | §5.1 (1)〜(3) のとおり。変化なしの入力は同一参照(`toBe`) |
 | C5 | reducer: `set-wind` round/seat | `table` が更新、同値で同一 state、`handOptions`・`input`・`inputFocus`・`tenkeyBuffer` は参照同一 |
 | C6 | reducer: `set-riichi` | openRiichi=false で 'open-riichi' を送ると 'riichi' になる。'none' を送ると ippatsu=false。現在値と同じ値を送ると同一 state。`input`・`inputFocus`・`tenkeyBuffer`・`table` は参照同一 |
@@ -192,10 +199,10 @@ export function formatWinds(table: Table): string; // 例 '東場・南家'
 | C8 | reducer: `set-rule` / `clear-all` | openRiichi 真→偽で 'open-double-riichi'→'double-riichi'、続けて偽→真にしても 'double-riichi' のまま。ippatsu ルール偽で ippatsu=false、真に戻しても false のまま。localYaku 偽で燕返し・槓振り false、真に戻しても false のまま。nuki の既存正規化も維持。`clear-all` 後 `handOptions` が初期値で `table` 不変 |
 | C9 | 画面: 風セグメント | 「場風」「自風」の見出しと東南西が見える。375px で各ボタンの見た目の高さ 40(`getBoundingClientRect()`)、当たり判定は `getComputedStyle(el,'::after').height` ≥ 48、またはボタン上端・下端の 4px 外側の点で `document.elementFromPoint` が当該ボタンを返す。幅 ≥ 48。見出しの computed font-size が `.stepper__label` と一致。自風=南を押すと要約1行目が「東場・南家」 |
 | C10 | 画面: 状況役シート | 状況役カードを押すとシートが開き、立直3択と chip 群が並ぶ。立直3択は C9 と同じ当たり判定条件(≥48)。openRiichi 有効時も 375px で立直3択の各文字が1行に収まり、ボタンからはみ出さない(`scrollWidth <= clientWidth`)。chip: 同一行で隣接する chip の host 間隔 ≥ 8(`getBoundingClientRect` の差)。折り返した行どうしでは、上の行の chip のタッチ領域下端(host 中心+24)と下の行のタッチ領域上端(host 中心−24)の間隔 ≥ 8。各 chip のタッチ領域の高さ 48(shadow 内 `.touch` の実測値を記録) |
-| C11 | 画面: ルール出し分け | 既定ルール(一発あり・openRiichi なし・localYaku なし): 一発あり、オープン・燕返し・槓振りなし、子で「地和」。次に localStorage の `mj3calc.rule`(`src/core/rule-storage.ts` の `RULE_STORAGE_KEY`)に、既定ルールの `openRiichi`・`localYaku` を true、`ippatsu` を false にした JSON を書いてリロード: オープン・燕返し・槓振りが出て、一発が消え、子で「地和・人和」。ルール変更時の値の正規化は C8 で担保する |
+| C11 | 画面: ルール出し分け | 既定ルール(一発あり・openRiichi なし・localYaku なし): 一発あり、オープン・燕返し・槓振りなし、子で「地和」。次に localStorage の `mj3calc.rule`(`src/core/rule-storage.ts` の `RULE_STORAGE_KEY`)に、既定ルールの `openRiichi`・`localYaku` を true、`ippatsu` を false にした JSON を書いてリロード: オープン・燕返し・槓振りが出て、一発が消え、子で「地和/人和」。ルール変更時の値の正規化は C8 で担保する |
 | C12 | 画面: 一発・オープンの無効 | 立直=なしで一発 chip とオープン chip が disabled。立直を選ぶと有効、一発を選んだ後「なし」に戻すと一発が外れる |
 | C13 | 自動テスト: 結果連動 | reducer で和了形の state に `set-riichi 'riichi'`→`set-situation ippatsu true` を適用し、`computeResult`(`src/ui/calc/compute.ts`)の `hora[].yaku` に riichi・ippatsu が含まれる。`seat='east'`・副露なし・和了形で `set-situation tenho true` → tenho が含まれる。画面では同操作で結果がエラー表示(計算できません)にならないことまでを確認する(役一覧の表示は Epic E) |
-| C14 | 描画テスト: 状況役カード | `SituationCardContent` に立直+一発+海底・河底を与えた `renderToStaticMarkup` に「立直、一発、海底・河底」。空で「なし」。選択中で `situation-card--selected` が付き、`data-sheet-opener` が無い |
+| C14 | 描画テスト: 状況役カード | `SituationCardContent` に立直+一発+海底/河底を与えた `renderToStaticMarkup` に「立直・一発・海底/河底」。シートの chip ラベル(view-model)に「海底/河底」、子・localYaku で「地和/人和」。空で「なし」。選択中で `situation-card--selected` が付き、`data-sheet-opener` が無い |
 | C15 | 画面・描画テスト: 要約1行目 | `SummaryStatusRow` の静的描画に「東場・東家」、`role="img"` で aria-label「積み棒 0」「供託 0」。画面: スクロールで要約カードを出し、ステッパーで積み棒2にすると「2」。状況役は1行目に出ない。手牌牌列行は従来どおり |
 | C16 | 画面: 案内なし | シート・カードに抜き北に関する説明文が無い |
 | C17 | 静的検査 | `npm run lint`・`typecheck`・`format:check`・`test` 成功。新規・変更 CSS(`main-screen.css`・`situation-sheet.css` ほか本 Issue で触れた CSS)に HEX 色・ms・cubic-bezier の直書きが無い |
@@ -207,7 +214,7 @@ export function formatWinds(table: Table): string; // 例 '東場・南家'
 ## 8. テスト方針・UI監修・実機確認
 
 - テスト: 純関数と reducer は単体テストで網羅(C1〜C8・C13・C20)。描画は `renderToStaticMarkup`+props 駆動の表示部品(§4)で行い、jsdom/Testing Library は追加しない。md-filter-chip の `selected`/`disabled` が静的マークアップに属性として出るかは未確認のため、シートの出し分け・disabled 判定は表示部品に渡す props を作る純関数(view-model。例 `situationSheetModel(handOptions, table, rule)` が chip ごとの `{key,label,selected,disabled}` を返す)を単体テストして判定する
-- UI監修項目(追加): 自作点棒アイコンの意匠(供託=中央1点、積み棒=複数点。§10 Q-11)、カード本文の区切り「、」(§10 Q-10)
+- UI監修項目(追加): 自作点棒アイコンの意匠(供託=大きな点1つ、積み棒=小さな点 2×4。赤は色でなく形で表す。§2 #21・§6.4)
 - UI監修項目(統括→ユーザー): 風セグメントの横並びの見え方、chip 群の並びと折り返し、要約1行目の自作点棒アイコン(16dp での判別性・MD 様式との調和。差し戻し時は path 定数の差し替え)、状況役カードの空表示
 - 実機確認項目(逆発注): 375px 実機で風セグメントが1行に収まるか、chip のタップしやすさ、ダークテーマでのピルのコントラスト
 - 実挙動未確認: md-filter-chip の touch target 高さ(C10)、自作点棒アイコンの判別性(UI監修で差し戻しあり得る)、要約カード高さ増による sticky 挙動への影響
@@ -272,11 +279,9 @@ export function formatWinds(table: Table): string; // 例 '東場・南家'
 - Q-8・Q-9: 2026-11-10 回答済み(§2 #18・#19)
 - 偶然役トグルの部品: 2026-11-10 回答済み(§2 #17)
 
-以下はユーザー判断待ち(独立レビュー所見による):
+- Q-10・Q-11・Q-12: 2026-11-10 回答済み(§2 #19〜#22)
 
-- Q-10: 状況役カードの区切りを「、」(例「立直、一発、海底・河底」)にしてよいですか。「・」連結だと「海底・河底」が2項目に読めます(本文は「、」案で記載)
-- Q-11: 点棒アイコンを「供託=1000点棒(中央1点)、積み棒=100点棒(複数点)」にしてよいですか。実物の意匠に合わせましたが、参考画像では積み棒が1点に見え、食い違う可能性があります
-- Q-12: chip の折り返し時のタップ領域は、(a) 行間 1.5rem でタッチ領域の間隔 8dp を確保する(本設計で採用)でよいですか。代案 (b) requirements.md にタップ領域の例外(chip の行間の重なり許容)を追記する案は、48dp・間隔 8dp の原則を例外で崩すことになり、(a) で縦に約 16dp/行 伸びるだけで解決できるため不採用としています
+未回答の質問は無い。
 
 ## 11. livewing との差異
 
@@ -286,11 +291,11 @@ export function formatWinds(table: Table): string; // 例 '東場・南家'
 | --- | --- | --- | --- |
 | 並び順 | 立直 → 一発 → 嶺上開花 → 槍槓 → 海底/河底 → 天和/地和 | 同順(+オープン、燕返し・槓振りを末尾) | 一致。変更なし |
 | 部品 | 各項目が「なし/役名」の2択セグメント+見出し | 立直のみ3択グループ、他は FilterChip | 確定事項 Q1 に従う。変更なし |
-| 天和/地和のラベル | 自風東=天和、他=地和 | 同じ(localYaku 時は「地和・人和」) | 一致(人和は仕様 §4.2.2 による追加) |
+| 天和/地和のラベル | 自風東=天和、他=地和 | 同じ(localYaku 時は「地和/人和」) | 一致(人和は仕様 §4.2.2 による追加) |
 | 一発の有効条件(入力) | 常に操作可(立直なしでも選べる) | 立直なしで disabled・false 化 | 確定事項 Q3 に従う。変更なし |
 | 入力の排他 | なし(どの組合せも入力可) | 一発⇔立直のみ | 確定事項 Q3・Q-3・Q-4 と整合 |
-| 要約の表示条件 | 入力値をそのまま出さず、効く役だけ表示: 天和選択中は他を出さない/立直・一発は門前(暗槓のみ許容)時のみ/嶺上開花は槓があるときのみ/海底・河底はダブル立直+一発のとき出さない/天和・地和は副露なしのときのみ | 入力どおりに表示 | 採らない(Q-8 回答済み。§2 #18)。参考: 採る場合は、嶺上開花の条件は三麻では「槓あり **または抜き北≥1**」(仕様 §2 抜きドラ(嶺上開花))、ダブル立直+一発と海底の関係は仕様 §4.1.1 に合わせる必要があり、livewing の条件はそのまま使えない |
-| 海底・河底のラベル | 1項目「海底/河底」相当 | 「海底・河底」 | 「海底・河底」(Q-9 回答済み。§2 #19) |
+| 要約の表示条件 | 入力値をそのまま出さず、効く役だけ表示: 天和選択中は他を出さない/立直・一発は門前(暗槓のみ許容)時のみ/嶺上開花は槓があるときのみ/海底/河底はダブル立直+一発のとき出さない/天和・地和は副露なしのときのみ | 入力どおりに表示 | 採らない(Q-8 回答済み。§2 #18)。参考: 採る場合は、嶺上開花の条件は三麻では「槓あり **または抜き北≥1**」(仕様 §2 抜きドラ(嶺上開花))、ダブル立直+一発と海底の関係は仕様 §4.1.1 に合わせる必要があり、livewing の条件はそのまま使えない |
+| 海底・河底のラベル | 1項目「海底/河底」相当 | 「海底/河底」 | 一致(§2 #19) |
 | 要約の風 | 「東場 · 東家」相当を中黒で連結 | 「東場・南家」 | 一致 |
 
 ## 12. 後続 Issue への引き継ぎ
