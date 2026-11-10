@@ -254,9 +254,11 @@ body {
   position: absolute;
   inset-inline: 0;
   top: 0;
-  background-color: var(--md-sys-color-surface-container-high);
-  color: var(--md-sys-color-on-surface);
+  background-color: var(--md-sys-color-secondary-container);
+  color: var(--md-sys-color-on-secondary-container);
   border-radius: var(--md-sys-shape-corner-medium);
+  box-shadow: 0 2px 6px
+    color-mix(in srgb, var(--md-sys-color-shadow) 30%, transparent);
   padding: 0.5rem 0.75rem;
   display: flex;
   flex-direction: column;
@@ -276,7 +278,7 @@ body {
   line-height: var(--md-sys-typescale-label-large-line-height);
   font-weight: var(--md-sys-typescale-label-large-weight);
   letter-spacing: var(--md-sys-typescale-label-large-tracking);
-  color: var(--md-sys-color-on-surface);
+  color: var(--md-sys-color-on-secondary-container);
 }
 
 .summary-card__counters {
@@ -288,10 +290,14 @@ body {
 .summary-card__pill {
   display: inline-flex;
   align-items: center;
-  background-color: var(--md-sys-color-surface-container-highest);
+  background-color: color-mix(
+    in srgb,
+    var(--md-sys-color-on-secondary-container) 16%,
+    transparent
+  );
   border-radius: var(--md-sys-shape-corner-full);
   padding: 0.125rem 0.5rem;
-  color: var(--md-sys-color-on-surface-variant);
+  color: var(--md-sys-color-on-secondary-container);
 }
 
 .summary-card__pill-inner {
@@ -307,7 +313,7 @@ body {
 .summary-card__label {
   font-family: var(--md-sys-typescale-label-medium-font);
   font-size: var(--md-sys-typescale-label-medium-size);
-  color: var(--md-sys-color-on-surface-variant);
+  color: var(--md-sys-color-on-secondary-container);
   margin-inline-end: 0.25rem;
 }
 
