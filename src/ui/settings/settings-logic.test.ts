@@ -1,10 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import { createDefaultRule } from '../../core/rule';
 import { type NumberRuleItem, RULE_ITEMS } from '../../core/rule-items';
+import type { SelectRuleItem } from '../../core/rule-items';
 import {
   changedDetailLabels,
+  choiceOptions,
+  choiceValue,
   commitPointValue,
+  currentChoiceLabel,
   formatChangedSummary,
+  resolveChoice,
   sanitizeDigits
 } from './settings-logic';
 
@@ -95,5 +100,41 @@ describe('D6-settings-logic (§4.3・§4.5)', () => {
         'オープン立直'
       ])
     ).toBe('本場・供託・数え役満ほか2件');
+  });
+});
+
+describe('D6-settings-logic-choice: 選択項目のボタン群・ダイアログ用の写像', () => {
+  const find = (key: string) =>
+    RULE_ITEMS.find(i => i.key === key) as SelectRuleItem;
+  const rule = createDefaultRule();
+
+  it('D6-logic-choiceOptions: 選択肢が文字列値とRULE_ITEMSのラベルへ写る', () => {
+    expect(choiceOptions(find('red'))).toEqual([
+      { value: '0', label: '赤なし' },
+      { value: '1', label: '2枚' },
+      { value: '2', label: '4枚' }
+    ]);
+    expect(choiceOptions(find('tsumoLoss')).map(o => o.value)).toEqual([
+      'loss',
+      'north-split',
+      'ron-split'
+    ]);
+  });
+
+  it('D6-logic-choiceValue: 現在値が文字列値と表示ラベルへ写る', () => {
+    expect(choiceValue(find('doubleWindFu'), rule)).toBe('4');
+    expect(choiceValue(find('north'), { ...rule, north: 'yakuhai' })).toBe(
+      'yakuhai'
+    );
+    expect(
+      currentChoiceLabel(find('tsumoLoss'), { ...rule, tsumoLoss: 'ron-split' })
+    ).toBe('ロン打点折半');
+  });
+
+  it('D6-logic-resolveChoice: 文字列値から元の型のルール値へ戻り、該当なしは undefined', () => {
+    expect(resolveChoice(find('red'), '2')).toBe(2);
+    expect(resolveChoice(find('doubleWindFu'), '2')).toBe(2);
+    expect(resolveChoice(find('tsumoLoss'), 'north-split')).toBe('north-split');
+    expect(resolveChoice(find('red'), 'x')).toBeUndefined();
   });
 });

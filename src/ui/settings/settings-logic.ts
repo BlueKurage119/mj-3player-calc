@@ -1,6 +1,11 @@
 import type { Rule } from '../../core/rule';
-import { type NumberRuleItem, RULE_ITEMS } from '../../core/rule-items';
+import {
+  type NumberRuleItem,
+  RULE_ITEMS,
+  type SelectRuleItem
+} from '../../core/rule-items';
 import { type RuleStorage, saveRule } from '../../core/rule-storage';
+import type { ConnectedOption } from '../expressive/connected-logic';
 import { DETAIL_RULE_KEYS } from './rule-groups';
 
 const RULE_ITEM_MAP = new Map(RULE_ITEMS.map(item => [item.key, item]));
@@ -86,4 +91,31 @@ export function applyRuleChange<K extends keyof Rule>(
   };
   const saved = saveRule(storage, next);
   return { rule: next, saved };
+}
+
+/** 選択項目の選択肢を、ボタン群へ渡す文字列値の選択肢へ写す */
+export function choiceOptions(item: SelectRuleItem): ConnectedOption<string>[] {
+  return item.options.map(opt => ({
+    value: String(opt.value),
+    label: opt.label
+  }));
+}
+
+/** 選択項目の現在値を、ボタン群・ラジオへ渡す文字列値へ写す */
+export function choiceValue(item: SelectRuleItem, rule: Rule): string {
+  return String(rule[item.key]);
+}
+
+/** ボタン群・ラジオの文字列値から、ルール値(数値など元の型)を引く。該当なしは undefined */
+export function resolveChoice(
+  item: SelectRuleItem,
+  value: string
+): SelectRuleItem['options'][number]['value'] | undefined {
+  return item.options.find(opt => String(opt.value) === value)?.value;
+}
+
+/** 選択項目の現在値の表示ラベル。該当なしは空文字 */
+export function currentChoiceLabel(item: SelectRuleItem, rule: Rule): string {
+  const current = choiceValue(item, rule);
+  return item.options.find(opt => String(opt.value) === current)?.label ?? '';
 }

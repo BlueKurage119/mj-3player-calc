@@ -1,10 +1,13 @@
 import type React from 'react';
 import type { Rule } from '../../core/rule';
 import type { RuleItem } from '../../core/rule-items';
-import { Select, SelectOption, Switch } from '../md';
+import { ConnectedButtonGroup } from '../expressive/ConnectedButtonGroup';
+import { Switch } from '../md';
 import { HelpTooltip } from './HelpTooltip';
 import { PointField } from './PointField';
+import { TsumoLossRow } from './TsumoLossRow';
 import { RULE_HELP_TEXTS } from './rule-help';
+import { choiceOptions, choiceValue, resolveChoice } from './settings-logic';
 
 export interface RuleItemRowProps {
   item: RuleItem;
@@ -23,28 +26,34 @@ export function RuleItemRow({
   ) : null;
 
   if (item.kind === 'select') {
+    if (item.key === 'tsumoLoss') {
+      return (
+        <TsumoLossRow
+          item={item}
+          rule={rule}
+          onChange={value => {
+            onRuleValueChange(item.key, value);
+          }}
+        />
+      );
+    }
     return (
-      <div className="settings-row settings-row--select">
-        <div className="settings-row__select-wrapper">
-          <Select
-            label={item.label}
-            value={String(rule[item.key])}
-            onValueChange={v => {
-              const opt = item.options.find(o => String(o.value) === v);
-              if (opt) {
-                onRuleValueChange(item.key, opt.value);
-              }
-            }}
-            className="settings-row__select"
-          >
-            {item.options.map(opt => (
-              <SelectOption key={String(opt.value)} value={String(opt.value)}>
-                {opt.label}
-              </SelectOption>
-            ))}
-          </Select>
+      <div className="settings-row settings-row--choice">
+        <div className="settings-row__label-group">
+          <span className="settings-row__label">{item.label}</span>
+          {helpElement}
         </div>
-        {helpElement && <div className="settings-row__help">{helpElement}</div>}
+        <ConnectedButtonGroup<string>
+          label={item.label}
+          options={choiceOptions(item)}
+          value={choiceValue(item, rule)}
+          onValueChange={v => {
+            const value = resolveChoice(item, v);
+            if (value !== undefined) {
+              onRuleValueChange(item.key, value as Rule[typeof item.key]);
+            }
+          }}
+        />
       </div>
     );
   }

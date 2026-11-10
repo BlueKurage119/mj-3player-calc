@@ -28,11 +28,11 @@ describe('D6-RuleSection (§4.1〜§4.3)', () => {
     ).toBe(true);
 
     // 理由: 基本5項目のラベルが含まれることを検証するため
-    expect(html.includes('label="赤ドラ"')).toBe(true);
+    expect(html.includes('aria-label="赤ドラ"')).toBe(true);
     expect(html.includes('喰い断')).toBe(true);
     expect(html.includes('一発')).toBe(true);
-    expect(html.includes('label="北の扱い"')).toBe(true);
-    expect(html.includes('label="ツモ損"')).toBe(true);
+    expect(html.includes('aria-label="北の扱い"')).toBe(true);
+    expect(html.includes('ツモ損')).toBe(true);
 
     // 理由: 既定値(変更なし)の場合、詳細設定の副テキストが出力されないことを検証するため
     expect(html.includes('settings-accordion__summary-subtext')).toBe(false);
@@ -104,7 +104,7 @@ describe('D6-RuleSection (§4.1〜§4.3)', () => {
     expect(html5.includes('本場・供託・数え役満ほか2件')).toBe(true);
   });
 
-  it('D6-RuleSection-open-accordion: 開時にダブル役満の子見出し・補足・4項目およびhelpが8項目のみ出力される', () => {
+  it('D6-RuleSection-open-accordion: 開時にダブル役満の子見出し・補足・4項目およびhelpが7項目のみ出力される', () => {
     const html = renderToStaticMarkup(
       <HelpTooltipScope>
         <RuleSection
@@ -129,10 +129,10 @@ describe('D6-RuleSection (§4.1〜§4.3)', () => {
     expect(html.includes('大四喜')).toBe(true);
     expect(html.includes('純正九蓮宝燈')).toBe(true);
 
-    // 理由: help ツールチップが仕様の8項目 (ツモ損・北の扱い・ローカル役・オープン立直・連風牌の雀頭・本場・供託・赤ドラ) のみ出力されることを検証するため
+    // 理由: help ツールチップが仕様の7項目 (北の扱い・ローカル役・オープン立直・連風牌の雀頭・本場・供託・赤ドラ) のみ出力されることを検証するため
     const helpMatches = html.match(/id="help-[^"]+"/g) ?? [];
-    expect(helpMatches).toHaveLength(8);
-    expect(html.includes('id="help-tsumoLoss"')).toBe(true);
+    expect(helpMatches).toHaveLength(7);
+    expect(html.includes('id="help-tsumoLoss"')).toBe(false);
     expect(html.includes('id="help-north"')).toBe(true);
     expect(html.includes('id="help-localYaku"')).toBe(true);
     expect(html.includes('id="help-openRiichi"')).toBe(true);
@@ -144,5 +144,41 @@ describe('D6-RuleSection (§4.1〜§4.3)', () => {
     // 理由: 切り上げ満貫・役満の複合には help が無いことを検証するため
     expect(html.includes('id="help-roundedMangan"')).toBe(false);
     expect(html.includes('id="help-multipleYakuman"')).toBe(false);
+  });
+
+  it('D6-RuleSection-choice-buttons: 赤ドラ・北の扱い・連風牌の雀頭はボタン群、ツモ損は現在値つきのダイアログ行で出力される', () => {
+    const html = renderToStaticMarkup(
+      <HelpTooltipScope>
+        <RuleSection
+          rule={{ ...defaultRule, tsumoLoss: 'north-split' }}
+          initialOpen={true}
+          onResetToRanked={() => {}}
+          onRuleValueChange={() => {}}
+        />
+      </HelpTooltipScope>
+    );
+
+    // 理由: Select をやめ、選択肢が ConnectedButtonGroup (radiogroup) で出力されることを検証するため
+    expect(html.includes('<md-outlined-select')).toBe(false);
+    for (const label of ['赤ドラ', '北の扱い', '連風牌の雀頭']) {
+      expect(html.includes(`role="radiogroup" aria-label="${label}"`)).toBe(
+        true
+      );
+    }
+    expect(html.includes('>赤なし<')).toBe(true);
+    expect(html.includes('>抜きドラ<')).toBe(true);
+    expect(html.includes('>4符<')).toBe(true);
+
+    // 理由: ツモ損は行全体のボタンで、現在値と aria-haspopup="dialog" を持つことを検証するため
+    expect(html.includes('aria-haspopup="dialog"')).toBe(true);
+    expect(html.includes('settings-row__value"><span>北家分折半</span>')).toBe(
+      true
+    );
+    // 理由: ツモ損のラジオ群 (ダイアログ内) が説明つきで3選択肢出力されることを検証するため
+    expect(html.includes('role="radiogroup" aria-label="ツモ損"')).toBe(true);
+    expect(html.match(/<md-radio /g) ?? []).toHaveLength(3);
+    expect(
+      html.includes('北家の負担額を、ツモられた2人で折半して上乗せする')
+    ).toBe(true);
   });
 });
