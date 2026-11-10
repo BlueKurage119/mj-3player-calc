@@ -115,7 +115,9 @@ export function MeldAreaContent({
           type="button"
           aria-label="副露を追加"
           className="meld-add"
+          data-sheet-opener=""
           onClick={onAddMeld}
+          onKeyDown={e => handleMeldAddKey(e, onAddMeld)}
         >
           <Ripple />
           <FocusRing />
@@ -159,5 +161,16 @@ export function handleMeldBodyKey(
     }
     event.preventDefault();
     open();
+  }
+}
+
+/** 追加ボタンの keydown: Enter で追加する(確定事項45)。Space はボタン標準の click に任せる */
+export function handleMeldAddKey(
+  event: { key: string; preventDefault(): void },
+  add: () => void
+): void {
+  if (event.key === 'Enter') {
+    event.preventDefault();
+    add();
   }
 }

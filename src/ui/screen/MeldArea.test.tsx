@@ -1,7 +1,8 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import type { Meld } from '../../core/input';
-import { MeldAreaContent, meldTiles } from './MeldArea';
+import { shouldHandleKeyTarget } from '../input/tenkey-logic';
+import { handleMeldAddKey, MeldAreaContent, meldTiles } from './MeldArea';
 
 describe('D4: 副露領域・副露カード・追加ボタンの構造と表示 (2.5, C11, C12, C14)', () => {
   it('D4-MA1: 初期状態で追加ボタンが存在し副露カードが0枚 (renderToStaticMarkup)', () => {
@@ -146,5 +147,56 @@ describe('D4: 副露領域・副露カード・追加ボタンの構造と表示
       s1,
       back
     ]);
+  });
+});
+
+describe('D4-C30: 副露追加ボタンの物理キー対応 (確定事項45)', () => {
+  it('D4-C30-M1: data-sheet-opener を持つ擬似要素で shouldHandleKeyTarget が真、属性なし(ステッパー相当)で偽', () => {
+    const opener = {
+      closest: (sel: string) =>
+        sel === '[data-sheet-opener]' ? ({} as Element) : null
+    } as unknown as EventTarget;
+    const stepper = { closest: () => null } as unknown as EventTarget;
+    expect(shouldHandleKeyTarget(opener)).toBe(true);
+    expect(shouldHandleKeyTarget(stepper)).toBe(false);
+  });
+
+  it('D4-C30-M2: Enter で onAddMeld が1回呼ばれ preventDefault される', () => {
+    let added = 0;
+    let prevented = 0;
+    handleMeldAddKey(
+      { key: 'Enter', preventDefault: () => prevented++ },
+      () => added++
+    );
+    expect(added).toBe(1);
+    expect(prevented).toBe(1);
+  });
+
+  it('D4-C30-M3: Space では呼ばれず preventDefault もしない', () => {
+    let added = 0;
+    let prevented = 0;
+    handleMeldAddKey(
+      { key: ' ', preventDefault: () => prevented++ },
+      () => added++
+    );
+    expect(added).toBe(0);
+    expect(prevented).toBe(0);
+  });
+
+  it('D4-C30-M4: 追加ボタンの描画結果に .meld-add と data-sheet-opener がある', () => {
+    const html = renderToStaticMarkup(
+      <MeldAreaContent
+        red={1}
+        melds={[]}
+        selectedIndex={null}
+        buffer=""
+        onSelectMeld={() => {}}
+        onRemoveMeld={() => {}}
+        onAddMeld={() => {}}
+      />
+    );
+    const m = html.match(/<button[^>]*class="meld-add"[^>]*>/);
+    expect(m).not.toBeNull();
+    expect(m?.[0]).toContain('data-sheet-opener=""');
   });
 });
