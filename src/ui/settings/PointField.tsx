@@ -9,7 +9,6 @@ export interface PointFieldProps {
   onCommit: (value: number) => void;
 }
 
-// 対照実験用ダミーコメント
 export function PointField({
   item,
   value,
