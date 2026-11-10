@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   INITIAL_TOOLTIP_STATE,
   type TooltipState,
+  computeTooltipShiftX,
   reduceTooltip
 } from './tooltip-logic';
 
@@ -93,5 +94,20 @@ describe('D6-tooltip-logic (§4.4)', () => {
       openId: null,
       via: null
     });
+  });
+});
+
+describe('computeTooltipShiftX', () => {
+  it('D6-収まっていれば補正しない', () => {
+    expect(computeTooltipShiftX({ left: 50, right: 300 }, 375)).toBe(0);
+  });
+  it('D6-右にはみ出すと左へ寄せ right が幅-16 になる', () => {
+    expect(computeTooltipShiftX({ left: 175, right: 455 }, 375)).toBe(-96);
+  });
+  it('D6-左にはみ出すと右へ寄せ left が16 になる', () => {
+    expect(computeTooltipShiftX({ left: -10, right: 200 }, 375)).toBe(26);
+  });
+  it('D6-狭い幅でも左端 16px を優先する', () => {
+    expect(computeTooltipShiftX({ left: 10, right: 330 }, 320)).toBe(6);
   });
 });

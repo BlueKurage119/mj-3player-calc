@@ -14,6 +14,7 @@ import {
   INITIAL_TOOLTIP_STATE,
   type TooltipEvent,
   type TooltipState,
+  computeTooltipShiftX,
   reduceTooltip
 } from './tooltip-logic';
 
@@ -92,31 +93,19 @@ export function HelpTooltip({
   const { state, dispatch } = useHelpTooltip();
   const isOpen = state.openId === id;
   const bubbleRef = useRef<HTMLSpanElement | null>(null);
-  const [styleOffset, setStyleOffset] = useState<React.CSSProperties>({});
+  const [shiftX, setShiftX] = useState(0);
 
-  // 左右の見切れ防止 (表示時に左右16px以内に収まるよう left を補正)
+  // 左右の見切れ防止 (表示時に実際の表示幅の左右16px以内へ補正。閉じるたびに補正を捨て、素の位置で測る)
   useLayoutEffect(() => {
-    if (!isOpen || typeof window === 'undefined' || !bubbleRef.current) {
+    if (!isOpen) {
+      setShiftX(0);
+      return;
+    }
+    if (typeof window === 'undefined' || !bubbleRef.current) {
       return;
     }
     const rect = bubbleRef.current.getBoundingClientRect();
-    const margin = 16;
-    const viewportWidth = window.innerWidth;
-    let shiftX = 0;
-
-    if (rect.left < margin) {
-      shiftX = margin - rect.left;
-    } else if (rect.right > viewportWidth - margin) {
-      shiftX = viewportWidth - margin - rect.right;
-    }
-
-    if (shiftX !== 0) {
-      setStyleOffset({
-        transform: `translateX(calc(-50% + ${shiftX}px))`
-      });
-    } else {
-      setStyleOffset({});
-    }
+    setShiftX(computeTooltipShiftX(rect, document.documentElement.clientWidth));
   }, [isOpen]);
 
   const handlePointerEnter = () => {
@@ -171,7 +160,7 @@ export function HelpTooltip({
         role="tooltip"
         className="help-tooltip__bubble"
         hidden={!isOpen}
-        style={styleOffset}
+        style={shiftX === 0 ? undefined : { marginLeft: `${shiftX}px` }}
       >
         {text}
       </span>

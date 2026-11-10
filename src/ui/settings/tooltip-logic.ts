@@ -51,3 +51,22 @@ export const reduceTooltip = (
       return { openId: null, via: null };
   }
 };
+
+/**
+ * 吹き出しを表示幅の左右 margin 以内に収めるための水平補正量(px)を返す。
+ * 基準は実際に見えている幅(clientWidth)。左端を優先して収める。
+ */
+export const computeTooltipShiftX = (
+  rect: { left: number; right: number },
+  viewportWidth: number,
+  margin = 16
+): number => {
+  let shift = 0;
+  if (rect.right > viewportWidth - margin) {
+    shift = viewportWidth - margin - rect.right;
+  }
+  if (rect.left + shift < margin) {
+    shift = margin - rect.left;
+  }
+  return shift;
+};
