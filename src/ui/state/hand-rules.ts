@@ -1,9 +1,110 @@
 import { type Meld, instantiateMeld } from '../../core/input';
 import type { Rule } from '../../core/rule';
 import { type Tile, compareTiles, isAvailableTiles } from '../../core/tile';
-import type { AppInput, AppState, TenkeySuit } from './app-state';
+import type {
+  AppInput,
+  AppState,
+  IndicatorTarget,
+  MeldKind,
+  TenkeySuit
+} from './app-state';
 
 const NORTH_TILE: Tile = { type: 'z', n: 4 };
+
+export const MAX_MELDS = 4;
+export const MAX_INDICATORS = 5;
+
+export const meldOfKind = (kind: MeldKind, tile: Tile | null): Meld => {
+  switch (kind) {
+    case 'pon':
+      return { type: 'pon', tile };
+    case 'minkan':
+      return { type: 'kan', tile, closed: false };
+    case 'ankan':
+      return { type: 'kan', tile, closed: true };
+  }
+};
+
+export const kindOfMeld = (meld: Meld): MeldKind => {
+  if (meld.type === 'pon') return 'pon';
+  return meld.closed ? 'ankan' : 'minkan';
+};
+
+/** melds[i] を next に置き換えても使用枚数が超えないか(melds[i] 自身は除いて数える) */
+export const canSetMeld = (
+  state: Pick<AppState, 'input' | 'rule'>,
+  i: number,
+  next: Meld
+): boolean => {
+  if (next.tile === null) return true;
+  const filteredMelds = state.input.melds.filter((_, k) => k !== i);
+  const currentUsed = usedTiles(
+    { ...state.input, melds: filteredMelds },
+    state.rule.red
+  );
+  const nextTiles = instantiateMeld(next, state.rule.red);
+  return isAvailableTiles(state.rule.red, currentUsed, nextTiles);
+};
+
+type RedableTile = { type: 'p' | 's'; n: 5; red: boolean };
+
+const isRedable = (tile: Tile | null): tile is RedableTile =>
+  tile !== null && (tile.type === 'p' || tile.type === 's') && tile.n === 5;
+
+/**
+ * 副露のシートで牌キーを押したときに置く牌を決める(置けなければ null)。
+ * キーの牌は red:false 前提。5p・5s のポンは、まず red:false、だめなら red:true を試す。
+ * 既に同じ種類の 5 が入っている副露では現在の red を優先して保持する。
+ */
+export const meldTileForKey = (
+  state: Pick<AppState, 'input' | 'rule'>,
+  i: number,
+  kind: MeldKind,
+  tile: Tile
+): Tile | null => {
+  if (!isRedable(tile) || kind !== 'pon') {
+    return canSetMeld(state, i, meldOfKind(kind, tile)) ? tile : null;
+  }
+  const current = state.input.melds[i]?.tile ?? null;
+  const keepRed =
+    isRedable(current) && current.type === tile.type
+      ? current.red === true
+      : false;
+  for (const red of [keepRed, !keepRed]) {
+    const next: Tile = { ...tile, red };
+    if (canSetMeld(state, i, meldOfKind(kind, next))) return next;
+  }
+  return null;
+};
+
+/** 副露のシートの赤牌切替ボタンの状態。next は押下で置く(赤を反転した)牌 */
+export const meldRedToggle = (
+  state: Pick<AppState, 'input' | 'rule'>,
+  i: number
+): { visible: boolean; disabled: boolean; next: Tile | null } => {
+  const visible = state.rule.red > 0;
+  const meld = state.input.melds[i];
+  if (!meld || meld.type !== 'pon' || !isRedable(meld.tile)) {
+    return { visible, disabled: true, next: null };
+  }
+  const next: Tile = { ...meld.tile, red: !meld.tile.red };
+  return {
+    visible,
+    disabled: !canSetMeld(state, i, { ...meld, tile: next }),
+    next
+  };
+};
+
+/** 表示牌を1枚足せるか(枚数 < 5 かつ isAvailableTiles) */
+export const canAddIndicatorTile = (
+  state: Pick<AppState, 'input' | 'rule'>,
+  target: IndicatorTarget,
+  tile: Tile
+): boolean => {
+  if (state.input[target].length >= MAX_INDICATORS) return false;
+  const currentUsed = usedTiles(state.input, state.rule.red);
+  return isAvailableTiles(state.rule.red, currentUsed, [tile]);
+};
 
 /** 手牌の最大枚数 (14 - 3 × 副露数) */
 export const maxHandLength = (melds: Meld[]): number => 14 - 3 * melds.length;
@@ -140,6 +241,39 @@ export const canAppendTenkeyDigit = (
     if (char === digit) count++;
   }
   if (count >= 4) return false;
+  return true;
+};
+
+/** 対象別のテンキー桁追加判定。既存 canAppendTenkeyDigit は手牌の場合として残す */
+export const canAppendTenkeyDigitFor = (
+  state: Pick<AppState, 'input' | 'tenkeyBuffer' | 'inputFocus'>,
+  digit: string
+): boolean => {
+  if (!/^[0-9]$/.test(digit)) return false;
+  if (!state.inputFocus) return false;
+
+  let capacity = 0;
+  if (state.inputFocus.type === 'hand') {
+    capacity = maxHandLength(state.input.melds) - state.input.hand.length;
+  } else if (
+    state.inputFocus.type === 'dora' ||
+    state.inputFocus.type === 'uradora'
+  ) {
+    capacity = MAX_INDICATORS - state.input[state.inputFocus.type].length;
+  } else if (state.inputFocus.type === 'meld') {
+    capacity = 1;
+  } else {
+    return false;
+  }
+
+  if (state.tenkeyBuffer.length >= capacity) return false;
+
+  let count = 0;
+  for (const char of state.tenkeyBuffer) {
+    if (char === digit) count++;
+  }
+  if (count >= 4) return false;
+
   return true;
 };
 

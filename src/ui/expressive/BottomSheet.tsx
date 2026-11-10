@@ -1,6 +1,6 @@
 import { type ReactNode, useEffect, useLayoutEffect, useRef } from 'react';
 import type React from 'react';
-import { SYMBOL_CLOSE, SymbolIcon } from '../icons';
+import { SYMBOL_CANCEL, SymbolIcon } from '../icons';
 import { IconButton } from '../md';
 import './bottom-sheet.css';
 
@@ -135,7 +135,7 @@ export function BottomSheet(props: BottomSheetProps): React.JSX.Element {
           onClick={onClose}
           className="bottom-sheet__close-button"
         >
-          <SymbolIcon d={SYMBOL_CLOSE} />
+          <SymbolIcon d={SYMBOL_CANCEL} />
         </IconButton>
       </div>
       <div className="bottom-sheet__content">{open ? children : null}</div>

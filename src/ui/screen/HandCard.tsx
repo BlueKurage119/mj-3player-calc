@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import type React from 'react';
 import type { Tile as CoreTile } from '../../core/tile';
+import { SYMBOL_CLOSE, SymbolIcon } from '../icons';
 import { FocusRing, Ripple } from '../md';
 import {
   maxHandLength,
@@ -49,6 +50,7 @@ export function HandCard(): React.JSX.Element {
   const cardRef = useRef<HTMLDivElement | null>(null);
   const bodyRef = useRef<HTMLDivElement | null>(null);
   const isHandFocused = inputFocus?.type === 'hand';
+  const isSelected = isHandFocused;
   const isEmpty = input.hand.length === 0;
   const max = maxHandLength(input.melds);
   const { body, winning } = splitWinningTile(input.hand, max);
@@ -118,16 +120,18 @@ export function HandCard(): React.JSX.Element {
     }
   };
 
-  const handleBodyKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
-    if (event.key === 'Enter' || event.key === ' ') {
-      event.preventDefault();
-      dispatch({ type: 'open-sheet', target: { type: 'hand' } });
-    }
-  };
+  const handleBodyKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) =>
+    handleHandBodyKey(event, isSelected, () =>
+      dispatch({ type: 'open-sheet', target: { type: 'hand' } })
+    );
 
   return (
     // biome-ignore lint/a11y/useKeyWithClickEvents: キーボード操作は .hand-card__body(role=button)が担う。外枠のクリックはポインタの当たり判定拡張(設計書 issue-55 2.1)
-    <div ref={cardRef} className="hand-card" onClick={handleCardClick}>
+    <div
+      ref={cardRef}
+      className={`hand-card${isSelected ? ' hand-card--selected' : ''}`}
+      onClick={handleCardClick}
+    >
       <div className="hand-card__top-row">
         <span className="hand-card__title">
           {formatHandCardTitle(input.hand.length, max)}
@@ -142,17 +146,7 @@ export function HandCard(): React.JSX.Element {
           >
             <Ripple disabled={isEmpty} />
             <FocusRing />
-            <svg
-              viewBox="0 0 24 24"
-              width="1.5rem"
-              height="1.5rem"
-              aria-hidden="true"
-            >
-              <path
-                d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"
-                fill="currentColor"
-              />
-            </svg>
+            <SymbolIcon d={SYMBOL_CLOSE} size="1.25rem" />
           </button>
         </div>
       </div>
@@ -162,6 +156,7 @@ export function HandCard(): React.JSX.Element {
         ref={bodyRef}
         tabIndex={0}
         aria-label="手牌を入力"
+        data-sheet-opener=""
         className="hand-card__body"
         style={{ '--hand-max': max } as React.CSSProperties}
         onKeyDown={handleBodyKeyDown}
@@ -169,7 +164,7 @@ export function HandCard(): React.JSX.Element {
         <div className="hand-card__tiles">
           {body.map(item => renderHandTile(item))}
           {winning ? renderHandTile(winning, true) : null}
-          {tenkeyBuffer.length > 0 ? (
+          {isSelected && tenkeyBuffer.length > 0 ? (
             <span className="hand-card__buffer" aria-hidden="true">
               {tenkeyBuffer}‸
             </span>
@@ -178,4 +173,19 @@ export function HandCard(): React.JSX.Element {
       </div>
     </div>
   );
+}
+
+/** 本体の keydown: 選択中は Enter/Space を素通し(確定事項43)、非選択なら開く */
+export function handleHandBodyKey(
+  event: { key: string; preventDefault(): void },
+  selected: boolean,
+  open: () => void
+): void {
+  if (event.key === 'Enter' || event.key === ' ') {
+    if (selected) {
+      return;
+    }
+    event.preventDefault();
+    open();
+  }
 }

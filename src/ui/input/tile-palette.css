@@ -75,3 +75,14 @@
 .tile-palette__action--span-4 {
   grid-column: span 4;
 }
+
+.tile-palette__red-toggle {
+  gap: 0.25rem;
+  --tile-width: 1.75rem;
+  color: var(--md-sys-color-on-surface);
+  font: var(--md-sys-typescale-label-large-font);
+}
+
+.tile-palette__red-toggle[aria-pressed="true"] {
+  background-color: var(--md-sys-color-secondary-container);
+}

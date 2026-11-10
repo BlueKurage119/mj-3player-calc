@@ -98,4 +98,15 @@ describe('D1-1: 手牌カードの見た目と当たり判定 (C1, C4)', () => {
     // 理由: 外枠と二重に dispatch しないため .hand-card__body に onClick がないことを検証するため
     expect(bodyElementTag.includes('onClick')).toBe(false);
   });
+
+  it('D4-C29-HC: 初期状態(非選択)の HandCard に hand-card--selected クラスが付かないこと', () => {
+    const html = renderToStaticMarkup(
+      <AppStateProvider>
+        <HandCard />
+      </AppStateProvider>
+    );
+
+    // 理由: 非選択の初期状態では修飾クラスが付かないことを完全一致で検証するため
+    expect(html.includes('hand-card--selected')).toBe(false);
+  });
 });

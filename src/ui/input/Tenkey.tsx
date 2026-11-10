@@ -1,16 +1,18 @@
 import type React from 'react';
 import { SYMBOL_BACKSPACE, SYMBOL_KEYBOARD_RETURN, SymbolIcon } from '../icons';
 import { FocusRing, Ripple } from '../md';
-import { canAppendTenkeyDigit, useAppDispatch, useAppState } from '../state';
-import { TENKEY_HONOR_HINTS } from './tenkey-logic';
+import { canAppendTenkeyDigitFor, useAppDispatch, useAppState } from '../state';
+import { TENKEY_HONOR_HINTS, tenkeyActionKeysFor } from './tenkey-logic';
 import './tenkey.css';
 
 export function Tenkey(): React.JSX.Element {
   const state = useAppState();
   const dispatch = useAppDispatch();
 
+  const keys = tenkeyActionKeysFor(state);
+
   const renderDigitKey = (digit: string, sub?: string, extraClass = '') => {
-    const disabled = !canAppendTenkeyDigit(state, digit);
+    const disabled = !canAppendTenkeyDigitFor(state, digit);
     return (
       <button
         type="button"
@@ -95,9 +97,10 @@ export function Tenkey(): React.JSX.Element {
         type="button"
         className="tenkey__key tenkey__key--action"
         aria-label="1 文字削除"
+        disabled={keys.backspace.disabled}
         onClick={() => dispatch({ type: 'tenkey-backspace' })}
       >
-        <Ripple />
+        <Ripple disabled={keys.backspace.disabled} />
         <FocusRing />
         <SymbolIcon d={SYMBOL_BACKSPACE} />
       </button>
@@ -109,10 +112,13 @@ export function Tenkey(): React.JSX.Element {
       <button
         type="button"
         className="tenkey__key tenkey__key--action"
-        aria-label="手牌をクリア"
-        onClick={() => dispatch({ type: 'clear-hand' })}
+        aria-label={keys.clear.label}
+        disabled={keys.clear.disabled}
+        onClick={() => {
+          if (keys.clear.action) dispatch(keys.clear.action);
+        }}
       >
-        <Ripple />
+        <Ripple disabled={keys.clear.disabled} />
         <FocusRing />
         <span className="tenkey__key-main">AC</span>
       </button>

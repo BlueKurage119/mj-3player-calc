@@ -1,12 +1,19 @@
 import { describe, expect, it } from 'vitest';
 import { createDefaultRule } from '../../core/rule';
 import type { Tile } from '../../core/tile';
-import { type AppState, createInitialState } from './app-state';
+import { type AppState, appReducer, createInitialState } from './app-state';
 import {
   canAddHandTile,
+  canAddIndicatorTile,
   canAppendTenkeyDigit,
+  canAppendTenkeyDigitFor,
+  canSetMeld,
   isHandFull,
+  kindOfMeld,
   maxHandLength,
+  meldOfKind,
+  meldRedToggle,
+  meldTileForKey,
   planAddTiles,
   resolveTenkeyBuffer,
   sortHand,
@@ -534,5 +541,356 @@ describe('D3: テンキー入力の純関数 (D3-R・B・P)', () => {
         expect(result).toBeNull();
       }
     }
+  });
+
+  describe('D4: 副露・ドラ表示牌の判定関数 (2.2)', () => {
+    it('D4-R1: meldOfKind と kindOfMeld の相互変換', () => {
+      const tile1p: Tile = { type: 'p', n: 1 };
+      expect(meldOfKind('pon', tile1p)).toEqual({ type: 'pon', tile: tile1p });
+      expect(meldOfKind('minkan', tile1p)).toEqual({
+        type: 'kan',
+        tile: tile1p,
+        closed: false
+      });
+      expect(meldOfKind('ankan', tile1p)).toEqual({
+        type: 'kan',
+        tile: tile1p,
+        closed: true
+      });
+
+      expect(kindOfMeld({ type: 'pon', tile: null })).toBe('pon');
+      expect(kindOfMeld({ type: 'kan', tile: null, closed: false })).toBe(
+        'minkan'
+      );
+      expect(kindOfMeld({ type: 'kan', tile: null, closed: true })).toBe(
+        'ankan'
+      );
+    });
+
+    it('D4-R2: canSetMeld は null で真・自身除外カウント・上限超過で偽', () => {
+      const base = createInitialState(createDefaultRule());
+      const tile1p: Tile = { type: 'p', n: 1 };
+      const tile2p: Tile = { type: 'p', n: 2 };
+      const tile2m: Tile = { type: 'm', n: 2 };
+
+      // tile: null は常に真
+      expect(canSetMeld(base, 0, { type: 'pon', tile: null })).toBe(true);
+
+      // 手牌に 1p が 1 枚あるとき、副露 0 にポン 1p (3枚) は 1+3=4 枚で真
+      const stateWith1p = {
+        ...base,
+        input: { ...base.input, hand: [tile1p] }
+      };
+      expect(canSetMeld(stateWith1p, 0, { type: 'pon', tile: tile1p })).toBe(
+        true
+      );
+
+      // 手牌に 1p が 2 枚あるとき、副露 0 にポン 1p (3枚) は 2+3=5 枚で偽
+      const stateWith2_1p = {
+        ...base,
+        input: { ...base.input, hand: [tile1p, tile1p] }
+      };
+      expect(canSetMeld(stateWith2_1p, 0, { type: 'pon', tile: tile1p })).toBe(
+        false
+      );
+
+      // 存在しない 2m は偽
+      expect(canSetMeld(base, 0, { type: 'pon', tile: tile2m })).toBe(false);
+
+      // 確定済みのポン 1p に対し、自身 (index 0) の牌を 1p のままにすることは真
+      const stateWithPon1p = {
+        ...base,
+        input: {
+          ...base.input,
+          melds: [{ type: 'pon' as const, tile: tile1p }]
+        }
+      };
+      expect(canSetMeld(stateWithPon1p, 0, { type: 'pon', tile: tile1p })).toBe(
+        true
+      );
+      // 確定済みのポン 1p を 2p に変更することは真
+      expect(canSetMeld(stateWithPon1p, 0, { type: 'pon', tile: tile2p })).toBe(
+        true
+      );
+      // 手牌に 1p が 1 枚ある状態でポン 1p を明槓 (4枚) に変更しようとすると 1+4=5 枚で偽
+      const stateWithPonAndHand = {
+        ...base,
+        input: {
+          ...base.input,
+          hand: [tile1p],
+          melds: [{ type: 'pon' as const, tile: tile1p }]
+        }
+      };
+      expect(
+        canSetMeld(stateWithPonAndHand, 0, {
+          type: 'kan',
+          tile: tile1p,
+          closed: false
+        })
+      ).toBe(false);
+    });
+
+    it('D4-R3: canAddIndicatorTile は 5 枚未満で在庫内なら真・5 枚以上や在庫切れで偽', () => {
+      const base = createInitialState(createDefaultRule());
+      const tile1p: Tile = { type: 'p', n: 1 };
+      const tile2m: Tile = { type: 'm', n: 2 };
+
+      expect(canAddIndicatorTile(base, 'dora', tile1p)).toBe(true);
+      expect(canAddIndicatorTile(base, 'uradora', tile1p)).toBe(true);
+      // 2m は偽
+      expect(canAddIndicatorTile(base, 'dora', tile2m)).toBe(false);
+
+      // ドラ 4 枚なら 5 枚目を追加可能
+      const state4 = {
+        ...base,
+        input: {
+          ...base.input,
+          dora: [
+            { type: 'p' as const, n: 1 as const },
+            { type: 'p' as const, n: 2 as const },
+            { type: 'p' as const, n: 3 as const },
+            { type: 'p' as const, n: 4 as const }
+          ]
+        }
+      };
+      expect(canAddIndicatorTile(state4, 'dora', tile1p)).toBe(true);
+
+      // ドラ 5 枚なら偽
+      const state5 = {
+        ...base,
+        input: {
+          ...base.input,
+          dora: [
+            { type: 'p' as const, n: 1 as const },
+            { type: 'p' as const, n: 2 as const },
+            { type: 'p' as const, n: 3 as const },
+            { type: 'p' as const, n: 4 as const },
+            { type: 'p' as const, n: 5 as const, red: false }
+          ]
+        }
+      };
+      expect(canAddIndicatorTile(state5, 'dora', tile1p)).toBe(false);
+
+      // ドラ 3 枚 + 裏ドラ 1 枚で 1p を 4 枚使っている場合、ドラに 1p は偽
+      const state4Used = {
+        ...base,
+        input: {
+          ...base.input,
+          dora: [tile1p, tile1p, tile1p],
+          uradora: [tile1p]
+        }
+      };
+      expect(canAddIndicatorTile(state4Used, 'dora', tile1p)).toBe(false);
+    });
+
+    it('D4-R4: canAppendTenkeyDigitFor は対象別の容量と数字制限に従う', () => {
+      const base = createInitialState(createDefaultRule());
+
+      // 不正文字は偽
+      expect(
+        canAppendTenkeyDigitFor({ ...base, inputFocus: { type: 'hand' } }, 'a')
+      ).toBe(false);
+
+      // inputFocus が null または situation のときは偽
+      expect(canAppendTenkeyDigitFor({ ...base, inputFocus: null }, '1')).toBe(
+        false
+      );
+      expect(
+        canAppendTenkeyDigitFor(
+          { ...base, inputFocus: { type: 'situation' } },
+          '1'
+        )
+      ).toBe(false);
+
+      // hand: 11 枚 + バッファ 2 桁で真、3 桁 (計 14 枚) で偽
+      const hand11State = {
+        ...base,
+        input: {
+          ...base.input,
+          hand: Array.from({ length: 11 }, () => ({
+            type: 'p' as const,
+            n: 1 as const
+          }))
+        },
+        inputFocus: { type: 'hand' as const },
+        tenkeyBuffer: '12'
+      };
+      expect(canAppendTenkeyDigitFor(hand11State, '3')).toBe(true);
+      const hand11FullBufState = {
+        ...hand11State,
+        tenkeyBuffer: '123'
+      };
+      expect(canAppendTenkeyDigitFor(hand11FullBufState, '4')).toBe(false);
+
+      // dora: 3 枚のときバッファ 1 桁で真 (計 4 枚)、2 桁 (計 5 枚) で偽
+      const dora3State = {
+        ...base,
+        input: {
+          ...base.input,
+          dora: Array.from({ length: 3 }, () => ({
+            type: 'p' as const,
+            n: 1 as const
+          }))
+        },
+        inputFocus: { type: 'dora' as const },
+        tenkeyBuffer: '1'
+      };
+      expect(canAppendTenkeyDigitFor(dora3State, '2')).toBe(true);
+      const dora3FullBufState = {
+        ...dora3State,
+        tenkeyBuffer: '12'
+      };
+      expect(canAppendTenkeyDigitFor(dora3FullBufState, '3')).toBe(false);
+
+      // meld: 容量は常に 1。バッファ空で真、1 桁で偽
+      const meldState = {
+        ...base,
+        inputFocus: { type: 'meld' as const, i: 0 },
+        tenkeyBuffer: ''
+      };
+      expect(canAppendTenkeyDigitFor(meldState, '1')).toBe(true);
+      const meldFullState = {
+        ...meldState,
+        tenkeyBuffer: '1'
+      };
+      expect(canAppendTenkeyDigitFor(meldFullState, '2')).toBe(false);
+
+      // 同じ数字 5 つ目は偽
+      const fourOnesState = {
+        ...base,
+        inputFocus: { type: 'hand' as const },
+        tenkeyBuffer: '1111'
+      };
+      expect(canAppendTenkeyDigitFor(fourOnesState, '1')).toBe(false);
+      expect(canAppendTenkeyDigitFor(fourOnesState, '2')).toBe(true);
+    });
+  });
+});
+
+describe('D4-C24・C25: 赤牌切替の判定と5キーの代替 (確定事項 25〜28・33・34)', () => {
+  const p5: Tile = { type: 'p', n: 5, red: false };
+  const p5r: Tile = { type: 'p', n: 5, red: true };
+  const mk = (
+    red: 0 | 1 | 2,
+    melds: AppState['input']['melds'],
+    hand: Tile[] = []
+  ): AppState => {
+    const base = createInitialState({ ...createDefaultRule(), red });
+    return { ...base, input: { ...base.input, hand, melds } };
+  };
+  const redCount = (s: AppState): number =>
+    usedTiles(s.input, s.rule.red).filter(
+      t => t.type === 'p' && t.n === 5 && t.red === true
+    ).length;
+
+  it('D4-C24a: red=0 では visible=false', () => {
+    const s = mk(0, [{ type: 'pon', tile: p5 }]);
+    expect(meldRedToggle(s, 0).visible).toBe(false);
+    expect(meldRedToggle(mk(1, []), 0).visible).toBe(true);
+  });
+
+  it('D4-C24b: red=1 のポン 5p は赤なし⇄赤ありを往復でき、赤の数が 0⇄1 になる', () => {
+    let s = mk(1, [{ type: 'pon', tile: p5 }]);
+    expect(redCount(s)).toBe(0);
+    const t1 = meldRedToggle(s, 0);
+    expect(t1.disabled).toBe(false);
+    expect(t1.next).toEqual(p5r);
+    s = appReducer(s, { type: 'set-meld-tile', i: 0, tile: p5r });
+    expect(redCount(s)).toBe(1);
+    const t2 = meldRedToggle(s, 0);
+    expect(t2.disabled).toBe(false);
+    expect(t2.next).toEqual(p5);
+    s = appReducer(s, { type: 'set-meld-tile', i: 0, tile: p5 });
+    expect(redCount(s)).toBe(0);
+  });
+
+  it('D4-C24c: red=1 で手牌に赤5p があると赤なし→赤ありは disabled', () => {
+    const s = mk(1, [{ type: 'pon', tile: p5 }], [p5r]);
+    expect(meldRedToggle(s, 0).disabled).toBe(true);
+  });
+
+  it('D4-C24d: red=2 のポン 5p(赤なし=赤1枚)は有効で、赤の数が 1⇄2。手牌に赤 5p があれば disabled', () => {
+    let s = mk(2, [{ type: 'pon', tile: p5 }]);
+    expect(redCount(s)).toBe(1);
+    expect(meldRedToggle(s, 0).disabled).toBe(false);
+    s = appReducer(s, { type: 'set-meld-tile', i: 0, tile: p5r });
+    expect(redCount(s)).toBe(2);
+    s = appReducer(s, { type: 'set-meld-tile', i: 0, tile: p5 });
+    expect(redCount(s)).toBe(1);
+    const blocked = mk(2, [{ type: 'pon', tile: p5 }], [p5r]);
+    expect(meldRedToggle(blocked, 0).disabled).toBe(true);
+  });
+
+  it('D4-C24e: 槓・5 以外・牌未確定・副露なしは disabled(next は null または無関係)', () => {
+    expect(
+      meldRedToggle(mk(1, [{ type: 'kan', tile: p5, closed: false }]), 0)
+        .disabled
+    ).toBe(true);
+    expect(
+      meldRedToggle(mk(1, [{ type: 'kan', tile: p5, closed: true }]), 0)
+        .disabled
+    ).toBe(true);
+    expect(
+      meldRedToggle(mk(1, [{ type: 'pon', tile: { type: 'p', n: 1 } }]), 0)
+        .disabled
+    ).toBe(true);
+    expect(
+      meldRedToggle(mk(1, [{ type: 'pon', tile: null }]), 0).disabled
+    ).toBe(true);
+    expect(meldRedToggle(mk(1, []), 0).disabled).toBe(true);
+  });
+
+  it('D4-C24f: set-rule(red:2) の dispatch で red=2 の状態を作って判定できる', () => {
+    const base = mk(1, [{ type: 'pon', tile: p5 }]);
+    const s = appReducer(base, {
+      type: 'set-rule',
+      rule: { ...base.rule, red: 2 }
+    });
+    expect(s.rule.red).toBe(2);
+    expect(redCount(s)).toBe(1);
+    expect(meldRedToggle(s, 0).disabled).toBe(false);
+  });
+
+  it('D4-C25a: red=1・手牌に普通の 5p 1枚で、5p キーは赤ありポンになる', () => {
+    const s = mk(1, [{ type: 'pon', tile: null }], [p5]);
+    // 赤なしポン(普通3枚)は不可、赤ありは可
+    expect(meldTileForKey(s, 0, 'pon', p5)).toEqual(p5r);
+  });
+
+  it('D4-C25b: 赤ありの 5p ポンに 5p キーを押しても赤のまま', () => {
+    const s = mk(1, [{ type: 'pon', tile: p5r }]);
+    expect(meldTileForKey(s, 0, 'pon', p5)).toEqual(p5r);
+    const n = mk(1, [{ type: 'pon', tile: p5 }]);
+    expect(meldTileForKey(n, 0, 'pon', p5)).toEqual(p5);
+  });
+
+  it('D4-C25c: 槓・5 以外は red:false のまま、置けなければ null', () => {
+    const s = mk(1, [{ type: 'kan', tile: null, closed: false }]);
+    expect(meldTileForKey(s, 0, 'minkan', p5)).toEqual(p5);
+    const one: Tile = { type: 'p', n: 1 };
+    expect(meldTileForKey(s, 0, 'minkan', one)).toEqual(one);
+    const full = mk(1, [{ type: 'pon', tile: null }], [one, one]);
+    expect(meldTileForKey(full, 0, 'pon', one)).toBeNull();
+  });
+
+  it('D4-C25d: テンキー(副露)で 5→p は代替で赤ありに、0→p は赤のまま、赤なしが入るなら赤なし', () => {
+    const base = mk(1, [{ type: 'pon', tile: null }], [p5]);
+    const focused: AppState = { ...base, inputFocus: { type: 'meld', i: 0 } };
+    const via5 = appReducer(
+      { ...focused, tenkeyBuffer: '5' },
+      { type: 'tenkey-commit', suit: 'p' }
+    );
+    expect(via5.input.melds[0]).toEqual({ type: 'pon', tile: p5r });
+    const via0 = appReducer(
+      { ...focused, tenkeyBuffer: '0' },
+      { type: 'tenkey-commit', suit: 'p' }
+    );
+    expect(via0.input.melds[0]).toEqual({ type: 'pon', tile: p5r });
+    const free = mk(1, [{ type: 'pon', tile: null }]);
+    const plain = appReducer(
+      { ...free, inputFocus: { type: 'meld', i: 0 }, tenkeyBuffer: '5' },
+      { type: 'tenkey-commit', suit: 'p' }
+    );
+    expect(plain.input.melds[0]).toEqual({ type: 'pon', tile: p5 });
   });
 });

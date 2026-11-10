@@ -195,6 +195,7 @@ body {
   border-radius: var(--md-sys-shape-corner-extra-small);
 }
 
+.card-buffer,
 .hand-card__buffer {
   font-family: var(--md-sys-typescale-title-medium-font);
   font-size: var(--md-sys-typescale-title-medium-size);
@@ -204,6 +205,20 @@ body {
   color: var(--md-sys-color-primary);
   flex-shrink: 0;
   margin-inline-start: 0.25rem;
+}
+
+.meld-card .card-buffer {
+  margin-inline-start: 0;
+  height: calc(1.5rem * 4 / 3);
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.hand-card.hand-card--selected,
+.indicator-card.indicator-card--selected,
+.meld-card.meld-card--selected {
+  background-color: var(--md-sys-color-primary-container);
 }
 
 /* 要約カード (sticky top: 0、非表示時は高さ 0 でレイアウトの跳ねを避ける) */
@@ -317,4 +332,159 @@ body {
 .sheet-slot[data-slot="sheet-hand"] .tile-palette {
   padding-block: 0.8rem;
   row-gap: 0.8rem;
+}
+
+.indicator-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+}
+
+.indicator-card {
+  background: var(--md-sys-color-surface-container);
+  border-radius: var(--md-sys-shape-corner-large);
+  padding: 0.375rem 0.5rem;
+  box-sizing: border-box;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.indicator-card__top-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.indicator-card__title {
+  font-family: var(--md-sys-typescale-label-medium-font);
+  font-size: var(--md-sys-typescale-label-medium-size);
+  line-height: var(--md-sys-typescale-label-medium-line-height);
+  font-weight: var(--md-sys-typescale-label-medium-weight);
+  letter-spacing: var(--md-sys-typescale-label-medium-tracking);
+  color: var(--md-sys-color-on-surface-variant);
+  white-space: nowrap;
+}
+
+.indicator-card .card-clear-zone,
+.meld-card .card-clear-zone {
+  position: relative;
+  padding-block-end: 0;
+}
+
+.indicator-card .card-clear-zone::after,
+.meld-card .card-clear-zone::after {
+  content: "";
+  position: absolute;
+  inset-block-end: -0.5rem;
+  inset-inline: 0;
+  block-size: 0.5rem;
+}
+
+.indicator-card__body {
+  container-type: inline-size;
+  display: flex;
+  align-items: center;
+  border-radius: var(--md-sys-shape-corner-medium);
+  padding: 0.125rem;
+  box-sizing: border-box;
+  outline: none;
+}
+
+.indicator-card__body:focus-visible {
+  outline: 2px solid var(--md-sys-color-primary);
+  outline-offset: 2px;
+}
+
+.indicator-card__tiles {
+  --tile-width: 1.25rem;
+  display: flex;
+  gap: 1px;
+  align-items: center;
+  justify-content: flex-start;
+  width: 100%;
+  min-height: calc(var(--tile-width) * 4 / 3);
+}
+
+.meld-area {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+}
+
+.meld-card {
+  background: var(--md-sys-color-surface-container);
+  border-radius: var(--md-sys-shape-corner-large);
+  padding: 0.375rem 0.5rem;
+  box-sizing: border-box;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.meld-card__row {
+  display: flex;
+  align-items: center;
+}
+
+.meld-card__body {
+  container-type: inline-size;
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  border-radius: var(--md-sys-shape-corner-medium);
+  padding: 0.125rem;
+  box-sizing: border-box;
+  outline: none;
+}
+
+.meld-card__body:focus-visible {
+  outline: 2px solid var(--md-sys-color-primary);
+  outline-offset: 2px;
+}
+
+.meld-card__tiles {
+  --tile-width: min(1.5rem, calc((100cqi - 3 * 1px) / 4));
+  display: flex;
+  gap: 1px;
+  align-items: center;
+  justify-content: flex-start;
+  width: 100%;
+}
+
+.meld-card__empty {
+  height: calc(1.5rem * 4 / 3);
+  width: 100%;
+}
+
+.meld-add {
+  min-height: 3rem;
+  border: 1px dashed var(--md-sys-color-outline);
+  border-radius: var(--md-sys-shape-corner-medium);
+  background: transparent;
+  color: var(--md-sys-color-on-surface-variant);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  position: relative;
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.meld-add:focus-visible {
+  outline: 2px solid var(--md-sys-color-primary);
+  outline-offset: 2px;
+}
+
+.sheet-meld-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.sheet-slot[data-slot^="sheet-dora"],
+.sheet-slot[data-slot^="sheet-uradora"],
+.sheet-slot[data-slot^="sheet-meld"] {
+  min-height: 16rem;
 }
