@@ -120,15 +120,10 @@ export function HandCard(): React.JSX.Element {
     }
   };
 
-  const handleBodyKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
-    if (event.key === 'Enter' || event.key === ' ') {
-      if (isSelected) {
-        return;
-      }
-      event.preventDefault();
-      dispatch({ type: 'open-sheet', target: { type: 'hand' } });
-    }
-  };
+  const handleBodyKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) =>
+    handleHandBodyKey(event, isSelected, () =>
+      dispatch({ type: 'open-sheet', target: { type: 'hand' } })
+    );
 
   return (
     // biome-ignore lint/a11y/useKeyWithClickEvents: キーボード操作は .hand-card__body(role=button)が担う。外枠のクリックはポインタの当たり判定拡張(設計書 issue-55 2.1)
@@ -178,4 +173,19 @@ export function HandCard(): React.JSX.Element {
       </div>
     </div>
   );
+}
+
+/** 本体の keydown: 選択中は Enter/Space を素通し(確定事項43)、非選択なら開く */
+export function handleHandBodyKey(
+  event: { key: string; preventDefault(): void },
+  selected: boolean,
+  open: () => void
+): void {
+  if (event.key === 'Enter' || event.key === ' ') {
+    if (selected) {
+      return;
+    }
+    event.preventDefault();
+    open();
+  }
 }

@@ -215,9 +215,9 @@ body {
   width: 100%;
 }
 
-.hand-card--selected,
-.indicator-card--selected,
-.meld-card--selected {
+.hand-card.hand-card--selected,
+.indicator-card.indicator-card--selected,
+.meld-card.meld-card--selected {
   background-color: var(--md-sys-color-primary-container);
 }
 

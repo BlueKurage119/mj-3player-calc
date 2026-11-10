@@ -59,15 +59,7 @@ export function MeldAreaContent({
   const handleBodyKeyDown = (
     i: number,
     event: React.KeyboardEvent<HTMLDivElement>
-  ) => {
-    if (event.key === 'Enter' || event.key === ' ') {
-      if (i === selectedIndex) {
-        return;
-      }
-      event.preventDefault();
-      onSelectMeld(i);
-    }
-  };
+  ) => handleMeldBodyKey(event, i === selectedIndex, () => onSelectMeld(i));
 
   return (
     <div className="meld-area">
@@ -153,4 +145,19 @@ export function MeldArea(): React.JSX.Element {
       onAddMeld={() => dispatch({ type: 'add-meld' })}
     />
   );
+}
+
+/** 本体の keydown: 選択中は Enter/Space を素通し(確定事項43)、非選択なら開く */
+export function handleMeldBodyKey(
+  event: { key: string; preventDefault(): void },
+  selected: boolean,
+  open: () => void
+): void {
+  if (event.key === 'Enter' || event.key === ' ') {
+    if (selected) {
+      return;
+    }
+    event.preventDefault();
+    open();
+  }
 }

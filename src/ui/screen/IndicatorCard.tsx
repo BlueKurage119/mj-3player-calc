@@ -50,15 +50,8 @@ export function IndicatorCardContent({
     bodyRef.current?.focus({ preventScroll: true });
   };
 
-  const handleBodyKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
-    if (event.key === 'Enter' || event.key === ' ') {
-      if (selected) {
-        return;
-      }
-      event.preventDefault();
-      onSelect();
-    }
-  };
+  const handleBodyKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) =>
+    handleIndicatorBodyKey(event, selected, onSelect);
 
   return (
     // biome-ignore lint/a11y/useKeyWithClickEvents: キーボード操作は .indicator-card__body(role=button)が担う
@@ -127,4 +120,19 @@ export function IndicatorCard({
       onClear={() => dispatch({ type: 'clear-indicators', target })}
     />
   );
+}
+
+/** 本体の keydown: 選択中は Enter/Space を素通し(確定事項43)、非選択なら開く */
+export function handleIndicatorBodyKey(
+  event: { key: string; preventDefault(): void },
+  selected: boolean,
+  open: () => void
+): void {
+  if (event.key === 'Enter' || event.key === ' ') {
+    if (selected) {
+      return;
+    }
+    event.preventDefault();
+    open();
+  }
 }
