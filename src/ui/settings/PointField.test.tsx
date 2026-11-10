@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import type { NumberRuleItem } from '../../core/rule-items';
@@ -65,5 +66,24 @@ describe('D6-PointField (§4.5)', () => {
 
     // 理由: 中間値 (200) のとき両ボタンとも disabled でないことを検証するため
     expect(html.includes('disabled=""')).toBe(false);
+  });
+
+  it('D6-PointField-input-width: 入力欄の幅が最大5桁ぶんを ch で確保し、縮まない', () => {
+    const css = readFileSync(
+      new URL('./settings.css', import.meta.url),
+      'utf8'
+    );
+    const block =
+      css.match(/\.settings-point-field__input\s*\{[^}]*\}/)?.[0] ?? '';
+    // 理由: 10000 (5桁) と単位「点」が欠けないよう、桁数基準の幅と flex-shrink:0 を保証するため
+    expect(/width:\s*calc\(5ch\s*\+/.test(block)).toBe(true);
+    expect(/flex-shrink:\s*0/.test(block)).toBe(true);
+    const html = renderToStaticMarkup(
+      <PointField item={honbaItem} value={10000} onCommit={() => {}} />
+    );
+    expect(
+      html.includes('maxLength="5"') || html.includes('maxlength="5"')
+    ).toBe(true);
+    expect(html.includes('value="10000"')).toBe(true);
   });
 });
