@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type React from 'react';
 import { useResult } from '../calc/use-result';
 import { BottomSheet, ConnectedButtonGroup, Stepper } from '../expressive';
@@ -87,67 +87,100 @@ export function MainScreen(): React.JSX.Element {
     dispatch(action);
   };
 
-  const topSentinelRef = useRef<HTMLDivElement | null>(null);
-  const isTopInView = useInView(topSentinelRef, undefined, true);
-  const summaryVisible = !isTopInView;
+  const headerRef = useRef<HTMLElement | null>(null);
+  const [headerHeight, setHeaderHeight] = useState(0);
+  useEffect(() => {
+    const el = headerRef.current;
+    if (!el) return;
+    const update = () => setHeaderHeight(el.offsetHeight);
+    update();
+    if (typeof ResizeObserver === 'undefined') return;
+    const observer = new ResizeObserver(update);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  const statusRef = useRef<HTMLDivElement | null>(null);
+  const doraRef = useRef<HTMLDivElement | null>(null);
+  const handRef = useRef<HTMLDivElement | null>(null);
+  const viewOptions = {
+    rootMargin: `-${headerHeight}px 0px 0px 0px`,
+    minRatio: 0.1
+  };
+  const statusInView = useInView(statusRef, viewOptions, true);
+  const doraInView = useInView(doraRef, viewOptions, true);
+  const handInView = useInView(handRef, viewOptions, true);
+  const summaryRows = {
+    status: !statusInView,
+    dora: !doraInView,
+    hand: !handInView
+  };
   const sheetOpen = inputFocus !== null;
 
   return (
-    <div className="app-shell">
-      <AppHeader />
+    <div
+      className="app-shell"
+      style={
+        { '--app-header-height': `${headerHeight}px` } as React.CSSProperties
+      }
+    >
+      <AppHeader headerRef={headerRef} />
       <main className="main-screen">
+        <SummaryCard rows={summaryRows} sheetOpen={sheetOpen} />
         <section className="input-section" aria-label="入力">
+          <div ref={statusRef} className="input-group">
+            <div className="input-slot" data-slot="wind-segment">
+              <WindSegment />
+            </div>
+            <div className="stepper-group">
+              <Stepper
+                aria-label="積み棒"
+                value={table.continue}
+                min={STEPPER_BOUNDS.continue[0]}
+                max={STEPPER_BOUNDS.continue[1]}
+                onStep={delta =>
+                  trackedDispatch({ type: 'step', field: 'continue', delta })
+                }
+              />
+              <Stepper
+                aria-label="供託"
+                value={table.deposit}
+                min={STEPPER_BOUNDS.deposit[0]}
+                max={STEPPER_BOUNDS.deposit[1]}
+                onStep={delta =>
+                  trackedDispatch({ type: 'step', field: 'deposit', delta })
+                }
+              />
+              <Stepper
+                aria-label="抜き北"
+                value={input.nuki}
+                min={STEPPER_BOUNDS.nuki[0]}
+                max={STEPPER_BOUNDS.nuki[1]}
+                disabled={!isNukiEnabled(rule)}
+                onStep={delta =>
+                  trackedDispatch({ type: 'step', field: 'nuki', delta })
+                }
+              />
+            </div>
+          </div>
           <div
-            ref={topSentinelRef}
-            className="input-section__sentinel"
-            aria-hidden="true"
-          />
-          <div className="input-slot" data-slot="wind-segment">
-            <WindSegment />
-          </div>
-          <div className="stepper-group">
-            <Stepper
-              aria-label="積み棒"
-              value={table.continue}
-              min={STEPPER_BOUNDS.continue[0]}
-              max={STEPPER_BOUNDS.continue[1]}
-              onStep={delta =>
-                trackedDispatch({ type: 'step', field: 'continue', delta })
-              }
-            />
-            <Stepper
-              aria-label="供託"
-              value={table.deposit}
-              min={STEPPER_BOUNDS.deposit[0]}
-              max={STEPPER_BOUNDS.deposit[1]}
-              onStep={delta =>
-                trackedDispatch({ type: 'step', field: 'deposit', delta })
-              }
-            />
-            <Stepper
-              aria-label="抜き北"
-              value={input.nuki}
-              min={STEPPER_BOUNDS.nuki[0]}
-              max={STEPPER_BOUNDS.nuki[1]}
-              disabled={!isNukiEnabled(rule)}
-              onStep={delta =>
-                trackedDispatch({ type: 'step', field: 'nuki', delta })
-              }
-            />
-          </div>
-          <div className="input-slot indicator-row" data-slot="dora-uradora">
+            ref={doraRef}
+            className="input-slot indicator-row"
+            data-slot="dora-uradora"
+          >
             <IndicatorCard target="dora" />
             <IndicatorCard target="uradora" />
           </div>
-          <HandCard />
-          <div className="input-slot" data-slot="melds">
-            <MeldArea />
+          <div ref={handRef} className="input-group">
+            <HandCard />
+            <div className="input-slot" data-slot="melds">
+              <MeldArea />
+            </div>
           </div>
           <div className="input-slot" data-slot="situation">
             <SituationCard />
           </div>
         </section>
-        <SummaryCard visible={summaryVisible} sheetOpen={sheetOpen} />
         <ResultPanel
           resultState={resultState}
           dispatchTimestampRef={dispatchTimestampRef}

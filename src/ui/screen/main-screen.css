@@ -15,6 +15,9 @@ body {
 }
 
 .app-header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
   width: 100%;
   background-color: var(--md-sys-color-surface);
   color: var(--md-sys-color-on-surface);
@@ -75,7 +78,12 @@ body {
   gap: 0.75rem;
 }
 
-.input-section__sentinel,
+.input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
 .result-panel__sentinel {
   width: 100%;
   height: 1px;
@@ -225,28 +233,30 @@ body {
 /* 要約カード (sticky top: 0、非表示時は高さ 0 でレイアウトの跳ねを避ける) */
 .summary-card {
   position: sticky;
-  top: 0;
+  top: var(--app-header-height, 0px);
   z-index: 10;
   height: 0;
-  overflow: hidden;
+  margin-block-end: -1rem;
+  overflow: visible;
   opacity: 0;
   pointer-events: none;
-  background-color: var(--md-sys-color-surface-container-high);
-  color: var(--md-sys-color-on-surface);
-  border-radius: var(--md-sys-shape-corner-medium);
   transition-property: opacity;
   transition-duration: var(--md-sys-motion-spring-effects-fast-duration);
   transition-timing-function: var(--md-sys-motion-spring-effects-fast-easing);
 }
 
 .summary-card--visible {
-  height: auto;
-  overflow: visible;
   opacity: 1;
   pointer-events: auto;
 }
 
 .summary-card__inner {
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+  background-color: var(--md-sys-color-surface-container-high);
+  color: var(--md-sys-color-on-surface);
+  border-radius: var(--md-sys-shape-corner-medium);
   padding: 0.5rem 0.75rem;
   display: flex;
   flex-direction: column;
@@ -288,6 +298,17 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 0.25rem;
+}
+
+.summary-card__pill-inner > svg {
+  margin-block: -0.5rem;
+}
+
+.summary-card__label {
+  font-family: var(--md-sys-typescale-label-medium-font);
+  font-size: var(--md-sys-typescale-label-medium-size);
+  color: var(--md-sys-color-on-surface-variant);
+  margin-inline-end: 0.25rem;
 }
 
 .summary-card__count {
