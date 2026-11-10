@@ -38,8 +38,10 @@ export {
 export {
   AppStateProvider,
   type AppStateProviderProps,
+  type RuleLoadNoticeContextValue,
   useAppState,
-  useAppDispatch
+  useAppDispatch,
+  useRuleLoadNotice
 } from './AppStateProvider';
 
 export {
