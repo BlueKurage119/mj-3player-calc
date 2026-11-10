@@ -1,15 +1,25 @@
 import type React from 'react';
 import type { Table } from '../../core/table';
 import { CUSTOM_DEPOSIT_STICK, CUSTOM_HONBA_STICK, SymbolIcon } from '../icons';
-import { formatWinds, useAppState } from '../state';
+import {
+  formatWinds,
+  isNukiEnabled,
+  splitWinningTile,
+  maxHandLength,
+  useAppState
+} from '../state';
 import { Tile } from '../tile';
+import { meldTiles } from './MeldArea';
 
 export interface SummaryStatusRowProps {
   table: Table;
+  /** 抜き北の枚数。undefined のとき(抜き北なしのルール)は表示しない */
+  nuki?: number | undefined;
 }
 
 export function SummaryStatusRow({
-  table
+  table,
+  nuki
 }: SummaryStatusRowProps): React.JSX.Element {
   return (
     <div
@@ -38,6 +48,17 @@ export function SummaryStatusRow({
             <span className="summary-card__count">{table.deposit}</span>
           </span>
         </span>
+        {nuki === undefined ? null : (
+          <span
+            className="summary-card__pill"
+            role="img"
+            aria-label={`抜き北 ${nuki}`}
+          >
+            <span className="summary-card__pill-inner" aria-hidden="true">
+              <span className="summary-card__count">北 {nuki}</span>
+            </span>
+          </span>
+        )}
       </div>
     </div>
   );
@@ -51,12 +72,13 @@ export interface SummaryRowsVisible {
 
 export interface SummaryCardProps {
   rows: SummaryRowsVisible;
-  sheetOpen: boolean;
 }
 
 export function SummaryCard(props: SummaryCardProps): React.JSX.Element {
-  const { rows, sheetOpen } = props;
-  const { input, table } = useAppState();
+  const { rows } = props;
+  const { input, table, rule } = useAppState();
+  const max = maxHandLength(input.melds);
+  const { body, winning } = splitWinningTile(input.hand, max);
 
   const visible = rows.status || rows.dora || rows.hand;
   const className = visible
@@ -71,7 +93,12 @@ export function SummaryCard(props: SummaryCardProps): React.JSX.Element {
       className={className}
     >
       <div className="summary-card__inner">
-        {rows.status ? <SummaryStatusRow table={table} /> : null}
+        {rows.status ? (
+          <SummaryStatusRow
+            table={table}
+            nuki={isNukiEnabled(rule) ? input.nuki : undefined}
+          />
+        ) : null}
         {rows.dora ? (
           <div className="summary-card__row" data-slot="summary-dora">
             <div className="summary-card__tiles">
@@ -91,17 +118,23 @@ export function SummaryCard(props: SummaryCardProps): React.JSX.Element {
         {rows.hand ? (
           <div className="summary-card__row" data-slot="summary-input">
             <div className="summary-card__tiles">
-              {input.hand.map((tile, idx) => {
-                const key = `${tile.type}${tile.n}${
-                  tile.type !== 'z' && tile.n === 5 && tile.red ? 'r' : ''
-                }-${idx}`;
-                return <Tile key={key} tile={tile} />;
-              })}
+              {body.map(item => (
+                <Tile key={`h${item.index}`} tile={item.tile} />
+              ))}
+              {input.melds.map((meld, mi) => (
+                <span key={`m${mi}`} className="summary-card__meld">
+                  {meldTiles(meld, rule.red).map((t, ti) => (
+                    <Tile key={ti} tile={t} />
+                  ))}
+                </span>
+              ))}
+              {winning ? (
+                <span className="summary-card__winning-tile">
+                  <Tile tile={winning.tile} />
+                </span>
+              ) : null}
             </div>
           </div>
-        ) : null}
-        {sheetOpen ? (
-          <div className="summary-card__result" data-slot="summary-result" />
         ) : null}
       </div>
     </aside>

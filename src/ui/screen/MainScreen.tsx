@@ -126,7 +126,7 @@ export function MainScreen(): React.JSX.Element {
     >
       <AppHeader headerRef={headerRef} />
       <main className="main-screen">
-        <SummaryCard rows={summaryRows} sheetOpen={sheetOpen} />
+        <SummaryCard rows={summaryRows} />
         <section className="input-section" aria-label="入力">
           <div className="input-group">
             <div
@@ -175,8 +175,10 @@ export function MainScreen(): React.JSX.Element {
             <IndicatorCard target="dora" />
             <IndicatorCard target="uradora" />
           </div>
-          <div ref={handRef} className="input-group">
-            <HandCard />
+          <div className="input-group">
+            <div ref={handRef}>
+              <HandCard />
+            </div>
             <div className="input-slot" data-slot="melds">
               <MeldArea />
             </div>

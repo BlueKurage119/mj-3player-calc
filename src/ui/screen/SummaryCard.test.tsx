@@ -55,4 +55,23 @@ describe('SummaryCard (D5)', () => {
     // 理由: 抜き北に関する説明文が含まれないことを検証するため
     expect(html.includes('抜き北')).toBe(false);
   });
+
+  it('D5-summary-nuki: 抜き北の枚数を「北 n」で表示し、undefined なら表示しない', () => {
+    const table: Table = {
+      round: 'east',
+      seat: 'east',
+      continue: 0,
+      deposit: 0
+    };
+    const html = renderToStaticMarkup(
+      <SummaryStatusRow table={table} nuki={2} />
+    );
+    // 理由: 抜き北の枚数がアイコンなしの「北 2」で出ることを検証するため
+    expect(html.includes('role="img" aria-label="抜き北 2"')).toBe(true);
+    expect(html.includes('北 2')).toBe(true);
+
+    const htmlNone = renderToStaticMarkup(<SummaryStatusRow table={table} />);
+    // 理由: 抜き北なしのルールでは表示されないことを検証するため
+    expect(htmlNone.includes('抜き北')).toBe(false);
+  });
 });
