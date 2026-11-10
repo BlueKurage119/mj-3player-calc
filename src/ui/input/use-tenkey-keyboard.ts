@@ -1,15 +1,10 @@
 import { useEffect } from 'react';
-import type {
-  AppAction,
-  IndicatorTarget,
-  SheetMode,
-  SheetTarget
-} from '../state';
+import type { AppAction, SheetMode, SheetTarget } from '../state';
 import { useAppDispatch, useAppState } from '../state';
 import {
   type TenkeyKeyCommand,
   mapTenkeyKey,
-  shouldHandleKeyTarget
+  shouldHandleKeyEvent
 } from './tenkey-logic';
 
 export const isSheetKeyboardTarget = (
@@ -30,7 +25,7 @@ export const isSheetKeyboardTarget = (
 
 export const resolveKeyboardAction = (
   command: TenkeyKeyCommand | null,
-  sheetMode: SheetMode,
+  _sheetMode: SheetMode,
   inputFocus: SheetTarget | null
 ): AppAction | null => {
   if (command === null || !isSheetKeyboardTarget(inputFocus)) return null;
@@ -41,19 +36,7 @@ export const resolveKeyboardAction = (
     case 'suit':
       return { type: 'tenkey-commit', suit: command.suit };
     case 'backspace':
-      if (sheetMode === 'tenkey') {
-        return { type: 'tenkey-backspace' };
-      }
-      if (inputFocus.type === 'hand') {
-        return { type: 'remove-last-hand-tile' };
-      }
-      if (inputFocus.type === 'dora' || inputFocus.type === 'uradora') {
-        return {
-          type: 'remove-last-indicator-tile',
-          target: inputFocus.type as IndicatorTarget
-        };
-      }
-      return null;
+      return { type: 'tenkey-backspace' };
     case 'enter':
       return { type: 'close-sheet' };
   }
@@ -73,7 +56,7 @@ export function useTenkeyKeyboard(): void {
     if (!isFocused) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (!shouldHandleKeyTarget(e.target)) return;
+      if (!shouldHandleKeyEvent(e)) return;
 
       const command = mapTenkeyKey(e, sheetMode);
       const action = resolveKeyboardAction(command, sheetMode, inputFocus);

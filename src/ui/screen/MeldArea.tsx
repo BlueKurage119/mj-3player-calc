@@ -61,6 +61,9 @@ export function MeldAreaContent({
     event: React.KeyboardEvent<HTMLDivElement>
   ) => {
     if (event.key === 'Enter' || event.key === ' ') {
+      if (i === selectedIndex) {
+        return;
+      }
       event.preventDefault();
       onSelectMeld(i);
     }
@@ -88,6 +91,7 @@ export function MeldAreaContent({
                 }}
                 tabIndex={0}
                 aria-label={`副露${i + 1}を入力`}
+                data-sheet-opener=""
                 className="meld-card__body"
                 onKeyDown={e => handleBodyKeyDown(i, e)}
               >

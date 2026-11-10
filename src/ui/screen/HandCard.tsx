@@ -122,6 +122,9 @@ export function HandCard(): React.JSX.Element {
 
   const handleBodyKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
     if (event.key === 'Enter' || event.key === ' ') {
+      if (isSelected) {
+        return;
+      }
       event.preventDefault();
       dispatch({ type: 'open-sheet', target: { type: 'hand' } });
     }
@@ -158,6 +161,7 @@ export function HandCard(): React.JSX.Element {
         ref={bodyRef}
         tabIndex={0}
         aria-label="手牌を入力"
+        data-sheet-opener=""
         className="hand-card__body"
         style={{ '--hand-max': max } as React.CSSProperties}
         onKeyDown={handleBodyKeyDown}

@@ -3,8 +3,10 @@ import { createDefaultRule } from '../../core/rule';
 import type { Tile } from '../../core/tile';
 import { type AppState, appReducer, createInitialState } from '../state';
 import {
+  SHEET_OPENER_SELECTOR,
   TENKEY_HONOR_HINTS,
   mapTenkeyKey,
+  shouldHandleKeyEvent,
   shouldHandleKeyTarget,
   tenkeyActionKeysFor
 } from './tenkey-logic';
@@ -40,9 +42,15 @@ describe('D3: 物理キー入力の割り当てと対象判定 (D3-K・F)', () =
     });
   });
 
-  it('D3-K2: mapTenkeyKey はパレット方式で "7"・"m" が null', () => {
-    expect(mapTenkeyKey({ ...baseEvent, key: '7' }, 'palette')).toBeNull();
-    expect(mapTenkeyKey({ ...baseEvent, key: 'm' }, 'palette')).toBeNull();
+  it('D3-K2: mapTenkeyKey はパレット方式でも "7"・"m" を返す (確定事項 39)', () => {
+    expect(mapTenkeyKey({ ...baseEvent, key: '7' }, 'palette')).toEqual({
+      kind: 'digit',
+      digit: '7'
+    });
+    expect(mapTenkeyKey({ ...baseEvent, key: 'm' }, 'palette')).toEqual({
+      kind: 'suit',
+      suit: 'm'
+    });
   });
 
   it('D3-K3: mapTenkeyKey は両方式で Backspace が backspace、Enter が enter', () => {
@@ -109,6 +117,56 @@ describe('D3: 物理キー入力の割り当てと対象判定 (D3-K・F)', () =
 
     const targetWithoutClosest = {} as EventTarget;
     expect(shouldHandleKeyTarget(targetWithoutClosest)).toBe(false);
+  });
+
+  it('D4-C30-F1: shouldHandleKeyTarget はカード本体(SHEET_OPENER_SELECTOR)に一致する擬似要素で真、一致しない擬似要素で偽', () => {
+    // 理由: SHEET_OPENER_SELECTOR 定数が正しいセレクタであることを検証するため
+    expect(SHEET_OPENER_SELECTOR).toBe('[data-sheet-opener]');
+
+    const cardOpenerTarget = {
+      closest: (selector: string) =>
+        selector === SHEET_OPENER_SELECTOR ? ({} as Element) : null
+    } as unknown as EventTarget;
+    // 理由: カード本体(data-sheet-opener)のフォーカス時に真になることを検証するため
+    expect(shouldHandleKeyTarget(cardOpenerTarget)).toBe(true);
+
+    const stepperButtonTarget = {
+      closest: (selector: string) =>
+        selector === '.stepper__button' ? ({} as Element) : null
+    } as unknown as EventTarget;
+    // 理由: ステッパーなど対象外要素では偽になることを検証するため
+    expect(shouldHandleKeyTarget(stepperButtonTarget)).toBe(false);
+  });
+
+  it('D4-C30-F2: shouldHandleKeyEvent は defaultPrevented: true で偽、未キャンセルかつ対象要素なら真', () => {
+    const cardOpenerTarget = {
+      closest: (selector: string) =>
+        selector === SHEET_OPENER_SELECTOR ? ({} as Element) : null
+    } as unknown as EventTarget;
+
+    // 理由: defaultPrevented が true なら対象要素であっても偽になることを検証するため (確定事項 43)
+    expect(
+      shouldHandleKeyEvent({
+        target: cardOpenerTarget,
+        defaultPrevented: true
+      })
+    ).toBe(false);
+
+    // 理由: defaultPrevented が false で対象要素なら真になることを検証するため
+    expect(
+      shouldHandleKeyEvent({
+        target: cardOpenerTarget,
+        defaultPrevented: false
+      })
+    ).toBe(true);
+
+    // 理由: defaultPrevented が false でも対象外要素なら偽になることを検証するため
+    expect(
+      shouldHandleKeyEvent({
+        target: { closest: () => null } as unknown as EventTarget,
+        defaultPrevented: false
+      })
+    ).toBe(false);
   });
 
   it('D3: TENKEY_HONOR_HINTS は 1〜7 と 0 の補助表示文字を保持する', () => {

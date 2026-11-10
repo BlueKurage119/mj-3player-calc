@@ -6,6 +6,8 @@ export type TenkeyKeyCommand =
   | { kind: 'backspace' }
   | { kind: 'enter' };
 
+export const SHEET_OPENER_SELECTOR = '[data-sheet-opener]';
+
 export const TENKEY_HONOR_HINTS: Readonly<Record<string, string>> =
   Object.freeze({
     '1': '東',
@@ -22,14 +24,14 @@ export const TENKEY_HONOR_HINTS: Readonly<Record<string, string>> =
  * キーボードイベントと入力方式からテンキーのコマンドへ写像する。
  * 修飾キー(Ctrl/Meta/Alt)付きまたはIME変換中ならnull。
  * Backspace/Enterは両方式で有効。
- * 数字・スート(m/p/s/z)はテンキー方式のみ有効。
+ * 数字・スート(m/p/s/z)も両方式で有効(確定事項 39)。
  */
 export const mapTenkeyKey = (
   e: Pick<
     KeyboardEvent,
     'key' | 'ctrlKey' | 'metaKey' | 'altKey' | 'isComposing'
   >,
-  mode: SheetMode
+  _mode?: SheetMode
 ): TenkeyKeyCommand | null => {
   if (e.ctrlKey || e.metaKey || e.altKey || e.isComposing) {
     return null;
@@ -42,14 +44,12 @@ export const mapTenkeyKey = (
     return { kind: 'enter' };
   }
 
-  if (mode === 'tenkey') {
-    if (/^[0-9]$/.test(e.key)) {
-      return { kind: 'digit', digit: e.key };
-    }
-    const lower = e.key.toLowerCase();
-    if (lower === 'm' || lower === 'p' || lower === 's' || lower === 'z') {
-      return { kind: 'suit', suit: lower };
-    }
+  if (/^[0-9]$/.test(e.key)) {
+    return { kind: 'digit', digit: e.key };
+  }
+  const lower = e.key.toLowerCase();
+  if (lower === 'm' || lower === 'p' || lower === 's' || lower === 'z') {
+    return { kind: 'suit', suit: lower };
   }
 
   return null;
@@ -57,8 +57,9 @@ export const mapTenkeyKey = (
 
 /**
  * キー入力の対象要素を判定する。
- * null、document.body、document.documentElement、または.bottom-sheet内の要素なら真。
- * シート外の要素(ステッパーボタン等)は偽。
+ * null、document.body、document.documentElement、.bottom-sheet内の要素、
+ * またはカード本体(SHEET_OPENER_SELECTOR)なら真(確定事項 43)。
+ * シート外のその他要素(ステッパーボタン等)は偽。
  */
 export const shouldHandleKeyTarget = (target: EventTarget | null): boolean => {
   if (target === null) return true;
@@ -67,13 +68,27 @@ export const shouldHandleKeyTarget = (target: EventTarget | null): boolean => {
       return true;
     }
   }
-  if (
-    typeof (target as { closest?: unknown }).closest === 'function' &&
-    (target as Element).closest('.bottom-sheet') !== null
-  ) {
-    return true;
+  if (typeof (target as { closest?: unknown }).closest === 'function') {
+    const el = target as Element;
+    if (el.closest('.bottom-sheet') !== null) {
+      return true;
+    }
+    if (el.closest(SHEET_OPENER_SELECTOR) !== null) {
+      return true;
+    }
   }
   return false;
+};
+
+/**
+ * キーイベントがテンキー・パレット処理対象かを判定する(確定事項 43)。
+ * defaultPrevented なイベントは処理しない。
+ */
+export const shouldHandleKeyEvent = (
+  e: Pick<KeyboardEvent, 'target' | 'defaultPrevented'>
+): boolean => {
+  if (e.defaultPrevented) return false;
+  return shouldHandleKeyTarget(e.target);
 };
 
 export interface TenkeyActionKeys {

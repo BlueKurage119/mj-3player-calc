@@ -52,6 +52,9 @@ export function IndicatorCardContent({
 
   const handleBodyKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
     if (event.key === 'Enter' || event.key === ' ') {
+      if (selected) {
+        return;
+      }
       event.preventDefault();
       onSelect();
     }
@@ -78,6 +81,7 @@ export function IndicatorCardContent({
         ref={bodyRef}
         tabIndex={0}
         aria-label={inputAriaLabel}
+        data-sheet-opener=""
         className="indicator-card__body"
         onKeyDown={handleBodyKeyDown}
       >

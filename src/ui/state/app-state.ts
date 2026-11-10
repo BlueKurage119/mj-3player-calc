@@ -288,7 +288,6 @@ export const appReducer = (state: AppState, action: AppAction): AppState => {
       ) {
         return state;
       }
-      if (state.sheetMode !== 'tenkey') return state;
       if (!canAppendTenkeyDigitFor(state, action.digit)) return state;
       return {
         ...state,

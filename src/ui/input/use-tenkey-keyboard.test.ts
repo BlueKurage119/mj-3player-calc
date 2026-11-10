@@ -16,28 +16,28 @@ describe('D4: 物理キーボード連携の一般化 (C8)', () => {
     expect(isSheetKeyboardTarget(null)).toBe(false);
   });
 
-  it('D4-K2: パレットモードの Backspace は対象別にアクションを解決する', () => {
+  it('D4-K2: パレットモードの Backspace も tenkey-backspace を返す (確定事項 41)', () => {
     const backspaceCmd: TenkeyKeyCommand = { kind: 'backspace' };
 
-    // hand: remove-last-hand-tile
+    // hand: tenkey-backspace
     expect(
       resolveKeyboardAction(backspaceCmd, 'palette', { type: 'hand' })
-    ).toEqual({ type: 'remove-last-hand-tile' });
+    ).toEqual({ type: 'tenkey-backspace' });
 
-    // dora: remove-last-indicator-tile { target: 'dora' }
+    // dora: tenkey-backspace
     expect(
       resolveKeyboardAction(backspaceCmd, 'palette', { type: 'dora' })
-    ).toEqual({ type: 'remove-last-indicator-tile', target: 'dora' });
+    ).toEqual({ type: 'tenkey-backspace' });
 
-    // uradora: remove-last-indicator-tile { target: 'uradora' }
+    // uradora: tenkey-backspace
     expect(
       resolveKeyboardAction(backspaceCmd, 'palette', { type: 'uradora' })
-    ).toEqual({ type: 'remove-last-indicator-tile', target: 'uradora' });
+    ).toEqual({ type: 'tenkey-backspace' });
 
-    // meld: null (何もしない)
+    // meld: tenkey-backspace
     expect(
       resolveKeyboardAction(backspaceCmd, 'palette', { type: 'meld', i: 0 })
-    ).toBeNull();
+    ).toEqual({ type: 'tenkey-backspace' });
 
     // situation または null: null
     expect(
@@ -77,5 +77,17 @@ describe('D4: 物理キーボード連携の一般化 (C8)', () => {
     expect(
       resolveKeyboardAction(enterCmd, 'tenkey', { type: 'meld', i: 0 })
     ).toEqual({ type: 'close-sheet' });
+  });
+
+  it('D4-C30-K4: パレットモードでも digit/suit コマンドから tenkey-digit/commit が解決される (確定事項 39・41)', () => {
+    const digitCmd: TenkeyKeyCommand = { kind: 'digit', digit: '1' };
+    expect(
+      resolveKeyboardAction(digitCmd, 'palette', { type: 'hand' })
+    ).toEqual({ type: 'tenkey-digit', digit: '1' });
+
+    const suitCmd: TenkeyKeyCommand = { kind: 'suit', suit: 'm' };
+    expect(resolveKeyboardAction(suitCmd, 'palette', { type: 'hand' })).toEqual(
+      { type: 'tenkey-commit', suit: 'm' }
+    );
   });
 });

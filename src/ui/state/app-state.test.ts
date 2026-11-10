@@ -495,18 +495,20 @@ describe('D3: テンキー入力の状態管理と reducer (D3-S1〜S13)', () =>
     expect(switched.tenkeyBuffer).toBe('');
   });
 
-  it('D3-S3: tenkey-digit はパレット方式・シート閉・不正文字・手牌+バッファ上限・同じ数字 5 つ目で同一 state', () => {
+  it('D3-S3: tenkey-digit はパレット方式でバッファ積算、シート閉・不正文字・手牌+バッファ上限・同じ数字 5 つ目で同一 state', () => {
     const base = createInitialState(createDefaultRule());
 
-    // パレット方式
+    // パレット方式 (確定事項 39・41 によりパレット方式でも数字キーが有効でバッファに積まれる)
     const paletteState: AppState = {
       ...base,
       sheetMode: 'palette',
       inputFocus: { type: 'hand' }
     };
-    expect(appReducer(paletteState, { type: 'tenkey-digit', digit: '1' })).toBe(
-      paletteState
-    );
+    const paletteDigit = appReducer(paletteState, {
+      type: 'tenkey-digit',
+      digit: '1'
+    });
+    expect(paletteDigit.tenkeyBuffer).toBe('1');
 
     // シート閉 (inputFocus: null)
     const closedState: AppState = {
@@ -571,6 +573,30 @@ describe('D3: テンキー入力の状態管理と reducer (D3-S1〜S13)', () =>
     };
     const next = appReducer(openTenkey, { type: 'tenkey-digit', digit: '2' });
     expect(next.tenkeyBuffer).toBe('12');
+  });
+
+  it('D4-C30-R1: パレット方式での tenkey-digit, tenkey-commit, tenkey-backspace (確定事項 39・41)', () => {
+    const base = createInitialState(createDefaultRule());
+    const paletteOpen: AppState = {
+      ...base,
+      sheetMode: 'palette',
+      inputFocus: { type: 'hand' },
+      tenkeyBuffer: ''
+    };
+
+    // tenkey-digit 1 でバッファに積まれる
+    const s1 = appReducer(paletteOpen, { type: 'tenkey-digit', digit: '1' });
+    expect(s1.tenkeyBuffer).toBe('1');
+
+    // バッファありの tenkey-backspace で1文字削除
+    const s1Back = appReducer(s1, { type: 'tenkey-backspace' });
+    expect(s1Back.tenkeyBuffer).toBe('');
+
+    // 再度 tenkey-digit 1 から tenkey-commit p で 1p 追加
+    const s2 = appReducer(paletteOpen, { type: 'tenkey-digit', digit: '1' });
+    const sCommit = appReducer(s2, { type: 'tenkey-commit', suit: 'p' });
+    expect(sCommit.tenkeyBuffer).toBe('');
+    expect(sCommit.input.hand).toEqual([{ type: 'p', n: 1 }]);
   });
 
   it('D3-S5: tenkey-backspace はバッファ優先で手牌は不変、空なら手牌末尾', () => {

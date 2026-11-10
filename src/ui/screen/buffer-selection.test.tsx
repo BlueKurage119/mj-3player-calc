@@ -3,8 +3,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createDefaultRule } from '../../core/rule';
 import { type AppState, createInitialState } from '../state';
 
-const holder: { state: AppState } = vi.hoisted(() => ({
-  state: undefined as unknown as AppState
+const holder: {
+  state: AppState;
+  dispatched: unknown[];
+} = vi.hoisted(() => ({
+  state: undefined as unknown as AppState,
+  dispatched: []
 }));
 
 vi.mock('../state', async importOriginal => {
@@ -12,12 +16,14 @@ vi.mock('../state', async importOriginal => {
   return {
     ...actual,
     useAppState: () => holder.state,
-    useAppDispatch: () => () => {}
+    useAppDispatch: () => (action: unknown) => {
+      holder.dispatched.push(action);
+    }
   };
 });
 
 const { HandCard } = await import('./HandCard');
-const { IndicatorCard } = await import('./IndicatorCard');
+const { IndicatorCard, IndicatorCardContent } = await import('./IndicatorCard');
 const { MeldArea, MeldAreaContent } = await import('./MeldArea');
 
 const createState = (
@@ -281,5 +287,69 @@ describe('D4-C29: 選択中の背景修飾クラス (確定事項 38)', () => {
     expect(htmlNull.includes('hand-card--selected')).toBe(false);
     expect(htmlNull.includes('indicator-card--selected')).toBe(false);
     expect(htmlNull.includes('meld-card--selected')).toBe(false);
+  });
+});
+
+describe('D4-C30: カード本体の属性とEnter/Spaceキー制御 (確定事項 40・43)', () => {
+  beforeEach(() => {
+    holder.state = createState(null, '');
+    holder.dispatched = [];
+  });
+
+  it('D4-C30a: カード本体3種に data-sheet-opener 属性が付与されていること', () => {
+    const melds: AppState['input']['melds'] = [
+      { type: 'pon', tile: { type: 'p', n: 1 } }
+    ];
+    holder.state = createState(null, '', melds);
+
+    const htmlHand = renderToStaticMarkup(<HandCard />);
+    // 理由: HandCard 本体の role="button" 要素に data-sheet-opener 属性があることを検証するため
+    expect(htmlHand).toContain('data-sheet-opener=""');
+    expect(
+      htmlHand.includes(
+        'role="button" tabindex="0" aria-label="手牌を入力" data-sheet-opener=""'
+      ) ||
+        htmlHand.includes('data-sheet-opener="" class="hand-card__body"') ||
+        htmlHand.includes('class="hand-card__body" data-sheet-opener=""')
+    ).toBe(true);
+
+    const htmlIndicator = renderToStaticMarkup(
+      <IndicatorCardContent
+        target="dora"
+        tiles={[]}
+        selected={false}
+        buffer=""
+        onSelect={() => {}}
+        onClear={() => {}}
+      />
+    );
+    // 理由: IndicatorCard 本体の role="button" 要素に data-sheet-opener 属性があることを検証するため
+    expect(htmlIndicator).toContain('data-sheet-opener=""');
+    expect(
+      htmlIndicator.includes(
+        'data-sheet-opener="" class="indicator-card__body"'
+      ) ||
+        htmlIndicator.includes(
+          'class="indicator-card__body" data-sheet-opener=""'
+        )
+    ).toBe(true);
+
+    const htmlMeld = renderToStaticMarkup(
+      <MeldAreaContent
+        melds={melds}
+        red={1}
+        selectedIndex={null}
+        buffer=""
+        onSelectMeld={() => {}}
+        onRemoveMeld={() => {}}
+        onAddMeld={() => {}}
+      />
+    );
+    // 理由: MeldArea 本体の role="button" 要素に data-sheet-opener 属性があることを検証するため
+    expect(htmlMeld).toContain('data-sheet-opener=""');
+    expect(
+      htmlMeld.includes('data-sheet-opener="" class="meld-card__body"') ||
+        htmlMeld.includes('class="meld-card__body" data-sheet-opener=""')
+    ).toBe(true);
   });
 });
