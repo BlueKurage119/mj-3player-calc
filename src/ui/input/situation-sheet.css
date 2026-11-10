@@ -6,6 +6,22 @@
   box-sizing: border-box;
 }
 
-.situation-chips {
-  row-gap: 1.5rem;
+.situation-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.situation-heading {
+  font-family: var(--md-sys-typescale-label-medium-font);
+  font-size: var(--md-sys-typescale-label-medium-size);
+  line-height: var(--md-sys-typescale-label-medium-line-height);
+  font-weight: var(--md-sys-typescale-label-medium-weight);
+  letter-spacing: var(--md-sys-typescale-label-medium-tracking);
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+/* ダブル立直とオープンは性質が異なるので、chip 間の隙間(0.5rem)の倍を空ける */
+.situation-open {
+  margin-block-start: 0.5rem;
 }

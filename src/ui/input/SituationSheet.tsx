@@ -38,41 +38,53 @@ export function SituationSheetContent({
 
   return (
     <div className="situation-sheet">
-      <ChipSet className="situation-chips situation-riichi">
-        {RIICHI_BASE_OPTIONS.map(option => (
-          <FilterChip
-            key={option.value}
-            label={option.label}
-            selected={base === option.value}
-            radio
-            onSelectedChange={() => {
-              onRiichiChange(composeRiichi(option.value, open));
-            }}
-          />
-        ))}
+      <section className="situation-section" aria-label="立直">
+        <span className="situation-heading" aria-hidden="true">
+          立直
+        </span>
+        <ChipSet className="situation-chips">
+          {RIICHI_BASE_OPTIONS.map(option => (
+            <FilterChip
+              key={option.value}
+              label={option.label}
+              selected={base === option.value}
+              radio
+              onSelectedChange={() => {
+                onRiichiChange(composeRiichi(option.value, open));
+              }}
+            />
+          ))}
+        </ChipSet>
         {openRiichiAllowed ? (
-          <FilterChip
-            label="オープン"
-            selected={open}
-            disabled={base === 'none'}
-            onSelectedChange={nextOpen => {
-              onRiichiChange(composeRiichi(base, nextOpen));
-            }}
-          />
+          <ChipSet className="situation-chips situation-open">
+            <FilterChip
+              label="オープン"
+              selected={open}
+              disabled={base === 'none'}
+              onSelectedChange={nextOpen => {
+                onRiichiChange(composeRiichi(base, nextOpen));
+              }}
+            />
+          </ChipSet>
         ) : null}
-      </ChipSet>
+      </section>
 
-      <ChipSet className="situation-chips">
-        {chips.map(item => (
-          <FilterChip
-            key={item.key}
-            label={item.label}
-            selected={item.selected}
-            disabled={item.disabled}
-            onSelectedChange={val => onChipChange(item.key, val)}
-          />
-        ))}
-      </ChipSet>
+      <section className="situation-section" aria-label="偶然役">
+        <span className="situation-heading" aria-hidden="true">
+          偶然役
+        </span>
+        <ChipSet className="situation-chips">
+          {chips.map(item => (
+            <FilterChip
+              key={item.key}
+              label={item.label}
+              selected={item.selected}
+              disabled={item.disabled}
+              onSelectedChange={val => onChipChange(item.key, val)}
+            />
+          ))}
+        </ChipSet>
+      </section>
     </div>
   );
 }

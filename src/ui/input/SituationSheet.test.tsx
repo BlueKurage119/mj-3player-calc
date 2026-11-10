@@ -22,8 +22,9 @@ describe('SituationSheet (D5)', () => {
       />
     );
 
-    // 理由: 立直の単一選択 chip 列 situation-riichi が含まれることを検証するため
-    expect(htmlWithOpen.includes('situation-riichi')).toBe(true);
+    // 理由: 見出し「立直」「偶然役」の区画が含まれることを検証するため
+    expect(htmlWithOpen.includes('aria-label="立直"')).toBe(true);
+    expect(htmlWithOpen.includes('aria-label="偶然役"')).toBe(true);
     // 理由: 立直3択の chip(なし・立直・ダブル立直)が含まれることを検証するため
     expect(htmlWithOpen.includes('>なし<')).toBe(true);
     expect(htmlWithOpen.includes('>立直<')).toBe(true);
