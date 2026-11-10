@@ -89,12 +89,14 @@ function SummaryHandRow(): React.JSX.Element {
   const max = maxHandLength(input.melds);
   const { body, winning } = splitWinningTile(input.hand, max);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: 牌が変わるたびに収まりを測り直す
+  // 描画のたびに収まりを測り直す(牌・副露・和了牌のどれが変わっても漏れないよう、依存配列を持たない)
+  useLayoutEffect(() => {
+    if (ref.current) fitTileRow(ref.current);
+  });
+
   useLayoutEffect(() => {
     const el = ref.current;
-    if (!el) return;
-    fitTileRow(el);
-    if (typeof ResizeObserver === 'undefined') return;
+    if (!el || typeof ResizeObserver === 'undefined') return;
     let lastWidth = el.clientWidth;
     const observer = new ResizeObserver(() => {
       if (el.clientWidth !== lastWidth) {
@@ -104,7 +106,7 @@ function SummaryHandRow(): React.JSX.Element {
     });
     observer.observe(el);
     return () => observer.disconnect();
-  }, [input.hand, input.melds, rule.red]);
+  }, []);
 
   return (
     <div className="summary-card__row" data-slot="summary-input">
@@ -163,21 +165,22 @@ export function SummaryCard(props: SummaryCardProps): React.JSX.Element {
           />
         ) : null}
         {rows.dora ? (
-          <div className="summary-card__row" data-slot="summary-dora">
+          <div
+            className="summary-card__row summary-card__dora"
+            data-slot="summary-dora"
+          >
             <div className="summary-card__tiles">
               <span className="summary-card__label">ドラ</span>
               {input.dora.map((tile, idx) => (
                 <Tile key={`d${tile.type}${tile.n}-${idx}`} tile={tile} />
               ))}
             </div>
-            {input.uradora.length > 0 ? (
-              <div className="summary-card__tiles">
-                <span className="summary-card__label">裏</span>
-                {input.uradora.map((tile, idx) => (
-                  <Tile key={`u${tile.type}${tile.n}-${idx}`} tile={tile} />
-                ))}
-              </div>
-            ) : null}
+            <div className="summary-card__tiles">
+              <span className="summary-card__label">裏</span>
+              {input.uradora.map((tile, idx) => (
+                <Tile key={`u${tile.type}${tile.n}-${idx}`} tile={tile} />
+              ))}
+            </div>
           </div>
         ) : null}
         {rows.hand ? <SummaryHandRow /> : null}
