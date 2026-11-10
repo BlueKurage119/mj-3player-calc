@@ -42,7 +42,7 @@ describe('D6-rule-groups (§4.3)', () => {
     const doubleYakumanSubgroup = yakumanGroup?.subgroups?.[0];
     expect(doubleYakumanSubgroup?.id).toBe('double-yakuman');
     expect(doubleYakumanSubgroup?.title).toBe('ダブル役満');
-    expect(doubleYakumanSubgroup?.note).toBe('オフのときは役満');
+    expect(doubleYakumanSubgroup?.note).toBe('オフのときはシングル役満');
     expect(doubleYakumanSubgroup?.keys).toEqual([
       'kokushi13DoubleYakuman',
       'suankoTankiDoubleYakuman',

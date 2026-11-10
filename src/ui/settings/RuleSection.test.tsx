@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import { createDefaultRule } from '../../core/rule';
@@ -121,7 +122,7 @@ describe('D6-RuleSection (§4.1〜§4.3)', () => {
 
     // 理由: ダブル役満の子セクション見出しと補足が表示されることを検証するため
     expect(html.includes('ダブル役満</h4>')).toBe(true);
-    expect(html.includes('オフのときは役満</p>')).toBe(true);
+    expect(html.includes('オフのときはシングル役満</p>')).toBe(true);
 
     // 理由: ダブル役満4項目が短いラベルで表示されることを検証するため
     expect(html.includes('国士無双十三面待ち')).toBe(true);
@@ -179,6 +180,43 @@ describe('D6-RuleSection (§4.1〜§4.3)', () => {
     expect(html.match(/<md-radio /g) ?? []).toHaveLength(3);
     expect(
       html.includes('北家の負担額を、ツモられた2人で折半して上乗せする')
+    ).toBe(true);
+  });
+
+  it('D6-RuleSection-accordion-hidden: 閉のとき詳細領域に hidden が付き aria-expanded=false、開のとき付かず true', () => {
+    const render = (initialOpen: boolean) =>
+      renderToStaticMarkup(
+        <HelpTooltipScope>
+          <RuleSection
+            rule={defaultRule}
+            initialOpen={initialOpen}
+            onResetToRanked={() => {}}
+            onRuleValueChange={() => {}}
+          />
+        </HelpTooltipScope>
+      );
+    const region = (html: string) =>
+      html.match(/<div[^>]*settings-accordion__content[^>]*>/)?.[0] ?? '';
+
+    const closed = render(false);
+    expect(/\shidden=""/.test(region(closed))).toBe(true);
+    expect(closed.includes('aria-expanded="false"')).toBe(true);
+
+    const opened = render(true);
+    expect(/\shidden=""/.test(region(opened))).toBe(false);
+    expect(opened.includes('aria-expanded="true"')).toBe(true);
+  });
+
+  it('D6-RuleSection-accordion-css: display を指定する .settings-accordion__content が [hidden] で非表示に上書きされる', () => {
+    const css = readFileSync(
+      new URL('./settings.css', import.meta.url),
+      'utf8'
+    );
+    // 理由: hidden 属性が display:flex に負けて閉じても表示され続ける不具合を検知するため
+    expect(
+      /\.settings-accordion__content\[hidden\]\s*\{[^}]*display:\s*none/.test(
+        css
+      )
     ).toBe(true);
   });
 });

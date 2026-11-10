@@ -102,14 +102,18 @@
 }
 
 .settings-row--choice {
-  flex-direction: column;
-  align-items: stretch;
+  flex-wrap: wrap;
   justify-content: flex-start;
-  gap: 0.5rem;
+  gap: 0.25rem 0.75rem;
+}
+
+.settings-row--choice .settings-row__label-group {
+  flex: 0 0 auto;
 }
 
 .settings-row--choice .connected-button-group {
-  width: 100%;
+  flex: 1 1 auto;
+  min-width: max-content;
 }
 
 .settings-row--choice .connected-button {
@@ -365,6 +369,10 @@
 
 .settings-accordion__expand-icon--expanded {
   transform: rotate(180deg);
+}
+
+.settings-accordion__content[hidden] {
+  display: none;
 }
 
 .settings-accordion__content {

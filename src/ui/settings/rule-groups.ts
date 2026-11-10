@@ -39,7 +39,7 @@ export const DETAIL_RULE_GROUPS: readonly DetailRuleGroup[] = [
       {
         id: 'double-yakuman',
         title: 'ダブル役満',
-        note: 'オフのときは役満',
+        note: 'オフのときはシングル役満',
         keys: [
           'kokushi13DoubleYakuman',
           'suankoTankiDoubleYakuman',
