@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import type React from 'react';
 import type { NumberRuleItem } from '../../core/rule-items';
+import { ruleItemLabel } from './rule-help';
 import { commitPointValue, sanitizeDigits } from './settings-logic';
 
 export interface PointFieldProps {
@@ -59,11 +60,15 @@ export function PointField({
 
   return (
     /* biome-ignore lint/a11y/useSemanticElements: 設計書 §4.5 で指定された WAI-ARIA group パターンのため */
-    <div role="group" aria-label={item.label} className="settings-point-field">
+    <div
+      role="group"
+      aria-label={ruleItemLabel(item)}
+      className="settings-point-field"
+    >
       <button
         type="button"
         className="settings-point-field__btn"
-        aria-label={`${item.label}を減らす`}
+        aria-label={`${ruleItemLabel(item)}を減らす`}
         disabled={isMin}
         onClick={handleMinus}
       >
@@ -73,7 +78,7 @@ export function PointField({
         <input
           type="text"
           inputMode="numeric"
-          aria-label={item.label}
+          aria-label={ruleItemLabel(item)}
           maxLength={5}
           className="settings-point-field__input tabular-nums"
           value={draft}
@@ -91,7 +96,7 @@ export function PointField({
       <button
         type="button"
         className="settings-point-field__btn"
-        aria-label={`${item.label}を増やす`}
+        aria-label={`${ruleItemLabel(item)}を増やす`}
         disabled={isMax}
         onClick={handlePlus}
       >

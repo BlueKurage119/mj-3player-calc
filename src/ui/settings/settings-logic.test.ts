@@ -63,14 +63,14 @@ describe('D6-settings-logic (§4.3・§4.5)', () => {
       accumlatedYakuman: false
     };
     // DETAIL_RULE_KEYS では points グループの honbaPoint が先、yakuman グループの accumlatedYakuman が後
-    expect(changedDetailLabels(modifiedRule1)).toEqual(['本場', '数え役満']);
+    expect(changedDetailLabels(modifiedRule1)).toEqual(['積み棒', '数え役満']);
 
     // 基本項目(赤ドラ)を変更しても詳細には影響しない
     const modifiedRule2 = {
       ...modifiedRule1,
       red: 0 as const
     };
-    expect(changedDetailLabels(modifiedRule2)).toEqual(['本場', '数え役満']);
+    expect(changedDetailLabels(modifiedRule2)).toEqual(['積み棒', '数え役満']);
   });
 
   it('D6-logic-formatChangedSummary: 変更件数に応じたサマリー文字列を生成する (0/1/3/4/5件)', () => {
@@ -78,28 +78,28 @@ describe('D6-settings-logic (§4.3・§4.5)', () => {
     expect(formatChangedSummary([])).toBeNull();
 
     // 1件 → 単一ラベル
-    expect(formatChangedSummary(['本場'])).toBe('本場');
+    expect(formatChangedSummary(['積み棒'])).toBe('積み棒');
 
     // 3件 → ・区切り
-    expect(formatChangedSummary(['本場', '供託', '数え役満'])).toBe(
-      '本場・供託・数え役満'
+    expect(formatChangedSummary(['積み棒', '供託', '数え役満'])).toBe(
+      '積み棒・供託・数え役満'
     );
 
     // 4件 → 先頭3件 + ほか1件
     expect(
-      formatChangedSummary(['本場', '供託', '数え役満', '役満の複合'])
-    ).toBe('本場・供託・数え役満ほか1件');
+      formatChangedSummary(['積み棒', '供託', '数え役満', '役満の複合'])
+    ).toBe('積み棒・供託・数え役満ほか1件');
 
     // 5件 → 先頭3件 + ほか2件
     expect(
       formatChangedSummary([
-        '本場',
+        '積み棒',
         '供託',
         '数え役満',
         '役満の複合',
         'オープン立直'
       ])
-    ).toBe('本場・供託・数え役満ほか2件');
+    ).toBe('積み棒・供託・数え役満ほか2件');
   });
 });
 

@@ -79,8 +79,8 @@ describe('D6-RuleSection (§4.1〜§4.3)', () => {
         />
       </HelpTooltipScope>
     );
-    // 理由: 2件変更時に「本場・数え役満」が副テキストとして表示されることを検証するため
-    expect(html2.includes('本場・数え役満')).toBe(true);
+    // 理由: 2件変更時に「積み棒・数え役満」が副テキストとして表示されることを検証するため
+    expect(html2.includes('積み棒・数え役満')).toBe(true);
 
     // 5件変更: honbaPoint, depositPoint, accumlatedYakuman, multipleYakuman, openRiichi
     const rule5 = {
@@ -101,8 +101,8 @@ describe('D6-RuleSection (§4.1〜§4.3)', () => {
         />
       </HelpTooltipScope>
     );
-    // 理由: 5件変更時に「本場・供託・数え役満ほか2件」が副テキストとして表示されることを検証するため
-    expect(html5.includes('本場・供託・数え役満ほか2件')).toBe(true);
+    // 理由: 5件変更時に「積み棒・供託・数え役満ほか2件」が副テキストとして表示されることを検証するため
+    expect(html5.includes('積み棒・供託・数え役満ほか2件')).toBe(true);
   });
 
   it('D6-RuleSection-open-accordion: 開時にダブル役満の子見出し・補足・4項目およびhelpが7項目のみ出力される', () => {
@@ -130,21 +130,21 @@ describe('D6-RuleSection (§4.1〜§4.3)', () => {
     expect(html.includes('大四喜')).toBe(true);
     expect(html.includes('純正九蓮宝燈')).toBe(true);
 
-    // 理由: help ツールチップが仕様の7項目 (北の扱い・ローカル役・オープン立直・連風牌の雀頭・本場・供託・赤ドラ) のみ出力されることを検証するため
+    // 理由: help ツールチップが仕様の8項目 (赤ドラ・北の扱い・積み棒・供託・切り上げ満貫・役満の複合・オープン立直・ローカル役) のみ出力されることを検証するため
     const helpMatches = html.match(/id="help-[^"]+"/g) ?? [];
-    expect(helpMatches).toHaveLength(7);
+    expect(helpMatches).toHaveLength(8);
     expect(html.includes('id="help-tsumoLoss"')).toBe(false);
     expect(html.includes('id="help-north"')).toBe(true);
     expect(html.includes('id="help-localYaku"')).toBe(true);
     expect(html.includes('id="help-openRiichi"')).toBe(true);
-    expect(html.includes('id="help-doubleWindFu"')).toBe(true);
+    expect(html.includes('id="help-roundedMangan"')).toBe(true);
+    expect(html.includes('id="help-multipleYakuman"')).toBe(true);
     expect(html.includes('id="help-honbaPoint"')).toBe(true);
     expect(html.includes('id="help-depositPoint"')).toBe(true);
     expect(html.includes('id="help-red"')).toBe(true);
 
-    // 理由: 切り上げ満貫・役満の複合には help が無いことを検証するため
-    expect(html.includes('id="help-roundedMangan"')).toBe(false);
-    expect(html.includes('id="help-multipleYakuman"')).toBe(false);
+    // 理由: 連風牌の雀頭には help が無いことを検証するため
+    expect(html.includes('id="help-doubleWindFu"')).toBe(false);
   });
 
   it('D6-RuleSection-choice-buttons: 赤ドラ・北の扱い・連風牌の雀頭はボタン群、ツモ損は現在値つきのダイアログ行で出力される', () => {

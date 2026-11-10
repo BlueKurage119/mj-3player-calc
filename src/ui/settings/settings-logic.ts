@@ -7,6 +7,7 @@ import {
 import { type RuleStorage, saveRule } from '../../core/rule-storage';
 import type { ConnectedOption } from '../expressive/connected-logic';
 import { DETAIL_RULE_KEYS } from './rule-groups';
+import { ruleItemLabel } from './rule-help';
 
 const RULE_ITEM_MAP = new Map(RULE_ITEMS.map(item => [item.key, item]));
 
@@ -52,7 +53,7 @@ export function changedDetailLabels(rule: Rule): string[] {
   for (const key of DETAIL_RULE_KEYS) {
     const item = RULE_ITEM_MAP.get(key);
     if (item && rule[key] !== item.defaultValue) {
-      result.push(item.label);
+      result.push(ruleItemLabel(item));
     }
   }
   return result;

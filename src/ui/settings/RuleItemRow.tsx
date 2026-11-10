@@ -6,7 +6,7 @@ import { Switch } from '../md';
 import { HelpTooltip } from './HelpTooltip';
 import { PointField } from './PointField';
 import { TsumoLossRow } from './TsumoLossRow';
-import { RULE_HELP_TEXTS } from './rule-help';
+import { RULE_HELP_TEXTS, ruleItemLabel } from './rule-help';
 import { choiceOptions, choiceValue, resolveChoice } from './settings-logic';
 
 export interface RuleItemRowProps {
@@ -22,7 +22,11 @@ export function RuleItemRow({
 }: RuleItemRowProps): React.JSX.Element {
   const helpText = RULE_HELP_TEXTS[item.key];
   const helpElement = helpText ? (
-    <HelpTooltip id={`help-${item.key}`} label={item.label} text={helpText} />
+    <HelpTooltip
+      id={`help-${item.key}`}
+      label={ruleItemLabel(item)}
+      text={helpText}
+    />
   ) : null;
 
   if (item.kind === 'select') {
@@ -40,11 +44,11 @@ export function RuleItemRow({
     return (
       <div className="settings-row settings-row--choice">
         <div className="settings-row__label-group">
-          <span className="settings-row__label">{item.label}</span>
+          <span className="settings-row__label">{ruleItemLabel(item)}</span>
           {helpElement}
         </div>
         <ConnectedButtonGroup<string>
-          label={item.label}
+          label={ruleItemLabel(item)}
           options={choiceOptions(item)}
           value={choiceValue(item, rule)}
           onValueChange={v => {
@@ -62,11 +66,11 @@ export function RuleItemRow({
     return (
       <div className="settings-row settings-row--switch">
         <div className="settings-row__label-group">
-          <span className="settings-row__label">{item.label}</span>
+          <span className="settings-row__label">{ruleItemLabel(item)}</span>
           {helpElement}
         </div>
         <Switch
-          label={item.label}
+          label={ruleItemLabel(item)}
           selected={Boolean(rule[item.key])}
           onSelectedChange={checked => {
             onRuleValueChange(item.key, checked as Rule[typeof item.key]);
@@ -79,7 +83,7 @@ export function RuleItemRow({
   return (
     <div className="settings-row settings-row--point">
       <div className="settings-row__label-group">
-        <span className="settings-row__label">{item.label}</span>
+        <span className="settings-row__label">{ruleItemLabel(item)}</span>
         {helpElement}
       </div>
       <PointField

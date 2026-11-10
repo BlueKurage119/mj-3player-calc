@@ -23,16 +23,18 @@ describe('D6-PointField (§4.5)', () => {
 
     // 理由: role="group" と aria-label が正しく設定されていることを検証するため
     expect(html.includes('role="group"')).toBe(true);
-    expect(html.includes('aria-label="本場"')).toBe(true);
+    expect(html.includes('aria-label="積み棒"')).toBe(true);
 
-    // 理由: value=min (0) のとき「本場を減らす」ボタンが disabled であることを検証するため
+    // 理由: value=min (0) のとき「積み棒を減らす」ボタンが disabled であることを検証するため
     expect(
-      html.includes('aria-label="本場を減らす" disabled=""') ||
-        html.includes('disabled="" aria-label="本場を減らす"')
+      html.includes('aria-label="積み棒を減らす" disabled=""') ||
+        html.includes('disabled="" aria-label="積み棒を減らす"')
     ).toBe(true);
 
-    // 理由: value=min のとき「本場を増やす」ボタンは disabled でないことを検証するため
-    expect(html.includes('aria-label="本場を増やす" disabled=""')).toBe(false);
+    // 理由: value=min のとき「積み棒を増やす」ボタンは disabled でないことを検証するため
+    expect(html.includes('aria-label="積み棒を増やす" disabled=""')).toBe(
+      false
+    );
 
     // 理由: inputmode="numeric" (または React 描画時の inputMode="numeric") が設定されていることを検証するため
     expect(
@@ -49,14 +51,16 @@ describe('D6-PointField (§4.5)', () => {
       <PointField item={honbaItem} value={10000} onCommit={() => {}} />
     );
 
-    // 理由: value=max (10000) のとき「本場を増やす」ボタンが disabled であることを検証するため
+    // 理由: value=max (10000) のとき「積み棒を増やす」ボタンが disabled であることを検証するため
     expect(
-      html.includes('aria-label="本場を増やす" disabled=""') ||
-        html.includes('disabled="" aria-label="本場を増やす"')
+      html.includes('aria-label="積み棒を増やす" disabled=""') ||
+        html.includes('disabled="" aria-label="積み棒を増やす"')
     ).toBe(true);
 
-    // 理由: value=max のとき「本場を減らす」ボタンは disabled でないことを検証するため
-    expect(html.includes('aria-label="本場を減らす" disabled=""')).toBe(false);
+    // 理由: value=max のとき「積み棒を減らす」ボタンは disabled でないことを検証するため
+    expect(html.includes('aria-label="積み棒を減らす" disabled=""')).toBe(
+      false
+    );
   });
 
   it('D6-PointField-middle-enabled: 中間値のとき − も + も disabled でない', () => {
