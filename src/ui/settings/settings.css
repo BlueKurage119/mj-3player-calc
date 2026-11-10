@@ -1,0 +1,355 @@
+/* 設定画面のスタイル (MD3 トークンのみ使用) */
+
+.settings-screen__content {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  padding-block: 1rem 2rem;
+}
+
+.settings-screen {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding: 1rem;
+  color: var(--md-sys-color-on-surface);
+  box-sizing: border-box;
+}
+
+.settings-notice {
+  font-family: var(--md-sys-typescale-body-medium-font);
+  font-size: var(--md-sys-typescale-body-medium-size);
+  line-height: var(--md-sys-typescale-body-medium-line-height);
+  color: var(--md-sys-color-error);
+  margin: 0;
+  padding: 0.25rem 0;
+}
+
+.settings-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.settings-section__title {
+  font-family: var(--md-sys-typescale-title-small-font);
+  font-size: var(--md-sys-typescale-title-small-size);
+  font-weight: var(--md-sys-typescale-title-small-weight);
+  line-height: var(--md-sys-typescale-title-small-line-height);
+  color: var(--md-sys-color-on-surface);
+  margin: 0;
+}
+
+.settings-theme-row {
+  display: flex;
+  align-items: center;
+}
+
+.settings-preset-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 3rem;
+  padding: 0.25rem 0;
+}
+
+.settings-preset-row__label {
+  font-family: var(--md-sys-typescale-body-large-font);
+  font-size: var(--md-sys-typescale-body-large-size);
+  color: var(--md-sys-color-on-surface);
+}
+
+.settings-preset-row__reset-btn {
+  background: transparent;
+  border: none;
+  color: var(--md-sys-color-primary);
+  font-family: var(--md-sys-typescale-label-large-font);
+  font-size: var(--md-sys-typescale-label-large-size);
+  font-weight: var(--md-sys-typescale-label-large-weight);
+  cursor: pointer;
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--md-sys-shape-corner-full);
+}
+
+.settings-preset-row__reset-btn:disabled {
+  color: color-mix(in srgb, var(--md-sys-color-on-surface) 38%, transparent);
+  cursor: default;
+}
+
+.settings-rules-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  min-height: 3rem;
+  padding: 0.25rem 0;
+  box-sizing: border-box;
+}
+
+.settings-row--select {
+  justify-content: flex-start;
+}
+
+.settings-row__select-wrapper {
+  flex: 1;
+  min-width: 0;
+}
+
+.settings-row__select {
+  width: 100%;
+  min-width: 0;
+}
+
+.settings-row__help {
+  display: flex;
+  align-items: center;
+  margin-left: 0.5rem;
+}
+
+.settings-row__label-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.settings-row__label {
+  font-family: var(--md-sys-typescale-body-large-font);
+  font-size: var(--md-sys-typescale-body-large-size);
+  color: var(--md-sys-color-on-surface);
+}
+
+/* ツールチップ */
+.help-tooltip {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.help-tooltip__button {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--md-sys-color-on-surface-variant);
+  cursor: pointer;
+  border-radius: var(--md-sys-shape-corner-full);
+}
+
+.help-tooltip__button::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 48px;
+  height: 48px;
+  transform: translate(-50%, -50%);
+}
+
+.help-tooltip__bubble {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100;
+  box-sizing: border-box;
+  padding: 0.5rem 0.75rem;
+  background-color: var(--md-sys-color-inverse-surface);
+  color: var(--md-sys-color-inverse-on-surface);
+  border-radius: var(--md-sys-shape-corner-extra-small);
+  font-family: var(--md-sys-typescale-body-small-font);
+  font-size: var(--md-sys-typescale-body-small-size);
+  line-height: var(--md-sys-typescale-body-small-line-height);
+  max-width: min(280px, calc(100vw - 32px));
+  width: max-content;
+  pointer-events: auto;
+  box-shadow: 0 2px 6px
+    color-mix(in srgb, var(--md-sys-color-shadow) 15%, transparent);
+  transition: opacity var(--md-sys-motion-duration-short2)
+    var(--md-sys-motion-easing-standard);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .help-tooltip__bubble {
+    transition: none;
+  }
+}
+
+/* 本場・供託 PointField */
+.settings-point-field {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.settings-point-field__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  min-width: 48px;
+  min-height: 48px;
+  border: none;
+  border-radius: var(--md-sys-shape-corner-small);
+  background-color: var(--md-sys-color-secondary-container);
+  color: var(--md-sys-color-on-secondary-container);
+  font-size: 1.25rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.settings-point-field__btn:disabled {
+  opacity: 0.38;
+  cursor: default;
+}
+
+.settings-point-field__input-wrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.settings-point-field__input {
+  width: 4.5rem;
+  height: 48px;
+  box-sizing: border-box;
+  text-align: right;
+  padding-right: 1.5rem;
+  padding-left: 0.5rem;
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: var(--md-sys-shape-corner-small);
+  background-color: var(--md-sys-color-surface-container);
+  color: var(--md-sys-color-on-surface);
+  font-family: var(--md-sys-typescale-body-large-font);
+  font-size: var(--md-sys-typescale-body-large-size);
+}
+
+.settings-point-field__input:focus {
+  outline: 2px solid var(--md-sys-color-primary);
+  border-color: transparent;
+}
+
+.settings-point-field__unit {
+  position: absolute;
+  right: 0.5rem;
+  pointer-events: none;
+  color: var(--md-sys-color-on-surface-variant);
+  font-family: var(--md-sys-typescale-body-small-font);
+  font-size: var(--md-sys-typescale-body-small-size);
+}
+
+/* 詳細設定アコーディオン */
+.settings-accordion {
+  display: flex;
+  flex-direction: column;
+}
+
+.settings-accordion__summary {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  min-height: 3rem;
+  padding: 0.5rem 0.25rem;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  border-radius: var(--md-sys-shape-corner-small);
+  color: var(--md-sys-color-on-surface);
+}
+
+.settings-accordion__summary-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.settings-accordion__summary-title {
+  font-family: var(--md-sys-typescale-body-large-font);
+  font-size: var(--md-sys-typescale-body-large-size);
+  font-weight: var(--md-sys-typescale-title-small-weight);
+  color: var(--md-sys-color-on-surface);
+}
+
+.settings-accordion__summary-subtext {
+  font-family: var(--md-sys-typescale-body-small-font);
+  font-size: var(--md-sys-typescale-body-small-size);
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+.settings-accordion__expand-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--md-sys-color-on-surface-variant);
+  transition: transform var(--md-sys-motion-duration-short4)
+    var(--md-sys-motion-easing-standard);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .settings-accordion__expand-icon {
+    transition: none;
+  }
+}
+
+.settings-accordion__expand-icon--expanded {
+  transform: rotate(180deg);
+}
+
+.settings-accordion__content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.settings-detail-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.settings-detail-group__title {
+  font-family: var(--md-sys-typescale-title-small-font);
+  font-size: var(--md-sys-typescale-title-small-size);
+  font-weight: var(--md-sys-typescale-title-small-weight);
+  color: var(--md-sys-color-on-surface-variant);
+  margin: 0.5rem 0 0.25rem 0;
+}
+
+.settings-detail-subgroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding-left: 0.75rem;
+  border-left: 2px solid var(--md-sys-color-outline-variant);
+  margin-top: 0.25rem;
+}
+
+.settings-detail-subgroup__title {
+  font-family: var(--md-sys-typescale-label-large-font);
+  font-size: var(--md-sys-typescale-label-large-size);
+  font-weight: var(--md-sys-typescale-label-large-weight);
+  color: var(--md-sys-color-on-surface);
+  margin: 0;
+}
+
+.settings-detail-subgroup__note {
+  font-family: var(--md-sys-typescale-body-small-font);
+  font-size: var(--md-sys-typescale-body-small-size);
+  color: var(--md-sys-color-on-surface-variant);
+  margin: 0.125rem 0 0.25rem 0;
+}

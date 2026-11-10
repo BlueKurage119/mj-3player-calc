@@ -6,8 +6,9 @@ import {
   isTileGalleryMode
 } from './app-mode';
 import { MainScreen } from './screen/MainScreen';
-import { SettingsScreen } from './screen/SettingsScreen';
 import { AppStateProvider, useAppState } from './state';
+
+const SettingsScreen = lazy(() => import('./screen/SettingsScreen'));
 
 let DevTileGallery: ComponentType | null = null;
 let DevMdGallery: ComponentType | null = null;
@@ -19,7 +20,13 @@ if (import.meta.env.DEV) {
 
 function AppContent(): React.JSX.Element {
   const { screen } = useAppState();
-  return screen === 'settings' ? <SettingsScreen /> : <MainScreen />;
+  return screen === 'settings' ? (
+    <Suspense fallback={null}>
+      <SettingsScreen />
+    </Suspense>
+  ) : (
+    <MainScreen />
+  );
 }
 
 export const App = (): React.JSX.Element => {
