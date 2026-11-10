@@ -45,6 +45,15 @@
   align-items: center;
 }
 
+.settings-theme-row > .connected-button-group {
+  width: 100%;
+}
+
+.settings-theme-row .connected-button {
+  padding: 0 0.5rem;
+  white-space: nowrap;
+}
+
 .settings-preset-row {
   display: flex;
   align-items: center;
