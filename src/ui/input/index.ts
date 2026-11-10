@@ -2,6 +2,11 @@ export { TilePalette } from './TilePalette';
 export { Tenkey } from './Tenkey';
 export { MeldKindBar, type MeldKindBarProps } from './MeldKindBar';
 export {
+  SituationSheet,
+  SituationSheetContent,
+  type SituationSheetContentProps
+} from './SituationSheet';
+export {
   useTenkeyKeyboard,
   resolveKeyboardAction,
   isSheetKeyboardTarget

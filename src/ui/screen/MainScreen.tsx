@@ -5,6 +5,7 @@ import { BottomSheet, ConnectedButtonGroup, Stepper } from '../expressive';
 import { SYMBOL_DIALPAD, SYMBOL_KEYBOARD_KEYS, SymbolIcon } from '../icons';
 import {
   MeldKindBar,
+  SituationSheet,
   Tenkey,
   TilePalette,
   isSheetKeyboardTarget,
@@ -23,7 +24,9 @@ import { HandCard } from './HandCard';
 import { IndicatorCard } from './IndicatorCard';
 import { MeldArea } from './MeldArea';
 import { ResultPanel } from './ResultPanel';
+import { SituationCard } from './SituationCard';
 import { SummaryCard } from './SummaryCard';
+import { WindSegment } from './WindSegment';
 import { useInView } from './use-in-view';
 import './main-screen.css';
 
@@ -99,7 +102,9 @@ export function MainScreen(): React.JSX.Element {
             className="input-section__sentinel"
             aria-hidden="true"
           />
-          <div className="input-slot" data-slot="wind-segment" />
+          <div className="input-slot" data-slot="wind-segment">
+            <WindSegment />
+          </div>
           <div className="stepper-group">
             <Stepper
               aria-label="積み棒"
@@ -138,7 +143,9 @@ export function MainScreen(): React.JSX.Element {
           <div className="input-slot" data-slot="melds">
             <MeldArea />
           </div>
-          <div className="input-slot" data-slot="situation" />
+          <div className="input-slot" data-slot="situation">
+            <SituationCard />
+          </div>
         </section>
         <SummaryCard visible={summaryVisible} sheetOpen={sheetOpen} />
         <ResultPanel
@@ -171,6 +178,8 @@ export function MainScreen(): React.JSX.Element {
               <MeldKindBar i={inputFocus.i} />
               {sheetMode === 'tenkey' ? <Tenkey /> : <TilePalette />}
             </div>
+          ) : inputFocus?.type === 'situation' ? (
+            <SituationSheet />
           ) : null}
         </div>
       </BottomSheet>

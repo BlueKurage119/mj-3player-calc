@@ -217,7 +217,8 @@ body {
 
 .hand-card.hand-card--selected,
 .indicator-card.indicator-card--selected,
-.meld-card.meld-card--selected {
+.meld-card.meld-card--selected,
+.situation-card.situation-card--selected {
   background-color: var(--md-sys-color-primary-container);
 }
 
@@ -250,6 +251,51 @@ body {
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
+}
+
+.summary-card__status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.summary-card__winds {
+  font-family: var(--md-sys-typescale-label-large-font);
+  font-size: var(--md-sys-typescale-label-large-size);
+  line-height: var(--md-sys-typescale-label-large-line-height);
+  font-weight: var(--md-sys-typescale-label-large-weight);
+  letter-spacing: var(--md-sys-typescale-label-large-tracking);
+  color: var(--md-sys-color-on-surface);
+}
+
+.summary-card__counters {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.summary-card__pill {
+  display: inline-flex;
+  align-items: center;
+  background-color: var(--md-sys-color-surface-container-highest);
+  border-radius: var(--md-sys-shape-corner-full);
+  padding: 0.125rem 0.5rem;
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+.summary-card__pill-inner {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.summary-card__count {
+  font-variant-numeric: tabular-nums;
+  font-family: var(--md-sys-typescale-label-medium-font);
+  font-size: var(--md-sys-typescale-label-medium-size);
+  line-height: var(--md-sys-typescale-label-medium-line-height);
+  font-weight: var(--md-sys-typescale-label-medium-weight);
 }
 
 .summary-card__tiles {
@@ -485,6 +531,86 @@ body {
 
 .sheet-slot[data-slot^="sheet-dora"],
 .sheet-slot[data-slot^="sheet-uradora"],
-.sheet-slot[data-slot^="sheet-meld"] {
+.sheet-slot[data-slot^="sheet-meld"],
+.sheet-slot[data-slot="sheet-situation"] {
   min-height: 16rem;
+}
+
+.wind-segment {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.wind-segment__group {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.wind-segment__label {
+  white-space: nowrap;
+  font-family: var(--md-sys-typescale-label-medium-font);
+  font-size: var(--md-sys-typescale-label-medium-size);
+  line-height: var(--md-sys-typescale-label-medium-line-height);
+  font-weight: var(--md-sys-typescale-label-medium-weight);
+  letter-spacing: var(--md-sys-typescale-label-medium-tracking);
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+.wind-segment .connected-button-group {
+  width: 100%;
+}
+
+.wind-segment .connected-button::after {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  top: calc(min(0px, (100% - 3rem) / 2));
+  bottom: calc(min(0px, (100% - 3rem) / 2));
+}
+
+.situation-card {
+  background: var(--md-sys-color-surface-container);
+  border-radius: var(--md-sys-shape-corner-large);
+  padding: 0.375rem 0.5rem;
+  box-sizing: border-box;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.situation-card__title {
+  display: block;
+  font-family: var(--md-sys-typescale-title-small-font);
+  font-size: var(--md-sys-typescale-title-small-size);
+  line-height: var(--md-sys-typescale-title-small-line-height);
+  font-weight: var(--md-sys-typescale-title-small-weight);
+  letter-spacing: var(--md-sys-typescale-title-small-tracking);
+  color: var(--md-sys-color-on-surface);
+}
+
+.situation-card__body {
+  margin-top: 0.25rem;
+  border-radius: var(--md-sys-shape-corner-medium);
+  padding: 0.125rem;
+  box-sizing: border-box;
+  outline: none;
+  font-family: var(--md-sys-typescale-body-medium-font);
+  font-size: var(--md-sys-typescale-body-medium-size);
+  line-height: var(--md-sys-typescale-body-medium-line-height);
+  font-weight: var(--md-sys-typescale-body-medium-weight);
+  letter-spacing: var(--md-sys-typescale-body-medium-tracking);
+  color: var(--md-sys-color-on-surface);
+  word-break: break-word;
+}
+
+.situation-card__body:focus-visible {
+  outline: 2px solid var(--md-sys-color-primary);
+  outline-offset: 2px;
+}
+
+.situation-card__empty {
+  color: var(--md-sys-color-on-surface-variant);
 }

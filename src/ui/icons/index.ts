@@ -8,3 +8,7 @@ export {
   SYMBOL_ADD,
   SYMBOL_CANCEL
 } from './symbol-paths';
+export {
+  CUSTOM_DEPOSIT_STICK,
+  CUSTOM_HONBA_STICK
+} from './custom-paths';
