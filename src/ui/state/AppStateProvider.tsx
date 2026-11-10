@@ -2,38 +2,29 @@ import {
   type Dispatch,
   type ReactNode,
   createContext,
+  useCallback,
   useContext,
-  useReducer
+  useMemo,
+  useReducer,
+  useState
 } from 'react';
 import type React from 'react';
-import { type RuleStorage, loadRule } from '../../core/rule-storage';
+import { type AppAction, type AppState, appReducer } from './app-state';
 import {
-  type AppAction,
-  type AppState,
-  appReducer,
-  createInitialState
-} from './app-state';
+  createInitialStateFromStorage,
+  safeLocalStorage
+} from './rule-persistence';
 
-const safeLocalStorage = (): RuleStorage | null => {
-  try {
-    return window.localStorage;
-  } catch {
-    return null;
-  }
-};
-
-const initAppState = (): AppState => {
-  const loaded = loadRule(safeLocalStorage());
-  // 設定画面(D6)の実装までの仮置き。オープン立直とローカル役の表示を確認できるよう有効にする(D6で削除する)
-  return createInitialState({
-    ...loaded.rule,
-    openRiichi: true,
-    localYaku: true
-  });
-};
+export interface RuleLoadNoticeContextValue {
+  show: boolean;
+  dismiss: () => void;
+}
 
 const AppStateContext = createContext<AppState | null>(null);
 const AppDispatchContext = createContext<Dispatch<AppAction> | null>(null);
+const RuleLoadNoticeContext = createContext<RuleLoadNoticeContextValue | null>(
+  null
+);
 
 export interface AppStateProviderProps {
   children: ReactNode;
@@ -42,11 +33,28 @@ export interface AppStateProviderProps {
 export function AppStateProvider(
   props: AppStateProviderProps
 ): React.JSX.Element {
-  const [state, dispatch] = useReducer(appReducer, undefined, initAppState);
+  const [initialData] = useState(() =>
+    createInitialStateFromStorage(safeLocalStorage())
+  );
+  const [state, dispatch] = useReducer(appReducer, initialData.state);
+  const [showNotice, setShowNotice] = useState(initialData.loadNotice);
+
+  const dismiss = useCallback(() => {
+    setShowNotice(false);
+  }, []);
+
+  const noticeValue = useMemo(
+    () => ({ show: showNotice, dismiss }),
+    [showNotice, dismiss]
+  );
 
   return (
     <AppStateContext value={state}>
-      <AppDispatchContext value={dispatch}>{props.children}</AppDispatchContext>
+      <AppDispatchContext value={dispatch}>
+        <RuleLoadNoticeContext value={noticeValue}>
+          {props.children}
+        </RuleLoadNoticeContext>
+      </AppDispatchContext>
     </AppStateContext>
   );
 }
@@ -64,6 +72,16 @@ export const useAppDispatch = (): Dispatch<AppAction> => {
   if (ctx === null) {
     throw new Error(
       'useAppDispatch は AppStateProvider の内側で使用してください'
+    );
+  }
+  return ctx;
+};
+
+export const useRuleLoadNotice = (): RuleLoadNoticeContextValue => {
+  const ctx = useContext(RuleLoadNoticeContext);
+  if (ctx === null) {
+    throw new Error(
+      'useRuleLoadNotice は AppStateProvider の内側で使用してください'
     );
   }
   return ctx;

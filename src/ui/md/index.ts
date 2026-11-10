@@ -24,6 +24,11 @@ export {
 } from './Switch';
 
 export {
+  Radio,
+  type RadioProps
+} from './Radio';
+
+export {
   Dialog,
   type DialogProps
 } from './Dialog';
