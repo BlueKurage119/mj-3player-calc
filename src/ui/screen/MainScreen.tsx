@@ -112,8 +112,8 @@ export function MainScreen(): React.JSX.Element {
   const handInView = useInView(handRef, viewOptions, true);
   const summaryRows = {
     status: !statusInView,
-    dora: !doraInView,
-    hand: !handInView
+    dora: !statusInView && !doraInView,
+    hand: !statusInView && !handInView
   };
   const sheetOpen = inputFocus !== null;
 
@@ -128,8 +128,12 @@ export function MainScreen(): React.JSX.Element {
       <main className="main-screen">
         <SummaryCard rows={summaryRows} sheetOpen={sheetOpen} />
         <section className="input-section" aria-label="入力">
-          <div ref={statusRef} className="input-group">
-            <div className="input-slot" data-slot="wind-segment">
+          <div className="input-group">
+            <div
+              ref={statusRef}
+              className="input-slot"
+              data-slot="wind-segment"
+            >
               <WindSegment />
             </div>
             <div className="stepper-group">
