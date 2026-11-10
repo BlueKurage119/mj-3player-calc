@@ -46,6 +46,7 @@
 | 20 | 区切り: 項目内は半角スラッシュ(「海底/河底」「地和/人和」)、項目間は中黒(例「立直・一発・海底/河底」) | Q-10(同) |
 | 21 | 点棒アイコン: 供託=千点棒(赤点1つ)、積み棒=百点棒(黒点 縦2×横4=8個) | Q-11(同) |
 | 22 | chip 折り返し時のタップ領域は行間 1.5rem で確保する(§6.3)。requirements への例外追記はしない | Q-12(同) |
+| 23 | オープン立直のトグルは立直の項目(立直3択のグループ)の中に置く。偶然役には入れない | ユーザー指示(2026-11-10) |
 
 ## 3. 排他・無効化の照合結果(07号)
 
@@ -68,7 +69,7 @@
 | `src/ui/state/index.ts` | 改修 | 新規 export |
 | `src/ui/screen/WindSegment.tsx` | 新規 | 場風・自風の2グループ(§6.1) |
 | `src/ui/screen/SituationCard.tsx` | 新規 | 状況役カード(§6.2) |
-| `src/ui/input/SituationSheet.tsx`・`situation-sheet.css` | 新規 | シート中身(§6.3)。`src/ui/input/index.ts` から export |
+| `src/ui/input/SituationSheet.tsx`・`situation-sheet.css` | 新規 | シート中身(§6.3)。立直グループ(`situation-riichi-group`: 3択+オープン chip)と偶然役 ChipSet の2ブロック。`src/ui/input/index.ts` から export |
 | `src/ui/screen/SummaryCard.tsx`・`main-screen.css` | 改修 | 1行目(§6.4)、風セグメント・状況役カードの配置 |
 | `src/ui/screen/MainScreen.tsx` | 改修 | 枠 `wind-segment`・`situation` に部品を置く。シート分岐に `situation` を追加 |
 | `src/ui/icons/custom-paths.ts`・`index.ts` | 新規・改修 | 自作の積み棒・供託アイコン path(§6.4)。Material Symbols 由来の `symbol-paths.ts` とはファイルを分ける |
@@ -133,7 +134,7 @@ export function formatWinds(table: Table): string; // 例 '東場・南家'
 ### 6.0 タップ領域の共通扱い(ConnectedButtonGroup)
 
 - `.connected-button` は `connected-button-group.css` で高さ 2.5rem(40dp)固定。既存の入力方式トグルは `main-screen.css` の `.sheet-mode-toggle .connected-button::after`(上下を 3rem まで外側に拡張)で当たり判定だけ 48dp にしている
-- 風セグメント(`main-screen.css`)と立直3択(`situation-sheet.css`)にも同じ `::after` 拡張を与える(例: `.wind-segment .connected-button::after`・`.situation-riichi .connected-button::after`)。見た目は 40dp のまま。`connected-button-group.css` は変更しない
+- 風セグメント(`main-screen.css`)と立直3択(`situation-sheet.css`)にも同じ `::after` 拡張を与える(例: `.wind-segment .connected-button::after`・`.situation-riichi .connected-button::after`)。見た目は 40dp のまま。立直グループ内のオープン chip は Material Web の touch 要素(48dp)で当たり判定を得るため、3択との行間は §6.3 の値で重なりを避ける。`connected-button-group.css` は変更しない
 - `.connected-button` に `white-space: nowrap` が無いため、立直3択は文字が1行に収まる幅を確保する(§6.3)
 
 ### 6.1 風セグメント(枠 `wind-segment`)
@@ -156,8 +157,25 @@ export function formatWinds(table: Table): string; // 例 '東場・南家'
 
 - ヘッダーの入力方式切替は出さない。物理キー入力(テンキー)も対象外。**このシートは Enter で閉じない**(他のシートは物理キーのフック経由で閉じる)。閉じる操作は Esc と✕(および既存の BottomSheet の閉じ方)のみ
 - 構成(上から):
-  1. 立直行: `ConnectedButtonGroup`(aria「立直」、なし・立直・ダブル立直。クラス `situation-riichi`)。1行に3択だけを置く(内容幅 343px÷3 ≒ 114px で「ダブル立直」約 102px が収まる)
-  2. 偶然役: `ChipSet`(className `situation-chips`)内に `FilterChip` を並べる。先頭に「オープン」(`rule.openRiichi` 真のときのみ。base='none' で disabled)、続いて一発(`isSituationKeyVisible` で出し分け、`isSituationKeyEnabled` で disabled)・嶺上開花・槍槓・海底/河底・`tenhoLabel(...)`・燕返し・槓振り(後2つは localYaku 時のみ)。オープン操作は `splitRiichi`/`composeRiichi` で5値にして `set-riichi`
+  1. 立直グループ(容器 `situation-riichi-group`。§2 #23): 
+     - 上段: `ConnectedButtonGroup`(aria「立直」、なし・立直・ダブル立直。クラス `situation-riichi`)。1行に3択だけを置く(内容幅 343px÷3 ≒ 114px で「ダブル立直」約 102px が収まる)
+     - 下段: `rule.openRiichi` 真のときだけ `FilterChip`「オープン」を独立した1行で置く(左寄せ)。base='none' で disabled。操作は `splitRiichi`/`composeRiichi` で5値にして `set-riichi`
+     - 容器の見た目: 背景 `--md-sys-color-surface-container-low`、角 `--md-sys-shape-corner-large`、内側余白 0.5rem。容器で囲むことで、見出し無しでもオープンが立直の一部と分かるようにする
+     - 上段と下段の行間 1rem(3択の当たり判定の下端 +4dp と chip のタッチ領域の上端 −8dp の間に 8dp 以上の間隔を確保)
+  2. 偶然役: 立直グループの下に 1.5rem 空けて `ChipSet`(className `situation-chips`)。一発(`isSituationKeyVisible` で出し分け、`isSituationKeyEnabled` で disabled)・嶺上開花・槍槓・海底/河底・`tenhoLabel(...)`・燕返し・槓振り(後2つは localYaku 時のみ)。**オープンは入れない**
+- 配置図(openRiichi・localYaku 有効時、375px):
+
+```
+┌ situation-riichi-group ─────────────────┐
+│ [ なし | 立直 | ダブル立直 ]              │
+│ [オープン]                                │
+└──────────────────────────────────┘
+(1.5rem)
+[一発] [嶺上開花] [槍槓] [海底/河底]
+[地和/人和] [燕返し] [槓振り]      ← 行間 1.5rem
+```
+
+- オープンの置き方の判断: 案(1)「3択の下に独立1行」を採る。案(2)「3択と同じ行で折り返し許可」は、375px では必ず折り返して結局2行になる一方、幅の広い端末では同じ行に並ぶなど配置が幅で変わり、3択の各ボタン幅も変動して「ダブル立直」の1行収まり(C10)が保証しにくい。(1) は配置が幅によらず一定で、容器で囲めば立直の一部と分かる
 - 見ればわかるため、行見出し・説明文は付けない。案内文も出さない(§2 #5)
 - Material Web の chip は `src/ui/md` の `ChipSet`/`FilterChip` ラッパー経由(06号 3。§2 #17)
 - タップ領域と折り返し: chip の host は高さ 32dp、shadow 内のタッチ領域は 48dp、`md-chip-set` の既定 gap は 8dp。6個以上で約 400px となり内容幅 343px を超えるため折り返しはほぼ確実で、既定の行ピッチ 40dp では上下行のタッチ領域が 8dp 重なる。対処として `situation-sheet.css` で `.situation-chips` の `row-gap` を 1.5rem(タッチ領域どうしの間隔 8dp)にする。CSS は className 経由で `situation-sheet.css` に書き、`src/ui/md` は変更しない
@@ -198,7 +216,7 @@ export function formatWinds(table: Table): string; // 例 '東場・南家'
 | C7 | reducer: `set-situation` | 立直なしで ippatsu=true は無視(同一 state)。localYaku=false で燕返し true は無視。false はいつでも受ける。現在値と同じ値で同一 state。`input`・`inputFocus`・`tenkeyBuffer`・`table` は参照同一 |
 | C8 | reducer: `set-rule` / `clear-all` | openRiichi 真→偽で 'open-double-riichi'→'double-riichi'、続けて偽→真にしても 'double-riichi' のまま。ippatsu ルール偽で ippatsu=false、真に戻しても false のまま。localYaku 偽で燕返し・槓振り false、真に戻しても false のまま。nuki の既存正規化も維持。`clear-all` 後 `handOptions` が初期値で `table` 不変 |
 | C9 | 画面: 風セグメント | 「場風」「自風」の見出しと東南西が見える。375px で各ボタンの見た目の高さ 40(`getBoundingClientRect()`)、当たり判定は `getComputedStyle(el,'::after').height` ≥ 48、またはボタン上端・下端の 4px 外側の点で `document.elementFromPoint` が当該ボタンを返す。幅 ≥ 48。見出しの computed font-size が `.stepper__label` と一致。自風=南を押すと要約1行目が「東場・南家」 |
-| C10 | 画面: 状況役シート | 状況役カードを押すとシートが開き、立直3択と chip 群が並ぶ。立直3択は C9 と同じ当たり判定条件(≥48)。openRiichi 有効時も 375px で立直3択の各文字が1行に収まり、ボタンからはみ出さない(`scrollWidth <= clientWidth`)。chip: 同一行で隣接する chip の host 間隔 ≥ 8(`getBoundingClientRect` の差)。折り返した行どうしでは、上の行の chip のタッチ領域下端(host 中心+24)と下の行のタッチ領域上端(host 中心−24)の間隔 ≥ 8。各 chip のタッチ領域の高さ 48(shadow 内 `.touch` の実測値を記録) |
+| C10 | 画面: 状況役シート | 状況役カードを押すとシートが開き、立直3択と chip 群が並ぶ。立直3択は C9 と同じ当たり判定条件(≥48)。openRiichi 有効時、オープン chip は `.situation-riichi-group` の中(3択の下の行)にあり、`.situation-chips` の中には無い。375px で立直3択の各文字が1行に収まり、ボタンからはみ出さない(`scrollWidth <= clientWidth`)。立直グループ内: 3択の下端とオープン chip の host 上端の間隔が 16px(1rem)、3択の当たり判定下端(見た目下端+4)と chip のタッチ領域上端(host 中心−24)の間隔 ≥ 8。立直グループの下端と `.situation-chips` の上端の間隔 24px(1.5rem)。chip: 同一行で隣接する chip の host 間隔 ≥ 8(`getBoundingClientRect` の差)。折り返した行どうしでは、上の行の chip のタッチ領域下端(host 中心+24)と下の行のタッチ領域上端(host 中心−24)の間隔 ≥ 8。各 chip のタッチ領域の高さ 48(shadow 内 `.touch` の実測値を記録) |
 | C11 | 画面: ルール出し分け | 既定ルール(一発あり・openRiichi なし・localYaku なし): 一発あり、オープン・燕返し・槓振りなし、子で「地和」。次に localStorage の `mj3calc.rule`(`src/core/rule-storage.ts` の `RULE_STORAGE_KEY`)に、既定ルールの `openRiichi`・`localYaku` を true、`ippatsu` を false にした JSON を書いてリロード: オープン・燕返し・槓振りが出て、一発が消え、子で「地和/人和」。ルール変更時の値の正規化は C8 で担保する |
 | C12 | 画面: 一発・オープンの無効 | 立直=なしで一発 chip とオープン chip が disabled。立直を選ぶと有効、一発を選んだ後「なし」に戻すと一発が外れる |
 | C13 | 自動テスト: 結果連動 | reducer で和了形の state に `set-riichi 'riichi'`→`set-situation ippatsu true` を適用し、`computeResult`(`src/ui/calc/compute.ts`)の `hora[].yaku` に riichi・ippatsu が含まれる。`seat='east'`・副露なし・和了形で `set-situation tenho true` → tenho が含まれる。画面では同操作で結果がエラー表示(計算できません)にならないことまでを確認する(役一覧の表示は Epic E) |
@@ -209,7 +227,7 @@ export function formatWinds(table: Table): string; // 例 '東場・南家'
 | C18 | バンドル | `npm run build` の gzip 合計を D4 時点と比較して記録し、§9.2 の見込みとの差を PR に記載する。予算は目標値扱いで、超過量の記録のみとし軽微な超過では不合格にしない(§9.5) |
 | C19 | 計算値: 選択中規則 | 状況役シートを開いた状態で `.situation-card` の computed `background-color` が `--md-sys-color-primary-container` の計算値と一致(D4-C29 相当)。CSS 上 `.situation-card.situation-card--selected` が基底規則より後または高い詳細度 |
 | C20 | キー操作: 状況役カード本体 | 4通り: 非選択中 Enter → シートが開く/非選択中 Space → 開く・スクロールしない/選択中 Enter → 何も起きない(シートは開いたまま)/選択中 Space → 何も起きない。ハンドラは純関数(`handleSituationBodyKey` 等)として単体テストし、画面でも確認する |
-| C21 | 計算値: chip の行間 | `.situation-chips` の computed `row-gap` が 24px(1.5rem) |
+| C21 | 計算値: 行間 | `.situation-chips` の computed `row-gap` が 24px(1.5rem)。`.situation-riichi-group` の行間(gap)が 16px(1rem)。容器の背景色が `--md-sys-color-surface-container-low` の計算値と一致 |
 
 ## 8. テスト方針・UI監修・実機確認
 
@@ -289,7 +307,7 @@ export function formatWinds(table: Table): string; // 例 '東場・南家'
 
 | 観点 | livewing | 本設計 | 扱い |
 | --- | --- | --- | --- |
-| 並び順 | 立直 → 一発 → 嶺上開花 → 槍槓 → 海底/河底 → 天和/地和 | 同順(+オープン、燕返し・槓振りを末尾) | 一致。変更なし |
+| 並び順 | 立直 → 一発 → 嶺上開花 → 槍槓 → 海底/河底 → 天和/地和 | 同順(オープンは立直グループ内、燕返し・槓振りを末尾) | 一致。変更なし |
 | 部品 | 各項目が「なし/役名」の2択セグメント+見出し | 立直のみ3択グループ、他は FilterChip | 確定事項 Q1 に従う。変更なし |
 | 天和/地和のラベル | 自風東=天和、他=地和 | 同じ(localYaku 時は「地和/人和」) | 一致(人和は仕様 §4.2.2 による追加) |
 | 一発の有効条件(入力) | 常に操作可(立直なしでも選べる) | 立直なしで disabled・false 化 | 確定事項 Q3 に従う。変更なし |
