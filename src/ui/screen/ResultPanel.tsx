@@ -81,7 +81,12 @@ export function ResultPanel(props: ResultPanelProps): React.JSX.Element {
         ) : resultState.status === 'error' ? (
           <p className="result-panel__error">計算できません</p>
         ) : resultState.result === null ? (
-          <div className="result-panel__empty" data-state="empty" />
+          <div className="result-panel__empty" data-state="empty">
+            {/* UI監修用の仮置き(監修後に削除する) */}
+            {'これはUI監修のための仮の長文です。要約カードの重なりやスクロール時の見え方を確かめるために置いています。'.repeat(
+              12
+            )}
+          </div>
         ) : (
           <div className="result-panel__result">{resultState.result.type}</div>
         )}
