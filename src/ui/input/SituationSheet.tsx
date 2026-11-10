@@ -49,14 +49,17 @@ export function SituationSheetContent({
               label={option.label}
               selected={base === option.value}
               radio
+              className={
+                option.value === 'double-riichi'
+                  ? 'situation-double'
+                  : undefined
+              }
               onSelectedChange={() => {
                 onRiichiChange(composeRiichi(option.value, open));
               }}
             />
           ))}
-        </ChipSet>
-        {openRiichiAllowed ? (
-          <ChipSet className="situation-chips situation-open">
+          {openRiichiAllowed ? (
             <FilterChip
               label="オープン"
               selected={open}
@@ -65,8 +68,8 @@ export function SituationSheetContent({
                 onRiichiChange(composeRiichi(base, nextOpen));
               }}
             />
-          </ChipSet>
-        ) : null}
+          ) : null}
+        </ChipSet>
       </section>
 
       <section className="situation-section" aria-label="偶然役">

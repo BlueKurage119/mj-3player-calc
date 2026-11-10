@@ -21,7 +21,7 @@
   color: var(--md-sys-color-on-surface-variant);
 }
 
-/* ダブル立直とオープンは性質が異なるので、chip 間の隙間(0.5rem)の倍を空ける */
-.situation-open {
-  margin-block-start: 0.5rem;
+/* ダブル立直とオープンは性質が異なるので、横の隙間を chip 間(0.5rem)の倍にする */
+.situation-double {
+  margin-inline-end: 0.5rem;
 }

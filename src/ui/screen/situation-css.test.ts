@@ -73,12 +73,12 @@ describe('situation-css (D5)', () => {
   });
 
   it('D5-C21: 行間、gap、背景色トークンの CSS 定義を検証する', () => {
-    // 1. chip の行間は既定のまま(row-gap を指定しない)、オープンだけ 0.5rem 余分に空ける
+    // 1. chip の行間は既定のまま(row-gap を指定しない)、ダブル立直とオープンの横だけ 0.5rem 余分に空ける
     // 理由: 行間を広げる指定が無いことを検証するため
     expect(sheetCss.includes('row-gap')).toBe(false);
-    // 理由: オープン chip の前に chip 間隔の倍の隙間を作る指定があることを検証するため
-    expect(sheetCss.includes('.situation-open')).toBe(true);
-    expect(sheetCss.includes('margin-block-start: 0.5rem;')).toBe(true);
+    // 理由: ダブル立直の右に chip 間隔の倍の隙間を作る指定があることを検証するため
+    expect(sheetCss.includes('.situation-double')).toBe(true);
+    expect(sheetCss.includes('margin-inline-end: 0.5rem;')).toBe(true);
 
     // 3. 当たり判定拡張 ::after の定義
     // 理由: wind-segment の ::after 拡張が存在することを検証するため
