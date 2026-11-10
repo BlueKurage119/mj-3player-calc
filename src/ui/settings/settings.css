@@ -259,6 +259,16 @@
     var(--md-sys-motion-easing-standard);
 }
 
+/* ボタンと吹き出しの間の 4px(top: calc(100% + 4px))を覆い、斜めに動いても wrapper の pointerleave を起こさない橋 */
+.help-tooltip__bubble::before {
+  content: "";
+  position: absolute;
+  top: -4px;
+  left: 0;
+  right: 0;
+  height: 4px;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .help-tooltip__bubble {
     transition: none;

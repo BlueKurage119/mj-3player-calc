@@ -37,4 +37,17 @@ describe('D6-settings-css: help の当たり判定と間隔 (§4.4・A19)', () =
       Number(block('.settings-detail-group').match(/gap:\s*([\d.]+)rem/)?.[1])
     ).toBeGreaterThanOrEqual(0.5);
   });
+
+  it('D6-css-tooltip-bridge: 吹き出しの上端に、ボタンとの隙間(4px)と同寸の透明な橋がある', () => {
+    const bubble = block('.help-tooltip__bubble');
+    const gap = Number(bubble.match(/top:\s*calc\(100%\s*\+\s*(\d+)px\)/)?.[1]);
+    const bridge = block('.help-tooltip__bubble::before');
+    // 理由: 斜め経路で隙間に入っても pointerleave で吹き出しが消えないようにするため
+    expect(gap).toBe(4);
+    expect(Number(bridge.match(/top:\s*-(\d+)px/)?.[1])).toBe(gap);
+    expect(Number(bridge.match(/height:\s*(\d+)px/)?.[1])).toBe(gap);
+    expect(/left:\s*0\b/.test(bridge)).toBe(true);
+    expect(/right:\s*0\b/.test(bridge)).toBe(true);
+    expect(/position:\s*absolute/.test(bridge)).toBe(true);
+  });
 });
