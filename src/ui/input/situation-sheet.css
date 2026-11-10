@@ -1,0 +1,27 @@
+.situation-sheet {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.situation-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.situation-heading {
+  font-family: var(--md-sys-typescale-label-medium-font);
+  font-size: var(--md-sys-typescale-label-medium-size);
+  line-height: var(--md-sys-typescale-label-medium-line-height);
+  font-weight: var(--md-sys-typescale-label-medium-weight);
+  letter-spacing: var(--md-sys-typescale-label-medium-tracking);
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+/* ダブル立直とオープンは性質が異なるので、横の隙間を chip 間(0.5rem)の倍にする */
+.situation-double {
+  margin-inline-end: 0.5rem;
+}

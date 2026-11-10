@@ -2,6 +2,8 @@ import { type RefObject, useEffect, useState } from 'react';
 
 export interface UseInViewOptions {
   rootMargin?: string;
+  /** 見えている割合がこの値以上のとき「見えている」とみなす(既定: 交差していれば見えている) */
+  minRatio?: number;
 }
 
 export function useInView(
@@ -10,6 +12,7 @@ export function useInView(
   defaultInView = true
 ): boolean {
   const rootMargin = options?.rootMargin ?? '0px';
+  const minRatio = options?.minRatio;
   const [inView, setInView] = useState<boolean>(defaultInView);
 
   useEffect(() => {
@@ -22,17 +25,21 @@ export function useInView(
       entries => {
         const entry = entries[0];
         if (entry) {
-          setInView(entry.isIntersecting);
+          setInView(
+            minRatio === undefined
+              ? entry.isIntersecting
+              : entry.isIntersecting && entry.intersectionRatio >= minRatio
+          );
         }
       },
-      { rootMargin }
+      { rootMargin, threshold: minRatio === undefined ? 0 : [0, minRatio] }
     );
 
     observer.observe(el);
     return () => {
       observer.disconnect();
     };
-  }, [targetRef, rootMargin]);
+  }, [targetRef, rootMargin, minRatio]);
 
   return inView;
 }

@@ -3,13 +3,17 @@ import type React from 'react';
 import { Divider, IconButton, Menu, MenuItem } from '../md';
 import { useAppDispatch } from '../state';
 
-export function AppHeader(): React.JSX.Element {
+export interface AppHeaderProps {
+  headerRef?: React.Ref<HTMLElement>;
+}
+
+export function AppHeader({ headerRef }: AppHeaderProps): React.JSX.Element {
   const dispatch = useAppDispatch();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuAnchorRef = useRef<HTMLElement | null>(null);
 
   return (
-    <header className="app-header">
+    <header ref={headerRef} className="app-header">
       <div className="app-header__inner">
         <h1 className="app-header__title">三麻点数計算機</h1>
         <div className="app-header__actions">

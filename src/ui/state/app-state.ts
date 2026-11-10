@@ -1,6 +1,6 @@
 import type { HandOptions, Input, Meld } from '../../core/input';
 import type { Rule } from '../../core/rule';
-import type { Table } from '../../core/table';
+import type { Table, Wind } from '../../core/table';
 import type { Tile } from '../../core/tile';
 import {
   MAX_MELDS,
@@ -16,6 +16,12 @@ import {
   resolveTenkeyBuffer,
   sortHand
 } from './hand-rules';
+import {
+  type SituationToggleKey,
+  areHandOptionsEqual,
+  isSituationKeyEnabled,
+  normalizeHandOptions
+} from './situation-rules';
 
 export type Screen = 'main' | 'settings';
 export type SheetMode = 'palette' | 'tenkey';
@@ -43,6 +49,9 @@ export type AppAction =
   | { type: 'navigate'; screen: Screen }
   | { type: 'open-sheet'; target: SheetTarget }
   | { type: 'close-sheet' }
+  | { type: 'set-wind'; field: 'round' | 'seat'; wind: Wind }
+  | { type: 'set-riichi'; riichi: HandOptions['riichi'] }
+  | { type: 'set-situation'; key: SituationToggleKey; value: boolean }
   | { type: 'step'; field: 'continue' | 'deposit' | 'nuki'; delta: 1 | -1 }
   | { type: 'add-hand-tile'; tile: Tile }
   | { type: 'remove-last-hand-tile' }
@@ -176,6 +185,54 @@ export const appReducer = (state: AppState, action: AppAction): AppState => {
       };
     }
 
+    case 'set-wind': {
+      if (state.table[action.field] === action.wind) return state;
+      return {
+        ...state,
+        table: {
+          ...state.table,
+          [action.field]: action.wind
+        }
+      };
+    }
+
+    case 'set-riichi': {
+      const nextHandOptions = normalizeHandOptions(
+        { ...state.handOptions, riichi: action.riichi },
+        state.rule
+      );
+      if (areHandOptionsEqual(state.handOptions, nextHandOptions)) {
+        return state;
+      }
+      return {
+        ...state,
+        handOptions: nextHandOptions
+      };
+    }
+
+    case 'set-situation': {
+      if (
+        action.value &&
+        !isSituationKeyEnabled(action.key, state.handOptions, state.rule)
+      ) {
+        return state;
+      }
+      if (state.handOptions[action.key] === action.value) {
+        return state;
+      }
+      const nextHandOptions = normalizeHandOptions(
+        { ...state.handOptions, [action.key]: action.value },
+        state.rule
+      );
+      if (areHandOptionsEqual(state.handOptions, nextHandOptions)) {
+        return state;
+      }
+      return {
+        ...state,
+        handOptions: nextHandOptions
+      };
+    }
+
     case 'add-hand-tile': {
       if (!canAddHandTile(state, action.tile)) return state;
       return {
@@ -261,10 +318,12 @@ export const appReducer = (state: AppState, action: AppAction): AppState => {
         nextNuki === state.input.nuki
           ? state.input
           : { ...state.input, nuki: nextNuki };
+      const nextHandOptions = normalizeHandOptions(state.handOptions, nextRule);
       return {
         ...state,
         rule: nextRule,
-        input: nextInput
+        input: nextInput,
+        handOptions: nextHandOptions
       };
     }
 
