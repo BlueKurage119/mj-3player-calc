@@ -8,6 +8,8 @@ describe('D4: ドラ・裏ドラカードの構造と表示 (2.4, C14, C15)', ()
       <IndicatorCardContent
         target="dora"
         tiles={[]}
+        selected={false}
+        buffer=""
         onSelect={() => {}}
         onClear={() => {}}
       />
@@ -60,6 +62,8 @@ describe('D4: ドラ・裏ドラカードの構造と表示 (2.4, C14, C15)', ()
       <IndicatorCardContent
         target="uradora"
         tiles={tiles}
+        selected={false}
+        buffer=""
         onSelect={() => {}}
         onClear={() => {}}
       />
@@ -78,5 +82,39 @@ describe('D4: ドラ・裏ドラカードの構造と表示 (2.4, C14, C15)', ()
     const clearButtonTag = clearButtonMatch?.[0] ?? '';
     // 理由: 牌がある場合は disabled でないことを検証するため
     expect(clearButtonTag.includes('disabled')).toBe(false);
+  });
+
+  it('D4-IC3: IndicatorCardContent の選択状態とバッファ表示 (確定事項 37・38)', () => {
+    // selected = true, buffer = "12"
+    const htmlSelected = renderToStaticMarkup(
+      <IndicatorCardContent
+        target="dora"
+        tiles={[{ type: 'm', n: 1 }]}
+        selected={true}
+        buffer="12"
+        onSelect={() => {}}
+        onClear={() => {}}
+      />
+    );
+    // 理由: 選択中のときは indicator-card--selected が付与されることを検証するため
+    expect(htmlSelected.includes('indicator-card--selected')).toBe(true);
+    // 理由: 選択中でバッファがあるときは card-buffer に 12‸ が表示されることを検証するため
+    expect(htmlSelected.includes('class="card-buffer"')).toBe(true);
+    expect(htmlSelected.includes('12‸')).toBe(true);
+
+    // selected = false, buffer = "12" (非選択のときはバッファが表示されず修飾クラスも付かない)
+    const htmlUnselected = renderToStaticMarkup(
+      <IndicatorCardContent
+        target="dora"
+        tiles={[{ type: 'm', n: 1 }]}
+        selected={false}
+        buffer="12"
+        onSelect={() => {}}
+        onClear={() => {}}
+      />
+    );
+    expect(htmlUnselected.includes('indicator-card--selected')).toBe(false);
+    expect(htmlUnselected.includes('card-buffer')).toBe(false);
+    expect(htmlUnselected.includes('12‸')).toBe(false);
   });
 });

@@ -195,6 +195,7 @@ body {
   border-radius: var(--md-sys-shape-corner-extra-small);
 }
 
+.card-buffer,
 .hand-card__buffer {
   font-family: var(--md-sys-typescale-title-medium-font);
   font-size: var(--md-sys-typescale-title-medium-size);
@@ -204,6 +205,20 @@ body {
   color: var(--md-sys-color-primary);
   flex-shrink: 0;
   margin-inline-start: 0.25rem;
+}
+
+.meld-card .card-buffer {
+  margin-inline-start: 0;
+  height: calc(1.5rem * 4 / 3);
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.hand-card--selected,
+.indicator-card--selected,
+.meld-card--selected {
+  background-color: var(--md-sys-color-primary-container);
 }
 
 /* 要約カード (sticky top: 0、非表示時は高さ 0 でレイアウトの跳ねを避ける) */

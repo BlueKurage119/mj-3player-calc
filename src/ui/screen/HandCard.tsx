@@ -50,6 +50,7 @@ export function HandCard(): React.JSX.Element {
   const cardRef = useRef<HTMLDivElement | null>(null);
   const bodyRef = useRef<HTMLDivElement | null>(null);
   const isHandFocused = inputFocus?.type === 'hand';
+  const isSelected = isHandFocused;
   const isEmpty = input.hand.length === 0;
   const max = maxHandLength(input.melds);
   const { body, winning } = splitWinningTile(input.hand, max);
@@ -128,7 +129,11 @@ export function HandCard(): React.JSX.Element {
 
   return (
     // biome-ignore lint/a11y/useKeyWithClickEvents: キーボード操作は .hand-card__body(role=button)が担う。外枠のクリックはポインタの当たり判定拡張(設計書 issue-55 2.1)
-    <div ref={cardRef} className="hand-card" onClick={handleCardClick}>
+    <div
+      ref={cardRef}
+      className={`hand-card${isSelected ? ' hand-card--selected' : ''}`}
+      onClick={handleCardClick}
+    >
       <div className="hand-card__top-row">
         <span className="hand-card__title">
           {formatHandCardTitle(input.hand.length, max)}
@@ -160,7 +165,7 @@ export function HandCard(): React.JSX.Element {
         <div className="hand-card__tiles">
           {body.map(item => renderHandTile(item))}
           {winning ? renderHandTile(winning, true) : null}
-          {tenkeyBuffer.length > 0 ? (
+          {isSelected && tenkeyBuffer.length > 0 ? (
             <span className="hand-card__buffer" aria-hidden="true">
               {tenkeyBuffer}‸
             </span>

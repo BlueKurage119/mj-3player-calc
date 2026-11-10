@@ -9,6 +9,8 @@ describe('D4: 副露領域・副露カード・追加ボタンの構造と表示
       <MeldAreaContent
         red={1}
         melds={[]}
+        selectedIndex={null}
+        buffer=""
         onSelectMeld={() => {}}
         onRemoveMeld={() => {}}
         onAddMeld={() => {}}
@@ -57,6 +59,8 @@ describe('D4: 副露領域・副露カード・追加ボタンの構造と表示
       <MeldAreaContent
         red={1}
         melds={melds}
+        selectedIndex={null}
+        buffer=""
         onSelectMeld={() => {}}
         onRemoveMeld={() => {}}
         onAddMeld={() => {}}
@@ -88,6 +92,8 @@ describe('D4: 副露領域・副露カード・追加ボタンの構造と表示
       <MeldAreaContent
         red={1}
         melds={[{ type: 'pon', tile: { type: 'p', n: 1 } }]}
+        selectedIndex={null}
+        buffer=""
         onSelectMeld={() => {}}
         onRemoveMeld={() => {}}
         onAddMeld={() => {}}

@@ -9,6 +9,8 @@ import { CardClearButton } from './CardClearButton';
 export interface IndicatorCardContentProps {
   target: IndicatorTarget;
   tiles: readonly CoreTile[];
+  selected: boolean;
+  buffer: string;
   onSelect: () => void;
   onClear: () => void;
 }
@@ -16,6 +18,8 @@ export interface IndicatorCardContentProps {
 export function IndicatorCardContent({
   target,
   tiles,
+  selected,
+  buffer,
   onSelect,
   onClear
 }: IndicatorCardContentProps): React.JSX.Element {
@@ -55,7 +59,11 @@ export function IndicatorCardContent({
 
   return (
     // biome-ignore lint/a11y/useKeyWithClickEvents: キーボード操作は .indicator-card__body(role=button)が担う
-    <div ref={cardRef} className="indicator-card" onClick={handleCardClick}>
+    <div
+      ref={cardRef}
+      className={`indicator-card${selected ? ' indicator-card--selected' : ''}`}
+      onClick={handleCardClick}
+    >
       <div className="indicator-card__top-row">
         <span className="indicator-card__title">{title}</span>
         <CardClearButton
@@ -80,6 +88,11 @@ export function IndicatorCardContent({
             }-${index}`;
             return <Tile key={key} tile={tile} />;
           })}
+          {selected && buffer.length > 0 ? (
+            <span className="card-buffer" aria-hidden="true">
+              {buffer}‸
+            </span>
+          ) : null}
         </div>
       </div>
     </div>
@@ -93,13 +106,17 @@ export interface IndicatorCardProps {
 export function IndicatorCard({
   target
 }: IndicatorCardProps): React.JSX.Element {
-  const { input } = useAppState();
+  const { input, inputFocus, tenkeyBuffer } = useAppState();
   const dispatch = useAppDispatch();
+  const selected = inputFocus?.type === target;
+  const buffer = selected ? tenkeyBuffer : '';
 
   return (
     <IndicatorCardContent
       target={target}
       tiles={input[target]}
+      selected={selected}
+      buffer={buffer}
       onSelect={() =>
         dispatch({ type: 'open-sheet', target: { type: target } })
       }

@@ -23,6 +23,8 @@ export const meldTiles = (meld: Meld, red: Rule['red']): TileOrBack[] => {
 export interface MeldAreaContentProps {
   melds: Meld[];
   red: Rule['red'];
+  selectedIndex: number | null;
+  buffer: string;
   onSelectMeld: (i: number) => void;
   onRemoveMeld: (i: number) => void;
   onAddMeld: () => void;
@@ -31,6 +33,8 @@ export interface MeldAreaContentProps {
 export function MeldAreaContent({
   melds,
   red,
+  selectedIndex,
+  buffer,
   onSelectMeld,
   onRemoveMeld,
   onAddMeld
@@ -66,11 +70,13 @@ export function MeldAreaContent({
     <div className="meld-area">
       {melds.map((meld, i) => {
         const tiles = meldTiles(meld, red);
+        const isCardSelected = i === selectedIndex;
+        const hasBuffer = isCardSelected && buffer.length > 0;
         return (
           // biome-ignore lint/a11y/useKeyWithClickEvents: キーボード操作は .meld-card__body(role=button)が担う
           <div
             key={i}
-            className="meld-card"
+            className={`meld-card${isCardSelected ? ' meld-card--selected' : ''}`}
             onClick={e => handleCardClick(i, e)}
           >
             <div className="meld-card__row">
@@ -85,7 +91,11 @@ export function MeldAreaContent({
                 className="meld-card__body"
                 onKeyDown={e => handleBodyKeyDown(i, e)}
               >
-                {meld.tile === null ? (
+                {hasBuffer ? (
+                  <span className="card-buffer" aria-hidden="true">
+                    {buffer}‸
+                  </span>
+                ) : meld.tile === null ? (
                   <div className="meld-card__empty" aria-hidden="true" />
                 ) : (
                   <div className="meld-card__tiles">
@@ -121,13 +131,17 @@ export function MeldAreaContent({
 }
 
 export function MeldArea(): React.JSX.Element {
-  const { input, rule } = useAppState();
+  const { input, rule, inputFocus, tenkeyBuffer } = useAppState();
   const dispatch = useAppDispatch();
+  const selectedIndex = inputFocus?.type === 'meld' ? inputFocus.i : null;
+  const buffer = selectedIndex !== null ? tenkeyBuffer : '';
 
   return (
     <MeldAreaContent
       melds={input.melds}
       red={rule.red}
+      selectedIndex={selectedIndex}
+      buffer={buffer}
       onSelectMeld={i =>
         dispatch({ type: 'open-sheet', target: { type: 'meld', i } })
       }
