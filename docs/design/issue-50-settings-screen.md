@@ -315,7 +315,7 @@ export function useRuleSettings(): {
 | A16 | 画面 | 積み棒を10000にする | + が無効 |
 | A17 | 画面 | 赤ドラの help をタップ。次に北の扱いの help をタップ | 赤ドラ: 吹き出しが出て `aria-expanded="true"`、§4.4 の文言。もう一度タップ・Esc・外側タップでそれぞれ閉じる。北の扱い: 文言が2行(抜きドラ/共通役牌)で表示される |
 | A18 | 画面 | 赤ドラの help を開いたまま北の扱いの help をタップ | 赤ドラが閉じ北の扱いだけ表示 |
-| A19 | 画面 | 幅 375px・320px で8つの help(詳細内も)を1つずつ開き、吹き出しの `getBoundingClientRect()` と `document.documentElement.clientWidth`(W)、`document.documentElement.scrollWidth` を取る。help ボタンは中心座標 (cx, cy) から ±23px の4点(cx±23, cy)・(cx, cy±23) で `document.elementFromPoint` を呼ぶ。隣接する操作要素(ConnectedButtonGroup・Switch・PointField のボタン)との間隔を両者の当たり判定の矩形で測る | 吹き出しは left≥16 かつ right≤W−16。開いている間も `scrollWidth` が W を超えない(横スクロールが出ない)。閉じた後に開き直しても同じ。4点すべてが当該 help ボタン(またはその子孫)を返す(当たり判定 48×48 以上)。隣接操作要素との間隔 8px 以上 |
+| A19 | 画面 | 幅 375px(合否の判定幅)・320px(非推奨幅。参考値で、不合格にしない)で8つの help(詳細内も)を1つずつ開き、吹き出しの `getBoundingClientRect()` と `document.documentElement.clientWidth`(W)、`document.documentElement.scrollWidth` を取る。help ボタンは中心座標 (cx, cy) から ±23px の4点(cx±23, cy)・(cx, cy±23) で `document.elementFromPoint` を呼ぶ。隣接する操作要素(ConnectedButtonGroup・Switch・PointField のボタン)との間隔を両者の当たり判定の矩形で測る | 吹き出しは left≥16 かつ right≤W−16。開いている間も `scrollWidth` が W を超えない(横スクロールが出ない)。閉じた後に開き直しても同じ。4点すべてが当該 help ボタン(またはその子孫)を返す(当たり判定 48×48 以上)。隣接操作要素との間隔 8px 以上 |
 | A20 | テスト | `rule-persistence.test.ts` の `createInitialStateFromStorage`(openRiichi 偽/真)と、SituationSheet の `openRiichiAllowed` 偽/真の静的描画テスト(§5.3) | 偽でオープンが出ず、真で出る。初期 rule が保存値どおり |
 | A21 | 画面 | localStorage 空でリロード→状況シート | オープン・燕返し・槓振りが出ない(revert 確認) |
 | A22 | 画面 | 設定でオープン立直・ローカル役をオン→戻る→状況シート | オープン・燕返し・槓振りが出る。リロード後も出る |
@@ -354,7 +354,7 @@ export function useRuleSettings(): {
 | 製造時・lazy 版 | 123,055 B | 差 17,781 B ≥ 8,000 B のため lazy を採用(§5.4 の条件を満たす) |
 | 監修後・lazy 版 | **122,852 B** | 基準 main 1531258 の 122,100 B との差 +752 B。§9.1 の lazy 見込み「約122 KB」と整合 |
 
-- 監修後の設定画面チャンクは 15,277 B(§9.1 の見込み 16〜19 KB を下回る。Select を使わなくなり Radio を使うようになったため)
+- 監修後の設定画面チャンクは 15,277 B(検収で再計測した値は 15,366 B。help の当たり判定修正などでの増。§9.1 の見込み 16〜19 KB を下回る。Select を使わなくなり Radio を使うようになったため)
 - 上表は統括担当から渡された計測値。監修後の値は検収(A32)で再計測して確認する
 
 ### 9.2 赤ドラ設定を下げたときの計算
