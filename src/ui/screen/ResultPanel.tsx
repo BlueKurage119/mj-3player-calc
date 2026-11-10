@@ -3,6 +3,12 @@ import type React from 'react';
 import type { ResultState } from '../calc/result-state';
 import { useInView } from './use-in-view';
 
+// UI監修用の仮置き(監修後に削除する)
+const REVIEW_DUMMY_TEXT =
+  'これはUI監修のための仮の長文です。要約カードの重なりやスクロール時の見え方を確かめるために置いています。'.repeat(
+    12
+  );
+
 export interface ResultPanelProps {
   resultState: ResultState;
   dispatchTimestampRef?: MutableRefObject<number | null> | undefined;
@@ -83,12 +89,14 @@ export function ResultPanel(props: ResultPanelProps): React.JSX.Element {
         ) : resultState.result === null ? (
           <div className="result-panel__empty" data-state="empty">
             {/* UI監修用の仮置き(監修後に削除する) */}
-            {'これはUI監修のための仮の長文です。要約カードの重なりやスクロール時の見え方を確かめるために置いています。'.repeat(
-              12
-            )}
+            {REVIEW_DUMMY_TEXT}
           </div>
         ) : (
-          <div className="result-panel__result">{resultState.result.type}</div>
+          <div className="result-panel__result">
+            {resultState.result.type}
+            {/* UI監修用の仮置き(監修後に削除する) */}
+            <p>{REVIEW_DUMMY_TEXT}</p>
+          </div>
         )}
       </div>
     </section>
