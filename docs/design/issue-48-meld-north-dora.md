@@ -54,6 +54,13 @@ Epic D(#5)の Sub-Issue。依存: D1(#51)・D2(#46)・D3(#47)・D1-1(#55)。
 | 34 | (オーナー確認済み、Q9=A)テンキーモードには切替ボタンを出さず、`0`=赤5・`5`=普通の5 で選ぶ(`tenkey-commit` の meld 分岐。`'0'` 経路は赤のまま) |
 | 35 | (オーナー確認済み、Q10=A)赤4ルールで普通の5のポンに赤が1枚含まれることの補足説明は出さない |
 | 36 | (オーナー確認済み)暗槓の表向き2枚は赤を見せる(`[裏, xs[2], xs[3], 裏]`=展開結果の末尾2枚。例 [裏, 5p, 赤5p, 裏]) |
+| 37 | (UI 監修5・項目1)入力途中の数字(`tenkeyBuffer`)は、選択中の欄(`inputFocus` が指す手牌・ドラ・裏ドラ・副露 i のカード)にだけ表示する。手牌以外が対象のとき、手牌カードに表示してはならない |
+| 38 | (UI 監修5・項目2)選択中の欄(シートが開いていて `inputFocus` が指すカード)は、**カード背景色だけ**で示す。枠線・アウトラインは付けない。副露は対象の副露カード1枚だけが選択状態になり、シートが閉じたら解除する。使うトークンは確定事項 42 |
+| 39 | (UI 監修5・項目3)パレット方式でも物理キー(数字・m/p/s/z)を有効にする(「案A」に準じる)。**issue-47 設計書の確定事項 10(「数字と m/p/s/z はテンキー方式のときだけ有効」)を本 Issue で変更する。** issue-47 設計書自体は改訂しない。パレット方式での入力モデルは確定事項 41 |
+| 40 | (UI 監修5・項目3)ページ読み込み直後の初回オープン(カードをタップしただけ)でも物理キーが効くこと。ステッパー(抜き北・積み棒・供託)・設定の入力欄など、自身がキーを使う要素にフォーカスがあるときはキーを奪わない(D3 の意図を維持) |
+| 41 | (ユーザー回答 Q11=P4)パレット方式の物理キーの入力モデルは P4: テンキー方式と同じバッファ入力(数字→m/p/s/z で確定)とし、物理 Backspace もバッファがあれば1文字削除、空なら対象別の削除(A8)とする。画面上のパレットの「1 枚削除」ボタンは従来どおり |
+| 42 | (ユーザー回答 Q12)選択中の欄の背景は `--md-sys-color-primary-container`。文字・アイコン色は現行トークンのまま |
+| 43 | (ユーザー回答 Q13=①)物理キーの不具合は `shouldHandleKeyTarget` の許可リスト型(カード本体3種を受付に追加)で直す。`src/ui/expressive/` は変更しない。シート表示中はカード本体の Enter/Space を無処理にする |
 
 ### 1.3 要件・下書きの改訂(製造で反映)
 
@@ -261,6 +268,91 @@ export const canAppendTenkeyDigitFor = (state: Pick<AppState,'input'|'tenkeyBuff
 
 **(5) open-sheet の修正(確定事項 30、`app-state.ts`)**: 空の副露を削除する条件に「`action.target` が `{type:'meld', i: state.inputFocus.i}`(同じ副露)ではない」を加える。同じ副露の再選択では削除も index 補正もせず、`inputFocus` はその副露のまま(手牌の整列分岐は対象が手牌でないので通らない)。それ以外(別の副露・手牌・ドラ等への移動、`close-sheet`)は A5 のまま。
 
+### 2.12 UI 監修5: バッファの表示先・選択中の欄・物理キー(確定事項 37〜40)
+
+PR #59 の UI 監修漏れ3点の修正。PR #59 に含める。
+
+#### (1) バッファの表示先(確定事項 37)
+
+現状: reducer の `tenkey-digit`・`tenkey-commit`・`tenkey-backspace` は `inputFocus` 別に正しく振り分けているが、表示 `.hand-card__buffer` は `HandCard.tsx` で `tenkeyBuffer.length > 0` だけを条件にしており、`inputFocus` を見ない。`IndicatorCard`・`MeldArea` には表示が無い。
+
+- 表示条件を「`tenkeyBuffer.length > 0` かつ そのカードが選択中(2.12(2) の `isSelected`)」にする。
+- 共通の表示部品として `.card-buffer`(`<span aria-hidden="true">{buffer}‸</span>`)を設ける。見た目は現行 `.hand-card__buffer` の指定(色 `--md-sys-color-primary` ほか)をそのまま移す。`HandCard` は `.hand-card__buffer` のクラス名を維持してよい(既存テスト互換)が、条件に `isHandFocused` を加える。
+- 置き場所: 手牌=従来どおり牌の行の末尾。ドラ・裏ドラ=`.indicator-card` の牌の行の末尾(牌スペースは確定事項 23 で常時確保済み。5 枚のときは数字が打てない=`canAppendTenkeyDigitFor` が偽なので、はみ出さない)。副露=対象 `.meld-card__row` の牌(または空枠)の右。副露は1牌しか持たないので、バッファは最大1桁(`canAppendTenkeyDigitFor` の既存判定に従う)。
+- 縦中心揃え(確定事項 22)とカード高さ(C14i)を崩さないこと。バッファの行高は牌の高さ以下にする。
+
+#### (2) 選択中の欄の見た目(確定事項 38)
+
+現状: カード背景は3種とも `--md-sys-color-surface-container`(`main-screen.css` の `.hand-card`・`.indicator-card`・`.meld-card`)。選択中を示す表示は無く、`:focus-visible` のアウトライン(`--md-sys-color-primary` 2px)だけ。シートを開くと(成功すれば)フォーカスは閉じるボタンへ移るので、アウトラインも消える。
+
+- 選択判定: `isSelected = inputFocus` が当該カードを指す(手牌 `type==='hand'`、ドラ/裏ドラ `type===target`、副露 `type==='meld' && i===index`)。`inputFocus` はシートを閉じると null になる(既存)ので、閉じれば自動で解除される。
+- カード外枠に修飾クラス `--selected` を付ける: `.hand-card--selected`・`.indicator-card--selected`・`.meld-card--selected`。CSS は背景色の差し替えのみ(枠線・影・寸法は変えない)。
+- `:focus-visible` のアウトラインは本体要素(`*__body`)に付いており、外枠の背景とは別要素なので共存する。アウトライン色 `--md-sys-color-primary` は下表のとおり選択色の上でも 3:1 以上。
+- ゴミ箱(`CardClearButton`)は背景を持たないアイコンボタンなので、アイコン色(現行トークンのまま)が選択色の上で読めればよい(下表)。disabled(空)時の opacity 0.38 は選択色の上でも同じ扱い。
+- モーション: **付けない**(背景の切替は即時)。シートのスライドと同時に起きるため、別の遷移を重ねない。付ける場合は 06 号に従い `--md-sys-motion-*` のトークンだけで書くが、本 Issue では採らない。
+
+トークン候補とコントラスト(`tokens.css` の値で WCAG 2.x の相対輝度から算出。値は比)。見出し・ゴミ箱=`--md-sys-color-on-surface-variant`、バッファ・フォーカス線=`--md-sys-color-primary`、牌画像の縁は `--md-sys-color-outline` を目安、「非選択との差」は `surface-container` との比。
+
+| 背景候補 | テーマ | 見出し/ゴミ箱 (on-surface-variant) | on-surface | バッファ・フォーカス線 (primary) | outline | 非選択(surface-container)との差 |
+| --- | --- | --- | --- | --- | --- | --- |
+| `primary-container` | ライト | 7.20 | 13.23 | 4.97 | 3.47 | 1.11(色相が緑で差が出る) |
+| `primary-container` | ダーク | 5.51 | 7.25 | 5.47 | 2.96 | 1.75 |
+| `secondary-container` | ライト | 7.21 | 13.25 | 4.98 | 3.48 | 1.11(彩度が低く差が弱い) |
+| `secondary-container` | ダーク | 5.50 | 7.24 | 5.46 | 2.95 | 1.75 |
+| `surface-container-high` | ライト | 7.57 | 13.91 | 5.23 | 3.65 | 1.06(ほぼ判別不能) |
+| `surface-container-high` | ダーク | 8.49 | 11.17 | 8.43 | 4.56 | 1.13(ほぼ判別不能) |
+
+- 採用は **`--md-sys-color-primary-container`**(確定事項 42)。文字・アイコンはすべて 4.5:1 以上、フォーカス線(非文字 3:1)も満たす。非選択カードとの差は、輝度比ではライトで小さいが色相(緑)で判別でき、ダークでは輝度差も最大。却下案: `surface-container-high` は非選択との差が小さすぎる。`secondary-container` は primary-container とほぼ同じ輝度で彩度が低く、選択の強調として弱い。`color-mix`(primary と surface の混色)は値の直書き(混合比)が要り、06 号「値を直書きしない」に抵触するおそれがあるため不採用。`surface-tint` は背景色として使うトークンではないため不採用。
+- 見出し・ゴミ箱の文字色を `on-primary-container` に替える必要はない(現行トークンで基準を満たす)。替えない。
+- 牌画像: 牌の地は画像自体が持つ明色で、ライトの `primary-container` との比は約 1.3(白基準)と小さい。牌の識別は画像自身の輪郭線に依存するので、C29 で実測する(識別できなければ統括へ戻す)。ダークでは約 9.3 で問題ない。
+
+#### (3) 物理キー
+
+**(a) 原因(コードで確認した事実)**
+
+- `use-tenkey-keyboard.ts` は window の keydown で `shouldHandleKeyTarget(e.target)` が真のときだけ処理する。真になるのは target が null・body・documentElement・`.bottom-sheet` 内のとき。
+- カードタップ時、`HandCard`・`IndicatorCard`・`MeldArea` の `handleCardClick` は本体(`*__body`、`role="button"`)へ `focus()` してから `open-sheet` する。
+- `BottomSheet` の `useLayoutEffect` は open になった瞬間に閉じるボタンへ `focus()` するが、`bottom-sheet.css` は閉状態で `visibility: hidden` で、`visibility` を transition させている。open への切替時、`visibility` の transition は開始時点で `visible` に切り替わるはずだが、統括の実測では初回オープンで focus() 時点の算出値が hidden で、focus() が無視され、フォーカスはカード本体(シート外)に残る。結果 `shouldHandleKeyTarget` が偽となり、方式によらず全キーが無視される。
+- `HandCard` のスクロール処理(`isHandFocused` の useEffect)は `scrollIntoView` を呼ぶだけで `focus()`・`blur()` を呼ばず、keydown にも関与しない。原因ではない(コードで確認。スクロール自体はフォーカスを移さない)。
+
+**(b) 修正方針の比較**
+
+| 案 | 内容 | 長所 | 短所 |
+| --- | --- | --- | --- |
+| ① 許可リスト型 | `shouldHandleKeyTarget` に「target が、開いている対象のカード本体(`.hand-card__body`・`.indicator-card__body`・`.meld-card__body`)の内側」を真の条件として追加 | 変更が `tenkey-logic.ts` だけ。フォーカスがどこに残っても、カードタップ由来なら必ず効く。ステッパー・設定入力欄は従来どおり偽 | 本体の `onKeyDown`(Enter/Space で open-sheet)とキーが二重に届く(下記の対処が要る) |
+| ① 拒否リスト型 | シートが開いている間、シート外でも「自身がキーを使う要素」(input・textarea・select・button・a[href]・contenteditable・カスタム要素 `md-*`)以外は受け付ける | 将来の別の開き方にも効く | 拒否リストの漏れで設定欄等のキーを奪う危険。カスタム要素の判定が曖昧。D3 の意図からの後退が大きい |
+| ② BottomSheet の遅延フォーカス | `visibility` が visible になってから(rAF・transitionstart 等)focus() | フォーカス位置が仕様どおりになり、a11y 的に正しい | `src/ui/expressive/` の変更(確定事項 20 は閉じるボタンのアイコンだけを例外にした)。タイミング依存で再現が不安定な不具合の修正としては検証が難しい。D1 条件 20(閉じた後に元の要素へ戻る)への影響確認が要る |
+| ③ カードタップ時にシートへフォーカス | `handleCardClick` で本体ではなくシートへ focus | expressive を触らない | シートの DOM を各カードが知る必要があり結合が強い。②と同じ visibility 問題で失敗し得る |
+
+- 採用は **①許可リスト型**(確定事項 43)。却下案: ①拒否リスト型は漏れで設定欄等のキーを奪う危険、③は結合が強く②と同じ visibility 問題で失敗し得る。`src/ui/expressive/` を変更しない(AGENTS §3.1 の禁止事項・既存の変更禁止方針に触れない)。②はフォーカス位置の正しさでは優れるが、例外承認が新たに要るため本 Issue では採らず、5 章へ引き継ぐ。
+- 二重受信の対処: シートが開いていて `inputFocus` が当該カードを指す間、本体の `onKeyDown`(Enter/Space)は何もしない(`HandCard` の `handleBodyKeyDown`、`IndicatorCard`・`MeldArea` の同等処理に条件を追加)。Enter はフックの `close-sheet` だけが処理する。Space はフックで扱わないので無処理になる。
+- 判定関数は純粋関数のまま保ち、`shouldHandleKeyTarget(target)` に `.hand-card__body, .indicator-card__body, .meld-card__body` の `closest` を加える。「開いている対象のカードか」までは問わない(フックは `inputFocus` が対象のときしか登録されず、別カードの本体にフォーカスが残ることはタップ経路では起きない)。
+
+**(c) パレット方式での物理キー(確定事項 39)と入力モデル(確定事項 41=P4)**
+
+`mapTenkeyKey` の `mode === 'tenkey'` の分岐を外し、数字・m/p/s/z を両方式で返す(下記の案により後段の扱いが変わる)。修飾キー(Ctrl/Meta/Alt)・IME 変換中(`isComposing`)を null にする規則、Backspace・Enter の扱いは変えない。Escape は従来どおり `BottomSheet` が処理し、フックは扱わない。Shift は従来どおり無視しない(`e.key` が大文字になるだけで、`toLowerCase` で吸収)。
+
+入力モデルの比較(P4 を採用。P1〜P3 は却下案として理由を残す):
+
+| 案 | 内容 | 長所 | 短所 |
+| --- | --- | --- | --- |
+| P1 バッファ共通 | テンキー方式と同じ。数字でバッファに積み、m/p/s/z で確定。バッファは選択中のカードに表示(2.12(1))。パレットの見た目はそのまま | 実装最小(reducer の `sheetMode !== 'tenkey'` の早期 return を外すだけ)。操作がテンキー方式と同一で覚えることが無い | パレット表示中に画面上に無い「バッファ」が出る。パレットの「1 枚削除」と物理 Backspace の意味がバッファ有無で変わる |
+| P2 1打鍵確定 | パレットに「選択中のスート」を新設し、数字1打で即確定 | 打鍵数が最少 | パレットにはスート選択の概念が無く、新規 UI と状態が要る。赤5『0』・字牌 z の切替など規則が増える。設計・検証コストが最大 |
+| P3 自動切替 | パレット表示中に数字/スートを打つと `sheetMode` を `tenkey` に切り替え、以降 P1 と同じ | 表示と挙動が一致する(画面上のテンキーにバッファが見える) | `sheetMode` は開閉をまたいで保持する(D3)ため、以後ずっとテンキー表示になる。タップ派のユーザーが意図せず切り替わる。トグルの表示も切り替わる |
+| P4 P1+Backspace の統一 | P1 に加え、パレット方式の Backspace も「バッファがあれば1文字削除、空なら対象別の削除(A8)」とテンキー方式と同じにする | 物理キーの挙動が方式に依存しなくなる | P1 とほぼ同じ。画面上のパレットの「1 枚削除」ボタンは従来どおりで、物理キーとだけ挙動が揃う |
+
+- 採用は **P4**(確定事項 41)。却下理由: P1=物理 Backspace の意味が方式で食い違う、P2=新規 UI・状態が要り設計検証コスト最大、P3=`sheetMode` が保持され意図せずテンキー表示に固定される。製造は P4 の列だけを実装する(P2 の列は参考)。
+- 各案の対象別の挙動(P1・P3・P4 は判定が同じ。既存関数を流用し新規判定を作らない):
+
+| 対象 | 数字の受付 | 確定(m/p/s/z) | 上限・使用済み・赤 | P2 の場合 |
+| --- | --- | --- | --- | --- |
+| 手牌 | `canAppendTenkeyDigitFor` | `planAddTiles`(14枚上限・4枚上限・赤5は在庫に応じ代替=既存) | 既存のまま | スート選択状態+`canAddHandTile` |
+| ドラ・裏ドラ | `canAppendTenkeyDigitFor`(最大5枚) | 既存の indicator 分岐。1m・9m・字牌以外・4枚超は確定しない(既存) | 既存 | `canAddIndicatorTile` |
+| 副露 | `canAppendTenkeyDigitFor`(1桁) | 既存の meld 分岐(`canSetMeld`、`0`=赤5・`5`=普通の5、確定事項 34) | 既存。パレットの赤牌切替ボタン(確定事項 31〜33)とは独立 | 赤の扱いを別途決める必要あり |
+| 共通 | 確定できないキー(例 `8z`)は無処理(既存の `resolveTenkeyBuffer` が null) | — | — | — |
+
+- Backspace の現行との差分: 現行パレット方式は対象別の末尾削除(A8)。P1・P3 はバッファがあっても末尾削除のまま(P3 は切替後テンキー扱い)、P4 はバッファ優先。
+
 ### 2.8 変更ファイル一覧
 
 | ファイル | 種別 | 内容 |
@@ -287,6 +379,10 @@ export const canAppendTenkeyDigitFor = (state: Pick<AppState,'input'|'tenkeyBuff
 | `src/ui/state/hand-rules.ts`・`index.ts`(+テスト) | 変更(確定事項 27) | `meldRedToggle`・`meldTileForKey` の追加 |
 | `src/ui/state/app-state.ts`(+テスト) | 変更(確定事項 30・34) | open-sheet の同一副露再選択、`tenkey-commit` の meld 分岐でのテンキーの赤5代替(2.11(3)(5))。`tenkey-logic.ts` は 2.11 では変更しない |
 | `src/ui/md/Button.tsx` | 変更(検収指摘、例外承認) | `ButtonProps` に `'aria-label'?: string` を追加し、4 バリアントのカスタム要素に渡すのみ(確定事項 24) |
+| `src/ui/screen/HandCard.tsx`・`IndicatorCard.tsx`・`MeldArea.tsx`(+テスト) | 変更(UI 監修5、確定事項 37・38・40) | バッファ表示を選択中のカードに限定・追加、外枠に `--selected` クラス、本体の Enter/Space をシート表示中は無処理(2.12)。HandCard の「アイコン差し替えのみ」の制約は本項で解除する |
+| `src/ui/screen/main-screen.css` | 変更(UI 監修5) | `.card-buffer`、`.hand-card--selected`・`.indicator-card--selected`・`.meld-card--selected`(背景色のみ) |
+| `src/ui/input/tenkey-logic.ts`・`use-tenkey-keyboard.ts`(+テスト) | 変更(UI 監修5、確定事項 39・40) | `shouldHandleKeyTarget` にカード本体を追加(2.12(3)(b)①)、`mapTenkeyKey` の方式分岐の撤去、P4 の `resolveKeyboardAction`(確定事項 41) |
+| `src/ui/state/app-state.ts`(+テスト) | 変更(UI 監修5、確定事項 41) | `tenkey-digit` の `sheetMode !== 'tenkey'` 早期 return の撤去。Backspace は `use-tenkey-keyboard.ts` の `resolveKeyboardAction` で、パレット方式でもバッファがあれば `tenkey-backspace`、空なら従来の対象別削除 |
 
 `src/core/` は変更しない(確定事項 29 でも同じ)。`src/ui/md/` は `Button.tsx` の確定事項 24 の範囲以外を変更しない(他ラッパー・`index.ts`・スタイルは不可)。`HandCard.tsx` はアイコンの差し替え以外を変更しない(見出しの m は `maxHandLength(melds)` で既に副露に追従する)。
 
@@ -310,6 +406,9 @@ UI 監修の修正(既存3コミットは変えず、追加で1〜2コミット)
 
 9. `fix`: Codex 指摘(確定事項 29・30): 副露の表示を `instantiateMeld` に合わせる、open-sheet の同一副露再選択で削除しない。C22・C23
 10. `feat`: 赤牌切替(確定事項 25・27・28): 判定関数とテスト → パレット・テンキー。C24〜C27。Q6〜Q10 は回答済み(確定事項 31〜36)
+
+11. `fix`: UI 監修5(確定事項 37・38): バッファの表示先と選択中の欄の背景。C28・C29
+12. `fix`: UI 監修5(確定事項 39・40): 物理キーの受付(初回オープン)とパレット方式の物理キー。P4(確定事項 41)で着手可。C30・C31
 
 経緯: 設計書の初版コミット後、UI 監修1〜4 として、✕アイコン(`SYMBOL_CLOSE`)と見出し書体(確定事項 17・19・20)、副露の1行化と牌幅 24dp・テンキー機能キーの対象別化(確定事項 18'・21)、縦中心揃えと牌スペースの常時確保(確定事項 22・23)を順に反映した。本書は実装(UI 監修4 まで)に合わせて改訂済み。
 
@@ -361,6 +460,10 @@ UI 監修の修正(既存3コミットは変えず、追加で1〜2コミット)
 - [ ] **C25 5キーの代替(自動テスト)**: red=1・手牌に普通の 5p 1枚で、副露ポンへの 5p キーが有効で、押すと `tile.red=true`。赤ありの 5p ポンに 5p キーを押しても `red=true` のまま。テンキー `'5'`→p でも同じ。`'0'`→p で `red=true`。
 - [ ] **C26 パレット(375px、dev、mobile、確定事項 25・31〜33)**: 基準として手牌のシート(red=1。`DEFAULT_RED=1` の既定状態)で赤5p・赤5s キーの矩形と全牌キー・機能キーの矩形を記録する。副露のシートで、`[aria-label]` に赤5の2キーが無く、`.tile-palette__red-toggle` が1つあり、その `left`・`top` が基準の赤5p キーと ±0.5px、`right` が基準の赤5s キーの `right` と ±0.5px、高さが基準キーと ±0.5px(=2セル分と一致)。他の牌キー・「1 枚削除」・AC・「入力を終える」の矩形が基準と ±0.5px で一致し、`.tile-palette` の `grid-template-columns` の列数が 9。切替ボタンの幅 ≥ 44px かつ高さが既存の牌キーと同じ(3rem=48px)。`aria-label="赤牌"`、牌画像(赤5)と「×n」の文字を含む。ポン 5p 確定後に押すと `aria-pressed` が false↔true に反転し、「×0」↔「×1」、副露カードの牌が 5p×3 ↔ 5p,5p,赤5p になる。槓・1p・牌未確定で `disabled`。テンキーモードの副露シートに `.tile-palette__red-toggle` が無い。手牌・ドラ・裏ドラのシートでは赤5キーが2つあり切替ボタンが無い(従来どおり)。`document.documentElement.scrollWidth === clientWidth`。red=0 の配置は C24・コンポーネントテストで確認する(dev 画面では red=0 にできないため。コンポーネントテストで red=0 の副露シートに切替ボタンも赤5キーも無いことを確認する)。
 - [ ] **C27 表示(375px、dev、red=1 のみ、確定事項 29・36)**: red=1(`DEFAULT_RED=1` の既定状態)で、暗槓 5p の副露カードの牌が [裏, 5p, 赤5p, 裏]、明槓 5p が赤1枚を含む。red=2 の表示は dev 画面に設定UIが無い(D6)ため確認せず、C22 の自動テストで代える。
+- [ ] **C28 バッファ表示(自動テスト・コンポーネント、確定事項 37)**: `tenkeyBuffer='1'` で `inputFocus` を hand・dora・uradora・meld 0 と変えたとき、バッファ要素(`‸` を含む)が対象のカードにだけ1つ存在し、他のカード(特に手牌カード)に無い。`inputFocus=null` ではどこにも無い。
+- [ ] **C29 選択中の背景(コンポーネント+375px、dev、ライト/ダーク、確定事項 38)**: (自動)`inputFocus` に応じて対象の外枠にだけ `--selected` クラスが付き、副露2つのとき対象の1枚だけ。`close-sheet` で全カードから外れる。(dev)各カードを開いたとき外枠の `getComputedStyle().backgroundColor` が`--md-sys-color-primary-container`の算出値と一致し、`outline-style`・`border` が開く前と同じ(枠線なし)。他のカードは `surface-container` のまま。閉じると戻る。`resize_window` の colorScheme light・dark の両方で、スクリーンショットで牌画像・見出し・✕・バッファが判別できる(識別不能なら不合格として統括へ戻す)。C14i の寸法が合格のまま。
+- [ ] **C30 物理キー判定(自動テスト、確定事項 39・40)**: `shouldHandleKeyTarget` がカード本体3種の内側で真、ステッパーのボタン・設定の input・シート外の md 部品で偽(従来どおり)。`mapTenkeyKey` が palette でも数字・m/p/s/z を返し、修飾キー・`isComposing` では null。P4 の reducer・フックのテスト(palette で `1`→`p` で 1p 追加、バッファありの Backspace が1文字削除)。本体の Enter はシート表示中に `open-sheet` を出さない。
+- [ ] **C31 物理キー実測(375px、dev 5201、mobile:true、確定事項 39・40)**: 各ケースの前にページを**リロード**し、カードを `computer` の left_click で1回タップしただけの状態(初回オープン直後)で、`computer` の key アクションで実際にキーを送る。(1) テンキー方式: 手牌で `1` `2` `3` `m` → 手牌に 1m2m3m。(2) ドラで `9` `m` → ドラに 9m(表示牌として入る牌であること)。(3) 副露(ポン)で `5` `p` → 5p のポン。(4) パレット方式に切り替えて(1)〜(3)を再実行し同じ結果。パレット表示のまま(テンキーに切り替わらない)で、バッファありの `Backspace` が1文字削除。(5) 入力途中の数字が対象のカードに表示され、手牌以外では手牌カードに出ない(C28 の実物確認)。(6) `Enter` でシートが閉じ、再度開いていない。(7) 抜き北ステッパーのボタンにフォーカスを置いて(シートを開いた状態でも)数字キーを送り、手牌が変わらない。設定画面の入力欄で数字を打てる。各ケースで `document.activeElement` のクラスを記録する。
 - [ ] **C14e 手牌カードの非回帰**: issue-55 の C5(ゴミ箱 40×24)・C6(当たり判定の点)・C7(押下の結果)ほか手牌カード・パレットの条件を再実行し合格(確定事項 24 の `Button.tsx` 変更後に実施)。HandCard.tsx の差分がアイコン部分(import と svg 要素)だけである(`git diff` で確認)。
 - [ ] **C14g テンキーの機能キー(自動テスト)**: `tenkeyActionKeysFor` について 2.3 のテンキー表の全行(hand/dora/uradora/meld × バッファ空/あり × 対象の牌0枚/あり)の `label`・`action`・`disabled` が表どおり。reducer で `inputFocus=dora`・手牌 13 枚・ドラ 2 枚から AC の `action` を dispatch すると、ドラが0枚・手牌 13 枚のまま。`tenkey-backspace` で dora はバッファ空ならドラ末尾1枚、meld はバッファ空で不変、バッファありなら末尾1文字。
 - [ ] **C14h テンキーの機能キー(375px、dev)**: テンキーモードでドラのシートを開き、AC の aria-label が「ドラ表示牌をクリア」、押すとドラだけが空になり手牌カードの見出しの n が変わらない。ドラ0枚・バッファ空で AC と「1 文字削除」が `disabled` 属性を持つ。裏ドラも同様(「裏ドラ表示牌をクリア」)。副露のシートで AC が `disabled`(aria-label「副露をクリア」)、「1 文字削除」はバッファ空で `disabled`、数字を1つ入れると有効になり押すとバッファが消える。手牌のシートの AC は従来どおり「手牌をクリア」で手牌を消す。
@@ -379,6 +482,7 @@ UI 監修の修正(既存3コミットは変えず、追加で1〜2コミット)
 - core の `Chii` 型等の削除(別 Issue)は、副露の UI に影響しない(UI は `Pon`/`Kan` しか作らない)。
 - Issue #58(D4-1 スマート入力モード(仮称)、依存 #48): 本 Issue は副露を「種類+牌」(`Meld`)の単位で持ち、種類(`set-meld-kind`)と牌(`set-meld-tile`)を独立に変えられるため、#58 は手牌の除去と `Meld` の追加をまとめるアクションを足すだけで載せられ、本 Issue の状態設計は #58 を妨げない。#58 の設計は本書では行わない。
 - D6(ルール設定): red=0 でテンキー `'0'` 確定した副露は `tile.red=true` のまま残り、後で red≥1 に変えると赤ありとして扱われ、手牌の赤との合計上限が再検査されない(既存の挙動。計算・表示自体は正しい)。ルール変更時の入力の再検査を D6 で扱うこと。
+- (UI 監修5)`BottomSheet` の初回オープンで閉じるボタンへのフォーカスが効かない件(2.12(3)(a))は、本 Issue では判定側(①)で回避しただけで、フォーカス位置自体は直していない。a11y 上の修正(②)は expressive の変更として別 Issue で扱う。
 - 各カードのゴミ箱の寸法は要件 §4 の例外(Issue #55・#48)に従う。寸法を変える場合は §4 の改訂が要る。
 
 ## 6. 要ヒアリング事項(統括担当へ)
@@ -386,6 +490,14 @@ UI 監修の修正(既存3コミットは変えず、追加で1〜2コミット)
 設計時の Q1〜Q4 はユーザー回答で解決済み(1.2 の確定事項 10〜13)。
 
 - Q5 は A 案で解決済み(確定事項 18')。
+
+### UI 監修5(Q11〜Q13): 回答済み(確定)
+
+ユーザー回答: Q11=P4→確定事項 41、Q12=primary-container→42、Q13=①許可リスト型→43。未確定事項として残すものはない。以下は回答時の選択肢(記録)。
+
+- **Q11 パレット方式の物理キーの入力モデル**(2.12(3)(c)): P1 バッファ共通 / P2 1打鍵確定(スート選択の新 UI) / P3 物理キーで自動的にテンキー方式へ切替 / **P4 P1+Backspace もテンキー方式と同じ(採用)**。
+- **Q12 選択中の欄の背景トークン**(2.12(2)): **`primary-container`(採用)** / `secondary-container`(控えめ) / `surface-container-high`(非選択との差がほぼ無く非推奨)。
+- **Q13 フォーカス不具合の直し方**(2.12(3)(b)): **①許可リスト型(採用、expressive 不変)** / ②BottomSheet の遅延フォーカス(expressive の例外変更が要る)。
 
 ### 赤牌切替(Q6〜Q10・暗槓の表示): 回答済み(確定)
 
