@@ -310,6 +310,8 @@ export function ConnectedButtonGroup<T extends string>(p: ConnectedButtonGroupPr
 
 ### 2.7 バンドル予算
 
+> 【事後注記】バンドルの扱いは[09-bundle-budget-protocol.md](../rules/09-bundle-budget-protocol.md)に改訂された。下記の 102,000 B は目標値であり、不合格条件ではない。
+
 - **初回 JS(`dist/index.html` が `<script type="module">` と `<link rel="modulepreload">` で参照する JS の gzip 合計)≤ 102,000 B。** 根拠: 1.4 の React のみ 58.59 kB に、ボタン1個の増分 14.18 kB の約3倍(42.5 kB)を足した値を丸めたもの(G-09)。`all.js` 全量 import(+81 kB)は確実に超える。
 - C2 の本番画面(パラメーター無し)は md 部品を静的 import しないため、実測は概ね C3 マージ後の main と同程度の見込み。
 - `MdGallery` のチャンクは枠外(値は検収で記録だけする)。
