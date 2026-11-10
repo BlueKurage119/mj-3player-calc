@@ -24,7 +24,12 @@ const safeLocalStorage = (): RuleStorage | null => {
 
 const initAppState = (): AppState => {
   const loaded = loadRule(safeLocalStorage());
-  return createInitialState(loaded.rule);
+  // 設定画面(D6)の実装までの仮置き。オープン立直とローカル役の表示を確認できるよう有効にする(D6で削除する)
+  return createInitialState({
+    ...loaded.rule,
+    openRiichi: true,
+    localYaku: true
+  });
 };
 
 const AppStateContext = createContext<AppState | null>(null);
