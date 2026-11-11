@@ -581,9 +581,12 @@ body {
 
 .sheet-slot[data-slot^="sheet-dora"],
 .sheet-slot[data-slot^="sheet-uradora"],
-.sheet-slot[data-slot^="sheet-meld"],
-.sheet-slot[data-slot="sheet-situation"] {
+.sheet-slot[data-slot^="sheet-meld"] {
   min-height: 16rem;
+}
+
+.sheet-slot[data-slot="sheet-situation"] {
+  padding-block-end: 0.5rem;
 }
 
 .wind-segment {
