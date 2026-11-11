@@ -5,13 +5,19 @@ import { FocusRing, Ripple } from '../md';
 export interface CardClearButtonProps {
   'aria-label': string;
   disabled?: boolean | undefined;
+  variant?: 'hand' | 'compact';
   onClear: () => void;
 }
 
 export function CardClearButton(
   props: CardClearButtonProps
 ): React.JSX.Element {
-  const { 'aria-label': ariaLabel, disabled = false, onClear } = props;
+  const {
+    'aria-label': ariaLabel,
+    disabled = false,
+    variant = 'compact',
+    onClear
+  } = props;
 
   const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
     event.stopPropagation();
@@ -21,12 +27,12 @@ export function CardClearButton(
   };
 
   return (
-    <div className="card-clear-zone hand-card__clear-zone">
+    <div className={`card-clear-zone card-clear-zone--${variant}`}>
       <button
         type="button"
         aria-label={ariaLabel}
         disabled={disabled}
-        className="card-clear-button hand-card__clear-button"
+        className="card-clear-button"
         onClick={handleClick}
       >
         <Ripple disabled={disabled} />

@@ -46,10 +46,7 @@ export function MeldAreaContent({
     event: React.MouseEvent<HTMLDivElement>
   ) => {
     const el = event.target as Element | null;
-    if (
-      el?.closest('.card-clear-zone') ||
-      el?.closest('.hand-card__clear-zone')
-    ) {
+    if (el?.closest('.card-clear-zone')) {
       return;
     }
     bodyRefs.current[i]?.focus({ preventScroll: true });

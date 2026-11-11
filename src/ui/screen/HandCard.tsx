@@ -1,8 +1,6 @@
 import { useEffect, useRef } from 'react';
 import type React from 'react';
 import type { Tile as CoreTile } from '../../core/tile';
-import { SYMBOL_CLOSE, SymbolIcon } from '../icons';
-import { FocusRing, Ripple } from '../md';
 import {
   maxHandLength,
   splitWinningTile,
@@ -10,6 +8,7 @@ import {
   useAppState
 } from '../state';
 import { Tile } from '../tile';
+import { CardClearButton } from './CardClearButton';
 
 export function formatHandCardTitle(handLength: number, max: number): string {
   return `手牌 (${handLength}/${max})`;
@@ -105,19 +104,16 @@ export function HandCard(): React.JSX.Element {
 
   const handleCardClick = (event: React.MouseEvent<HTMLDivElement>) => {
     const target = event.target as Element | null;
-    if (target?.closest('.hand-card__clear-zone')) {
+    if (target?.closest('.card-clear-zone')) {
       return;
     }
     bodyRef.current?.focus({ preventScroll: true });
     dispatch({ type: 'open-sheet', target: { type: 'hand' } });
   };
 
-  const handleClearClick = (event: React.MouseEvent<HTMLButtonElement>) => {
-    event.stopPropagation();
-    if (!isEmpty) {
-      dispatch({ type: 'clear-hand' });
-      bodyRef.current?.focus({ preventScroll: true });
-    }
+  const handleClear = () => {
+    dispatch({ type: 'clear-hand' });
+    bodyRef.current?.focus({ preventScroll: true });
   };
 
   const handleBodyKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) =>
@@ -136,19 +132,12 @@ export function HandCard(): React.JSX.Element {
         <span className="hand-card__title">
           {formatHandCardTitle(input.hand.length, max)}
         </span>
-        <div className="hand-card__clear-zone">
-          <button
-            type="button"
-            aria-label="手牌をクリア"
-            disabled={isEmpty}
-            className="hand-card__clear-button"
-            onClick={handleClearClick}
-          >
-            <Ripple disabled={isEmpty} />
-            <FocusRing />
-            <SymbolIcon d={SYMBOL_CLOSE} size="1.25rem" />
-          </button>
-        </div>
+        <CardClearButton
+          variant="hand"
+          aria-label="手牌をクリア"
+          disabled={isEmpty}
+          onClear={handleClear}
+        />
       </div>
       {/* biome-ignore lint/a11y/useSemanticElements: 設計書2.1で role="button"・tabIndex=0 の指定があるため */}
       <div
