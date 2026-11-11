@@ -1,7 +1,9 @@
 import type React from 'react';
+import { SYMBOL_ARROW_BACK, SymbolIcon } from '../icons';
 import { Divider, IconButton } from '../md';
 import { HelpTooltipScope, RuleSection, ThemeSection } from '../settings';
 import { useAppDispatch, useRuleLoadNotice } from '../state';
+
 import './main-screen.css';
 
 export function SettingsScreen(): React.JSX.Element {
@@ -18,17 +20,7 @@ export function SettingsScreen(): React.JSX.Element {
             className="settings-screen__back-button"
             onClick={() => dispatch({ type: 'navigate', screen: 'main' })}
           >
-            <svg
-              viewBox="0 0 24 24"
-              width="1.5rem"
-              height="1.5rem"
-              aria-hidden="true"
-            >
-              <path
-                d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"
-                fill="currentColor"
-              />
-            </svg>
+            <SymbolIcon d={SYMBOL_ARROW_BACK} />
           </IconButton>
           <h1 className="app-header__title">設定</h1>
         </div>

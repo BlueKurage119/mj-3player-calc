@@ -1,5 +1,6 @@
 import type React from 'react';
 import { SHAPE_MORPH_CLASS } from './shape-morph';
+import { SYMBOL_ADD, SYMBOL_REMOVE, SymbolIcon } from '../icons';
 import './stepper.css';
 
 export interface StepperProps {
@@ -49,14 +50,7 @@ export function Stepper(props: StepperProps): React.JSX.Element {
             }
           }}
         >
-          <svg
-            viewBox="0 0 24 24"
-            width="1.25rem"
-            height="1.25rem"
-            aria-hidden="true"
-          >
-            <path d="M19 13H5v-2h14v2z" fill="currentColor" />
-          </svg>
+          <SymbolIcon d={SYMBOL_REMOVE} size="1.25rem" />
         </button>
         <output className="stepper__value tabular-nums" aria-live="polite">
           {value}
@@ -72,14 +66,7 @@ export function Stepper(props: StepperProps): React.JSX.Element {
             }
           }}
         >
-          <svg
-            viewBox="0 0 24 24"
-            width="1.25rem"
-            height="1.25rem"
-            aria-hidden="true"
-          >
-            <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" fill="currentColor" />
-          </svg>
+          <SymbolIcon d={SYMBOL_ADD} size="1.25rem" />
         </button>
       </div>
     </fieldset>
