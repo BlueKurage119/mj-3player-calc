@@ -8,6 +8,7 @@ import { FocusRing, Ripple } from '../md';
 import { useAppDispatch, useAppState } from '../state';
 import { Tile } from '../tile';
 import { CardClearButton } from './CardClearButton';
+import { useRejectFeedback } from './reject-feedback';
 
 export const meldTiles = (meld: Meld, red: Rule['red']): TileOrBack[] => {
   if (meld.tile === null) return [];
@@ -30,6 +31,85 @@ export interface MeldAreaContentProps {
   onAddMeld: () => void;
 }
 
+interface MeldCardItemProps {
+  meld: Meld;
+  index: number;
+  isSelected: boolean;
+  buffer: string;
+  red: Rule['red'];
+  onSelect: () => void;
+  onRemove: () => void;
+  bodyRef: (el: HTMLDivElement | null) => void;
+  onKeyDown: (event: React.KeyboardEvent<HTMLDivElement>) => void;
+}
+
+function MeldCardItem({
+  meld,
+  index,
+  isSelected,
+  buffer,
+  red,
+  onSelect,
+  onRemove,
+  bodyRef,
+  onKeyDown
+}: MeldCardItemProps): React.JSX.Element {
+  const cardRef = useRef<HTMLDivElement | null>(null);
+  useRejectFeedback(cardRef, isSelected);
+
+  const tiles = meldTiles(meld, red);
+  const hasBuffer = isSelected && buffer.length > 0;
+
+  const handleClick = (event: React.MouseEvent<HTMLDivElement>) => {
+    const el = event.target as Element | null;
+    if (el?.closest('.card-clear-zone')) {
+      return;
+    }
+    onSelect();
+  };
+
+  return (
+    // biome-ignore lint/a11y/useKeyWithClickEvents: キーボード操作は .meld-card__body(role=button)が担う
+    <div
+      ref={cardRef}
+      className={`meld-card${isSelected ? ' meld-card--selected' : ''}`}
+      onClick={handleClick}
+    >
+      <div className="meld-card__row">
+        {/* biome-ignore lint/a11y/useSemanticElements: 設計書2.5で role="button"・tabIndex=0 の指定があるため */}
+        <div
+          role="button"
+          ref={bodyRef}
+          tabIndex={0}
+          aria-label={`副露${index + 1}を入力`}
+          data-sheet-opener=""
+          className="meld-card__body"
+          onKeyDown={onKeyDown}
+        >
+          {hasBuffer ? (
+            <span className="card-buffer" aria-hidden="true">
+              {buffer}‸
+            </span>
+          ) : meld.tile === null ? (
+            <div className="meld-card__empty" aria-hidden="true" />
+          ) : (
+            <div className="meld-card__tiles">
+              {tiles.map((t, idx) => (
+                <Tile key={idx} tile={t} />
+              ))}
+            </div>
+          )}
+        </div>
+        <CardClearButton
+          aria-label={`副露${index + 1}を削除`}
+          disabled={false}
+          onClear={onRemove}
+        />
+      </div>
+    </div>
+  );
+}
+
 export function MeldAreaContent({
   melds,
   red,
@@ -41,18 +121,6 @@ export function MeldAreaContent({
 }: MeldAreaContentProps): React.JSX.Element {
   const bodyRefs = useRef<(HTMLDivElement | null)[]>([]);
 
-  const handleCardClick = (
-    i: number,
-    event: React.MouseEvent<HTMLDivElement>
-  ) => {
-    const el = event.target as Element | null;
-    if (el?.closest('.card-clear-zone')) {
-      return;
-    }
-    bodyRefs.current[i]?.focus({ preventScroll: true });
-    onSelectMeld(i);
-  };
-
   const handleBodyKeyDown = (
     i: number,
     event: React.KeyboardEvent<HTMLDivElement>
@@ -60,53 +128,25 @@ export function MeldAreaContent({
 
   return (
     <div className="meld-area">
-      {melds.map((meld, i) => {
-        const tiles = meldTiles(meld, red);
-        const isCardSelected = i === selectedIndex;
-        const hasBuffer = isCardSelected && buffer.length > 0;
-        return (
-          // biome-ignore lint/a11y/useKeyWithClickEvents: キーボード操作は .meld-card__body(role=button)が担う
-          <div
-            key={i}
-            className={`meld-card${isCardSelected ? ' meld-card--selected' : ''}`}
-            onClick={e => handleCardClick(i, e)}
-          >
-            <div className="meld-card__row">
-              {/* biome-ignore lint/a11y/useSemanticElements: 設計書2.5で role="button"・tabIndex=0 の指定があるため */}
-              <div
-                role="button"
-                ref={el => {
-                  bodyRefs.current[i] = el;
-                }}
-                tabIndex={0}
-                aria-label={`副露${i + 1}を入力`}
-                data-sheet-opener=""
-                className="meld-card__body"
-                onKeyDown={e => handleBodyKeyDown(i, e)}
-              >
-                {hasBuffer ? (
-                  <span className="card-buffer" aria-hidden="true">
-                    {buffer}‸
-                  </span>
-                ) : meld.tile === null ? (
-                  <div className="meld-card__empty" aria-hidden="true" />
-                ) : (
-                  <div className="meld-card__tiles">
-                    {tiles.map((t, idx) => (
-                      <Tile key={idx} tile={t} />
-                    ))}
-                  </div>
-                )}
-              </div>
-              <CardClearButton
-                aria-label={`副露${i + 1}を削除`}
-                disabled={false}
-                onClear={() => onRemoveMeld(i)}
-              />
-            </div>
-          </div>
-        );
-      })}
+      {melds.map((meld, i) => (
+        <MeldCardItem
+          key={i}
+          meld={meld}
+          index={i}
+          isSelected={i === selectedIndex}
+          buffer={buffer}
+          red={red}
+          onSelect={() => {
+            bodyRefs.current[i]?.focus({ preventScroll: true });
+            onSelectMeld(i);
+          }}
+          onRemove={() => onRemoveMeld(i)}
+          bodyRef={el => {
+            bodyRefs.current[i] = el;
+          }}
+          onKeyDown={e => handleBodyKeyDown(i, e)}
+        />
+      ))}
       {melds.length < 4 ? (
         <button
           type="button"

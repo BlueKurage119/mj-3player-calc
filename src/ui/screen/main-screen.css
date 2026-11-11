@@ -667,3 +667,43 @@ body {
 .situation-card__empty {
   color: var(--md-sys-color-on-surface-variant);
 }
+
+@keyframes card-reject-shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20%,
+  60% {
+    transform: translateX(-4px);
+  }
+  40%,
+  80% {
+    transform: translateX(4px);
+  }
+}
+
+@keyframes card-reject-flash {
+  0% {
+    outline-color: var(--md-sys-color-error);
+  }
+  100% {
+    outline-color: transparent;
+  }
+}
+
+.hand-card[data-reject],
+.indicator-card[data-reject],
+.meld-card[data-reject] {
+  animation: card-reject-shake var(--md-sys-motion-duration-medium1) ease-in-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hand-card[data-reject],
+  .indicator-card[data-reject],
+  .meld-card[data-reject] {
+    animation: card-reject-flash var(--md-sys-motion-duration-medium1) linear;
+    outline: 2px solid transparent;
+    outline-offset: -2px;
+  }
+}

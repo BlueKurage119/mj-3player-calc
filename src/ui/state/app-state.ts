@@ -641,3 +641,28 @@ export const appReducer = (state: AppState, action: AppAction): AppState => {
       };
   }
 };
+
+export const isSilentReject = (
+  prev: AppState,
+  action: AppAction,
+  next: AppState
+): boolean => {
+  if (next !== prev) return false;
+  if (!prev.inputFocus) return false;
+  const fType = prev.inputFocus.type;
+  if (
+    fType !== 'hand' &&
+    fType !== 'dora' &&
+    fType !== 'uradora' &&
+    fType !== 'meld'
+  ) {
+    return false;
+  }
+  if (action.type === 'tenkey-digit') {
+    return true;
+  }
+  if (action.type === 'tenkey-commit') {
+    return prev.tenkeyBuffer !== '';
+  }
+  return false;
+};

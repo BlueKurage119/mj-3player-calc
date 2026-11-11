@@ -9,7 +9,12 @@ import {
   useState
 } from 'react';
 import type React from 'react';
-import { type AppAction, type AppState, appReducer } from './app-state';
+import {
+  type AppAction,
+  type AppState,
+  appReducer,
+  isSilentReject
+} from './app-state';
 import {
   createInitialStateFromStorage,
   safeLocalStorage
@@ -20,8 +25,26 @@ export interface RuleLoadNoticeContextValue {
   dismiss: () => void;
 }
 
+interface WrappedAppState {
+  app: AppState;
+  rejectSeq: number;
+}
+
+const wrappedAppReducer = (
+  prev: WrappedAppState,
+  action: AppAction
+): WrappedAppState => {
+  const nextApp = appReducer(prev.app, action);
+  const reject = isSilentReject(prev.app, action, nextApp);
+  return {
+    app: nextApp,
+    rejectSeq: reject ? prev.rejectSeq + 1 : prev.rejectSeq
+  };
+};
+
 const AppStateContext = createContext<AppState | null>(null);
 const AppDispatchContext = createContext<Dispatch<AppAction> | null>(null);
+const AppRejectSeqContext = createContext<number>(0);
 const RuleLoadNoticeContext = createContext<RuleLoadNoticeContextValue | null>(
   null
 );
@@ -36,7 +59,11 @@ export function AppStateProvider(
   const [initialData] = useState(() =>
     createInitialStateFromStorage(safeLocalStorage())
   );
-  const [state, dispatch] = useReducer(appReducer, initialData.state);
+  const [wrapped, dispatch] = useReducer(
+    wrappedAppReducer,
+    initialData.state,
+    app => ({ app, rejectSeq: 0 })
+  );
   const [showNotice, setShowNotice] = useState(initialData.loadNotice);
 
   const dismiss = useCallback(() => {
@@ -49,11 +76,13 @@ export function AppStateProvider(
   );
 
   return (
-    <AppStateContext value={state}>
+    <AppStateContext value={wrapped.app}>
       <AppDispatchContext value={dispatch}>
-        <RuleLoadNoticeContext value={noticeValue}>
-          {props.children}
-        </RuleLoadNoticeContext>
+        <AppRejectSeqContext value={wrapped.rejectSeq}>
+          <RuleLoadNoticeContext value={noticeValue}>
+            {props.children}
+          </RuleLoadNoticeContext>
+        </AppRejectSeqContext>
       </AppDispatchContext>
     </AppStateContext>
   );
@@ -75,6 +104,10 @@ export const useAppDispatch = (): Dispatch<AppAction> => {
     );
   }
   return ctx;
+};
+
+export const useRejectSeq = (): number => {
+  return useContext(AppRejectSeqContext);
 };
 
 export const useRuleLoadNotice = (): RuleLoadNoticeContextValue => {

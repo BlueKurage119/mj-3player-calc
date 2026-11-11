@@ -9,6 +9,7 @@ import {
 } from '../state';
 import { Tile } from '../tile';
 import { CardClearButton } from './CardClearButton';
+import { useRejectFeedback } from './reject-feedback';
 
 export function formatHandCardTitle(handLength: number, max: number): string {
   return `手牌 (${handLength}/${max})`;
@@ -53,6 +54,8 @@ export function HandCard(): React.JSX.Element {
   const isEmpty = input.hand.length === 0;
   const max = maxHandLength(input.melds);
   const { body, winning } = splitWinningTile(input.hand, max);
+
+  useRejectFeedback(cardRef, isSelected);
 
   useEffect(() => {
     if (!isHandFocused) return;

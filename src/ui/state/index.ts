@@ -11,6 +11,7 @@ export {
   STEPPER_BOUNDS,
   createInitialState,
   appReducer,
+  isSilentReject,
   isNukiEnabled
 } from './app-state';
 
@@ -41,6 +42,7 @@ export {
   type RuleLoadNoticeContextValue,
   useAppState,
   useAppDispatch,
+  useRejectSeq,
   useRuleLoadNotice
 } from './AppStateProvider';
 
