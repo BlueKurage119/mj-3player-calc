@@ -118,9 +118,15 @@ export const tenkeyActionKeysFor = (
     };
   }
   if (focus?.type === 'meld') {
+    const meld = state.input.melds[focus.i];
+    const tileNull = !meld || meld.tile === null;
     return {
-      backspace: { disabled: bufferEmpty },
-      clear: { action: null, label: '副露をクリア', disabled: true }
+      backspace: { disabled: bufferEmpty && tileNull },
+      clear: {
+        action: { type: 'remove-meld', i: focus.i },
+        label: '副露を削除',
+        disabled: false
+      }
     };
   }
   return {

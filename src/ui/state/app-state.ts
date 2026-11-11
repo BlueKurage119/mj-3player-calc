@@ -67,6 +67,7 @@ export type AppAction =
   | { type: 'add-meld' }
   | { type: 'set-meld-kind'; i: number; kind: MeldKind }
   | { type: 'set-meld-tile'; i: number; tile: Tile }
+  | { type: 'clear-meld-tile'; i: number }
   | { type: 'remove-meld'; i: number }
   | { type: 'add-indicator-tile'; target: IndicatorTarget; tile: Tile }
   | { type: 'remove-last-indicator-tile'; target: IndicatorTarget }
@@ -113,6 +114,26 @@ export const createInitialState = (rule: Rule): AppState => ({
   sheetMode: 'palette',
   tenkeyBuffer: ''
 });
+
+const clearMeldTileAt = (state: AppState, i: number): AppState => {
+  if (!Number.isInteger(i) || i < 0 || i >= state.input.melds.length) {
+    return state;
+  }
+  const meld = state.input.melds[i];
+  if (!meld || meld.tile === null) {
+    return state;
+  }
+  return {
+    ...state,
+    input: {
+      ...state.input,
+      melds: state.input.melds.map((m, idx) =>
+        idx === i ? { ...m, tile: null } : m
+      )
+    },
+    tenkeyBuffer: ''
+  };
+};
 
 export const appReducer = (state: AppState, action: AppAction): AppState => {
   switch (action.type) {
@@ -389,7 +410,7 @@ export const appReducer = (state: AppState, action: AppAction): AppState => {
         };
       }
       if (state.inputFocus.type === 'meld') {
-        return state;
+        return clearMeldTileAt(state, state.inputFocus.i);
       }
       return state;
     }
@@ -553,6 +574,9 @@ export const appReducer = (state: AppState, action: AppAction): AppState => {
         tenkeyBuffer: ''
       };
     }
+
+    case 'clear-meld-tile':
+      return clearMeldTileAt(state, action.i);
 
     case 'remove-meld': {
       if (

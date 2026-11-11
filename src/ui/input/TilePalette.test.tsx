@@ -134,4 +134,28 @@ describe('D4-C26: 副露シートのパレットの赤牌切替 (確定事項 25
       expect(html).not.toContain('tile-palette__action--span-4');
     }
   });
+
+  it('D7-C11-C12: meld フォーカス時、牌ありなら BS 有効、牌なし(null)なら BS disabled。AC は常に有効で「副露を削除」', () => {
+    // 牌あり: BS 有効、AC 有効
+    const htmlWithTile = render(
+      stateOf(1, { type: 'meld', i: 0 }, [{ type: 'pon', tile: p5 }])
+    );
+    const bsWithTile =
+      htmlWithTile.match(/<[^>]*aria-label="1 枚削除"[^>]*>/)?.[0] ?? '';
+    expect(bsWithTile).not.toContain('disabled');
+    const acWithTile =
+      htmlWithTile.match(/<[^>]*aria-label="副露を削除"[^>]*>/)?.[0] ?? '';
+    expect(acWithTile).not.toContain('disabled');
+
+    // 牌なし(null): BS disabled、AC 有効
+    const htmlEmpty = render(
+      stateOf(1, { type: 'meld', i: 0 }, [{ type: 'pon', tile: null }])
+    );
+    const bsEmpty =
+      htmlEmpty.match(/<[^>]*aria-label="1 枚削除"[^>]*>/)?.[0] ?? '';
+    expect(bsEmpty).toContain('disabled');
+    const acEmpty =
+      htmlEmpty.match(/<[^>]*aria-label="副露を削除"[^>]*>/)?.[0] ?? '';
+    expect(acEmpty).not.toContain('disabled');
+  });
 });

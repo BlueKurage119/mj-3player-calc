@@ -234,12 +234,23 @@ describe('D4-C14g: テンキーの機能キーの対象別化 (確定事項21、
         );
         expect(m.backspace.disabled).toBe(buffer === '');
         expect(m.clear).toEqual({
-          action: null,
-          label: '副露をクリア',
-          disabled: true
+          action: { type: 'remove-meld', i: 0 },
+          label: '副露を削除',
+          disabled: false
         });
       }
     }
+
+    const meldWithTileState: AppState = {
+      ...make({ type: 'meld', i: 0 }, '', 0),
+      input: {
+        ...make({ type: 'meld', i: 0 }, '', 0).input,
+        melds: [{ type: 'pon', tile: t1p }]
+      }
+    };
+    expect(tenkeyActionKeysFor(meldWithTileState).backspace.disabled).toBe(
+      false
+    );
   });
 
   it('D4-C14g-2: ドラ入力中のACを dispatch してもドラだけが空になり手牌は不変', () => {
@@ -256,13 +267,23 @@ describe('D4-C14g: テンキーの機能キーの対象別化 (確定事項21、
     expect(after.tenkeyBuffer).toBe('');
   });
 
-  it('D4-C14g-3: tenkey-backspace は dora=バッファ空で末尾1枚・meld=バッファ空で不変・バッファありなら1文字', () => {
+  it('D4-C14g-3: tenkey-backspace は dora=バッファ空で末尾1枚・meld=バッファ空で牌null(空枠なら不変)・バッファありなら1文字', () => {
     const dora = make({ type: 'dora' }, '', 2);
     expect(appReducer(dora, { type: 'tenkey-backspace' }).input.dora).toEqual([
       t1p
     ]);
-    const meld = make({ type: 'meld', i: 0 }, '', 0);
-    expect(appReducer(meld, { type: 'tenkey-backspace' })).toBe(meld);
+    const meldEmpty = make({ type: 'meld', i: 0 }, '', 0);
+    expect(appReducer(meldEmpty, { type: 'tenkey-backspace' })).toBe(meldEmpty);
+    const meldWithTile: AppState = {
+      ...meldEmpty,
+      input: {
+        ...meldEmpty.input,
+        melds: [{ type: 'pon', tile: t1p }]
+      }
+    };
+    const meldAfterBs = appReducer(meldWithTile, { type: 'tenkey-backspace' });
+    expect(meldAfterBs.input.melds[0]?.tile).toBeNull();
+    expect(meldAfterBs.input.melds[0]?.type).toBe('pon');
     const withBuf = make({ type: 'dora' }, '12', 2);
     const r = appReducer(withBuf, { type: 'tenkey-backspace' });
     expect(r.tenkeyBuffer).toBe('1');

@@ -1093,6 +1093,42 @@ describe('D3: テンキー入力の状態管理と reducer (D3-S1〜S13)', () =>
       expect(sRemoved1.inputFocus).toBeNull();
     });
 
+    it('D7-C11: clear-meld-tile は牌ありでnull化・種別とフォーカス不変・バッファ空、牌なしや範囲外は同一参照', () => {
+      const base = createInitialState(createDefaultRule());
+      const tile1p: Tile = { type: 'p', n: 1 };
+      const stateWithMeld: AppState = {
+        ...base,
+        input: {
+          ...base.input,
+          melds: [{ type: 'pon', tile: tile1p }]
+        },
+        inputFocus: { type: 'meld', i: 0 },
+        tenkeyBuffer: '12'
+      };
+
+      // 牌あり → tile: null, 種別(pon)不変, focus不変, tenkeyBuffer空
+      const sCleared = appReducer(stateWithMeld, {
+        type: 'clear-meld-tile',
+        i: 0
+      });
+      expect(sCleared.input.melds[0]).toEqual({ type: 'pon', tile: null });
+      expect(sCleared.inputFocus).toEqual({ type: 'meld', i: 0 });
+      expect(sCleared.tenkeyBuffer).toBe('');
+
+      // 既に tile === null → 同一参照
+      expect(appReducer(sCleared, { type: 'clear-meld-tile', i: 0 })).toBe(
+        sCleared
+      );
+
+      // 範囲外 index → 同一参照
+      expect(appReducer(stateWithMeld, { type: 'clear-meld-tile', i: 1 })).toBe(
+        stateWithMeld
+      );
+      expect(
+        appReducer(stateWithMeld, { type: 'clear-meld-tile', i: -1 })
+      ).toBe(stateWithMeld);
+    });
+
     it('D4-C6: 対象離脱時の空副露削除 (A5) と index 補正', () => {
       const base = createInitialState(createDefaultRule());
       const tile1p: Tile = { type: 'p', n: 1 };

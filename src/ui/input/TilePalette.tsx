@@ -182,9 +182,12 @@ export function TilePalette(): React.JSX.Element {
     onAcClick = () => dispatch({ type: 'clear-indicators', target: 'uradora' });
     acAriaLabel = '裏ドラ表示牌をクリア';
   } else if (focus?.type === 'meld') {
-    backspaceDisabled = true;
-    acDisabled = true;
-    acAriaLabel = '副露をクリア';
+    const meld = state.input.melds[focus.i];
+    backspaceDisabled = !meld || meld.tile === null;
+    onBackspaceClick = () => dispatch({ type: 'clear-meld-tile', i: focus.i });
+    acDisabled = false;
+    onAcClick = () => dispatch({ type: 'remove-meld', i: focus.i });
+    acAriaLabel = '副露を削除';
   }
 
   const backspaceSpanClass = 'tile-palette__action--span-2';
