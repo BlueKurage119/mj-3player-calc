@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
 import type React from 'react';
+import { SYMBOL_MORE_VERT, SymbolIcon } from '../icons';
 import { Divider, IconButton, Menu, MenuItem } from '../md';
 import { useAppDispatch } from '../state';
 
@@ -24,17 +25,7 @@ export function AppHeader({ headerRef }: AppHeaderProps): React.JSX.Element {
             className="app-header__menu-button"
             onClick={() => setMenuOpen(prev => !prev)}
           >
-            <svg
-              viewBox="0 0 24 24"
-              width="1.5rem"
-              height="1.5rem"
-              aria-hidden="true"
-            >
-              <path
-                d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"
-                fill="currentColor"
-              />
-            </svg>
+            <SymbolIcon d={SYMBOL_MORE_VERT} />
           </IconButton>
           <Menu
             open={menuOpen}
