@@ -67,17 +67,18 @@ describe('D4: UI監修2 (確定事項 17・19・20, C14d・C14f)', () => {
     expect(SYMBOL_CANCEL).not.toBe(SYMBOL_CLOSE);
   });
 
-  it('D4-ICON6: シートの閉じるボタンは SYMBOL_CANCEL を描画し、BottomSheet.tsx の差分はアイコン定数のみ', () => {
+  it('D7-C5: シートの閉じるボタンは tonal (md-filled-tonal-icon-button) で SYMBOL_CLOSE を描画する', () => {
     const html = renderToStaticMarkup(
       <BottomSheet open aria-label="t" onClose={() => {}} header={null}>
         x
       </BottomSheet>
     );
-    expect(html.includes(`d="${SYMBOL_CANCEL}"`)).toBe(true);
-    expect(html.includes(`d="${SYMBOL_CLOSE}"`)).toBe(false);
+    expect(html.includes('md-filled-tonal-icon-button')).toBe(true);
+    expect(html.includes(`d="${SYMBOL_CLOSE}"`)).toBe(true);
     const src = readSrc('../expressive/BottomSheet.tsx');
-    expect(src.includes('d={SYMBOL_CANCEL}')).toBe(true);
-    expect(src.includes('SYMBOL_CLOSE')).toBe(false);
+    expect(src.includes('variant="tonal"')).toBe(true);
+    expect(src.includes('d={SYMBOL_CLOSE}')).toBe(true);
+    expect(src.includes('SYMBOL_CANCEL')).toBe(false);
   });
 
   it('D4-FONT1: .indicator-card__title の書体は .stepper__label と同じ label-medium トークン', () => {
