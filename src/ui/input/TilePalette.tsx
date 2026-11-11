@@ -12,6 +12,7 @@ import {
   useAppState
 } from '../state';
 import { Tile, tileLabelOf } from '../tile';
+import { SYMBOL_BACKSPACE, SYMBOL_KEYBOARD_RETURN, SymbolIcon } from '../icons';
 import './tile-palette.css';
 
 const ROW_1_SOU: readonly CoreTile[] = [
@@ -204,17 +205,7 @@ export function TilePalette(): React.JSX.Element {
         className={`tile-palette__action ${backspaceSpanClass}`}
         onClick={onBackspaceClick}
       >
-        <svg
-          viewBox="0 0 24 24"
-          width="1.5rem"
-          height="1.5rem"
-          aria-hidden="true"
-        >
-          <path
-            d="M22 3H7c-.69 0-1.23.35-1.59.88L0 12l5.41 8.11c.36.53.9.89 1.59.89h15c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-3 12.59L17.59 17 14 13.41 10.41 17 9 15.59 12.59 12 9 8.41 10.41 7 14 10.59 17.59 7 19 8.41 15.41 12 19 15.59z"
-            fill="currentColor"
-          />
-        </svg>
+        <SymbolIcon d={SYMBOL_BACKSPACE} />
       </IconButton>
       <Button
         variant="tonal"
@@ -231,17 +222,7 @@ export function TilePalette(): React.JSX.Element {
         className={`tile-palette__action ${enterSpanClass}`}
         onClick={() => dispatch({ type: 'close-sheet' })}
       >
-        <svg
-          viewBox="0 0 24 24"
-          width="1.5rem"
-          height="1.5rem"
-          aria-hidden="true"
-        >
-          <path
-            d="M19 7v4H5.83l3.58-3.59L8 6l-6 6 6 6 1.41-1.41L5.83 13H21V7h-2z"
-            fill="currentColor"
-          />
-        </svg>
+        <SymbolIcon d={SYMBOL_KEYBOARD_RETURN} />
       </IconButton>
     </div>
   );

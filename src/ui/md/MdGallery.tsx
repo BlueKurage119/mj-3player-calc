@@ -41,6 +41,7 @@ export default function MdGallery(): React.JSX.Element {
   const [menuSelected, setMenuSelected] = useState('');
   const menuAnchorRef = useRef<HTMLElement | null>(null);
 
+  // 自作の幾何図形(三角形)。node_modules(@material/web 含む)と上流(material-web・material-design-icons)のコード検索で同形の出典は見つからず(確認 2026-11)、本リポジトリで追加(PR #40、0cc955f)。Material Symbols ではない
   const sampleIcon = (
     <svg viewBox="0 0 24 24" width="1.5rem" height="1.5rem" aria-hidden="true">
       <path d="M12 2L2 22h20L12 2z" fill="currentColor" />
