@@ -1,5 +1,7 @@
 # Issue #51 D1. 画面の骨格 設計書
 
+> 追記(Issue #73): BottomSheet の閉じるボタン(tonal・`close` アイコン・見た目 40dp)、影(elevation)、visibility の遷移(開くときは即時)は、Issue #73 で変更した。詳細は [issue-73](issue-73-keyboard-ui-fix.md)。
+
 - 対象 Issue: [#51 D1. 画面の骨格](https://github.com/BlueKurage119/mj-3player-calc/issues/51)(Epic D)
 - 状態: 設計承認済み。5A の9件は推奨どおりで一旦確定(ユーザーの UI 監修で修正する場合がある)
 - 本書で決めるもの: 入力状態と計算の呼び出し口、1ページ縦スクロールの骨格、要約カード、結果側の枠(2状態)、非モーダル底部シートの機構、ステッパー部品、ヘッダーと3点リーダーメニュー(`Menu` ラッパー)、手牌カード(シートを開くタップ領域とバケツ)、ギャラリーの DEV 限定化、バンドル予算と牌 SVG の確認

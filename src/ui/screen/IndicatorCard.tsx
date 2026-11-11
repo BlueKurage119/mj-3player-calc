@@ -5,6 +5,7 @@ import type { IndicatorTarget } from '../state';
 import { useAppDispatch, useAppState } from '../state';
 import { Tile } from '../tile';
 import { CardClearButton } from './CardClearButton';
+import { useRejectFeedback } from './reject-feedback';
 
 export interface IndicatorCardContentProps {
   target: IndicatorTarget;
@@ -33,12 +34,11 @@ export function IndicatorCardContent({
 
   const isEmpty = tiles.length === 0;
 
+  useRejectFeedback(cardRef, selected);
+
   const handleCardClick = (event: React.MouseEvent<HTMLDivElement>) => {
     const el = event.target as Element | null;
-    if (
-      el?.closest('.card-clear-zone') ||
-      el?.closest('.hand-card__clear-zone')
-    ) {
+    if (el?.closest('.card-clear-zone')) {
       return;
     }
     bodyRef.current?.focus({ preventScroll: true });

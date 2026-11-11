@@ -2,7 +2,8 @@
   display: grid;
   grid-template-columns: repeat(9, minmax(0, 1fr));
   column-gap: 2px;
-  row-gap: 0.25rem;
+  row-gap: 0.8rem;
+  padding-block: 0.8rem;
   grid-auto-rows: 3rem;
 }
 
@@ -62,6 +63,7 @@
   --md-filled-tonal-icon-button-container-height: 3rem;
   --md-filled-icon-button-container-width: 100%;
   --md-filled-tonal-icon-button-container-width: 100%;
+  --md-filled-tonal-button-hover-container-elevation: 0;
 }
 
 .tile-palette__action--span-2 {

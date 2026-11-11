@@ -246,10 +246,11 @@ export const canAppendTenkeyDigit = (
 
 /** 対象別のテンキー桁追加判定。既存 canAppendTenkeyDigit は手牌の場合として残す */
 export const canAppendTenkeyDigitFor = (
-  state: Pick<AppState, 'input' | 'tenkeyBuffer' | 'inputFocus'>,
+  state: Pick<AppState, 'input' | 'tenkeyBuffer' | 'inputFocus' | 'rule'>,
   digit: string
 ): boolean => {
   if (!/^[0-9]$/.test(digit)) return false;
+  if (digit === '0' && state.rule.red === 0) return false;
   if (!state.inputFocus) return false;
 
   let capacity = 0;

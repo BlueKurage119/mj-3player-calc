@@ -16,15 +16,22 @@ describe('D4: 消すボタンのアイコン (確定事項 19, 2.7, C14d)', () =
     expect(html.includes(`d="${SYMBOL_CLOSE}"`)).toBe(true);
     expect(html.includes('width="1.25rem"')).toBe(true);
     expect(html.includes(OLD_TRASH_PATH_HEAD)).toBe(false);
+    expect(html.includes('card-clear-zone--compact')).toBe(true);
+    expect(html.includes('card-clear-button')).toBe(true);
+
+    const htmlHand = renderToStaticMarkup(
+      <CardClearButton variant="hand" aria-label="x" onClear={() => {}} />
+    );
+    expect(htmlHand.includes('card-clear-zone--hand')).toBe(true);
   });
 
-  it('D4-ICON2: HandCard のソースに旧ゴミ箱パスが残らず新アイコンを使う', () => {
+  it('D4-ICON2: HandCard のソースに旧ゴミ箱パスが残らず CardClearButton を使う', () => {
     const src = readFileSync(
       new URL('./HandCard.tsx', import.meta.url),
       'utf8'
     );
     expect(src.includes(OLD_TRASH_PATH_HEAD)).toBe(false);
-    expect(src.includes('SYMBOL_CLOSE')).toBe(true);
+    expect(src.includes('CardClearButton')).toBe(true);
   });
 
   it('D4-ICON3: ドラ・裏ドラの牌幅は 20px 固定', () => {
@@ -60,17 +67,18 @@ describe('D4: UI監修2 (確定事項 17・19・20, C14d・C14f)', () => {
     expect(SYMBOL_CANCEL).not.toBe(SYMBOL_CLOSE);
   });
 
-  it('D4-ICON6: シートの閉じるボタンは SYMBOL_CANCEL を描画し、BottomSheet.tsx の差分はアイコン定数のみ', () => {
+  it('D7-C5: シートの閉じるボタンは tonal (md-filled-tonal-icon-button) で SYMBOL_CLOSE を描画する', () => {
     const html = renderToStaticMarkup(
       <BottomSheet open aria-label="t" onClose={() => {}} header={null}>
         x
       </BottomSheet>
     );
-    expect(html.includes(`d="${SYMBOL_CANCEL}"`)).toBe(true);
-    expect(html.includes(`d="${SYMBOL_CLOSE}"`)).toBe(false);
+    expect(html.includes('md-filled-tonal-icon-button')).toBe(true);
+    expect(html.includes(`d="${SYMBOL_CLOSE}"`)).toBe(true);
     const src = readSrc('../expressive/BottomSheet.tsx');
-    expect(src.includes('d={SYMBOL_CANCEL}')).toBe(true);
-    expect(src.includes('SYMBOL_CLOSE')).toBe(false);
+    expect(src.includes('variant="tonal"')).toBe(true);
+    expect(src.includes('d={SYMBOL_CLOSE}')).toBe(true);
+    expect(src.includes('SYMBOL_CANCEL')).toBe(false);
   });
 
   it('D4-FONT1: .indicator-card__title の書体は .stepper__label と同じ label-medium トークン', () => {
@@ -110,18 +118,14 @@ describe('D4: UI監修4 (横ライン揃えと牌スペース確保)', () => {
   const block = (sel: string) =>
     css.match(new RegExp(`${sel} \\{([^}]*)\\}`))?.[1] ?? '';
 
-  it('D4-ALIGN1: ドラ・副露カードでは死角paddingを持たず疑似要素で確保する', () => {
-    const zone = block(
-      '\\.indicator-card \\.card-clear-zone,\\s*\\.meld-card \\.card-clear-zone'
-    );
-    expect(zone.includes('padding-block-end: 0;')).toBe(true);
-    const after = block(
-      '\\.indicator-card \\.card-clear-zone::after,\\s*\\.meld-card \\.card-clear-zone::after'
-    );
+  it('D4-ALIGN1: ドラ・副露カードでは死角paddingを持たず疑似要素で確保し、手牌カードは modifier で確保する', () => {
+    const compact = block('\\.card-clear-zone--compact');
+    expect(compact.includes('padding-block-end: 0;')).toBe(true);
+    const after = block('\\.card-clear-zone--compact::after');
     expect(after.includes('inset-block-end: -0.5rem;')).toBe(true);
-    // 手牌カード側の死角paddingは据え置き
+    // 手牌カード側の死角paddingは修飾クラスで確保
     expect(
-      block('\\.hand-card__clear-zone').includes('padding-block-end: 0.5rem;')
+      block('\\.card-clear-zone--hand').includes('padding-block-end: 0.5rem;')
     ).toBe(true);
   });
 

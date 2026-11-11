@@ -3,11 +3,13 @@ import { createDefaultRule } from '../../core/rule';
 import type { Tile } from '../../core/tile';
 import { computeResult } from '../calc/compute';
 import {
+  type AppAction,
   type AppState,
   STEPPER_BOUNDS,
   appReducer,
   createInitialState,
-  isNukiEnabled
+  isNukiEnabled,
+  isSilentReject
 } from './app-state';
 import { canAddHandTile, sortHand } from './hand-rules';
 
@@ -1093,6 +1095,42 @@ describe('D3: テンキー入力の状態管理と reducer (D3-S1〜S13)', () =>
       expect(sRemoved1.inputFocus).toBeNull();
     });
 
+    it('D7-C11: clear-meld-tile は牌ありでnull化・種別とフォーカス不変・バッファ空、牌なしや範囲外は同一参照', () => {
+      const base = createInitialState(createDefaultRule());
+      const tile1p: Tile = { type: 'p', n: 1 };
+      const stateWithMeld: AppState = {
+        ...base,
+        input: {
+          ...base.input,
+          melds: [{ type: 'pon', tile: tile1p }]
+        },
+        inputFocus: { type: 'meld', i: 0 },
+        tenkeyBuffer: '12'
+      };
+
+      // 牌あり → tile: null, 種別(pon)不変, focus不変, tenkeyBuffer空
+      const sCleared = appReducer(stateWithMeld, {
+        type: 'clear-meld-tile',
+        i: 0
+      });
+      expect(sCleared.input.melds[0]).toEqual({ type: 'pon', tile: null });
+      expect(sCleared.inputFocus).toEqual({ type: 'meld', i: 0 });
+      expect(sCleared.tenkeyBuffer).toBe('');
+
+      // 既に tile === null → 同一参照
+      expect(appReducer(sCleared, { type: 'clear-meld-tile', i: 0 })).toBe(
+        sCleared
+      );
+
+      // 範囲外 index → 同一参照
+      expect(appReducer(stateWithMeld, { type: 'clear-meld-tile', i: 1 })).toBe(
+        stateWithMeld
+      );
+      expect(
+        appReducer(stateWithMeld, { type: 'clear-meld-tile', i: -1 })
+      ).toBe(stateWithMeld);
+    });
+
     it('D4-C6: 対象離脱時の空副露削除 (A5) と index 補正', () => {
       const base = createInitialState(createDefaultRule());
       const tile1p: Tile = { type: 'p', n: 1 };
@@ -1692,5 +1730,118 @@ describe('D5: 状況入力の reducer と結果連動 (C5〜C8, C13)', () => {
       );
       expect(allYakuNames).toContain('tenho');
     }
+  });
+
+  describe('D7-C8: isSilentReject の真偽判定 (確定事項 K10)', () => {
+    const base = createInitialState(createDefaultRule());
+
+    it('E1: tenkey-commit で解決不能牌(8z等)は拒否判定が真', () => {
+      const prev: AppState = {
+        ...base,
+        inputFocus: { type: 'hand' },
+        tenkeyBuffer: '8'
+      };
+      const action: AppAction = { type: 'tenkey-commit', suit: 'z' };
+      const next = appReducer(prev, action);
+      expect(next).toBe(prev);
+      expect(isSilentReject(prev, action, next)).toBe(true);
+    });
+
+    it('E2: tenkey-commit で枚数超過(手牌14枚満杯など)は拒否判定が真', () => {
+      const hand14 = Array.from({ length: 14 }, () => ({
+        type: 'p' as const,
+        n: 1 as const
+      }));
+      const prev: AppState = {
+        ...base,
+        input: { ...base.input, hand: hand14 },
+        inputFocus: { type: 'hand' },
+        tenkeyBuffer: '1'
+      };
+      const action: AppAction = { type: 'tenkey-commit', suit: 'p' };
+      const next = appReducer(prev, action);
+      expect(next).toBe(prev);
+      expect(isSilentReject(prev, action, next)).toBe(true);
+    });
+
+    it('E3: tenkey-digit が容量上限や赤なし等で拒否された場合は拒否判定が真', () => {
+      const hand14 = Array.from({ length: 14 }, () => ({
+        type: 'p' as const,
+        n: 1 as const
+      }));
+      const prev: AppState = {
+        ...base,
+        input: { ...base.input, hand: hand14 },
+        inputFocus: { type: 'hand' },
+        tenkeyBuffer: ''
+      };
+      const action: AppAction = { type: 'tenkey-digit', digit: '1' };
+      const next = appReducer(prev, action);
+      expect(next).toBe(prev);
+      expect(isSilentReject(prev, action, next)).toBe(true);
+
+      // 赤なしで 0
+      const prevRed0: AppState = {
+        ...createInitialState({ ...createDefaultRule(), red: 0 }),
+        inputFocus: { type: 'hand' },
+        tenkeyBuffer: ''
+      };
+      const action0: AppAction = { type: 'tenkey-digit', digit: '0' };
+      const nextRed0 = appReducer(prevRed0, action0);
+      expect(nextRed0).toBe(prevRed0);
+      expect(isSilentReject(prevRed0, action0, nextRed0)).toBe(true);
+    });
+
+    it('偽ケース: バッファ空の commit、成功した commit、フォーカスが null または非対象', () => {
+      // バッファ空の commit
+      const emptyBufState: AppState = {
+        ...base,
+        inputFocus: { type: 'hand' },
+        tenkeyBuffer: ''
+      };
+      const actionCommit: AppAction = { type: 'tenkey-commit', suit: 'p' };
+      const nextEmpty = appReducer(emptyBufState, actionCommit);
+      expect(nextEmpty).toBe(emptyBufState);
+      expect(isSilentReject(emptyBufState, actionCommit, nextEmpty)).toBe(
+        false
+      );
+
+      // 成功した commit
+      const validBufState: AppState = {
+        ...base,
+        inputFocus: { type: 'hand' },
+        tenkeyBuffer: '1'
+      };
+      const nextValid = appReducer(validBufState, actionCommit);
+      expect(nextValid).not.toBe(validBufState);
+      expect(isSilentReject(validBufState, actionCommit, nextValid)).toBe(
+        false
+      );
+
+      // inputFocus が null
+      const noFocusState: AppState = {
+        ...base,
+        inputFocus: null,
+        tenkeyBuffer: '1'
+      };
+      const nextNoFocus = appReducer(noFocusState, actionCommit);
+      expect(nextNoFocus).toBe(noFocusState);
+      expect(isSilentReject(noFocusState, actionCommit, nextNoFocus)).toBe(
+        false
+      );
+
+      // inputFocus が situation
+      const situationFocusState: AppState = {
+        ...base,
+        inputFocus: { type: 'situation' },
+        tenkeyBuffer: '1'
+      };
+      const actionDigit: AppAction = { type: 'tenkey-digit', digit: '1' };
+      const nextSituation = appReducer(situationFocusState, actionDigit);
+      expect(nextSituation).toBe(situationFocusState);
+      expect(
+        isSilentReject(situationFocusState, actionDigit, nextSituation)
+      ).toBe(false);
+    });
   });
 });

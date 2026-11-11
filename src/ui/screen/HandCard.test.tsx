@@ -74,7 +74,7 @@ describe('D1-1: 手牌カードの見た目と当たり判定 (C1, C4)', () => {
 
     // ゴミ箱ボタンが手牌0枚で disabled 属性を持つこと
     const buttonMatch = html.match(
-      /<button[^>]*class="[^"]*hand-card__clear-button[^"]*"[^>]*>/
+      /<button[^>]*class="[^"]*card-clear-button[^"]*"[^>]*>/
     );
     expect(buttonMatch).not.toBeNull();
     const buttonTag = buttonMatch?.[0] ?? '';

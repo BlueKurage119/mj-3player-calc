@@ -763,6 +763,20 @@ describe('D3: テンキー入力の純関数 (D3-R・B・P)', () => {
       };
       expect(canAppendTenkeyDigitFor(fourOnesState, '1')).toBe(false);
       expect(canAppendTenkeyDigitFor(fourOnesState, '2')).toBe(true);
+
+      // rule.red === 0 のときは 0 を拒否
+      const stateRed0 = {
+        ...createInitialState({ ...createDefaultRule(), red: 0 }),
+        inputFocus: { type: 'hand' as const }
+      };
+      expect(canAppendTenkeyDigitFor(stateRed0, '0')).toBe(false);
+      expect(canAppendTenkeyDigitFor(stateRed0, '1')).toBe(true);
+
+      const stateRed1 = {
+        ...createInitialState({ ...createDefaultRule(), red: 1 }),
+        inputFocus: { type: 'hand' as const }
+      };
+      expect(canAppendTenkeyDigitFor(stateRed1, '0')).toBe(true);
     });
   });
 });

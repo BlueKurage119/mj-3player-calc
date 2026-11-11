@@ -75,7 +75,9 @@ export function TilePalette(): React.JSX.Element {
     let disabled = true;
     let onTileClick = () => {};
 
-    if (focus?.type === 'hand') {
+    if ('red' in tile && tile.red && !hasRed) {
+      disabled = true;
+    } else if (focus?.type === 'hand') {
       disabled = !canAddHandTile(state, tile);
       onTileClick = () => dispatch({ type: 'add-hand-tile', tile });
     } else if (focus?.type === 'dora' || focus?.type === 'uradora') {
@@ -122,12 +124,14 @@ export function TilePalette(): React.JSX.Element {
 
   const renderRedToggle = (meldIndex: number) => {
     const meld = state.input.melds[meldIndex];
-    const { disabled, next } = meldRedToggle(state, meldIndex);
-    const redCount = meld
-      ? instantiateMeld(meld, state.rule.red).filter(
-          t => t.type !== 'z' && t.n === 5 && t.red === true
-        ).length
-      : 0;
+    const { disabled: toggleDisabled, next } = meldRedToggle(state, meldIndex);
+    const disabled = !hasRed || toggleDisabled;
+    const redCount =
+      hasRed && meld
+        ? instantiateMeld(meld, state.rule.red).filter(
+            t => t.type !== 'z' && t.n === 5 && t.red === true
+          ).length
+        : 0;
     const mt = meld?.tile ?? null;
     const suit = mt?.type === 's' ? 's' : 'p';
     const pressed = mt !== null && 'red' in mt && mt.red === true;
@@ -178,26 +182,23 @@ export function TilePalette(): React.JSX.Element {
     onAcClick = () => dispatch({ type: 'clear-indicators', target: 'uradora' });
     acAriaLabel = '裏ドラ表示牌をクリア';
   } else if (focus?.type === 'meld') {
-    backspaceDisabled = true;
-    acDisabled = true;
-    acAriaLabel = '副露をクリア';
+    const meld = state.input.melds[focus.i];
+    backspaceDisabled = !meld || meld.tile === null;
+    onBackspaceClick = () => dispatch({ type: 'clear-meld-tile', i: focus.i });
+    acDisabled = false;
+    onAcClick = () => dispatch({ type: 'remove-meld', i: focus.i });
+    acAriaLabel = '副露を削除';
   }
 
-  const backspaceSpanClass = hasRed
-    ? 'tile-palette__action--span-2'
-    : 'tile-palette__action--span-3';
-  const enterSpanClass = hasRed
-    ? 'tile-palette__action--span-3'
-    : 'tile-palette__action--span-4';
+  const backspaceSpanClass = 'tile-palette__action--span-2';
+  const enterSpanClass = 'tile-palette__action--span-3';
 
   return (
     <div className="tile-palette">
       {BASE_ROWS.map(renderTileKey)}
-      {hasRed
-        ? focus?.type === 'meld'
-          ? renderRedToggle(focus.i)
-          : RED_TILES.map(renderTileKey)
-        : null}
+      {focus?.type === 'meld'
+        ? renderRedToggle(focus.i)
+        : RED_TILES.map(renderTileKey)}
       <IconButton
         variant="tonal"
         label="1 枚削除"

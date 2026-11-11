@@ -1,5 +1,7 @@
 # Issue #48 D4. 副露・抜き北・ドラ表示牌の入力 設計書
 
+> 追記(Issue #73): 確定事項 13、A8 の「副露では何もしない」、2.3 の表の meld 行(パレット・テンキーとも)、受け入れ条件 C12 の末文・C14h の副露部分、A11(HandCard は CardClearButton を使わない)は、Issue #73 で変更した(副露の BS=牌だけ消す・AC=副露カードごと削除・物理 Backspace も BS に揃える。HandCard も CardClearButton を使う)。詳細は [issue-73](issue-73-keyboard-ui-fix.md) §2.2〜2.4・2.7。確定事項 41 の文言自体は変わらない(参照先の A8 が変わる)。
+
 Epic D(#5)の Sub-Issue。依存: D1(#51)・D2(#46)・D3(#47)・D1-1(#55)。
 
 ## 1. 参照資料と判断の根拠

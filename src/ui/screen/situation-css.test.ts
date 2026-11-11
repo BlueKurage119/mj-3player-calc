@@ -86,4 +86,17 @@ describe('situation-css (D5)', () => {
       true
     );
   });
+
+  it('D7-C13: 状況役シートは min-height: 16rem を持たず padding-block-end: 0.5rem を持つ', () => {
+    // 理由: 状況役シートが固定最小高さを外され、内容に応じた高さになることを検証するため
+    const situationMinHeight = mainCss.match(
+      /\.sheet-slot\[data-slot="sheet-situation"\][^{]*\{[^}]*min-height/
+    );
+    expect(situationMinHeight).toBeNull();
+    const situationBlock =
+      mainCss.match(
+        /\.sheet-slot\[data-slot="sheet-situation"\]\s*\{([^}]*)\}/
+      )?.[1] ?? '';
+    expect(situationBlock.includes('padding-block-end: 0.5rem;')).toBe(true);
+  });
 });

@@ -133,14 +133,30 @@ body {
   padding-block-start: 2px;
 }
 
-.hand-card__clear-zone {
+.card-clear-zone {
   padding-inline-start: 0.5rem;
-  padding-block-end: 0.5rem;
   display: flex;
   box-sizing: border-box;
+  position: relative;
 }
 
-.hand-card__clear-button {
+.card-clear-zone--hand {
+  padding-block-end: 0.5rem;
+}
+
+.card-clear-zone--compact {
+  padding-block-end: 0;
+}
+
+.card-clear-zone--compact::after {
+  content: "";
+  position: absolute;
+  inset-block-end: -0.5rem;
+  inset-inline: 0;
+  block-size: 0.5rem;
+}
+
+.card-clear-button {
   width: 2.5rem;
   height: 1.5rem;
   padding: 0;
@@ -157,7 +173,7 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 
-.hand-card__clear-button:disabled {
+.card-clear-button:disabled {
   color: var(--md-sys-color-on-surface);
   opacity: 0.38;
   cursor: default;
@@ -429,11 +445,6 @@ body {
   min-height: 16rem;
 }
 
-.sheet-slot[data-slot="sheet-hand"] .tile-palette {
-  padding-block: 0.8rem;
-  row-gap: 0.8rem;
-}
-
 .indicator-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -463,21 +474,6 @@ body {
   letter-spacing: var(--md-sys-typescale-label-medium-tracking);
   color: var(--md-sys-color-on-surface-variant);
   white-space: nowrap;
-}
-
-.indicator-card .card-clear-zone,
-.meld-card .card-clear-zone {
-  position: relative;
-  padding-block-end: 0;
-}
-
-.indicator-card .card-clear-zone::after,
-.meld-card .card-clear-zone::after {
-  content: "";
-  position: absolute;
-  inset-block-end: -0.5rem;
-  inset-inline: 0;
-  block-size: 0.5rem;
 }
 
 .indicator-card__body {
@@ -585,9 +581,12 @@ body {
 
 .sheet-slot[data-slot^="sheet-dora"],
 .sheet-slot[data-slot^="sheet-uradora"],
-.sheet-slot[data-slot^="sheet-meld"],
-.sheet-slot[data-slot="sheet-situation"] {
+.sheet-slot[data-slot^="sheet-meld"] {
   min-height: 16rem;
+}
+
+.sheet-slot[data-slot="sheet-situation"] {
+  padding-block-end: 0.5rem;
 }
 
 .wind-segment {
@@ -667,4 +666,44 @@ body {
 
 .situation-card__empty {
   color: var(--md-sys-color-on-surface-variant);
+}
+
+@keyframes card-reject-shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20%,
+  60% {
+    transform: translateX(-4px);
+  }
+  40%,
+  80% {
+    transform: translateX(4px);
+  }
+}
+
+@keyframes card-reject-flash {
+  0% {
+    outline-color: var(--md-sys-color-error);
+  }
+  100% {
+    outline-color: transparent;
+  }
+}
+
+.hand-card[data-reject],
+.indicator-card[data-reject],
+.meld-card[data-reject] {
+  animation: card-reject-shake var(--md-sys-motion-duration-medium1) ease-in-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hand-card[data-reject],
+  .indicator-card[data-reject],
+  .meld-card[data-reject] {
+    animation: card-reject-flash var(--md-sys-motion-duration-medium1) linear;
+    outline: 2px solid transparent;
+    outline-offset: -2px;
+  }
 }
