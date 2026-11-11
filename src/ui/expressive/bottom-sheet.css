@@ -57,9 +57,10 @@
   min-width: 0;
 }
 
+/* 見た目は md 既定の 40dp。当たり判定は md の .touch が 48dp を確保する。
+   余白 0.25rem で、従来の 48dp 枠と中心位置を揃える */
 .bottom-sheet__close-button {
-  min-width: 3rem;
-  min-height: 3rem;
+  margin: 0.25rem;
 }
 
 .bottom-sheet__content {
