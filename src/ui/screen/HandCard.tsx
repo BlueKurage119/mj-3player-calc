@@ -63,6 +63,9 @@ export function HandCard(): React.JSX.Element {
     const root = document.documentElement;
     let rafId: number | null = null;
     let lastSheetHeight = root.style.getPropertyValue('--sheet-height').trim();
+    let lastBannerHeight = root.style
+      .getPropertyValue('--result-banner-height')
+      .trim();
 
     const triggerScroll = () => {
       if (rafId !== null) {
@@ -82,11 +85,18 @@ export function HandCard(): React.JSX.Element {
     const observer =
       typeof MutationObserver !== 'undefined'
         ? new MutationObserver(() => {
-            const nextHeight = root.style
+            const nextSheetHeight = root.style
               .getPropertyValue('--sheet-height')
               .trim();
-            if (nextHeight !== lastSheetHeight) {
-              lastSheetHeight = nextHeight;
+            const nextBannerHeight = root.style
+              .getPropertyValue('--result-banner-height')
+              .trim();
+            if (
+              nextSheetHeight !== lastSheetHeight ||
+              nextBannerHeight !== lastBannerHeight
+            ) {
+              lastSheetHeight = nextSheetHeight;
+              lastBannerHeight = nextBannerHeight;
               triggerScroll();
             }
           })

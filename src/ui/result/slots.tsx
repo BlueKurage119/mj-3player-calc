@@ -18,13 +18,12 @@ export function GlanceTiles({
         const key = `${tile.type}${tile.n}${
           tile.type !== 'z' && tile.n === 5 && tile.red ? 'r' : ''
         }-${i}`;
-        return (
-          <Tile
-            key={key}
-            tile={tile}
-            onClick={onTileClick ? () => onTileClick(tile) : undefined}
-          />
-        );
+        if (onTileClick) {
+          return (
+            <Tile key={key} tile={tile} onClick={() => onTileClick(tile)} />
+          );
+        }
+        return <Tile key={key} tile={tile} />;
       })}
     </div>
   );
@@ -62,7 +61,7 @@ export function HoraBody({ hora }: HoraBodyProps): React.JSX.Element {
           return (
             <div key={key} className="result-body__hora-item">
               <Tile tile={t} />
-              <span>{h.options.tsumo ? 'ツモ' : 'ロン'}</span>
+              <span>{h.by === 'tsumo' ? 'ツモ' : 'ロン'}</span>
             </div>
           );
         })}

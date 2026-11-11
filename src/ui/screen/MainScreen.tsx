@@ -23,6 +23,7 @@ import { AppHeader } from './AppHeader';
 import { HandCard } from './HandCard';
 import { IndicatorCard } from './IndicatorCard';
 import { MeldArea } from './MeldArea';
+import { ResultBanner } from './ResultBanner';
 import { ResultPanel } from './ResultPanel';
 import { SituationCard } from './SituationCard';
 import { SummaryCard } from './SummaryCard';
@@ -103,6 +104,7 @@ export function MainScreen(): React.JSX.Element {
   const statusRef = useRef<HTMLDivElement | null>(null);
   const doraRef = useRef<HTMLDivElement | null>(null);
   const handRef = useRef<HTMLDivElement | null>(null);
+  const resultPanelRef = useRef<HTMLElement | null>(null);
   const viewOptions = {
     rootMargin: `-${headerHeight}px 0px 0px 0px`,
     minRatio: 0.1
@@ -188,11 +190,17 @@ export function MainScreen(): React.JSX.Element {
           </div>
         </section>
         <ResultPanel
+          ref={resultPanelRef}
           resultState={resultState}
           dispatchTimestampRef={dispatchTimestampRef}
         />
         <div className="main-screen__bottom-spacer" aria-hidden="true" />
       </main>
+      <ResultBanner
+        resultState={resultState}
+        panelRef={resultPanelRef}
+        headerHeight={headerHeight}
+      />
       <BottomSheet
         open={sheetOpen}
         onClose={() => dispatch({ type: 'close-sheet' })}

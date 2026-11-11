@@ -1,17 +1,17 @@
-import { type MutableRefObject, useLayoutEffect, useRef } from 'react';
+import { type MutableRefObject, useLayoutEffect } from 'react';
 import type React from 'react';
 import type { ResultState } from '../calc/result-state';
-import { useInView } from './use-in-view';
+import { ResultBody } from '../result/ResultBody';
+import { classifyResult } from '../result/classify';
 
 export interface ResultPanelProps {
   resultState: ResultState;
   dispatchTimestampRef?: MutableRefObject<number | null> | undefined;
+  ref?: React.Ref<HTMLElement> | undefined;
 }
 
 export function ResultPanel(props: ResultPanelProps): React.JSX.Element {
-  const { resultState, dispatchTimestampRef } = props;
-  const sentinelRef = useRef<HTMLDivElement | null>(null);
-  const sectionRef = useRef<HTMLElement | null>(null);
+  const { resultState, dispatchTimestampRef, ref } = props;
 
   useLayoutEffect(() => {
     if (import.meta.env.DEV && dispatchTimestampRef) {
@@ -24,13 +24,6 @@ export function ResultPanel(props: ResultPanelProps): React.JSX.Element {
     }
   });
 
-  const isExpanded = useInView(
-    sentinelRef,
-    { rootMargin: '0px 0px -30% 0px' },
-    false
-  );
-  const viewMode = isExpanded ? 'expanded' : 'banner';
-
   const contentState =
     resultState.status === 'loading'
       ? 'loading'
@@ -40,37 +33,23 @@ export function ResultPanel(props: ResultPanelProps): React.JSX.Element {
           ? 'empty'
           : 'ok';
 
-  const handleBannerClick = () => {
-    if (!isExpanded && sectionRef.current) {
-      sectionRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-  };
+  const view = classifyResult(
+    resultState.status === 'ok' ? resultState.result : null
+  );
 
   return (
     <section
-      ref={sectionRef}
+      ref={ref}
+      id="result-panel"
       aria-label="計算結果"
-      data-view={viewMode}
       data-state={contentState}
-      className={`result-panel result-panel--${viewMode}`}
-      onClick={!isExpanded ? handleBannerClick : undefined}
-      onKeyDown={
-        !isExpanded
-          ? event => {
-              if (event.key === 'Enter' || event.key === ' ') {
-                event.preventDefault();
-                handleBannerClick();
-              }
-            }
-          : undefined
+      className="result-panel"
+      style={
+        {
+          scrollMarginTop: 'calc(var(--app-header-height, 0px) + 0.5rem)'
+        } as React.CSSProperties
       }
-      tabIndex={!isExpanded ? 0 : undefined}
     >
-      <div
-        ref={sentinelRef}
-        className="result-panel__sentinel"
-        aria-hidden="true"
-      />
       <div className="result-panel__body">
         {resultState.status === 'loading' ? (
           <output
@@ -83,7 +62,7 @@ export function ResultPanel(props: ResultPanelProps): React.JSX.Element {
         ) : resultState.result === null ? (
           <div className="result-panel__empty" data-state="empty" />
         ) : (
-          <div className="result-panel__result">{resultState.result.type}</div>
+          <ResultBody view={view} />
         )}
       </div>
     </section>

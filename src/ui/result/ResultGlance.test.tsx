@@ -22,8 +22,8 @@ describe('ResultGlance', () => {
 
   it('shanten のとき「N向聴」「受け入れ」と牌が表示される', () => {
     const tileAvailabilities: TileAvailability[] = [
-      { tile: { type: 'm', n: 1, red: false }, count: 3 },
-      { tile: { type: 'p', n: 9, red: false }, count: 1 }
+      { tile: { type: 'm', n: 1 }, count: 3 },
+      { tile: { type: 'p', n: 9 }, count: 1 }
     ];
     const markup = renderToStaticMarkup(
       <ResultGlance
@@ -59,7 +59,7 @@ describe('ResultGlance', () => {
   it('tempai で全0枚のとき「和了牌なし」になる', () => {
     const tileAvailabilities: TileAvailability[] = [
       { tile: { type: 's', n: 5, red: false }, count: 0 },
-      { tile: { type: 's', n: 6, red: false }, count: 0 }
+      { tile: { type: 's', n: 6 }, count: 0 }
     ];
     const markup = renderToStaticMarkup(
       <ResultGlance
@@ -81,7 +81,8 @@ describe('ResultGlance', () => {
           kind: 'hora',
           hora: [
             {
-              horaTile: { type: 'z', n: 1, red: false }
+              horaTile: { type: 'z', n: 1 },
+              by: 'tsumo'
             } as unknown as ScoredHora
           ]
         }}
