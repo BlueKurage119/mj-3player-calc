@@ -1,8 +1,10 @@
 /**
  * Material Symbols (outlined) path 定数
- * 出典: https://github.com/google/material-design-icons
+ * 出典: https://github.com/google/material-design-icons (Google の Material Design Icons)
  * パス形式: symbols/web/<name>/materialsymbolsoutlined/<name>_24px.svg
- * ライセンス: Apache License 2.0
+ * ライセンス: Apache License 2.0 (https://www.apache.org/licenses/LICENSE-2.0)
+ *   全文は LICENSES/Apache-2.0.txt、クレジットは CREDITS.md を参照
+ * パスは公式 SVG (24px、viewBox `0 -960 960 960`) の path の d を無改変で書き写したもの
  */
 
 export const SYMBOL_KEYBOARD_KEYS =

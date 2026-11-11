@@ -27,3 +27,5 @@ Issue 駆動で、ヒアリング→設計→製造→検収の順に進めま�
 ## ライセンス
 
 [MIT](./LICENSE)。計算コアは livewing.net による mahjong-calc（MIT）に由来します。
+
+第三者素材の権利表示は [CREDITS.md](./CREDITS.md) と [LICENSES/](./LICENSES/) を参照してください。
