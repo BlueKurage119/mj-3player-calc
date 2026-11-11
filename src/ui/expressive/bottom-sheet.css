@@ -20,19 +20,22 @@
   visibility: hidden;
   pointer-events: none;
   outline: none;
-  transition-property: transform, visibility;
-  transition-duration: var(--md-sys-motion-spring-spatial-default-duration);
-  transition-timing-function: var(--md-sys-motion-spring-spatial-default-easing);
+  transition: transform var(--md-sys-motion-spring-spatial-default-duration)
+    var(--md-sys-motion-spring-spatial-default-easing), visibility 0s linear
+    var(--md-sys-motion-spring-spatial-default-duration);
 }
 
 .bottom-sheet--open {
   transform: translateY(0%);
   visibility: visible;
   pointer-events: auto;
+  transition: transform var(--md-sys-motion-spring-spatial-default-duration)
+    var(--md-sys-motion-spring-spatial-default-easing), visibility 0s;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .bottom-sheet {
+  .bottom-sheet,
+  .bottom-sheet--open {
     transition: none;
   }
 }
