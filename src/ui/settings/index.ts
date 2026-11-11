@@ -1,5 +1,3 @@
-import './settings.css';
-
 export { ThemeSection } from './ThemeSection';
 export { PresetRow, type PresetRowProps } from './PresetRow';
 export { RuleSection, type RuleSectionProps } from './RuleSection';

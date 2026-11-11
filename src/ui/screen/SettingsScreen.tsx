@@ -2,6 +2,7 @@ import type React from 'react';
 import { Divider, IconButton } from '../md';
 import { HelpTooltipScope, RuleSection, ThemeSection } from '../settings';
 import { useAppDispatch, useRuleLoadNotice } from '../state';
+import '../settings/settings.css';
 import './main-screen.css';
 
 export function SettingsScreen(): React.JSX.Element {
