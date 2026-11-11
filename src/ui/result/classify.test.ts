@@ -4,16 +4,16 @@ import type { TileAvailability } from '../../core/tile';
 import { classifyResult } from './classify';
 
 describe('classifyResult', () => {
-  it('null のときは kind: "none" を返す', () => {
+  it('E1-3: null のときは kind: "none" を返す', () => {
     expect(classifyResult(null)).toEqual({ kind: 'none' });
   });
 
-  it('just-hora のときは kind: "just-hora" を返す', () => {
+  it('E1-3: just-hora のときは kind: "just-hora" を返す', () => {
     const result: Result = { type: 'just-hora' };
     expect(classifyResult(result)).toEqual({ kind: 'just-hora' });
   });
 
-  it('tempai のときは kind: "tempai" と同一参照の tileAvailabilities を返す', () => {
+  it('E1-3: tempai のときは kind: "tempai" と同一参照の tileAvailabilities を返す', () => {
     const tileAvailabilities: TileAvailability[] = [
       { tile: { type: 's', n: 5, red: false }, count: 1 }
     ];
@@ -31,7 +31,7 @@ describe('classifyResult', () => {
     }
   });
 
-  it('discard-shanten のときは kind: "discard" と同一参照の discards を返す', () => {
+  it('E1-3: discard-shanten のときは kind: "discard" と同一参照の discards を返す', () => {
     const discards: Discard[] = [
       {
         tile: { type: 'm', n: 1 },
@@ -52,7 +52,7 @@ describe('classifyResult', () => {
     }
   });
 
-  it('hora-shanten で info.type が hora のとき(0件) kind: "hora" と同一参照の hora を返す', () => {
+  it('E1-3: hora-shanten で info.type が hora のとき(0件) kind: "hora" と同一参照の hora を返す', () => {
     const hora: ScoredHora[] = [];
     const result: Result = {
       type: 'hora-shanten',
@@ -71,7 +71,7 @@ describe('classifyResult', () => {
     }
   });
 
-  it('hora-shanten で info.type が hora のとき(複数件) kind: "hora" と同一参照の hora を返す', () => {
+  it('E1-3: hora-shanten で info.type が hora のとき(複数件) kind: "hora" と同一参照の hora を返す', () => {
     const mockHoraItem = {
       horaTile: { type: 'm', n: 1 },
       by: 'tsumo',
@@ -95,7 +95,7 @@ describe('classifyResult', () => {
     }
   });
 
-  it('hora-shanten で info.type が shanten のとき kind: "shanten" と shanten, 同一参照の tileAvailabilities を返す', () => {
+  it('E1-3: hora-shanten で info.type が shanten のとき kind: "shanten" と shanten, 同一参照の tileAvailabilities を返す', () => {
     const tileAvailabilities: TileAvailability[] = [
       { tile: { type: 'p', n: 1 }, count: 4 }
     ];

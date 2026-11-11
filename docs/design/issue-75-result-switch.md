@@ -237,14 +237,14 @@ export const scrollToResultPanel = (
 6. **単体テスト**: `npx vitest run src/ui/result src/ui/screen/ResultPanel.test.tsx src/ui/screen/result-banner-logic.test.ts src/ui/screen/HandCard.test.tsx` が全件通過し、2.7 の各ケース(`shouldShowBanner` の 159/160 の境界、`scrollToResultPanel` の呼び出し引数を含む)が含まれる(テスト名で確認)。`package.json` に `jsdom`・`happy-dom`・`@testing-library/*` が追加されていない。
 7. **空**: 初期状態(手牌なし)で `section[aria-label="計算結果"]` の `data-state` が `empty`、その中に `[data-result-kind]` が無く、文字が無い。バナー要素が非表示(`aria-hidden="true"` かつ `getComputedStyle(...).visibility === 'hidden'`)。
 8. **常に展開**: 結果パネルに `data-view` 属性・`result-panel--banner` クラスが無い。ページ先頭でも末尾でも結果パネルの `getBoundingClientRect().height` が 16rem(256px)以上で同じ値。
-9. **向聴**: 手牌に `1m 9m 1p 2p 5p 1s 4s 7s 東 南 西 白 發`(13枚)を入れる。結果パネルに `[data-result-kind="shanten"]` があり「N向聴」が出る。ページ先頭(結果パネルが画面外)でシートを閉じると、画面下端にバナーが表示され(`visibility` が `visible`)、「向聴」「受け入れ」の文字と牌画像が1枚以上ある。バナー下端が `innerHeight`(±1px)。
+9. **向聴**: 手牌に `1m 9m 1p 2p 5p 1s 4s 7s 東 南 西 白 發`(13枚)を入れる。結果パネルに `[data-result-kind="shanten"]` があり「N向聴」が出る。375×812 ではページ先頭でも結果パネルの上端が画面内に入る(バナーは出ないのが正しい)ため、375×500 にして、ページ先頭(結果パネルが画面外)でシートを閉じる。すると画面下端にバナーが表示され(`visibility` が `visible`)、「向聴」「受け入れ」の文字と牌画像が1枚以上ある。バナー下端が `innerHeight − 8px`(`--result-banner-gap`。±1px)。【検収での事後改訂。7章】
 10. **just-hora**: 5枚の手 `1p 2p 3p 5s 5s` をこの順に入力する(最後の牌が `5s`)。`handWithoutLast` は `1p 2p 3p 5s`(4枚、`length % 3 === 1` で13枚でないため、`5s` 単騎の聴牌として `tempai`)で、最後の `5s` が待ち牌なので `just-hora` になる。結果パネルとバナーに「和了です。牌をすべて入力して点数を計算します。」が出る(`[data-result-kind="just-hora"]`)。補足: 4枚 `1p 2p 3p 5s` の時点では `[data-result-kind="tempai"]`、6枚目を加えると `length % 3 === 0` で `null`(空)になる。8枚の例: `1p 2p 3p 4p 5p 6p 5s 5s`(最後が `5s`。`handWithoutLast` は7枚で `5s` 単騎の `tempai`)でも `just-hora` になる。
-11. **和了・聴牌の種類**: `1m 9m 1p 2p 3p 4p 5p 6p 7p 8p 9p 東 東`(13枚)で `[data-result-kind="hora"]`、さらに `東` を加えた14枚でも `[data-result-kind="hora"]`。7枚 `1p 2p 3p 4p 5p 6p 東`(`length % 3 === 1` で13枚でない聴牌)で `[data-result-kind="tempai"]`。何切る形(和了でない14枚)で `[data-result-kind="discard"]` と「何切る」。
+11. **和了・聴牌の種類**: `1m 1p 2p 3p 4p 5p 6p 7p 8p 9p 東 東 東`(13枚。三麻では `1m 9m` の組は1向聴になるため差し替えた。7章)で `[data-result-kind="hora"]`、さらに `1m` を加えた14枚でも `[data-result-kind="hora"]`。7枚 `1p 2p 3p 4p 5p 6p 東`(`length % 3 === 1` で13枚でない聴牌)で `[data-result-kind="tempai"]`。何切る形(和了でない14枚)で `[data-result-kind="discard"]` と「何切る」。
 12. **シート上端のバナー**: 条件9 の手でシートを開いた状態(結果パネルが画面外またはシートに隠れる位置)で、バナーの `getBoundingClientRect().bottom` がシートの `getBoundingClientRect().top` より 8px(`--result-banner-gap`。7章)上にあり(±1px)、バナーとシートが重ならない。
 13. **パネルが見えると消える**: 条件9 の状態でページ末尾までスクロールし、結果パネルが見えている(シートより上に入っている)とバナーが非表示になる。シートを開いた状態でも、結果パネルがシートに隠れて見えないときはバナーが表示される。
 14. **高さ不足で出さない**: `resize_window` で 812×375 相当(幅 812・高さ 375)にし、条件9 の手でシートを開く。`innerHeight − ヘッダ高 − --sheet-height − バナー高 < 160` を console で確かめたうえで、バナーが非表示。幅 375・高さ 812 に戻すと表示される。確認後 preset desktop で戻す。
-15. **タップでスクロール**: 条件9 のバナーを押すと、結果パネルの上端がヘッダの下(`top` ≈ ヘッダ高 + 8px、±4px)に来るまでスクロールし、その後バナーが非表示になる。
-16. **手牌カードが隠れない**: 375×812 でページ先頭(`scrollY = 0`)から手牌カードを押してシートを開く(この時点では手牌が空なのでバナーは出ない)。シートを開いたまま、パレットで条件9の13枚を入力する。入力の途中で結果が `null` でなくなった時点でバナーが現れる。入力を終えたら、スクロール位置はそのまま(手動でスクロールしない)で次を測る。(a) `getComputedStyle(document.documentElement).getPropertyValue('--result-banner-height')` がバナーの `getBoundingClientRect().height` と ±1px で一致する。(b) 手牌カード(`.hand-card`)の `getBoundingClientRect().bottom` が、バナーの `getBoundingClientRect().top` 以下である。あわせて、`HandCard.tsx` の `MutationObserver` のコールバックが `--result-banner-height` の変化も比較していることをコードで確認する。
+15. **タップでスクロール**: 条件9 のバナーを押すと、スクロールして結果パネルが画面内に入り、その後バナーが非表示になる(`scrollIntoView({ block: 'start' })` の呼び出しは単体テストで担保。ページ末尾で止まるため、上端がヘッダの下に来るとは限らない。7章)。
+16. **手牌カードが隠れない**: 375×812 でページ先頭(`scrollY = 0`)から手牌カードを押してシートを開く(この時点では手牌が空なのでバナーは出ない)。シートを開いたまま、パレットで条件9の13枚を入力する。入力の途中で結果が `null` でなくなった時点でバナーが現れる。入力を終えたら、スクロール位置はそのまま(手動でスクロールしない)で次を測る。(a) `getComputedStyle(document.documentElement).getPropertyValue('--result-banner-height')` がバナーの `getBoundingClientRect().height` に `--result-banner-gap`(8px)を足した値と ±1px で一致する(7章)。(b) 手牌カード(`.hand-card`)の `getBoundingClientRect().bottom` が、バナーの `getBoundingClientRect().top` 以下である。あわせて、`HandCard.tsx` の `MutationObserver` のコールバックが `--result-banner-height` の変化も比較していることをコードで確認する。
 17. **ダーク・トークン**: Browser pane の `prefers-color-scheme` のエミュレーションは `change` イベントを発火しないため使わない。console で `document.documentElement.dataset.theme = 'dark'` を設定するか、設定画面でダークに切り替える。バナーと結果パネルの背景・文字が切り替わることを確認する。注意: リロードすると入力が消えるので、手牌を入れ直してから確かめる。`git diff main -- src | grep -nE "#[0-9a-fA-F]{3,8}\b"` が CSS の色値としてヒットしない。
 18. **issue-51 の事後注記**: `docs/design/issue-51-screen-skeleton.md` の差分が追記のみ(`git diff main -- docs/design/issue-51-screen-skeleton.md` に `-` 行が無い)で、2.6 の5か所に事後注記がある。
 19. **実機逆発注(C-02)**: 最終報告に、iOS Safari / Android Chrome でのバナーの safe-area 余白・シート上端への追従・表示切替のちらつきをユーザーに確認してもらう手順を書く。
@@ -262,3 +262,11 @@ export const scrollToResultPanel = (
 
 - **和了の表示から「ツモ」「ロン」の区別を外す。** 本体(`HoraBody`)・バナー(`HoraGlance`)とも、和了牌の牌だけを出す。ツモとロンで同じ牌が重なるため、牌の重複を除く(並びは最初に現れた順)。2.3・2.5 の「牌画像 + ツモ/ロン」「打点(ロン・ツモ)」の記述は、E1 の仮表示としては本章に置き換わる。打点の出し方は引き続き E2 で決める。
 - **バナーの見た目を入力側の要約カードに合わせ、シート(キーボード)から少し離す。** 背景 `--md-sys-color-secondary-container`・文字 `--md-sys-color-on-secondary-container`・角丸 `--md-sys-shape-corner-medium`(四隅)・影・内側余白 `0.5rem 0.75rem`(要約カードの `.summary-card__inner` と同じ)。左右は 1rem 内側に入れる。下端は `--result-banner-gap`(0.5rem)だけ離す(閉じているときは `max(gap, safe-area)`、開いているときは `--sheet-height + gap`)。`--result-banner-height` には gap を含める(`calc(<高さ>px + var(--result-banner-gap))`)。2.5 の「上辺の線・上側だけの角丸」の記述は置き換わる。
+
+### 検収での事後改訂(2026-11-12)
+
+検収で、次の受け入れ条件が実画面の挙動と合わないことが分かり、実装は変えずに条件を改訂した(上の各条件に反映済み)。
+- 条件9: 375×812 ではページ先頭でも結果パネルが画面内に入るため、前提の viewport を 375×500 にした。バナー下端は gap(8px)を引いた位置。
+- 条件11: 13枚の和了の例 `1m 9m …` は三麻では1向聴になるため、`1m 1p〜9p 東東東` に差し替えた。
+- 条件15: ページ末尾でスクロールが止まるため、「パネルの上端がヘッダの下に来る」を「パネルが画面内に入りバナーが消える」に改めた。結果パネルの下に余白を足して上端まで来るようにする案は採らない(必要なら別途ユーザーが決める)。
+- 条件16(a): `--result-banner-height` は gap を含む(7章)ので、実高 + 8px と一致する。

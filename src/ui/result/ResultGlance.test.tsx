@@ -5,14 +5,14 @@ import type { TileAvailability } from '../../core/tile';
 import { ResultGlance } from './ResultGlance';
 
 describe('ResultGlance', () => {
-  it('none のときは何も描画しない', () => {
+  it('E1-6: none のときは何も描画しない', () => {
     const markup = renderToStaticMarkup(
       <ResultGlance view={{ kind: 'none' }} />
     );
     expect(markup).toBe('');
   });
 
-  it('just-hora のとき指定の文言が出る', () => {
+  it('E1-6: just-hora のとき指定の文言が出る', () => {
     const markup = renderToStaticMarkup(
       <ResultGlance view={{ kind: 'just-hora' }} />
     );
@@ -20,7 +20,7 @@ describe('ResultGlance', () => {
     expect(markup).toContain('data-result-kind="just-hora"');
   });
 
-  it('shanten のとき「N向聴」「受け入れ」と牌が表示される', () => {
+  it('E1-6: shanten のとき「N向聴」「受け入れ」と牌が表示される', () => {
     const tileAvailabilities: TileAvailability[] = [
       { tile: { type: 'm', n: 1 }, count: 3 },
       { tile: { type: 'p', n: 9 }, count: 1 }
@@ -39,7 +39,7 @@ describe('ResultGlance', () => {
     expect(markup).toContain('tile');
   });
 
-  it('tempai で残りが1枚以上あるとき「聴牌 待ち」と牌が表示される', () => {
+  it('E1-6: tempai で残りが1枚以上あるとき「聴牌 待ち」と牌が表示される', () => {
     const tileAvailabilities: TileAvailability[] = [
       { tile: { type: 's', n: 5, red: false }, count: 2 }
     ];
@@ -56,7 +56,7 @@ describe('ResultGlance', () => {
     expect(markup).toContain('tile');
   });
 
-  it('tempai で全0枚のとき「和了牌なし」になる', () => {
+  it('E1-6: tempai で全0枚のとき「和了牌なし」になる', () => {
     const tileAvailabilities: TileAvailability[] = [
       { tile: { type: 's', n: 5, red: false }, count: 0 },
       { tile: { type: 's', n: 6 }, count: 0 }
@@ -74,7 +74,7 @@ describe('ResultGlance', () => {
     expect(markup).toContain('data-result-kind="tempai"');
   });
 
-  it('hora のとき「和了」と牌が表示される', () => {
+  it('E1-6: hora のとき「和了」と牌が表示される', () => {
     const markup = renderToStaticMarkup(
       <ResultGlance
         view={{
@@ -92,7 +92,7 @@ describe('ResultGlance', () => {
     expect(markup).toContain('data-result-kind="hora"');
   });
 
-  it('hora のとき、ツモとロンで同じ牌が重なっても牌は1枚だけ出し、ツモ・ロンの語は出さない', () => {
+  it('E1-6: hora のとき、ツモとロンで同じ牌が重なっても牌は1枚だけ出し、ツモ・ロンの語は出さない', () => {
     const markup = renderToStaticMarkup(
       <ResultGlance
         view={{
@@ -115,7 +115,7 @@ describe('ResultGlance', () => {
     expect(markup).not.toContain('ロン');
   });
 
-  it('discard のとき「何切る」が表示される', () => {
+  it('E1-6: discard のとき「何切る」が表示される', () => {
     const markup = renderToStaticMarkup(
       <ResultGlance
         view={{

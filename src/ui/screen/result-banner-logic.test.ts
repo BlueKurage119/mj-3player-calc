@@ -23,7 +23,7 @@ describe('result-banner-logic', () => {
   };
 
   describe('shouldShowBanner', () => {
-    it('(a) loading のときは false を返す', () => {
+    it('E1-6: (a) loading のときは false を返す', () => {
       expect(
         shouldShowBanner({
           ...defaultInput,
@@ -32,7 +32,7 @@ describe('result-banner-logic', () => {
       ).toBe(false);
     });
 
-    it('(a) error のときは false を返す', () => {
+    it('E1-6: (a) error のときは false を返す', () => {
       expect(
         shouldShowBanner({
           ...defaultInput,
@@ -41,7 +41,7 @@ describe('result-banner-logic', () => {
       ).toBe(false);
     });
 
-    it('(a) ok で result が null のときは false を返す', () => {
+    it('E1-6: (a) ok で result が null のときは false を返す', () => {
       expect(
         shouldShowBanner({
           ...defaultInput,
@@ -50,7 +50,7 @@ describe('result-banner-logic', () => {
       ).toBe(false);
     });
 
-    it('(b) panelInView が true のときは false を返す', () => {
+    it('E1-6: (b) panelInView が true のときは false を返す', () => {
       expect(
         shouldShowBanner({
           ...defaultInput,
@@ -59,7 +59,7 @@ describe('result-banner-logic', () => {
       ).toBe(false);
     });
 
-    it('(c) viewportHeight - headerHeight - sheetHeight - bannerHeight が 159 の境界で false を返す', () => {
+    it('E1-6: (c) viewportHeight - headerHeight - sheetHeight - bannerHeight が 159 の境界で false を返す', () => {
       // 159 = 279 - 60 - 0 - 60
       expect(
         shouldShowBanner({
@@ -72,7 +72,7 @@ describe('result-banner-logic', () => {
       ).toBe(false);
     });
 
-    it('(c) viewportHeight - headerHeight - sheetHeight - bannerHeight が 160 の境界で true を返す', () => {
+    it('E1-6: (c) viewportHeight - headerHeight - sheetHeight - bannerHeight が 160 の境界で true を返す', () => {
       // 160 = 280 - 60 - 0 - 60
       expect(
         shouldShowBanner({
@@ -85,21 +85,21 @@ describe('result-banner-logic', () => {
       ).toBe(true);
     });
 
-    it('(d) すべての条件を満たすときは true を返す', () => {
+    it('E1-6: (d) すべての条件を満たすときは true を返す', () => {
       expect(shouldShowBanner(defaultInput)).toBe(true);
     });
 
-    it('MIN_INPUT_VISIBLE 定数が 160 である', () => {
+    it('E1-6: MIN_INPUT_VISIBLE 定数が 160 である', () => {
       expect(MIN_INPUT_VISIBLE).toBe(160);
     });
   });
 
   describe('scrollToResultPanel', () => {
-    it('panel が null のとき例外を投げない', () => {
+    it('E1-6: panel が null のとき例外を投げない', () => {
       expect(() => scrollToResultPanel(null, 'smooth')).not.toThrow();
     });
 
-    it('panel が渡されたとき scrollIntoView が { behavior, block: "start" } で1回呼ばれる', () => {
+    it('E1-6: panel が渡されたとき scrollIntoView が { behavior, block: "start" } で1回呼ばれる', () => {
       const scrollIntoView = vi.fn();
       const mockPanel = { scrollIntoView };
       scrollToResultPanel(mockPanel, 'smooth');

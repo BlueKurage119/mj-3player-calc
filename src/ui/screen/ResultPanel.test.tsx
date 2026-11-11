@@ -5,7 +5,7 @@ import type { ResultState } from '../calc/result-state';
 import { ResultPanel } from './ResultPanel';
 
 describe('ResultPanel', () => {
-  it('loading のとき data-state="loading" でローディング表示があり、data-view と result-panel--banner が存在しない', () => {
+  it('E1-7: loading のとき data-state="loading" でローディング表示があり、data-view と result-panel--banner が存在しない', () => {
     const state: ResultState = { status: 'loading' };
     const html = renderToStaticMarkup(<ResultPanel resultState={state} />);
 
@@ -16,7 +16,7 @@ describe('ResultPanel', () => {
     expect(html).toContain('id="result-panel"');
   });
 
-  it('error のとき data-state="error" で「計算できません」が表示され、data-view と result-panel--banner が存在しない', () => {
+  it('E1-7: error のとき data-state="error" で「計算できません」が表示され、data-view と result-panel--banner が存在しない', () => {
     const state: ResultState = {
       status: 'error',
       error: new Error('test error')
@@ -29,7 +29,7 @@ describe('ResultPanel', () => {
     expect(html).not.toContain('result-panel--banner');
   });
 
-  it('ok で result が null のとき data-state="empty" で [data-result-kind] が存在しない', () => {
+  it('E1-7: ok で result が null のとき data-state="empty" で [data-result-kind] が存在しない', () => {
     const state: ResultState = { status: 'ok', result: null };
     const html = renderToStaticMarkup(<ResultPanel resultState={state} />);
 
@@ -39,7 +39,7 @@ describe('ResultPanel', () => {
     expect(html).not.toContain('result-panel--banner');
   });
 
-  it('ok で just-hora のとき data-state="ok" かつ data-result-kind="just-hora" で指定文言が出る', () => {
+  it('E1-7: ok で just-hora のとき data-state="ok" かつ data-result-kind="just-hora" で指定文言が出る', () => {
     const state: ResultState = {
       status: 'ok',
       result: { type: 'just-hora' }
@@ -53,7 +53,7 @@ describe('ResultPanel', () => {
     expect(html).not.toContain('result-panel--banner');
   });
 
-  it('ok で shanten のとき data-state="ok" かつ data-result-kind="shanten" が出る', () => {
+  it('E1-7: ok で shanten のとき data-state="ok" かつ data-result-kind="shanten" が出る', () => {
     const state: ResultState = {
       status: 'ok',
       result: {
@@ -74,7 +74,7 @@ describe('ResultPanel', () => {
     expect(html).not.toContain('result-panel--banner');
   });
 
-  it('ok で hora のとき data-state="ok" かつ data-result-kind="hora" が出る', () => {
+  it('E1-7: ok で hora のとき data-state="ok" かつ data-result-kind="hora" が出る', () => {
     const state: ResultState = {
       status: 'ok',
       result: {
@@ -99,7 +99,7 @@ describe('ResultPanel', () => {
     expect(html).not.toContain('result-panel--banner');
   });
 
-  it('ok で tempai のとき data-state="ok" かつ data-result-kind="tempai" が出る', () => {
+  it('E1-7: ok で tempai のとき data-state="ok" かつ data-result-kind="tempai" が出る', () => {
     const state: ResultState = {
       status: 'ok',
       result: {
@@ -118,7 +118,7 @@ describe('ResultPanel', () => {
     expect(html).not.toContain('result-panel--banner');
   });
 
-  it('ok で discard-shanten のとき data-state="ok" かつ data-result-kind="discard" が出る', () => {
+  it('E1-7: ok で discard-shanten のとき data-state="ok" かつ data-result-kind="discard" が出る', () => {
     const state: ResultState = {
       status: 'ok',
       result: {
