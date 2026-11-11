@@ -1,6 +1,6 @@
 # Issue化ドラフト(Epic単位)
 
-更新日: 2026-11-01(Epic D の Sub-Issue を登録)
+更新日: 2026-11-11(Epic E の Sub-Issue を登録)
 
 [要件](requirements.md)を実装タスクに分けた下書き。Issue を登録したら、見出しを GitHub の Issue へのリンクにする。各 Epic は親 Issue とし、項目は着手時に Sub-Issue として登録する。マイルストーンは Epic ごとに設け(「Epic A: 計算コアの三麻化」など)、親 Issue とその Sub-Issue に付ける。識別番号(A1 など)は Issue 番号とは別で、どの Epic のどの項目かを示すために使う。各項目の未決事項は、着手前のヒアリングで決める。
 
@@ -57,7 +57,7 @@
 ## [Epic D: 入力 UI](https://github.com/BlueKurage119/mj-3player-calc/issues/5)
 
 - **[D1. 画面の骨格](https://github.com/BlueKurage119/mj-3player-calc/issues/51)**
-  入力と結果を1ページ(縦スクロール)に収める骨格。入力側の下に結果側を置き、入力側の上部が隠れるときは要約カードを上部に固定する。結果側はバナー程度の小カードから、スクロールで展開する(2状態の切り替え。中身は Epic E)。パレット・テンキー・状況役の入力は非モーダルの底部シートで行う(シートの機構を含む。中身は D2・D3・D5)。入力状態(`useReducer` + Context)と計算(`generateResult`)の呼び出し口。ヘッダーはタイトルと3点リーダーメニュー(設定・オールクリア。`md-menu` のラッパーを含む)。ステッパー部品(積み棒・供託・抜き北で共有)。手牌カードのバケツ(手牌クリア)。`?gallery=tiles`・`?gallery=md` の分岐は開発時限定にする。バンドル予算 102,000 B の維持(計算部の `lazy` 分離、実測)。要約カードで `Tile` を使うため、牌 SVG の出力・precache を D1 で確認する。
+  入力と結果を1ページ(縦スクロール)に収める骨格。入力側の下に結果側を置き、入力側の上部が隠れるときは要約カードを上部に固定する。結果側はバナー程度の小カードから、スクロールで展開する(2状態の切り替え。中身は Epic E)。パレット・テンキー・状況役の入力は非モーダルの底部シートで行う(シートの機構を含む。中身は D2・D3・D5)。入力状態(`useReducer` + Context)と計算(`generateResult`)の呼び出し口。ヘッダーはタイトルと3点リーダーメニュー(設定・オールクリア。`md-menu` のラッパーを含む)。ステッパー部品(積み棒・供託・抜き北で共有)。手牌カードのバケツ(手牌クリア)。`?gallery=tiles`・`?gallery=md` の分岐は開発時限定にする。バンドル予算の維持(基準は [業務標準 09](rules/09-bundle-budget-protocol.md)。計算部の `lazy` 分離、実測)。要約カードで `Tile` を使うため、牌 SVG の出力・precache を D1 で確認する。
 - **[D2. パレット入力](https://github.com/BlueKurage119/mj-3player-calc/issues/46)**
   底部シート内のパレット。三麻の牌だけを表示する。枚数の上限、赤牌。手牌の1行表示と並べ替え。シート内の AC(手牌クリア)と、牌を1枚ずつ消す手段。牌のタップでの削除は採用しない。
 - **[D3. テンキー入力](https://github.com/BlueKurage119/mj-3player-calc/issues/47)**
@@ -71,12 +71,14 @@
 
 ## [Epic E: 結果表示](https://github.com/BlueKurage119/mj-3player-calc/issues/6)
 
-- **E1. 牌姿に応じた表示の切り替え**
-  和了形・聴牌形・それ以外。
-- **E2. 和了の結果**
-  役一覧、翻・符、符の内訳、点数、支払いの内訳(mj-mighty-calc を参考に)。
-- **E3. 聴牌の結果**
-  待ち牌ごとの役と打点、残り枚数。
+- **[E1. 牌姿に応じた表示の切り替え](https://github.com/BlueKurage119/mj-3player-calc/issues/75)**
+  `Result` の種類(和了形・聴牌形・それ以外・何切る)に応じた結果側の中身の振り分け。結果側の置き場の再定義(D5 で要約カードの結果欄を削除済み)、読み込み中・エラー・空の表示。
+- **[E2. 和了の結果](https://github.com/BlueKurage119/mj-3player-calc/issues/76)**
+  役一覧、翻・符、符の内訳、点数、ツモとロンを並べた支払いの内訳(mj-mighty-calc を参考に)。抜き北・北の表示名、役満の複合を認めないルールでの表示、設定と食い違う赤牌の注意表示。関連: [#62](https://github.com/BlueKurage119/mj-3player-calc/issues/62)(入力済み赤5の扱い)。
+- **[E3. 聴牌の結果](https://github.com/BlueKurage119/mj-3player-calc/issues/77)**
+  待ち牌ごとの役と打点(ツモとロン)、残り枚数。
+- **[E4. 和了形・聴牌形以外の結果](https://github.com/BlueKurage119/mj-3player-calc/issues/78)**
+  向聴数、有効牌の種類と枚数。打牌候補の一覧は F1。
 
 ## [Epic F: 何切る](https://github.com/BlueKurage119/mj-3player-calc/issues/7)
 
