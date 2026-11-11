@@ -16,7 +16,8 @@
 | ┗ riichi-rs-bundlers | 未記載（実体 riichi-rust に LICENSE なし） | npm registry／過去の調査 | 問題の原因 |
 | ┗ riichi-mahjong-tiles（React SVG） | MIT | npm registry | 使用可 |
 | FluffyStuff/riichi-mahjong-tiles（牌画像） | **CC0（パブリックドメイン）** | 上流の `LICENSE.md` | 使用可。mahjong-calc の README には「CC BY」とあるが、上流は現在 CC0。クレジットは礼儀として残す |
-| google/material-design-icons（Material Symbols） | **Apache-2.0** | 上流の `LICENSE` | `src/ui/icons/` でインライン SVG として使用可（出典をコード先頭コメントに記載） |
+| google/material-design-icons（Material Symbols） | **Apache-2.0** | 上流の `LICENSE`（著作権者欄は雛形のまま。NOTICE は無し） | `src/ui/icons/` でインライン SVG として使用可。権利表示はコード先頭コメント・`CREDITS.md`・`LICENSES/Apache-2.0.txt` の3か所に置く |
+| material-components/material-web（`@material/web` 2.5.0） | **Apache-2.0**（`Copyright 2018-2023 Google, Inc.`） | 上流の `LICENSE`（NOTICE は無し） | 本番依存として配布物に含まれる。`CREDITS.md` と `LICENSES/Apache-2.0.txt` に表示する |
 
 ### mj-mighty-calc について
 riichi 系ライブラリを import しているのは次のファイルです: `App.tsx`, `ui/LuckSheet.tsx`, `ui/TileImage.tsx`, `core/{almighty,tiles,analysis,yakuNames,backend}.ts`。
