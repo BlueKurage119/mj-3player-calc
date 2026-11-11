@@ -92,6 +92,29 @@ describe('ResultGlance', () => {
     expect(markup).toContain('data-result-kind="hora"');
   });
 
+  it('hora のとき、ツモとロンで同じ牌が重なっても牌は1枚だけ出し、ツモ・ロンの語は出さない', () => {
+    const markup = renderToStaticMarkup(
+      <ResultGlance
+        view={{
+          kind: 'hora',
+          hora: [
+            {
+              horaTile: { type: 'z', n: 1 },
+              by: 'tsumo'
+            } as unknown as ScoredHora,
+            {
+              horaTile: { type: 'z', n: 1 },
+              by: 'ron'
+            } as unknown as ScoredHora
+          ]
+        }}
+      />
+    );
+    expect(markup.match(/role="img"/g)?.length ?? 0).toBe(1);
+    expect(markup).not.toContain('ツモ');
+    expect(markup).not.toContain('ロン');
+  });
+
   it('discard のとき「何切る」が表示される', () => {
     const markup = renderToStaticMarkup(
       <ResultGlance

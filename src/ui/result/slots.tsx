@@ -3,6 +3,20 @@ import type { Discard, ScoredHora } from '../../core/result';
 import type { Tile as CoreTile, TileAvailability } from '../../core/tile';
 import { Tile } from '../tile';
 
+const tileKey = (tile: CoreTile): string =>
+  `${tile.type}${tile.n}${tile.type !== 'z' && tile.n === 5 && tile.red ? 'r' : ''}`;
+
+/** ツモ・ロンで同じ牌が重なるため、牌の重複を除く(並びは最初に現れた順) */
+const uniqueTiles = (tiles: CoreTile[]): CoreTile[] => {
+  const seen = new Set<string>();
+  return tiles.filter(t => {
+    const k = tileKey(t);
+    if (seen.has(k)) return false;
+    seen.add(k);
+    return true;
+  });
+};
+
 export interface GlanceTilesProps {
   tiles: CoreTile[];
   onTileClick?: ((tile: CoreTile) => void) | undefined;
@@ -53,18 +67,11 @@ export function HoraBody({ hora }: HoraBodyProps): React.JSX.Element {
     <div data-result-kind="hora" className="result-body result-body--hora">
       <h2 className="result-body__title">和了</h2>
       <div className="result-body__hora-list">
-        {hora.map((h, i) => {
-          const t = h.horaTile;
-          const key = `${t.type}${t.n}${
-            t.type !== 'z' && t.n === 5 && t.red ? 'r' : ''
-          }-${i}`;
-          return (
-            <div key={key} className="result-body__hora-item">
-              <Tile tile={t} />
-              <span>{h.by === 'tsumo' ? 'ツモ' : 'ロン'}</span>
-            </div>
-          );
-        })}
+        {uniqueTiles(hora.map(h => h.horaTile)).map(t => (
+          <div key={tileKey(t)} className="result-body__hora-item">
+            <Tile tile={t} />
+          </div>
+        ))}
       </div>
     </div>
   );
@@ -158,7 +165,7 @@ export interface HoraGlanceProps {
 }
 
 export function HoraGlance({ hora }: HoraGlanceProps): React.JSX.Element {
-  const tiles = hora.map(h => h.horaTile);
+  const tiles = uniqueTiles(hora.map(h => h.horaTile));
   return (
     <div data-result-kind="hora" className="result-glance result-glance--hora">
       <span className="result-glance__label">和了</span>

@@ -80,7 +80,10 @@ export function ResultBanner(props: ResultBannerProps): React.JSX.Element {
   useLayoutEffect(() => {
     const root = document.documentElement;
     if (visible && bannerHeight > 0) {
-      root.style.setProperty('--result-banner-height', `${bannerHeight}px`);
+      root.style.setProperty(
+        '--result-banner-height',
+        `calc(${bannerHeight}px + var(--result-banner-gap))`
+      );
     } else {
       root.style.setProperty('--result-banner-height', '0px');
     }
