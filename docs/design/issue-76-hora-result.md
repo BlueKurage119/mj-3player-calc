@@ -4,7 +4,7 @@
 - ブランチ: `feature/issue-76-hora-result`
 - 依存: E1 #75(`docs/design/issue-75-result-switch.md`)。関連: #62
 - 後続: E3 #77(聴牌の結果)・E4 #78・Epic F
-- 改訂: 2026-11-12 第6版(main の取り込みに伴う基準値・3章の更新。10章)
+- 改訂: 2026-11-12 第8版(独立レビュー判定の反映)。第7版(UI 監修のイメージに合わせたカード構成・書式・次の段階のバッジ。10章)
 
 ## 1. 参照資料と設計判断の根拠
 
@@ -18,7 +18,7 @@
 - 実コード: `src/core/{result,hora-score,hora,fu,yaku,score,payment,input,rule}.ts`・`src/core/tile/index.ts`、`src/ui/result/*`、`src/ui/screen/{ResultPanel,ResultBanner,MainScreen}.tsx`・`main-screen.css`、`src/ui/state/{app-state,hand-rules,situation-rules}.ts`、`src/ui/settings/use-rule-settings.ts`、`src/ui/md/index.ts`・`src/ui/expressive/`・`src/ui/icons/symbol-paths.ts`
 - 参照実装(リポジトリ外の参照用クローン。リポジトリのルートから見て `../ref-repo/`):
   - livewing/mahjong-calc(MIT): `src/components/{HoraItem,HoraItemSummary,FuDetail,YakuList,Score,LimitBadge}.tsx`、`locales/ja.yml`、`src/lib/store/index.ts`(`set-current-rule`)
-  - mj-mighty-calc(自作。ライセンス未設定): `src/ui/ResultPanel.tsx`、`src/index.css` の `.candidate` 系。riichi 系に依存するファイル(`App.tsx`・`ui/LuckSheet.tsx`・`ui/TileImage.tsx`・`core/{almighty,tiles,analysis,yakuNames,backend}.ts`)は読むだけで移植しない
+  - mj-mighty-calc(自作。ライセンス未設定): `src/ui/ResultPanel.tsx`(`CandidateCard`)、`src/index.css` の `.candidate` 系(`.candidate-head`・`.candidate-sub`・`.sub-main`・`.pay-detail`・`.tier-hint`・`.side-badge`・`.rank`)、`src/core/payment.ts` の `basePoints`・`nextTierHint`(自作部分。riichi 非依存)。riichi 系に依存するファイル(`App.tsx`・`ui/LuckSheet.tsx`・`ui/TileImage.tsx`・`core/{almighty,tiles,analysis,yakuNames,backend}.ts`)は読むだけで移植しない
 
 ### 1.2 確定事項(ユーザー決定。再検討しない)
 
@@ -38,11 +38,17 @@
 | 12 | 製造方式に依存する記述を入れない | 全体 |
 | 13 | 役名・符名・限度名の表は、ユーザーが直接編集して監修する。コードの論理を含まないデータだけの1ファイルにし、各行に出典コメントを付け、型で全件網羅を守る | 2.7・2.7.4 |
 | 14 | 基本点の行を出す | 2.6.4 |
-| 15 | 細部の書式はユーザーが UI 監修で調整する。現行の提案どおりとし、書式の純関数と表を分離する。二倍以上の役満は漢数字で「二倍役満」「三倍役満」…と統一し、「ダブル役満」「トリプル役満」は使わない。単独は「役満」 | 2.4・2.7.3 |
+| 15 | 細部の書式はユーザーが UI 監修で調整する。書式の純関数と表を分離する。二倍以上の役満は漢数字で「二倍役満」「三倍役満」…と統一し、「ダブル役満」「トリプル役満」は使わない。単独は「役満」 | 2.4・2.7.3 |
+| 16 | (第7版・UI 監修)カードは mj-mighty-calc の `CandidateCard` の構成に準拠する(万能牌はない): 見出し行の左に「ロン/ツモのバッジ+和了牌1枚」、右に大きく点数。その下の左に「N飜 M符」+限度名(赤字)、その下に次の段階のバッジ、右端に右揃えで支払いの内訳。その下に役一覧(飜は右)、その下に符の折りたたみ | 2.6 |
+| 17 | (第7版)和了牌は各カードのバッジの横に置く。和了牌ごとのまとめ・結果パネル先頭の和了牌の列は廃止し、`HoraDetail` は `hora[]` を並び順のまま平らに並べる(13枚で複数の和了牌のときも同じ)。カードはロンが先、ツモが後 | 2.5 |
+| 18 | (第7版)次の段階のバッジ「＋k飜で{限度名}」を範囲に加える。役満・数え役満、数え役満なしの三倍満では出さない。ロン・ツモの両方に出す。遅延チャンク内で実装し、core は変えない | 2.6.5 |
+| 19 | (第7版)点数は3桁区切りあり。ツモの区切りは「・」(例「700・1,300」「1,000オール」)。見出し・「は」の行・バナーで同じ書式関数を使う | 2.4・2.7.3 |
+| 20 | (第7版)支払いの内訳: ツモは「は {本場込み}」(本場があるときだけ)と「合計 {total}点」(本場・供託があれば「合計 {total}(+{bonus})点」)。ロンは「は {本場込みの支払額}」(本場があるときだけ)と「(+{bonus})点」(本場・供託があるときだけ)の2行。どちらも無ければ何も出さない。アプリをそのまま読めば点数申告できる形にするため(第7版の追加確定) | 2.6.4 |
+| 21 | (第7版)ロン・ツモのバッジの一方を tertiary、他方を primary にする(入れ替えやすく1か所で定義)。基本点の位置と計算式の追加は UI 監修で決める | 2.6・4章 |
 
 ### 1.3 実行して確かめた事実(使い捨てのテストで `generateResult` を実行。実行後に削除し、`git status` が空であることを確認済み)
 
-ルールは `DEFAULT_RULE`(赤 1=5p・5s 各1枚、ツモ損あり、役満の複合あり、数え役満あり、北=抜きドラ)を基準とし、「変更」列だけ変えた。場は東。
+表の「子·親」「計」は core の値の記録で、画面の書式(3桁区切り・「・」)は 2.4 による。ルールは `DEFAULT_RULE`(赤 1=5p・5s 各1枚、ツモ損あり、役満の複合あり、数え役満あり、北=抜きドラ)を基準とし、「変更」列だけ変えた。場は東。
 
 | ID | 牌姿(最後が和了牌) | 自風・変更 | ロン | ツモ |
 | --- | --- | --- | --- | --- |
@@ -75,7 +81,8 @@
 | R28 | 13枚 `234p567p34s678s99p` | 南 | 和了牌 `2s`・`5s`・赤`5s` の3種×ロン/ツモ = 6件。ロン最高は赤5s の 2000、ツモ最高は赤5s の 700·1300(計2000) | — |
 | R29 | 同上 | 東 | 2s・5s は 1500 / 700オール、赤5s は 2900 / 1300オール | — |
 
-- 最終版(第4版)で、条件9〜17 が使う牌姿(R01・R02・R03・R05・R07・R09〜R11・R13〜R17・R19〜R22・R24・R26・R29)の期待値を `generateResult` で再実行して確認済み(2026-11-12。上表と一致)。
+- 第7版で、条件9〜17 が使う牌姿(R02・R03・R05・R07・R09・R09+抜き北3(切り上げ満貫なし/あり)・R10〜R17・R20〜R22・R24・R26・R29。R13 は数え役満なしでも)の期待値を `generateResult` で再実行して確認済み(2026-11-12)。R09+抜き北3 はロン 4飜30符・基本点1920・7700、切り上げ満貫ありで 2000・8000。R13 数え役満なしは 13飜・基本点6000・24000。R02 で1本場だとロン本場込み1700・ツモ 800オール(参考)。
+- 第4版で、条件9〜17 が使う牌姿(R01・R02・R03・R05・R07・R09〜R11・R13〜R17・R19〜R22・R24・R26・R29)の期待値を `generateResult` で再実行して確認済み(2026-11-12。上表と一致)。
 - R28: `rule.red` が 1 以上のとき、`5s` と赤 `5s` は別の和了牌として `hora[]` に並ぶ。「最高打点」はロン・ツモそれぞれで別々に選ぶ(和了牌が異なってもよい)。
 - R22: `yakumanMultiplier` は `multipleYakuman: false` のとき point の最大値(四暗刻単騎の 2)。役一覧(`hora.yaku`)からは他の役満は消えない。
 - 一発: `hora.ts` は `ippatsu` を立直系の役を付ける分岐の中でだけ付ける(面子手は立直系の分岐 468〜485行の中の `if (options.ippatsu)` 478〜484行、七対子は 1022〜1028行)。UI も立直なしでは一発を選べない(`situation-rules.ts` 76行)。したがって**一発だけ(または一発と懸賞役だけ)の和了は生じず**、一発が付く和了には必ず立直系の役がある。役なし判定で一発を懸賞役に数えても、現行の core では判定結果は変わらない。
@@ -92,7 +99,10 @@
 
 - 1枚のカード(`.candidate`)に、上段「ツモ/ロンのバッジ・和了牌・点数(大)」、中段左「N翻 M符+ランク(満貫等)」、中段右「本場込み(`は …`)・合計(`合計 X(+bonus)点`)」、下段に役一覧。(以下は mj-mighty-calc の事実)ツモ・ロンの順に縦に2枚並べる。E2 はこれと異なり、core の `uniqueHoras` の並び(`ronAndTsumo`)に合わせて「ロン→ツモ」とする(2.4・2.5)。役なしの側は「役なし」とだけ出す。
 - **符は合計(「M符」)だけで、内訳を出さない(折りたたみも無い)。** 本書の符の内訳(折りたたみのリスト)は mj-mighty-calc に無い追加である(確定事項3 で採用済み)。
-- 点数の書式: `700・1,300`(子・親)/`2,000オール`/ロン `12,000`(3桁区切りあり)。
+- 点数の書式: `700・1,300`(子・親)/`2,000オール`/ロン `12,000`(3桁区切りあり。`toLocaleString()`)。
+- 次の段階: `nextTierHint(han, fu, yakuman, kiriage)` が、han を1ずつ増やして限度名(`basePoints` の `rank`)が変わる最初の k を「＋k飜で{rank}」とする。役満・数え役満は null。han+k は 13 まで。E2 はこれを本プロジェクトの限度の定義(`calculateBasePoint`)に合わせて書き直す(2.6.5)。
+- `.tier-hint` は `primary-container` 地、`.rank` は error 色の太字、`.pay-detail` は右揃え・折り返しなし、`.side-badge` は primary 地。
+- テーマ: `src/ui/theme/tokens.css` に `--md-sys-color-tertiary`・`--md-sys-color-on-tertiary`・`--md-sys-color-tertiary-container`・`--md-sys-color-on-tertiary-container` が定義されている(実物で確認。ライト・ダークとも生成済み)。
 
 ### 1.6 UI 部品の実物確認
 
@@ -106,21 +116,22 @@
 
 | ファイル | 種別 | 内容 |
 | --- | --- | --- |
-| `src/ui/result/hora-summary.ts` | 新規 | 初回 JS に入る純関数: `isNoYaku`・`formatPoints`・`pickBestByBy`・`horaGlanceParts`(2.3・2.4) |
+| `src/ui/result/hora-summary.ts` | 新規 | 初回 JS に入る純関数: `isNoYaku`・`formatNumber`・`formatPoints`・`pickBestByBy`・`horaGlanceParts`(2.3・2.4) |
 | `src/ui/result/hora-summary.test.ts` | 新規 | 上の単体テスト |
 | `src/ui/result/slots.tsx` | 改修 | `HoraBody` を遅延チャンクの入口に、`HoraGlance` を打点表示に差し替える |
 | `src/ui/result/ResultBody.tsx` | 改修 | `context` を受け取り `HoraBody` に渡す |
-| `src/ui/result/hora/HoraDetail.tsx` | 新規(遅延) | 和了本体(default export)。和了牌ごとのまとめ(暫定)と `HoraItem` |
-| `src/ui/result/hora/HoraItem.tsx` | 新規(遅延) | 和了1件の部品。見出し行・役一覧・符の内訳・支払い |
+| `src/ui/result/hora/HoraDetail.tsx` | 新規(遅延) | 和了本体(default export)。`hora[]` の順に `HoraItem` を平らに並べる |
+| `src/ui/result/hora/HoraItem.tsx` | 新規(遅延) | 和了1件の部品。見出し行(バッジ・和了牌・点数)・飜符と限度名・次の段階・支払い・役一覧・符の折りたたみ・基本点 |
+| `src/ui/result/hora/next-tier.ts` | 新規(遅延) | 次の段階の純関数(2.6.5)。mj-mighty-calc `core/payment.ts` の `nextTierHint` を出典として明記 |
 | `src/ui/result/hora/FuBreakdown.tsx` | 新規(遅延) | 符の内訳(折りたたみ)。2.6.3 |
 | `src/ui/result/hora/fu-rows.ts` | 新規(遅延) | `Fu[]` から表示行を作る純関数と、牌の並びの導出(2.6.3) |
 | `src/ui/result/hora/labels.ts` | 新規(遅延) | **データだけ**の表(役名・符名・限度名)。2.7 |
-| `src/ui/result/hora/format.ts` | 新規(遅延) | 表を引いて文言を作る純関数(`yakuLabel`・`yakuHanText`・`limitName`・`fuRowName`)。2.7.3 |
+| `src/ui/result/hora/format.ts` | 新規(遅延) | 表を引いて文言を作る純関数(`yakuLabel`・`yakuHanText`・`limitName`・`fuRowName`・`nextTierText`・`payDetailLines`)。2.7.3 |
 | `src/ui/result/hora/hora.css` | 新規(遅延) | 和了本体のスタイル(遅延チャンクの CSS になる) |
 | `src/ui/expressive/Disclosure.tsx`・`disclosure.css` | 新規 | 開閉部品(2.6.3)。`hora/` からだけ使うので遅延チャンクに入る |
 | `src/ui/result/hora/*.test.ts(x)`・`src/ui/expressive/Disclosure.test.tsx` | 新規 | 2.12 |
 | `src/ui/screen/ResultPanel.tsx` | 改修 | `context` を受け取り `ResultBody` に渡す。遅延チャンクの先読み(2.2) |
-| `src/ui/screen/MainScreen.tsx` | 改修 | `ResultPanel` に `{ table }` を渡す |
+| `src/ui/screen/MainScreen.tsx` | 改修 | `ResultPanel` に `{ table, rule }` を渡す |
 | `src/ui/screen/main-screen.css` | 改修 | 下余白(2.9) |
 | `src/ui/result/ResultGlance.test.tsx`・`src/ui/screen/ResultPanel.test.tsx` | 改修 | E1 の `hora` の仮表示を前提にしたケースを E2 の仕様に置き換える(2.12) |
 
@@ -163,7 +174,7 @@ export const isNoYaku = (hora: ScoredHora): boolean;
 - 判定: `hora.score.yakumanPoint === 0` かつ `hora.yaku.every(y => y.type === 'yaku' && BONUS_YAKU.includes(y.name))`。
 - `north`(北の役牌)は役として数える。R19 は役あり、R20 は役なし。
 - 一発は懸賞役に数える(確定事項5)。現行の core では一発に必ず立直系の役が付くため、一発で結果が変わる牌姿は無い(1.3)。
-- 役なしの `HoraItem` は、見出し行に「ロン」「ツモ」のバッジと「役なし」だけを出し、点数・飜符・役一覧・符の内訳・支払いを出さない(mj-mighty-calc と同じ)。
+- 役なしの `HoraItem` は、見出し行に「ロン」「ツモ」のバッジ・和了牌と「役なし」だけを出し、点数・飜符・次の段階・役一覧・符の内訳・支払い・基本点を出さない(mj-mighty-calc と同じ)。
 
 ### 2.4 バナー(`HoraGlance`)
 
@@ -174,12 +185,17 @@ export type GlanceSide =
   | { by: 'ron' | 'tsumo'; kind: 'none' };               // その by の候補がない(天和等でロンがない場合)
 /** ロン → ツモの順に2要素。各 by について isNoYaku でない候補のうち payment.total が最大の1件 */
 export const horaGlanceParts = (hora: ScoredHora[]): GlanceSide[];
-/** 本場抜きの打点。ロン: "2600"。子のツモ: "子·親"("1000·2000")。親のツモ: "700オール" */
-export const formatPoints = (payment: Payment): string;
+/** 3桁区切り。ロケールに依存しないよう手書き(String(n) を正規表現で3桁ごとに "," で区切る) */
+export const formatNumber = (n: number): string;
+/** ツモの支払いの区切り(UI 監修で変えるときはここだけ) */
+export const TSUMO_SEPARATOR = '・';
+/** 打点。detail の各値に withHonba を使うかを選べる。ロン: "2,600"。子のツモ: "子・親"("1,000・2,000")。親のツモ: "1,000オール" */
+export const formatPoints = (payment: Payment, withHonba = false): string;
 ```
 
-- 書式(確定事項15。UI 監修で調整する前提で、文言は `formatPoints` とバナー部品の中だけで組む): `ロン 2000 / ツモ 700·1300`。3桁区切りなし。数字は `tabular-nums`。本場・供託は入れない。
-- 片方が役なし: `ロン 役なし / ツモ 300·500`(R24)。両方とも役なし(候補なし含む)のときは `役なし` だけ。`kind: 'none'` の側は出さない。
+- 書式(確定事項15・19。UI 監修で調整する前提で、文言は `formatPoints` とバナー部品の中だけで組む): `ロン 1,500 / ツモ 700・1,300`。数字は `tabular-nums`。本場・供託は入れない(`withHonba = false`)。
+- 3桁区切りは `toLocaleString` を使わず手書きにする(実行環境のロケールで記号が変わるのを避けるため)。テストで `1500`→`1,500`、`128000`→`128,000`、`700`→`700` を確かめる。
+- 片方が役なし: `ロン 役なし / ツモ 300・500`(R24)。両方とも役なし(候補なし含む)のときは `役なし` だけ。`kind: 'none'` の側は出さない。
 - 同点のときは `hora[]` で先に現れたもの。和了牌の牌画像・「和了」の文字・限度名は出さない。
 - ルート要素 `data-result-kind="hora"`、各側に `data-glance-by="ron|tsumo"`。
 
@@ -188,36 +204,50 @@ export const formatPoints = (payment: Payment): string;
 ```ts
 export interface ResultContext {
   table: Table; // 雀頭の符名(場風・自風)に使う
+  rule: Pick<Rule, 'roundedMangan' | 'accumlatedYakuman'>; // 次の段階(2.6.5)に使う
 }
 export interface HoraDetailProps { hora: ScoredHora[]; context?: ResultContext }
 ```
 
-- 和了牌ごとのまとめ【E3 が置き換える暫定表示】: `hora[]` を和了牌(赤を区別)で出現順にまとめ、各まとめに和了牌の牌画像を1枚と、その和了牌の `HoraItem` をロン → ツモの順に縦に並べる。2枚を横に並べない(幅 375 で収まらないため)。
-- `ResultBody`・`ResultPanel` は `context?: ResultContext` を受け取り、`HoraBody` にだけ渡す。`MainScreen` は `useAppState()` の `table` を渡す。`context` が無いとき(テスト)は、雀頭の符名を 2.7.2 の「風牌雀頭」にする。
+- `hora[]` を並び順のまま、`HoraItem` を縦に平らに並べる(確定事項17)。`uniqueHoras` の並びは和了牌ごとにロン → ツモ(1.3 の R28・R29)。和了牌ごとのまとめ・見出しの牌は作らない。2枚を横に並べない(幅 375 で収まらないため)。
+- `ResultBody`・`ResultPanel` は `context?: ResultContext` を受け取り、`HoraBody` にだけ渡す。`MainScreen` は `useAppState()` の `table` と `rule` を渡す。`context` が無いとき(テスト)は、雀頭の符名を 2.7.2 の「風牌雀頭」にする。
 
-### 2.6 `HoraItem({ hora, table })`
+### 2.6 `HoraItem({ hora, context })`
 
-E1 の引き継ぎの `HoraItem({ hora: ScoredHora })` に、雀頭の符名のため `table`(省略可)を加える。ルート `<article class="hora-item" data-hora-by="ron|tsumo" data-no-yaku?>`。mj-mighty-calc の `.candidate` を次のトークンで置き換える。色・形・文字はすべてトークン(06号)。
+E1 の引き継ぎの `HoraItem({ hora: ScoredHora })` に、`context?: ResultContext`(2.5。`table` は雀頭の符名、`rule`(`roundedMangan`・`accumlatedYakuman`)は次の段階(2.6.5)に使う)を加える。`HoraDetail` は受け取った `context` をそのまま各 `HoraItem` に渡す。ルート `<article class="hora-item" data-hora-by="ron|tsumo" data-no-yaku?>`。mj-mighty-calc の `CandidateCard` の構成(`.candidate-head`・`.candidate-sub`(`.sub-main`・`.pay-detail`)・`.tier-hint`・`.yaku-list`)に準拠し、色を次のトークンで置き換える(確定事項16)。色・形・文字はすべてトークン(06号)。
 
 | 部分 | 指定 |
 | --- | --- |
 | カード | 背景 `--md-sys-color-surface-container-low`、角丸 `--md-sys-shape-corner-large`、内側余白 0.75rem 1rem、カード間 0.5rem。強調枠・影なし |
-| ツモ/ロンのバッジ | 背景 `--md-sys-color-primary`・文字 `--md-sys-color-on-primary`、角丸 `--md-sys-shape-corner-small`、label-medium |
-| 点数(大) | headline-small、`tabular-nums`、`--md-sys-color-on-surface` |
-| 飜符・基本点・支払い | body-medium、`--md-sys-color-on-surface-variant`、`tabular-nums` |
-| 限度名のバッジ | 背景 `--md-sys-color-tertiary-container`・文字 `--md-sys-color-on-tertiary-container`、label-medium、角丸 `--md-sys-shape-corner-small` |
-| 区切り | 役一覧・符の内訳・支払いの間は `Divider`(`src/ui/md`) |
+| ツモ/ロンのバッジ | ロン: 背景 `--md-sys-color-primary`・文字 `--md-sys-color-on-primary`。ツモ: 背景 `--md-sys-color-tertiary`・文字 `--md-sys-color-on-tertiary`(提案。確定事項21)。`hora.css` の `.hora-item[data-hora-by="ron"]`・`[data-hora-by="tsumo"]` で `--by-badge-bg`・`--by-badge-fg` を定義する1か所だけで決め、入れ替えはこの2行を入れ替える。角丸 `--md-sys-shape-corner-small`、label-medium |
+| 和了牌 | バッジの右に `Tile` 1枚(`--tile-width: 1.75rem`)。赤5は赤のまま |
+| 点数(大) | 見出し行の右端。headline-small、`tabular-nums`、`--md-sys-color-on-surface` |
+| 飜符・基本点・支払い | body-medium、`--md-sys-color-on-surface-variant`、`tabular-nums`。支払いは右揃え・折り返しなし |
+| 限度名 | 飜符の右に文字だけ(バッジにしない)。文字 `--md-sys-color-error`、太字(title-small)。役満は飜符の位置に限度名だけ |
+| 次の段階のバッジ | 背景 `--md-sys-color-primary-container`・文字 `--md-sys-color-on-primary-container`、label-medium、角丸 `--md-sys-shape-corner-small`。飜符の行の下 |
+| 区切り | 役一覧の上に `Divider`(`src/ui/md`) |
 
-上から: 見出し行(2.6.1)→ 役一覧(2.6.2)→ 符の内訳(2.6.3)→ 点数と支払いの内訳(2.6.4)。
+構成(上から):
+
+```
+┌ [ツモ][牌]                      3,000・6,000 ┐  見出し行(2.6.1)
+│ 7飜 30符 跳満                は 3,100・6,100 │  左: 飜符+限度名 / 右: 支払い(2.6.4)
+│ [＋1飜で倍満]          合計 9,000(+1,200)点 │  左: 次の段階(2.6.5)。ロンの右端は「は 7,900」「(+200)点」の形
+│──────────────────────────│
+│ 立直 ………………………………………… 1飜 │  役一覧(2.6.2)
+│ 符 30 ▼                                    │  符の折りたたみ(2.6.3)
+└ 基本点 3000                                ┘  基本点(2.6.4。位置は UI 監修で決める)
+```
 
 #### 2.6.1 見出し行
 
-- 左: バッジ(「ロン」/「ツモ」)。右: 点数(大)= `formatPoints(payment)`。
-- 2行目: 通常役は `N飜 M符`(`score.fu` が null なら符を省く)と限度名のバッジ。役満は限度名のバッジだけ。限度名は `limitName(score)`(2.7.3)。満貫未満は出さない。
+- 左: バッジ(「ロン」/「ツモ」)と和了牌1枚。右: 点数(大)= `formatPoints(payment)`(例 ロン `1,500`、子ツモ `700・1,300`、親ツモ `700オール`)。
+- 2行目の左(`.sub-main` 相当): 通常役は `N飜 M符`(`score.fu` が null なら符を省く)と限度名(赤字)。役満は限度名だけ。限度名は `limitName(score)`(2.7.3)。満貫未満は出さない。その下に次の段階のバッジ(2.6.5)。
+- 2行目の右(`.pay-detail` 相当): 支払いの内訳(2.6.4)。行が無ければ右側は空。
 
 #### 2.6.2 役一覧
 
-- `hora.yaku` を core の順のまま全件、`<ul>` の1行1役で「役名 …… N飜」。役満の行は point から「役満」「二倍役満」(2.7.3 と同じ語)。
+- `hora.yaku` を core の順のまま全件、`<ul>` の1行1役で、役名を左、飜を右に揃える。役満の行は point から「役満」「二倍役満」(2.7.3 と同じ語)。
 - 役満の複合なし(R22)でも全役満を出し、不採用の役満を淡くしない・印を付けない。点数・限度名は `score`(採用分)だけで決まる(R22: 限度名「二倍役満」、ロン 64000)。
 
 #### 2.6.3 符の内訳(折りたたみ)
@@ -256,11 +286,51 @@ E1 の引き継ぎの `HoraItem({ hora: ScoredHora })` に、雀頭の符名の�
 
 #### 2.6.4 点数と支払いの内訳
 
-- 本場込みの行(`payment.honba > 0` のときだけ): `は ` + 本場込みの値を `formatPoints` と同じ形で(R07 ロン `は 1400`、ツモ `は 600·900`、R08 親ツモ `は 900オール`)。
-- 合計の行: ツモは常に、ロンは `payment.bonus > 0` のときだけ。`合計 {total}点`、`bonus > 0` なら `合計 {total}(+{bonus})点`(R07 ツモ `合計 1100(+1400)点`、ロン `合計 1000(+1400)点`)。
-- 基本点の行: `基本点 {basePoint}`(確定事項14)。
+`payDetailLines(payment): string[]`(`format.ts`)が右端の行を返す(確定事項20)。
+- ツモ: (1) `payment.honba > 0` のときだけ `は {formatPoints(payment, true)}`(R07 `は 600・900`、R08 親 `は 900オール`)。(2) 常に `合計 {total}点`、`bonus > 0` なら `合計 {total}(+{bonus})点`(R07 `合計 1,100(+1,400)点`、R02 `合計 1,400点`)。
+- ロン: (1) `payment.honba > 0` のときだけ `は {formatPoints(payment, true)}`(= `detail.discarder.withHonba`。放銃者の本場込みの支払い。供託は含まない)。(2) `payment.bonus > 0` のときだけ `(+{bonus})点`(本場+供託。和了者の追加の受け取り)。合計の行は出さない。どちらも無ければ右端は空。
+  - 実行値(R01 の手・子・南家): 本場2・供託0 → `は 1,400`・`(+400)点`。本場0・供託1 → `(+1,000)点` だけ。本場2・供託1(R07)→ `は 1,400`・`(+1,400)点`。本場2・供託0・1本場 400点(`honbaPoint: 400`)→ `は 1,800`・`(+800)点`(ツモは `は 800・1,100`・`合計 1,100(+800)点`)。
+- 行の文言(「は 」「(+…)点」「合計 …点」)は `format.ts` の `payDetailLines` の中だけで組む(UI 監修で変えるときはここだけ)。
+- 基本点の行: `基本点 {basePoint}`(確定事項14)。カードの最後(符の折りたたみの下)に `BasePointLine` という小さな部品として置く。折りたたみの中に入れるか、計算式(`符 × 2^(飜+2)` 等)を加えるかは UI 監修で決める(4章)。部品を分けておけば位置の移動は1行で済む。
 - ツモ損の方式名は出さない(06号2)。
 - これらの文言は `format.ts` の純関数で組む(UI 監修で直しやすくするため)。
+
+#### 2.6.5 次の段階のバッジ(`next-tier.ts`)
+
+出典: mj-mighty-calc `src/core/payment.ts` の `nextTierHint`(自作部分。1.5)。限度の定義だけ本プロジェクトの `calculateBasePoint`(`src/core/score.ts`)に合わせる。core は import しない(型のみの規律)ので、同じ式を `next-tier.ts` に小さく書く。
+
+```ts
+export type LimitKey = 'mangan' | 'haneman' | 'baiman' | 'sanbaiman' | 'kazoe-yakuman'; // labels.ts の LIMIT_LABELS のキー(実装済みの labels.ts と同じ)
+/** calculateBasePoint と同じしきい値で限度を返す(満貫未満は null) */
+export const limitOf = (fu: number, han: number, rule: Pick<Rule, 'roundedMangan' | 'accumlatedYakuman'>): LimitKey | null;
+/** 次の段階。役満・数え役満・それ以上がない場合は null */
+export const nextTier = (score: HoraScore, rule: Pick<Rule, 'roundedMangan' | 'accumlatedYakuman'>): { plusHan: number; limit: LimitKey } | null;
+```
+
+- `limitOf`: `accumlatedYakuman && han >= 13` → kazoe-yakuman、`han >= 11` → sanbaiman、`>= 8` → baiman、`>= 6` → haneman、`han >= 5` または `fu × 2^(han+2) >= (roundedMangan ? 1920 : 2000)` → mangan、それ以外 null。fu は `score.fu`(切り上げ済み。七対子 25)。
+- `nextTier`: `score.yakumanPoint > 0` なら null。現在の限度 `cur = limitOf(fu, han)`。`cur === 'kazoe-yakuman'` なら null。k = 1, 2, … で `han + k <= 13` の間、`limitOf(fu, han + k)` が null でなく `cur` と違う最初の k を返す。見つからなければ null(数え役満なしの三倍満は 13飜でも三倍満なので null になる)。
+- 文言: `nextTierText`(`format.ts`)が `＋{plusHan}飜で{LIMIT_LABELS[limit]}` を作る(全角「＋」。UI 監修で変えるときはここだけ)。
+- ロン・ツモの両方のカードに出す。役なしのカードには出さない。
+- `HoraItem` は `rule`(`roundedMangan`・`accumlatedYakuman`)を要するため、`ResultContext` に `rule` を加える(2.5)。`context` が無いとき(テスト)は `DEFAULT_RULE` 相当の値(切り上げ満貫なし・数え役満あり)を `next-tier.ts` 内の定数で持つ。
+- 1.3 の実行値による例(子・南家):
+
+  | 牌姿 | 現在 | 次の段階 |
+  | --- | --- | --- |
+  | R01 ロン 1飜30符(基本点240) | — | ＋4飜で満貫 |
+  | R01 ツモ 2飜20符 | — | ＋3飜で満貫 |
+  | R09+抜き北3 ロン 4飜30符(基本点1920。切り上げ満貫なし) | — | ＋1飜で満貫 |
+  | 同 切り上げ満貫あり(基本点2000) | 満貫 | ＋2飜で跳満 |
+  | R10 ロン 5飜 | 満貫 | ＋1飜で跳満 |
+  | R10 ツモ 6飜 | 跳満 | ＋2飜で倍満 |
+  | R11 ロン 9飜 | 倍満 | ＋2飜で三倍満 |
+  | R12 ロン 11飜30符 | 三倍満 | ＋2飜で数え役満 |
+  | R12 ツモ 12飜20符 | 三倍満 | ＋1飜で数え役満 |
+  | R12 数え役満なし(ロン 11飜・ツモ 12飜。値は同じ) | 三倍満 | 出さない(ロン・ツモとも) |
+  | R13 ロン 13飜 | 数え役満 | 出さない |
+  | R13 数え役満なし(13飜・基本点6000) | 三倍満 | 出さない |
+
+  R13 は数え役満の有無のどちらでも null になり、`rule` の渡し忘れを検出できない。`rule` の参照は R12 のあり/なしの対照で確かめる(05号のミューテーション確認: `accumlatedYakuman` を無視する実装ではなしの側が落ちる)。R12 の値は `generateResult` で確認済み(数え役満あり・なしとも ロン 11飜30符・基本点6000・24,000、ツモ 12飜20符・6000・6,000・12,000)。
+  | R14 大三元 | 役満 | 出さない |
 
 ### 2.7 名前の表(`hora/labels.ts`。ユーザーが直接編集する)
 
@@ -278,11 +348,12 @@ export const YAKU_LABELS: Record<NormalYaku['name'], string> = {
 };
 export const YAKUMAN_LABELS: Record<Yakuman['name'], string> = { /* 29件 */ };
 export const FU_LABELS = { futei: '副底', /* … */ } as const satisfies Record<FuLabelKey, string>;
-export const LIMIT_LABELS = { mangan: '満貫', /* … */ } as const satisfies Record<LimitKey, string>;
+export const LIMIT_LABELS = { mangan: '満貫', haneman: '跳満', baiman: '倍満', sanbaiman: '三倍満', 'kazoe-yakuman': '数え役満' } as const satisfies Record<LimitKey, string>;
 export const YAKUMAN_MULTIPLE_LABELS: Record<number, string> = { 1: '役満', 2: '二倍役満', /* … 10 */ };
 ```
 
-- `labels.ts` には関数・条件分岐・計算を書かない(`import type` と定数だけ)。`FuLabelKey`・`LimitKey` の型は `format.ts` 側ではなく `labels.ts` の先頭に文字列リテラルの合併型で置く。
+- 数え役満のキーは `'kazoe-yakuman'`(実装済みの `labels.ts` 40・154行、`format.ts` 46行に合わせた。第8版。実装の変更は不要)。
+- `labels.ts` には関数・条件分岐・計算を書かない(`import type` と定数だけ)。`FuLabelKey`・`LimitKey` の型は `labels.ts` の先頭に文字列リテラルの合併型で置き、`next-tier.ts`・`format.ts` はそれを `import type` する。限度名(満貫〜数え役満)は限度名の表示と次の段階のバッジで同じ表を引く。
 - `Record<…['name'], string>` と `satisfies` により、役・符・限度の項目に過不足があると `npm run typecheck` が失敗する。
 
 #### 2.7.1 役名(`yakuNames` 43種・`yakumanNames` 29種)
@@ -380,9 +451,9 @@ export const YAKUMAN_MULTIPLE_LABELS: Record<number, string> = { 1: '役満', 2:
 
 - 基準値: **124,850 B**(#62(PR #81)マージ後の main 9910db3。第6版で更新。当初は起点 febdbe7 の 124,831 B)。2026-11-12 に `npm run build` し、`dist/index.html` の `<script type="module" src>` が指す `assets/index-BcA3TqtJ.js` を `gzip -9 -c | wc -c` で測った(modulepreload なし。`registerSW.js` は対象外)。
 - 参考(遅延チャンク): `SettingsScreen-*.js` 15,267 B、`compute-*.js` 9,638 B。
-- 初回 JS の増分の積算: `lazy`/`Suspense` と先読み 約0.15 kB、`hora-summary.ts` 約0.4 kB、`context` の受け渡し 約0.05 kB、E1 の `HoraBody`/`HoraGlance` 仮表示の削除 約 −0.1 kB。計 **約 +0.5 kB**。`Tile`・`SymbolIcon`・`Ripple`・`FocusRing`・`Divider` は既に初回 JS にあり、遅延チャンクから参照しても初回 JS は増えない(製造でビルド後に確かめる)。
-- 目標値: **約 125,370 B**(基準値 124,850 B + 積算した増分 約 520 B)。超過は不合格にしない。
-- 遅延チャンク(`HoraDetail-*.js`)の見込み: 名前の表(72役+符名+限度名)約1.2 kB、`HoraDetail`・`HoraItem` 約1.6 kB、`FuBreakdown`・`fu-rows`・`Disclosure` 約1.2 kB、`format.ts` 約0.3 kB。計 **約 4.3 kB**(gzip -9)。CSS は別ファイル。
+- 初回 JS の増分の積算: `lazy`/`Suspense` と先読み 約0.15 kB、`hora-summary.ts`(3桁区切りを含む)約0.45 kB、`context` の受け渡し 約0.05 kB、E1 の `HoraBody`/`HoraGlance` 仮表示の削除 約 −0.1 kB。計 **約 +0.55 kB**。`Tile`・`SymbolIcon`・`Ripple`・`FocusRing`・`Divider` は既に初回 JS にあり、遅延チャンクから参照しても初回 JS は増えない(製造でビルド後に確かめる)。
+- 目標値: **約 125,400 B**(基準値 124,850 B + 積算した増分 約 550 B)。超過は不合格にしない。
+- 遅延チャンク(`HoraDetail-*.js`)の見込み: 名前の表(72役+符名+限度名)約1.2 kB、`HoraDetail`・`HoraItem` 約1.6 kB、`FuBreakdown`・`fu-rows`・`Disclosure` 約1.2 kB、`format.ts` 約0.4 kB、`next-tier.ts` 約0.3 kB、カード構成の変更(和了牌・右端の支払い)約0.2 kB、まとめの廃止 約 −0.2 kB。計 **約 4.8 kB**(gzip -9)。CSS は別ファイル。
 
 ### 2.11 E1 持ち越し (b): 要約カードの表示遅れの調査タスク(修正しない)
 
@@ -397,12 +468,19 @@ export const YAKUMAN_MULTIPLE_LABELS: Record<number, string> = { 1: '役満', 2:
 
 方針は E1 と同じ(jsdom・Testing Library を追加しない。表示は `renderToStaticMarkup`、判定は純関数)。テストの入力は `generateResult` で作ってよい(UI の書式のテストであり、点数の正しさは core の golden テストが担う。期待値は 1.3 の実行結果)。テスト名は `E2-<番号>: …`。
 
-- `hora-summary.test.ts`: `isNoYaku` が R20・R24・R26 で true、R19・R01・R22 で false。`yaku` が `dora`・`red-dora`・`nuki-dora`・`ippatsu` の各1種だけ(手書きの `ScoredHora`)でも true、`ippatsu`+`riichi` では false。`formatPoints` がロン `1000`、子ツモ `400·700`、親ツモ `700オール`。`horaGlanceParts` が R28 でロン `2000`・ツモ `700·1300`、R24 でロン役なし・ツモ `300·500`。
+- `hora-summary.test.ts`: `isNoYaku` が R20・R24・R26 で true、R19・R01・R22 で false。`yaku` が `dora`・`red-dora`・`nuki-dora`・`ippatsu` の各1種だけ(手書きの `ScoredHora`)でも true、`ippatsu`+`riichi` では false。`formatNumber` が `700`→`700`・`1500`→`1,500`・`128000`→`128,000`(`toLocaleString` を使わない)。`formatPoints` がロン `1,000`、子ツモ `400・700`、親ツモ `700オール`、`withHonba` で R07 ツモ `600・900`。`horaGlanceParts` が R28 でロン `2,000`・ツモ `700・1,300`、R24 でロン役なし・ツモ `300・500`。
 - `names.test.ts`: `YAKU_LABELS`・`YAKUMAN_LABELS` のキーが `yakuNames`・`yakumanNames` と同じ集合で、値がすべて空でない。`nuki-dora` = 抜きドラ、`north` = 北、`chankan` = 槍槓、`haitei` = 海底撈月、`suanko-tanki` = 四暗刻単騎。`labels.ts` のソースに `function`・`=>`・`if`・`?` の各トークンが無い(データだけであることの静的検査)。
 - `format.test.ts`: `limitName` が basePoint 1920 未満で null、2000・3000・4000・6000・8000(役満0)で満貫〜数え役満、yakumanPoint 1・2・3・4・11 で 役満・二倍役満・三倍役満・四倍役満・11倍役満。`ダブル`・`トリプル` を返さない。
+- `next-tier.test.ts`: 2.6.5 の表の13行をすべて。とくに R12 の数え役満あり(ロン「＋2飜」・ツモ「＋1飜」で数え役満)となし(ロン・ツモとも null)の対照を必ず含める(入力は `generateResult` の出力。数え役満なし・切り上げ満貫ありはルールを変えて)。`format.test.ts` に `nextTierText` が `＋1飜で跳満` を返すこと、`payDetailLines` が R07 ツモ `['は 600・900', '合計 1,100(+1,400)点']`、R07 ロン `['は 1,400', '(+1,400)点']`、本場2・供託0 のロン `['は 1,400', '(+400)点']`、本場0・供託1 のロン `['(+1,000)点']`、`honbaPoint: 400`・本場2 のロン `['は 1,800', '(+800)点']`、R02 ツモ `['合計 1,400点']`、R02 ロン `[]` を返すことを加える(入力は `generateResult` の出力)。
 - `fu-rows.test.ts`: R24 ロンで行が順に「副底 20」「順子 0」×4(牌3枚ずつ)「風牌雀頭 2」相当(`table` に場風東を渡せば「場風牌雀頭 2」、牌2枚)「単騎待ち 2」「門前ロン 10」。R19 ロンで「么九牌暗刻 8」(牌3枚)を含み、合計の生の値が 38 または 40(同点の2分解。上記)。暗槓の行が牌4枚。
 - `Disclosure.test.tsx`: 既定で `aria-expanded="false"` かつ中身の領域に `hidden`、`defaultOpen` で `aria-expanded="true"`。`aria-controls` が中身の `id` を指す。
-- `HoraDetail.test.tsx`(`HoraDetail` を直接 import): R01 ロンで「平和」「1飜」「30符」「基本点 240」と開閉ボタンの「符 30」。R24 ロンで「役なし」が出て `700` と「符」が出ない。R24+立直(`riichi:'riichi'`。単騎の1通りで生34・40符・1300、n=7項目)で「符 34 → 40」。R17 で「符 25」。R16 で開閉ボタンが無い。R22 で3役満がすべて出て「二倍役満」と `64000`、「ダブル」の文字が無い。R07 で「は 1400」「合計 1000(+1400)点」。
+- `HoraDetail.test.tsx`(`HoraDetail` を直接 import): R28 で `article.hora-item` が6件、`data-hora-by` が ron・tsumo の交互で、各カードに牌画像が1枚ずつ(和了牌のまとめの見出しが無い)。R01 ロンで「平和」「1飜」「30符」「＋4飜で満貫」「基本点 240」と開閉ボタンの「符 30」。R24 ロンで「役なし」が出て `700` と「符」が出ない。R24+立直(`riichi:'riichi'`。単騎の1通りで生34・40符・1300、n=7項目)で「符 34 → 40」。R17 で「符 25」。R16 で開閉ボタンが無い。R22 で3役満がすべて出て「二倍役満」と `64,000`、「ダブル」の文字が無い。R07 でツモに「は 600・900」「合計 1,100(+1,400)点」、ロンに「は 1,400」「(+1,400)点」があり「合計」が無い。R13 と R14 で「＋」の文字が無い。
+- **第7版の書式変更に伴う既存テストの直し(製造範囲)**: 実物を洗い出した結果、3桁区切り・区切り「・」・ロンの右端の変更より前の期待値が次に残っている。すべて第7版の書式に直す。
+  - `src/ui/result/ResultGlance.test.tsx` 77行(テスト名「ロン 1500」)・130行 `toContain('1500')` → `1,500`。139行(名「300·500」)・194行 `toContain('300·500')` → `300・500`。
+  - `src/ui/result/hora-summary.test.ts` 298行 `'1000'` → `'1,000'`、313行 `'400·700'` → `'400・700'`、330行(テスト名)、369行 `'2000'` → `'2,000'`、370行 `'700·1300'` → `'700・1,300'`、406行 `'300·500'` → `'300・500'`。
+  - `src/ui/result/hora/format.test.ts` 93行 `'1400'` → `'1,400'`、94行 `'は 1400'` → `'は 1,400'`、95行 ロンの `'合計 1000(+1400)点'` は第7版でロンに合計の行が無くなったため `'(+1,400)点'`(`payDetailLines` の期待値)に置き換える、111・112行 `'600·900'` → `'600・900'`、113行 `'合計 1100(+1400)点'` → `'合計 1,100(+1,400)点'`。
+  - `src/ui/result/hora/HoraDetail.test.tsx` 235行(テスト名)・284行 `toContain('64000')` → `64,000`、289行(テスト名)・333行 `'は 1400'` → `'は 1,400'`、334行 ロンの `'合計 1000(+1400)点'` → `'(+1,400)点'` と、ロンに「合計」が無いことの確認。
+  - テスト名に古い書式が入っているもの(上記の 77・139・330・235・289行)は名前も直す。直したあと `grep -nE "'[^']*([0-9]{4}|·)[^']*'" src/ui/result/*.test.ts* src/ui/result/hora/*.test.ts*` で、牌の指定以外に4桁以上の区切りなしの数字と「·」が残っていないことを確かめる。
 - 既存テストの改訂: `ResultGlance.test.tsx` の `E1-6: hora のとき「和了」と牌…`・`…ツモ・ロンの語は出さない` の2件は E1 の仮表示の仕様のため、E2 のバナー仕様(2.4)のテストに置き換える。`ResultPanel.test.tsx` の `E1-7: ok で hora のとき…`(96〜97行)の `expect(html).toContain('和了')` は、E2 で仮見出し「和了」を削除し `<Suspense fallback={null}>` で描くため失敗する。この行を外し、`data-result-kind="hora"` と `data-state="ok"` の確認だけを残す。同テストの `hora` の入力は `score` を持たない手書きの値なので、`generateResult` の出力に替える(`HoraGlance` は `ResultPanel` では描かれないが、将来の参照に備える)。実物を確認した範囲では、E1 の仮表示に依存するアサーションはこの1行と `ResultGlance.test.tsx` の上記2件だけ(`just-hora`・`shanten` の `E1-7` は E2 で変わらない)。改訂の理由をコミットメッセージに書く。
 
 ### 2.13 ルールの正本への追記(1飜縛り)
@@ -422,19 +500,19 @@ export const YAKUMAN_MULTIPLE_LABELS: Record<number, string> = { 1: '役満', 2:
 
 ## 3. 範囲外
 
-- 和了の一覧の並べ方・待ち牌ごとのまとめ・残り枚数(E3)。2.5 のまとめは E3 が置き換える暫定表示。
+- 待ち牌の残り枚数・聴牌の一覧としての見せ方(E3)。
 - 複数の和了候補(分解の違い)の表示【確定8】。和了牌の発光表示【確定10】。
 - 赤牌の注意表示(確定事項9 で廃止)。赤牌の枚数を変えたときの入力のリセット(#62。4章)と `hora.ts` の変更。
 - **変更禁止**: `src/ui/state/app-state.ts`・`src/ui/state/hand-rules.ts`・`src/ui/settings/` 配下・`src/core/` 配下(受け入れ条件2)。
 - **既知の事実**: 赤牌のリセット(#62)は PR #81 でマージ済み(第6版で更新)。設定で赤牌の枚数を変えると入力がリセットされるため、設定と食い違う赤5の入力は UI からは起こらない。`hora.ts` が `rule.red` を参照しない件は #62 で「実害なし」として扱う(core は変えない)。
 - 要約カードの表示遅れの修正(2.11 は調査のみ)。
-- `src/core/` の変更。点差・+N飜で次の段階(mj-mighty-calc の `tier-hint`、livewing の `ScorePlusList`・`PointDiff`)。
+- `src/core/` の変更。点差(livewing の `PointDiff`)。次の段階のバッジは第7版で範囲に含めた(2.6.5)。
 
 ## 4. 後続への引き継ぎ
 
-- **E3**: `HoraDetail` の和了牌ごとのまとめ(2.5)を一覧部品に置き換える。`HoraItem({ hora, table })` と `horaGlanceParts`・`isNoYaku` はそのまま使える。13枚の聴牌のバナーは E2 の「ロン・ツモそれぞれの最高打点」で出している。赤5と通常の5が別の和了牌として並ぶ(R28)。
+- **E3**: `HoraItem` は和了牌・by・点数を自分で持つので、一覧側は `hora[]` を並べるだけでよい。E2 の `HoraDetail`(平らな並び)は聴牌の表示にそのまま転用できる。待ち牌の残り枚数等を足すときは一覧側に加え、`HoraItem` は変えない。`horaGlanceParts`・`isNoYaku`・`formatPoints` はそのまま使える。13枚の聴牌のバナーは E2 の「ロン・ツモそれぞれの最高打点」で出している。赤5と通常の5が別の和了牌として並ぶ(R28)。
 - **F**: 打牌候補の `next` に和了があるときの打点表示に `formatPoints`・`isNoYaku` を使える。
-- **UI 監修**: 文言は `labels.ts`(表)と `format.ts`・`hora-summary.ts`(書式)に集めてある。2.7.4 の手引きに従う。
+- **UI 監修**: 文言は `labels.ts`(表)と `format.ts`・`hora-summary.ts`(書式。区切り記号 `TSUMO_SEPARATOR`・3桁区切り `formatNumber`・次の段階 `nextTierText`・支払い `payDetailLines`)に集めてある。2.7.4 の手引きに従う。残る監修事項: (1) 基本点の行の位置(折りたたみの中に入れるか。`BasePointLine` を移すだけ)と計算式の追加、(2) ロン・ツモのバッジの tertiary/primary の入れ替え(`hora.css` の2行)。
 - **#62(E2 完了後に別 PR。ユーザー確定 Q7a〜d)**:
   - 仕様: `set-rule` で、種別(m・p・s)ごとの赤5の枚数(`redCountOf(rule.red, type)`)のどれかが前の値と違うときだけ、手牌・副露・ドラ表示牌・裏ドラ表示牌を空にする。抜き北の枚数・状況役・卓(場風・自風・本場・供託)は保つ。変わらなければ入力を保つ(livewing の `set-current-rule` と同様)。確認ダイアログは出さない。
   - 置き場の目安: `src/ui/state/app-state.ts` の `set-rule`(335〜349行)の1か所。設定画面は個別の項目もプリセットも `set-rule` で送る。`app-state.test.ts` の `set-rule` のテストの改訂要否を確認する。
@@ -447,6 +525,7 @@ export const YAKUMAN_MULTIPLE_LABELS: Record<number, string> = { 1: '役満', 2:
 - 2.11 の遅れが再現するか。
 - 遅延チャンクの先読みで、初回の和了表示に空白が見えないか(受け入れ条件 9)。
 - 2.10 の増分・遅延チャンクの見込みは積算で、実測していない。
+- tertiary のバッジのダークでのコントラスト(受け入れ条件 19 で確かめる)。
 - 1.3 の値は core を直接実行して得た。画面上の手順(受け入れ条件 9〜17)は画面では未確認。
 
 ## 6. 受け入れ条件
@@ -457,21 +536,21 @@ export const YAKUMAN_MULTIPLE_LABELS: Record<number, string> = { 1: '役満', 2:
 2. **変更禁止ファイル**: (a) `git diff main --stat -- src/core src/ui/state/app-state.ts src/ui/state/hand-rules.ts src/ui/settings` が空(main にもこれらの変更は無いので、main 比で判定できる。赤牌のリセットは #62 で行う)。(b) `git diff <設計コミット> --stat -- docs/mahjong-rules.md` が空(正本の追記は本ブランチの設計コミットに含まれるため、main 比では差分が出る。2.13。`<設計コミット>` のハッシュは統括担当が製造・検収への依頼文で渡す)。
 3. **import type の規律**: `grep -rnE "^import [^t].*core/" src/ui/result` が0件。
 4. **遅延チャンク**: `npm run build` 後、`dist/assets` に `HoraDetail-*.js` があり、`dist/index.html` に書かれていない。`index-*.js` に `門前清自摸和`・`抜きドラ`・`倍役満` の文字列が含まれない(`grep -c` が 0)。`HoraDetail-*.js` には含まれる。
-5. **初回 JS の記録**: 09号の方法で初回 JS(B)と `HoraDetail-*.js` の gzip -9 の値を測り、基準値 124,850 B・目標値 約125,370 B・遅延チャンク見込み 約4.3 kB と並べて最終報告に書く。超過は不合格にしない。
+5. **初回 JS の記録**: 09号の方法で初回 JS(B)と `HoraDetail-*.js` の gzip -9 の値を測り、基準値 124,850 B・目標値 約125,400 B・遅延チャンク見込み 約4.8 kB と並べて最終報告に書く。超過は不合格にしない。
 6. **単体テスト**: `npx vitest run src/ui/result src/ui/expressive/Disclosure.test.tsx src/ui/screen/ResultPanel.test.tsx` が全件通過し、2.12 の各ケースがテスト名から確認できる。`package.json` に `jsdom`・`happy-dom`・`@testing-library/*` が無い。
 7. **名前の表**: `src/ui/result/hora/labels.ts` の72役が 2.7.1 の表のとおりで、各行に出典コメントがある(目視で照合)。`labels.ts` に関数・条件分岐が無い。試しに `YAKU_LABELS` から1行消すと `npm run typecheck` が失敗する(確認後に戻し、`git diff` が残らない)。
 8. **E1 の規律の維持**: E1 受け入れ条件3(振り分けの一意性)の grep が `classify.ts` のみ(テストファイルを除く)。
-9. **通常の和了(親)**: 手牌 `2p3p4p 5p6p7p 3s4s 6s7s8s 9p9p` に `2s` を加える(R02)。結果パネルに `article[data-hora-by="ron"]` と `[data-hora-by="tsumo"]` がこの順にあり、ロンは「1500」「1飜 30符」「平和」「基本点 240」、ツモは「700オール」「2飜 20符」「門前清自摸和」「平和」「合計 1400点」「基本点 320」。和了直後に結果パネルが空白のまま 1 秒以上残らない。
+9. **通常の和了(親)とカードの構成**: 手牌 `2p3p4p 5p6p7p 3s4s 6s7s8s 9p9p` に `2s` を加える(R02)。結果パネルに `article.hora-item` が2件だけあり、1件目が `data-hora-by="ron"`、2件目が `"tsumo"`。和了牌のまとめの見出しは無い。各カードの見出し行の左にバッジと `2s` の牌画像1枚、右端に点数(ロン「1,500」、ツモ「700オール」)。その下にロン「1飜 30符」「＋4飜で満貫」、ツモ「2飜 20符」「＋3飜で満貫」。右端の支払いは、ロンは何も無く、ツモは「合計 1,400点」だけ(「は」の行は無い)。役一覧はロン「平和 1飜」、ツモ「門前清自摸和」「平和」で、飜の数字がカードの右端側にある。最後に「基本点 240」「基本点 320」。ロンのバッジの背景色が `--md-sys-color-primary`、ツモが `--md-sys-color-tertiary` の計算値と一致する(`getComputedStyle` で比較)。和了直後に結果パネルが空白のまま 1 秒以上残らない。
 10. **符の内訳の開閉**: 条件9 のロンのカードで、開閉ボタンが `aria-expanded="false"` で「符 30」が見え、内訳の行は見えない。押すと `aria-expanded="true"` になり、行が「副底 20符」「順子 0符」×3(各行に牌画像3枚)「雀頭 0符」(9p 2枚)「順子 0符」(2s3s4s)「両面待ち 0符」「門前ロン 10符」の順に(`hora.fu` の順。1.3 の R01 と同じ並び)1行1項目で出る(0符の行も出る)。もう一度押すと閉じる。ツモのカードの開閉はロンのカードに影響しない。
-11. **バナー**: 条件9 の状態で 375×500 にしてページ先頭へ戻し、シートを閉じる。バナーに「ロン 1500」と「ツモ 700オール」が出て、和了牌の牌画像と「和了」の文字が無い。375×812 に戻す。
-12. **13枚・複数の和了牌**: 条件9 の手から `2s` を除いた13枚(R29)。バナー(375×500)が「ロン 2900」「ツモ 1300オール」。本体に和了牌 2s・5s・赤5s の3まとまりがあり、各まとまりにロン・ツモの2枚がある。
-13. **子・本場・供託・ツモ損**: 自風を南、本場 2・供託 1 にして条件9 の14枚(R07)。ロンに「1000」「は 1400」「合計 1000(+1400)点」、ツモに「400·700」「は 600·900」「合計 1100(+1400)点」。本場・供託を 0 に戻し、設定でツモ損を「北家分折半」→ ツモ「600·900」、「ロン打点折半」→ ツモ「700·700」(R03・R05)。
-14. **役なし・ドラのみ**: 自風を南。`1p2p3p 4p5p6p 2s3s4s 7s8s9s 東` に `東` を加える(R24)。ロンのカードに `data-no-yaku` があり「役なし」が出て「700」と符の開閉ボタンが無い。ツモは「300·500」「門前清自摸和」。バナー「ロン 役なし」「ツモ 300·500」。ドラ表示牌に `北` を入れる(R26)と、ロンは役なしのまま(「2600」が出ない)、ツモは「1000·2000」。
-15. **抜きドラ・北の役牌**: 自風を南。条件9 の14枚で抜き北を 2(R09)→ ロン「3900」・役一覧に「抜きドラ」「2飜」。手を `北北北 1p2p3p 4p5p6p 7s8s9s 9s` + `9s` に替える(R19・R20)。所定(抜きドラ)ではロンが役なし、ツモ「400·700」。設定で北を役牌に変える → ロン「1300」・役一覧に「北」・開閉ボタンが「符 38 → 40」または「符 40」(同点の2分解のため、どちらも合格)・開くと「么九牌暗刻 8符」(北の牌3枚)。
-16. **満貫〜役満**: 自風を南で、R10(満貫/跳満)・R11(倍満)・R13(数え役満。立直・一発は状況入力で選ぶ)・R14(役満)・R15(二倍役満)・R17(七対子。開閉ボタン「符 25」)・R16(国士。開閉ボタンなし)を入れ、限度名のバッジと点数が 1.3 のとおり。
-17. **役満の複合なし**: 自風を南、設定で役満の複合を「認めない」にし、`東東東 南 白白白 發發發 中中中` + `南`(R22)。役一覧に「四暗刻単騎」「大三元」「字一色」の3つがすべて同じ見た目で出て(四暗刻単騎の行は「二倍役満」)、限度名は「二倍役満」、ロン「64000」、ツモ「16000·32000」。複合を認めると限度名「四倍役満」・「128000」(R21)。画面のどこにも「ダブル」「トリプル」の文字が無い。
+11. **バナー**: 条件9 の状態で 375×500 にしてページ先頭へ戻し、シートを閉じる。バナーに「ロン 1,500」と「ツモ 700オール」が出て、和了牌の牌画像と「和了」の文字が無い。375×812 に戻す。
+12. **13枚・複数の和了牌**: 条件9 の手から `2s` を除いた13枚(R29)。バナー(375×500)が「ロン 2,900」「ツモ 1,300オール」。本体に `article.hora-item` が6件、上から 2s ロン・2s ツモ・5s ロン・5s ツモ・赤5s ロン・赤5s ツモの順に平らに並び、各カードのバッジの横にその和了牌(赤5s は赤)がある。赤5s のロンは「2,900」・「2飜 30符」。
+13. **子・本場・供託・ツモ損**: 自風を南で条件9 の14枚。設定の1本場の点数は所定の 200。次の順に操作する(値はすべて `generateResult` で確認済み)。(1) 本場 2・供託 1(R07): ロンは見出し「1,000」、右端「は 1,400」「(+1,400)点」(「合計」が無い)。ツモは見出し「400・700」、右端「は 600・900」「合計 1,100(+1,400)点」。(2) 供託を 0(本場 2): ロン「は 1,400」「(+400)点」、ツモ「は 600・900」「合計 1,100(+400)点」。(3) 本場を 0・供託を 1: ロンは「(+1,000)点」だけ(「は」が無い)、ツモは「合計 1,100(+1,000)点」だけ(「は」が無い)。(4) 本場 2・供託 0 にし、設定で1本場の点数を 400: ロン「は 1,800」「(+800)点」、ツモ「は 800・1,100」「合計 1,100(+800)点」。(5) 設定の1本場の点数を 200 に、本場・供託を 0 に戻す(ロンの右端は空、ツモの右端は「合計 1,100点」だけになる)。(6) 設定でツモ損を「北家分折半」→ ツモ「600・900」、「ロン打点折半」→ ツモ「700・700」(R03・R05)。
+14. **役なし・ドラのみ**: 自風を南。`1p2p3p 4p5p6p 2s3s4s 7s8s9s 東` に `東` を加える(R24)。ロンのカードに `data-no-yaku` があり、バッジ・牌と「役なし」だけで、「700」・次の段階・符の開閉ボタンが無い。ツモは「300・500」「門前清自摸和」。バナー「ロン 役なし」「ツモ 300・500」。ドラ表示牌に `北` を入れる(R26)と、ロンは役なしのまま(「2,600」が出ない)、ツモは「1,000・2,000」。
+15. **抜きドラ・切り上げ満貫**: 自風を南。条件9 の14枚で抜き北を 2(R09)→ ロン「3,900」・役一覧に「抜きドラ」「2飜」。抜き北を 3 にする → ロン「7,700」「4飜 30符」「＋1飜で満貫」。設定で切り上げ満貫をありにする → ロン「8,000」「満貫」(赤字)「＋2飜で跳満」。手を `北北北 1p2p3p 4p5p6p 7s8s9s 9s` + `9s` にする(R20。北=抜きドラ)とロンが役なし、ツモ「400・700」。(R19 は同点の2分解で符が変わるため条件に使わない)
+16. **満貫〜役満と次の段階**: 自風を南で、次を入れて点数・限度名(赤字)・次の段階が一致する。R10: ロン「8,000」満貫「＋1飜で跳満」、ツモ「3,000・6,000」跳満「＋2飜で倍満」。R11: ロン「16,000」倍満「＋2飜で三倍満」。R12(立直・一発を状況入力で選ぶ): ロン「24,000」三倍満「＋2飜で数え役満」、ツモ「6,000・12,000」三倍満「＋1飜で数え役満」。R12 のまま設定で数え役満をなしにする: 点数は同じで、ロン・ツモとも次の段階が出ない。設定を数え役満ありに戻す。R13: ロン「32,000」数え役満、次の段階なし。R13 のまま設定で数え役満をなしにする: ロン「24,000」三倍満、次の段階なし(確認後、ありに戻す)。R14: 役満「32,000」、次の段階なし。R15: 「二倍役満」「64,000」。R17: 開閉ボタン「符 25」。R16: 開閉ボタンなし。
+17. **役満の複合なし**: 自風を南、設定で役満の複合を「認めない」にし、`東東東 南 白白白 發發發 中中中` + `南`(R22)。役一覧に「四暗刻単騎」「大三元」「字一色」の3つがすべて同じ見た目で出て(四暗刻単騎の行は「二倍役満」)、限度名は「二倍役満」、ロン「64,000」、ツモ「16,000・32,000」。複合を認めると限度名「四倍役満」・「128,000」(R21)。画面のどこにも「ダブル」「トリプル」の文字が無い。
 18. **下余白(E1 持ち越し a)**: 375×812、条件9 の手。`getComputedStyle(document.querySelector('.main-screen__bottom-spacer')).height` が `--sheet-height` と `--result-banner-height` の和(±1px)。シートを閉じた状態と開いた状態のそれぞれで、ページ末尾までスクロールしたとき、`[aria-label="副露を追加"]` の `getBoundingClientRect().bottom` がバナーの `top` 以下であるか、バナーが非表示。ページ末尾で 2 秒間、バナーの `visibility` を 100ms ごとに記録し、切り替わりが1回以下。
-19. **ダーク・トークン**: E1 条件17 と同じ方法でダークにし、カード・バッジ・開閉ボタン・内訳の行の背景と文字が切り替わる。`git diff main -- src | grep -nE "#[0-9a-fA-F]{3,8}\b"` が CSS の色値としてヒットしない。
+19. **ダーク・トークン**: E1 条件17 と同じ方法でダークにし、カード・ロン/ツモのバッジ・限度名・次の段階のバッジ・開閉ボタン・内訳の行の背景と文字が切り替わる。ライトとダークのそれぞれで、ロン・ツモのバッジの文字色と背景色のコントラスト比を console で計算し(`getComputedStyle` の色から相対輝度を求める)4.5 以上。`git diff main -- src | grep -nE "#[0-9a-fA-F]{3,8}\b"` が CSS の色値としてヒットしない。
 20. **出典表示**: mj-mighty-calc・livewing を参考にしたファイルの先頭コメントに出典(リポジトリ名と元ファイル名)がある。`LICENSE` の著作権表示が変わっていない。`git diff main -- src | grep -nE "/(Users|home)/"` が0件。
 21. **調査タスク(E1 持ち越し b)**: 最終報告に 2.11 の報告項目(1)〜(5)がすべてある。`git diff main` に計測用のコードが無い。
 22. **実機確認の申し送り(E1 持ち越し c)**: 最終報告に、ユーザーが実機(iOS Safari / Android Chrome)で確かめる手順(7章)がある(合否には含めない)。
@@ -484,7 +563,7 @@ export const YAKUMAN_MULTIPLE_LABELS: Record<number, string> = { 1: '役満', 2:
 
 ## 9. 未決事項(要ヒアリング)
 
-未決事項なし。初版の Q1〜Q6 と第2版の Q7(a〜d)はユーザーが確定した(確定事項の表と 4章・10章)。
+未決事項なし。初版の Q1〜Q6、第2版の Q7(a〜d)、第7版の UI 監修方針はユーザーが確定した(確定事項の表と 4章・10章)。ロン=primary・ツモ=tertiary の割り当てと基本点の位置・計算式は、確定事項21 のとおり UI 監修で調整する(設計としては提案どおりで製造できる)。
 
 ## 10. 改訂履歴
 
@@ -503,3 +582,12 @@ export const YAKUMAN_MULTIPLE_LABELS: Record<number, string> = { 1: '役満', 2:
 - 2026-11-12 第4版: 独立レビューの真偽判定を反映。条件9〜17 の牌姿の期待値を再実行して確認(1.3)。`ResultPanel.test.tsx` の `toContain('和了')` の扱いを 2.12 に明記。受け入れ条件2 の正本の判定を設計コミット比に変更。条件番号の誤記(17→18、9〜16→9〜17)を訂正。ツモ・ロンの並び順の記述を統一(1.2・1.5)。条件8 にテストファイル除外を明記。`Tile` の裏向き(`{ type: 'back' }`)を確定事実に書き直し、`hora.ts` の行番号を実物に合わせた。
 - 2026-11-12 第5版: 製造の検証で、R19 の符が分解の順序の違いで「38 → 40」と「40」のどちらにもなる(core の挙動。同点の多面張)と判明。R19 の期待値を「どちらも合格」に直し、符の切り上げの確認は分解が1通りの R24+立直(生34 → 40)に替えた。core の変更はしない(後続の検討事項)。
 - 2026-11-12 第6版: main(#62 マージ済み、9910db3)を取り込み。基準値を 124,850 B、目標値を約 125,370 B に更新。3章の赤牌リセットの記述を「PR #81 でマージ済み」に更新。
+- 2026-11-12 第7版: ユーザーの UI 監修(イメージ画像。mj-mighty-calc の `CandidateCard` 準拠)を反映。確定事項16〜21 を追加。
+  - カード構成: 見出し行にバッジ+和了牌1枚と点数、その下に飜符+限度名(赤字)と次の段階のバッジ、右端に右揃えの支払い、役一覧(飜は右)、符の折りたたみ、基本点(2.6)。
+  - 和了牌ごとのまとめを廃止し、`hora[]` を平らに並べる(2.5)。E3 への引き継ぎを書き換え(4章)。
+  - 次の段階のバッジ「＋k飜で{限度名}」を範囲に追加(2.6.5・`next-tier.ts`)。`ResultContext` に `rule` を追加。3章を修正。
+  - 点数の書式を3桁区切り(手書き)・ツモの区切り「・」に変更(2.4)。支払いの内訳をツモ「は …」「合計 …」、ロン「(+bonus)点」のみに変更(2.6.4)。
+  - ロン=primary・ツモ=tertiary のバッジ(1か所で入れ替え可能)。tertiary のトークンの存在を `tokens.css` で確認(1.5)。限度名を赤字の文字に、次の段階を primary-container のバッジに。
+  - 受け入れ条件 5・9・11〜17・19 とテスト(2.12)を書式・構成に合わせて改訂し、期待値を `generateResult` で再実行して確認。R19 を条件から外した。バンドルの積算を更新(目標 約125,400 B、遅延チャンク 約4.8 kB)。
+  - 追加確定: ロンの右端を「は {本場込み}」(本場があるとき)と「(+{bonus})点」(本場・供託があるとき)の2行に変更(確定事項20・2.6.4)。本場のみ・供託のみ・両方・1本場400点の実行値で条件13とテストを改訂。
+- 2026-11-12 第8版: 独立レビューの判定を反映。条件13 の操作順を整理(R07 でロン・ツモを確認→ロンの各パターンとツモの値→設定と本場・供託を戻す→ツモ損)。次の段階の rule 参照を R12 の数え役満あり/なしの対照で確かめる(2.6.5・2.12・条件16)。第7版の書式に追従していない既存テストの期待値を実物で洗い出して 2.12 に列挙(`64000` 等)。2.6 の見出しを `HoraItem({ hora, context })` に統一。数え役満のキーを実装済みの `'kazoe-yakuman'` に統一。構成図の左上を `[ツモ]` に訂正。
