@@ -340,11 +340,15 @@ export const appReducer = (state: AppState, action: AppAction): AppState => {
           ? state.input
           : { ...state.input, nuki: nextNuki };
       const nextHandOptions = normalizeHandOptions(state.handOptions, nextRule);
+      const redChanged = nextRule.red !== state.rule.red;
       return {
         ...state,
         rule: nextRule,
-        input: nextInput,
-        handOptions: nextHandOptions
+        input: redChanged
+          ? { ...createInitialInput(), nuki: nextInput.nuki }
+          : nextInput,
+        handOptions: nextHandOptions,
+        ...(redChanged ? { inputFocus: null, tenkeyBuffer: '' } : {})
       };
     }
 

@@ -855,11 +855,15 @@ describe('D4-C24・C25: 赤牌切替の判定と5キーの代替 (確定事項 2
   });
 
   it('D4-C24f: set-rule(red:2) の dispatch で red=2 の状態を作って判定できる', () => {
-    const base = mk(1, [{ type: 'pon', tile: p5 }]);
-    const s = appReducer(base, {
+    const base = mk(1, []);
+    const afterRule = appReducer(base, {
       type: 'set-rule',
       rule: { ...base.rule, red: 2 }
     });
+    const s = {
+      ...afterRule,
+      input: { ...afterRule.input, melds: [{ type: 'pon' as const, tile: p5 }] }
+    };
     expect(s.rule.red).toBe(2);
     expect(redCount(s)).toBe(1);
     expect(meldRedToggle(s, 0).disabled).toBe(false);
