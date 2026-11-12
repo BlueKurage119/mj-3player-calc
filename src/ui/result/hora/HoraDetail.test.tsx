@@ -123,7 +123,6 @@ describe('HoraDetail.test.tsx (E2 和了本体部品の表示)', () => {
 
   it('E2-19: R24+立直 ロンで 符 34 → 40、R17 七対子で 符 25、R16 国士無双で開閉ボタンなし', async () => {
     const { generateResult, DEFAULT_RULE } = await getCore();
-    const ruleYakuhai: Rule = { ...DEFAULT_RULE, north: 'yakuhai' };
 
     // R24 + 立直: 123p456p234s789s11z。分解が1通り(単騎待ち)で、生符34 → 40 に切り上がる
     // (R19 は両面と単騎が同点の多面張で、分解の順序が実行履歴で変わるため使わない)
