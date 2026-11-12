@@ -24,8 +24,18 @@ export interface HoraItemProps {
 }
 
 export function HoraItem({ hora, context }: HoraItemProps): React.JSX.Element {
+  const { score } = hora;
   const noYaku = isNoYaku(hora);
   const byLabel = hora.by === 'ron' ? 'ロン' : 'ツモ';
+  // 符の概念がない国士無双・十三不塔以外は、役満でも符を出す(UI 監修)
+  const showFuBreakdown = hora.type === 'mentsu' || hora.type === 'chitoitsu';
+  const displayFu: number | null =
+    score.fu ??
+    (hora.type === 'chitoitsu'
+      ? 25
+      : hora.type === 'mentsu'
+        ? Math.ceil(sumRawFu(hora.fu) / 10) * 10
+        : null);
 
   if (noYaku) {
     return (
@@ -39,24 +49,27 @@ export function HoraItem({ hora, context }: HoraItemProps): React.JSX.Element {
           </span>
           <span className="hora-item__no-yaku-text">役なし</span>
         </div>
+        {/* 役なしでは、符の明細だけを出す(基本点・点差は出さない。UI 監修) */}
+        {showFuBreakdown ? (
+          <>
+            <Divider />
+            <FuBreakdown
+              fu={hora.type === 'mentsu' ? hora.fu : undefined}
+              score={hora.score}
+              displayFu={displayFu ?? 0}
+              horaType={hora.type}
+              table={context?.table}
+              omitBasePoint
+            />
+          </>
+        ) : null}
       </article>
     );
   }
 
-  const { score } = hora;
   const limit = limitName(score);
   const tier = nextTier(score, context?.rule);
   const payLines = payDetailLines(score.payment);
-  // 符の概念がない国士無双・十三不塔以外は、役満でも符を出す(UI 監修)
-  const showFuBreakdown = hora.type === 'mentsu' || hora.type === 'chitoitsu';
-  const displayFu: number | null =
-    score.fu ??
-    (hora.type === 'chitoitsu'
-      ? 25
-      : hora.type === 'mentsu'
-        ? Math.ceil(sumRawFu(hora.fu) / 10) * 10
-        : null);
-
   return (
     <article className="hora-item" data-hora-by={hora.by}>
       {/* 2.6.1 見出し行 */}

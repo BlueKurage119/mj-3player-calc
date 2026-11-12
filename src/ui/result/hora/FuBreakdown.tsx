@@ -14,10 +14,19 @@ export interface FuBreakdownProps {
   displayFu: number;
   horaType: 'mentsu' | 'chitoitsu' | 'kokushi' | 'shisanputa';
   table?: Table | undefined;
+  /** 基本点を出さない(役なしのカード) */
+  omitBasePoint?: boolean | undefined;
 }
 
 export function FuBreakdown(props: FuBreakdownProps): React.JSX.Element | null {
-  const { fu = [], score, displayFu, horaType, table } = props;
+  const {
+    fu = [],
+    score,
+    displayFu,
+    horaType,
+    table,
+    omitBasePoint = false
+  } = props;
 
   // 符の概念がない国士無双・十三不塔では出さない(役満でも、面子手・七対子では出す)
   if (horaType !== 'mentsu' && horaType !== 'chitoitsu') {
@@ -34,7 +43,9 @@ export function FuBreakdown(props: FuBreakdownProps): React.JSX.Element | null {
       <Disclosure
         summary={
           <span className="fu-breakdown__summary">
-            {summaryText}・{formatBasePointText(score.basePoint)}
+            {omitBasePoint
+              ? summaryText
+              : `${summaryText}・${formatBasePointText(score.basePoint)}`}
           </span>
         }
       >
@@ -62,18 +73,20 @@ export function FuBreakdown(props: FuBreakdownProps): React.JSX.Element | null {
             </li>
           ))}
         </ul>
-        <div className="fu-breakdown__formula tabular-nums">
-          {formula.kind === 'formula' ? (
-            <>
-              基本点 = 符 × 2<sup>飜+2</sup> = {formula.fu} × 2
-              <sup>{formula.han}+2</sup> = {formula.base}
-            </>
-          ) : (
-            <>
-              {formula.name} = {formula.base}
-            </>
-          )}
-        </div>
+        {omitBasePoint ? null : (
+          <div className="fu-breakdown__formula tabular-nums">
+            {formula.kind === 'formula' ? (
+              <>
+                基本点 = 符 × 2<sup>飜+2</sup> = {formula.fu} × 2
+                <sup>{formula.han}+2</sup> = {formula.base}
+              </>
+            ) : (
+              <>
+                {formula.name} = {formula.base}
+              </>
+            )}
+          </div>
+        )}
       </Disclosure>
     </div>
   );

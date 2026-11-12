@@ -80,7 +80,7 @@ describe('HoraDetail.test.tsx (E2 和了本体部品の表示)', () => {
     }
   });
 
-  it('E2-18: R24 ロン - 役なし が出て 700 と 符 の開閉ボタンが出ない', async () => {
+  it('E2-18: R24 ロン - 役なし が出て、点数 700・基本点・点差は出ず、符の明細だけ出る', async () => {
     const { generateResult, DEFAULT_RULE } = await getCore();
 
     // R24: 123p456p234s789s1z + 1z (南家, 役なし)
@@ -124,7 +124,11 @@ describe('HoraDetail.test.tsx (E2 和了本体部品の表示)', () => {
       expect(html).toContain('役なし');
       expect(html).toContain('data-no-yaku=""');
       expect(html).not.toContain('700');
-      expect(html).not.toContain('fu-breakdown');
+      // 符の明細だけ追加(基本点・基本点の式・点差は出さない。UI 監修)
+      expect(html).toContain('fu-breakdown');
+      expect(html).toContain('符 34 → 40');
+      expect(html).not.toContain('基本点');
+      expect(html).not.toContain('点差');
     }
   });
 
