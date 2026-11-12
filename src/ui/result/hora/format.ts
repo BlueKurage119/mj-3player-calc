@@ -5,10 +5,12 @@ import type { Payment } from '../../../core/payment';
 import type { Table } from '../../../core/table';
 import type { TileCountsIndex } from '../../../core/tile';
 import type { NormalYaku, Yakuman } from '../../../core/yaku';
+import { formatNumber, formatPoints } from '../hora-summary';
 import {
   FU_LABELS,
   type FuLabelKey,
   LIMIT_LABELS,
+  type LimitKey,
   YAKU_LABELS,
   YAKUMAN_LABELS,
   YAKUMAN_MULTIPLE_LABELS
@@ -118,32 +120,41 @@ export const fuRowName = (
   }
 };
 
-/** 本場込み打点 (ロン: "1400", 親ツモ: "900オール", 子ツモ: "600·900") */
-export const formatPointsWithHonba = (payment: Payment): string => {
-  if (payment.detail.by === 'ron') {
-    return String(payment.detail.discarder.withHonba);
-  }
-  if (payment.detail.winner === 'dealer') {
-    return `${payment.detail.eachNonDealer.withHonba}オール`;
-  }
-  return `${payment.detail.nonDealer.withHonba}·${payment.detail.dealer.withHonba}`;
+/** 次の段階のバッジ文字列 (例: "＋1飜で跳満") */
+export const nextTierText = (tier: {
+  plusHan: number;
+  limit: LimitKey;
+}): string => {
+  return `＋${tier.plusHan}飜で${LIMIT_LABELS[tier.limit]}`;
 };
 
-/** 本場込みの行テキスト (payment.honba > 0 のときだけ。例: "は 1400") */
-export const formatHonbaText = (payment: Payment): string | null => {
-  if (payment.honba <= 0) return null;
-  return `は ${formatPointsWithHonba(payment)}`;
-};
+/**
+ * 支払いの内訳行を返す
+ * ツモ: (1) payment.honba > 0 のとき「は {formatPoints(payment, true)}」
+ *      (2) 常に「合計 {total}点」、bonus > 0 なら「合計 {total}(+{bonus})点」
+ * ロン: (1) payment.honba > 0 のとき「は {formatPoints(payment, true)}」
+ *      (2) payment.bonus > 0 のとき「(+{bonus})点」
+ */
+export const payDetailLines = (payment: Payment): string[] => {
+  const lines: string[] = [];
+  if (payment.detail.by === 'tsumo') {
+    if (payment.honba > 0) {
+      lines.push(`は ${formatPoints(payment, true)}`);
+    }
+    const bonusPart =
+      payment.bonus > 0 ? `(+${formatNumber(payment.bonus)})` : '';
+    lines.push(`合計 ${formatNumber(payment.total)}${bonusPart}点`);
+    return lines;
+  }
 
-/** 合計行テキスト (ツモは常時、ロンは bonus > 0 のとき) */
-export const formatTotalText = (payment: Payment): string | null => {
-  if (payment.detail.by === 'ron' && payment.bonus <= 0) {
-    return null;
+  // ロン
+  if (payment.honba > 0) {
+    lines.push(`は ${formatPoints(payment, true)}`);
   }
   if (payment.bonus > 0) {
-    return `合計 ${payment.total}(+${payment.bonus})点`;
+    lines.push(`(+${formatNumber(payment.bonus)})点`);
   }
-  return `合計 ${payment.total}点`;
+  return lines;
 };
 
 /** 基本点行テキスト */

@@ -4,7 +4,12 @@ import type { Payment } from '../../core/payment';
 import type { ScoredHora } from '../../core/result';
 import type { Rule } from '../../core/rule';
 import type { Table } from '../../core/table';
-import { formatPoints, horaGlanceParts, isNoYaku } from './hora-summary';
+import {
+  formatNumber,
+  formatPoints,
+  horaGlanceParts,
+  isNoYaku
+} from './hora-summary';
 
 const defaultOptions: HandOptions = {
   riichi: 'none',
@@ -286,8 +291,14 @@ describe('hora-summary (E2 和了要約・役なし判定・バナー打点)', (
     ).toBe(false);
   });
 
-  it('E2-7: formatPoints - ロン打点、子ツモ打点、親ツモ打点を正しくフォーマットする', () => {
-    // ロン: 1000
+  it('E2-6: formatNumber - 3桁区切りの手書き関数', () => {
+    expect(formatNumber(700)).toBe('700');
+    expect(formatNumber(1500)).toBe('1,500');
+    expect(formatNumber(128000)).toBe('128,000');
+  });
+
+  it('E2-7: formatPoints - ロン打点、子ツモ打点、親ツモ打点、withHonba を正しくフォーマットする', () => {
+    // ロン: 1,000
     const ronPayment: Payment = {
       detail: { by: 'ron', discarder: { base: 1000, withHonba: 1400 } },
       total: 1000,
@@ -295,9 +306,10 @@ describe('hora-summary (E2 和了要約・役なし判定・バナー打点)', (
       deposit: 0,
       bonus: 400
     };
-    expect(formatPoints(ronPayment)).toBe('1000');
+    expect(formatPoints(ronPayment)).toBe('1,000');
+    expect(formatPoints(ronPayment, true)).toBe('1,400');
 
-    // 子ツモ: 400·700
+    // 子ツモ: 400・700 (withHonba で R07 ツモ 600・900)
     const childTsumoPayment: Payment = {
       detail: {
         by: 'tsumo',
@@ -310,7 +322,8 @@ describe('hora-summary (E2 和了要約・役なし判定・バナー打点)', (
       deposit: 0,
       bonus: 400
     };
-    expect(formatPoints(childTsumoPayment)).toBe('400·700');
+    expect(formatPoints(childTsumoPayment)).toBe('400・700');
+    expect(formatPoints(childTsumoPayment, true)).toBe('600・900');
 
     // 親ツモ: 700オール
     const dealerTsumoPayment: Payment = {
@@ -325,9 +338,10 @@ describe('hora-summary (E2 和了要約・役なし判定・バナー打点)', (
       bonus: 400
     };
     expect(formatPoints(dealerTsumoPayment)).toBe('700オール');
+    expect(formatPoints(dealerTsumoPayment, true)).toBe('900オール');
   });
 
-  it('E2-8: horaGlanceParts - R28 でロン 2000 / ツモ 700·1300、R24 でロン 役なし / ツモ 300·500', async () => {
+  it('E2-8: horaGlanceParts - R28 でロン 2,000 / ツモ 700・1,300、R24 でロン 役なし / ツモ 300・500', async () => {
     const { generateResult, DEFAULT_RULE } = await getCore();
     const southTable: Table = {
       round: 'east',
@@ -366,8 +380,8 @@ describe('hora-summary (E2 和了要約・役なし判定・バナー打点)', (
     if (r28 && r28.type === 'hora-shanten' && r28.info.type === 'hora') {
       const parts = horaGlanceParts(r28.info.hora);
       expect(parts).toEqual([
-        { by: 'ron', kind: 'points', text: '2000' },
-        { by: 'tsumo', kind: 'points', text: '700·1300' }
+        { by: 'ron', kind: 'points', text: '2,000' },
+        { by: 'tsumo', kind: 'points', text: '700・1,300' }
       ]);
     }
 
@@ -403,7 +417,7 @@ describe('hora-summary (E2 和了要約・役なし判定・バナー打点)', (
       const parts = horaGlanceParts(r24.info.hora);
       expect(parts).toEqual([
         { by: 'ron', kind: 'no-yaku' },
-        { by: 'tsumo', kind: 'points', text: '300·500' }
+        { by: 'tsumo', kind: 'points', text: '300・500' }
       ]);
     }
   });

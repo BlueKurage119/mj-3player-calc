@@ -19,20 +19,39 @@ export type GlanceSide =
   | { by: 'ron' | 'tsumo'; kind: 'no-yaku' }
   | { by: 'ron' | 'tsumo'; kind: 'none' };
 
+/** 3桁区切り。ロケールに依存しないよう手書き */
+export const formatNumber = (n: number): string =>
+  String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+
+/** ツモの支払いの区切り(UI 監修で変えるときはここだけ) */
+export const TSUMO_SEPARATOR = '・';
+
 /**
- * 本場抜きの打点。
- * ロン: "2600"
- * 子のツモ: "子·親"("1000·2000")
- * 親のツモ: "700オール"
+ * 打点。detail の各値に withHonba を使うかを選べる。
+ * ロン: "2,600"
+ * 子のツモ: "子・親"("1,000・2,000")
+ * 親のツモ: "1,000オール"
  */
-export const formatPoints = (payment: Payment): string => {
+export const formatPoints = (payment: Payment, withHonba = false): string => {
   if (payment.detail.by === 'ron') {
-    return String(payment.detail.discarder.base);
+    const val = withHonba
+      ? payment.detail.discarder.withHonba
+      : payment.detail.discarder.base;
+    return formatNumber(val);
   }
   if (payment.detail.winner === 'dealer') {
-    return `${payment.detail.eachNonDealer.base}オール`;
+    const val = withHonba
+      ? payment.detail.eachNonDealer.withHonba
+      : payment.detail.eachNonDealer.base;
+    return `${formatNumber(val)}オール`;
   }
-  return `${payment.detail.nonDealer.base}·${payment.detail.dealer.base}`;
+  const nonDealerVal = withHonba
+    ? payment.detail.nonDealer.withHonba
+    : payment.detail.nonDealer.base;
+  const dealerVal = withHonba
+    ? payment.detail.dealer.withHonba
+    : payment.detail.dealer.base;
+  return `${formatNumber(nonDealerVal)}${TSUMO_SEPARATOR}${formatNumber(dealerVal)}`;
 };
 
 /** 各 by について isNoYaku でない候補のうち payment.total が最大の1件 */
