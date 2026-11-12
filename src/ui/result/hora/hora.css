@@ -246,3 +246,25 @@
   letter-spacing: var(--md-sys-typescale-body-medium-tracking);
   font-variant-numeric: tabular-nums;
 }
+
+/* 点差(折りたたみ) */
+.point-diff__list {
+  list-style: none;
+  margin: 0;
+  padding: 0.25rem 0.25rem 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.point-diff__row {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  color: var(--md-sys-color-on-surface-variant);
+  font-family: var(--md-sys-typescale-body-medium-font);
+  font-size: var(--md-sys-typescale-body-medium-size);
+  line-height: var(--md-sys-typescale-body-medium-line-height);
+  font-weight: var(--md-sys-typescale-body-medium-weight);
+  letter-spacing: var(--md-sys-typescale-body-medium-tracking);
+}

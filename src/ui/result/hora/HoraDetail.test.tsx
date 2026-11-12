@@ -355,6 +355,12 @@ describe('HoraDetail.test.tsx (E2 和了本体部品の表示)', () => {
       expect(ronHtml).toContain('は 1,400');
       expect(ronHtml).toContain('(+1,400)点');
       expect(ronHtml).not.toContain('合計');
+      // 点差(折りたたみの中)。受取総額 2,400 + 放銃者の支払い 1,400 = 3,800、傍観者は 2,400
+      expect(ronHtml).toContain('点差');
+      expect(ronHtml).toContain('放銃者との点差');
+      expect(ronHtml).toContain('3,800点');
+      expect(ronHtml).toContain('傍観者との点差');
+      expect(ronHtml).toContain('2,400点');
 
       const tsumo = r07.info.hora.filter(h => h.by === 'tsumo');
       const tsumoHtml = renderToStaticMarkup(
@@ -367,6 +373,11 @@ describe('HoraDetail.test.tsx (E2 和了本体部品の表示)', () => {
       // 意図的アサーション: ツモには「は 600・900」と「合計 1,100(+1,400)点」がある
       expect(tsumoHtml).toContain('は 600・900');
       expect(tsumoHtml).toContain('合計 1,100(+1,400)点');
+      // 点差: 受取総額 2,500 + 親 900 = 3,400、+ 子 600 = 3,100
+      expect(tsumoHtml).toContain('親との点差');
+      expect(tsumoHtml).toContain('3,400点');
+      expect(tsumoHtml).toContain('子との点差');
+      expect(tsumoHtml).toContain('3,100点');
     }
   });
 

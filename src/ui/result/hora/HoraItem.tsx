@@ -5,6 +5,7 @@ import { Divider } from '../../md';
 import { Tile } from '../../tile';
 import { formatPoints, isNoYaku } from '../hora-summary';
 import { FuBreakdown } from './FuBreakdown';
+import { PointDiff } from './PointDiff';
 import type { ResultContext } from './HoraDetail';
 import {
   formatBasePointText,
@@ -133,6 +134,9 @@ export function HoraItem({ hora, context }: HoraItemProps): React.JSX.Element {
 
       {/* 符・基本点のブロックの下の仕切り線(このあとに点数差の項目を足す。UI 監修) */}
       <Divider />
+
+      {/* 点差(折りたたみ。UI 監修) */}
+      <PointDiff payment={score.payment} />
     </article>
   );
 }

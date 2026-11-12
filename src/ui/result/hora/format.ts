@@ -190,3 +190,44 @@ export const formatFuSummary = (
   }
   return `符 ${rawFu}`;
 };
+
+/** 点差(和了で相手との点差が縮まる額)の1行 */
+export interface PointDiffRow {
+  label: string;
+  /** 「N点」の N(本場・供託を含む) */
+  points: number;
+}
+
+/**
+ * 点差の行を作る(livewing の PointDiff を三麻に合わせたもの)。
+ * 和了者の受取総額(打点+本場+供託)に、相手の支払い(本場込み)を足す。支払わない相手は受取総額だけ。
+ * ロン: 放銃者・傍観者。ツモ: 親が和了または親と子の差がない(ロン打点折半など)ときは「他家」、
+ * 子が和了して差があるときは「親」「子」。
+ */
+export const pointDiffRows = (payment: Payment): PointDiffRow[] => {
+  const gain = payment.total + payment.bonus;
+  const detail = payment.detail;
+  if (detail.by === 'ron') {
+    return [
+      { label: '放銃者との点差', points: gain + detail.discarder.withHonba },
+      { label: '傍観者との点差', points: gain }
+    ];
+  }
+  if (detail.winner === 'dealer') {
+    return [
+      {
+        label: '他家との点差',
+        points: gain + detail.eachNonDealer.withHonba
+      }
+    ];
+  }
+  const dealerPoints = gain + detail.dealer.withHonba;
+  const nonDealerPoints = gain + detail.nonDealer.withHonba;
+  if (dealerPoints === nonDealerPoints) {
+    return [{ label: '他家との点差', points: dealerPoints }];
+  }
+  return [
+    { label: '親との点差', points: dealerPoints },
+    { label: '子との点差', points: nonDealerPoints }
+  ];
+};

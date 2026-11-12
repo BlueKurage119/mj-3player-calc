@@ -7,6 +7,7 @@ import type { Table } from '../../../core/table';
 import type { NormalYaku, Yakuman } from '../../../core/yaku';
 import {
   baseFormula,
+  pointDiffRows,
   formatBasePointText,
   formatFuSummary,
   limitName,
@@ -276,5 +277,70 @@ describe('format.ts (E2 和了文言・書式関数)', () => {
     expect(formatFuSummary(30, 30, 'mentsu')).toBe('符 30');
     expect(formatFuSummary(34, 40, 'mentsu')).toBe('符 34 → 40');
     expect(formatFuSummary(25, 25, 'chitoitsu')).toBe('符 25');
+  });
+
+  it('E2-PD1: pointDiffRows - ロンは放銃者・傍観者、ツモは親・子(差がなければ他家、親の和了も他家)', () => {
+    const ron: Payment = {
+      detail: { by: 'ron', discarder: { base: 1000, withHonba: 1400 } },
+      total: 1000,
+      honba: 400,
+      deposit: 1000,
+      bonus: 1400
+    };
+    // 受取総額 2,400。放銃者との点差 = 2,400 + 1,400
+    expect(pointDiffRows(ron)).toEqual([
+      { label: '放銃者との点差', points: 3800 },
+      { label: '傍観者との点差', points: 2400 }
+    ]);
+
+    const childTsumo: Payment = {
+      detail: {
+        by: 'tsumo',
+        winner: 'nonDealer',
+        dealer: { base: 700, withHonba: 900 },
+        nonDealer: { base: 400, withHonba: 600 }
+      },
+      total: 1100,
+      honba: 400,
+      deposit: 1000,
+      bonus: 1400
+    };
+    // 受取総額 2,500
+    expect(pointDiffRows(childTsumo)).toEqual([
+      { label: '親との点差', points: 3400 },
+      { label: '子との点差', points: 3100 }
+    ]);
+
+    // ロン打点折半(親と子の支払いが等しい): 他家との点差の1行
+    const splitTsumo: Payment = {
+      detail: {
+        by: 'tsumo',
+        winner: 'nonDealer',
+        dealer: { base: 700, withHonba: 900 },
+        nonDealer: { base: 700, withHonba: 900 }
+      },
+      total: 1400,
+      honba: 400,
+      deposit: 1000,
+      bonus: 1400
+    };
+    expect(pointDiffRows(splitTsumo)).toEqual([
+      { label: '他家との点差', points: 3700 }
+    ]);
+
+    const dealerTsumo: Payment = {
+      detail: {
+        by: 'tsumo',
+        winner: 'dealer',
+        eachNonDealer: { base: 700, withHonba: 900 }
+      },
+      total: 1400,
+      honba: 400,
+      deposit: 0,
+      bonus: 400
+    };
+    expect(pointDiffRows(dealerTsumo)).toEqual([
+      { label: '他家との点差', points: 2700 }
+    ]);
   });
 });
