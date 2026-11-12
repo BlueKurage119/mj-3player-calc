@@ -30,7 +30,7 @@ describe('HoraDetail.test.tsx (E2 和了本体部品の表示)', () => {
     deposit: 0
   };
 
-  it('E2-17: R01 ロン - 平和、1飜、30符、基本点 240、開閉ボタン 符 30 が描画される', async () => {
+  it('E2-17: R01 ロン - 平和、1飜、30符、＋4飜で満貫、基本点 240、開閉ボタン 符 30 が描画される', async () => {
     const { generateResult, DEFAULT_RULE } = await getCore();
 
     // R01: 234p567p34s678s99p + 2s (南家, 平和1 / 30符 / 1000)
@@ -65,12 +65,16 @@ describe('HoraDetail.test.tsx (E2 和了本体部品の表示)', () => {
     if (res?.type === 'hora-shanten' && res.info.type === 'hora') {
       const ron = res.info.hora.filter(h => h.by === 'ron');
       const html = renderToStaticMarkup(
-        <HoraDetail hora={ron} context={{ table: southTable }} />
+        <HoraDetail
+          hora={ron}
+          context={{ table: southTable, rule: DEFAULT_RULE }}
+        />
       );
 
       // 意図的アサーション: 和了カード内の各表示文言を検証
       expect(html).toContain('平和');
       expect(html).toContain('1飜 30符');
+      expect(html).toContain('＋4飜で満貫');
       expect(html).toContain('基本点 240');
       expect(html).toContain('符 30');
     }
@@ -110,7 +114,10 @@ describe('HoraDetail.test.tsx (E2 和了本体部品の表示)', () => {
     if (res?.type === 'hora-shanten' && res.info.type === 'hora') {
       const ron = res.info.hora.filter(h => h.by === 'ron');
       const html = renderToStaticMarkup(
-        <HoraDetail hora={ron} context={{ table: southTable }} />
+        <HoraDetail
+          hora={ron}
+          context={{ table: southTable, rule: DEFAULT_RULE }}
+        />
       );
 
       // 意図的アサーション: 役なし時は点数・符ボタンが非表示であることを検証
@@ -156,7 +163,10 @@ describe('HoraDetail.test.tsx (E2 和了本体部品の表示)', () => {
     if (r24?.type === 'hora-shanten' && r24.info.type === 'hora') {
       const ron = r24.info.hora.filter(h => h.by === 'ron');
       const html = renderToStaticMarkup(
-        <HoraDetail hora={ron} context={{ table: southTable }} />
+        <HoraDetail
+          hora={ron}
+          context={{ table: southTable, rule: DEFAULT_RULE }}
+        />
       );
       expect(html).toContain('符 34 → 40');
     }
@@ -191,7 +201,10 @@ describe('HoraDetail.test.tsx (E2 和了本体部品の表示)', () => {
     if (r17?.type === 'hora-shanten' && r17.info.type === 'hora') {
       const ron = r17.info.hora.filter(h => h.by === 'ron');
       const html = renderToStaticMarkup(
-        <HoraDetail hora={ron} context={{ table: southTable }} />
+        <HoraDetail
+          hora={ron}
+          context={{ table: southTable, rule: DEFAULT_RULE }}
+        />
       );
       expect(html).toContain('符 25');
     }
@@ -226,13 +239,16 @@ describe('HoraDetail.test.tsx (E2 和了本体部品の表示)', () => {
     if (r16?.type === 'hora-shanten' && r16.info.type === 'hora') {
       const ron = r16.info.hora.filter(h => h.by === 'ron');
       const html = renderToStaticMarkup(
-        <HoraDetail hora={ron} context={{ table: southTable }} />
+        <HoraDetail
+          hora={ron}
+          context={{ table: southTable, rule: DEFAULT_RULE }}
+        />
       );
       expect(html).not.toContain('fu-breakdown');
     }
   });
 
-  it('E2-20: R22 役満複合なしで3役満がすべて出て 二倍役満 と 64000、ダブル の文字が無い', async () => {
+  it('E2-20: R22 役満複合なしで3役満がすべて出て 二倍役満 と 64,000、ダブル の文字が無い', async () => {
     const { generateResult, DEFAULT_RULE } = await getCore();
     const southTable: Table = {
       round: 'east',
@@ -242,7 +258,7 @@ describe('HoraDetail.test.tsx (E2 和了本体部品の表示)', () => {
     };
     const ruleNoMulti: Rule = { ...DEFAULT_RULE, multipleYakuman: false };
 
-    // R22: 四暗刻単騎・大三元・字一色 (南家, 複合なし) -> 二倍役満, 64000
+    // R22: 四暗刻単騎・大三元・字一色 (南家, 複合なし) -> 二倍役満, 64,000
     const r22 = generateResult(
       southTable,
       {
@@ -273,7 +289,10 @@ describe('HoraDetail.test.tsx (E2 和了本体部品の表示)', () => {
     if (r22?.type === 'hora-shanten' && r22.info.type === 'hora') {
       const ron = r22.info.hora.filter(h => h.by === 'ron');
       const html = renderToStaticMarkup(
-        <HoraDetail hora={ron} context={{ table: southTable }} />
+        <HoraDetail
+          hora={ron}
+          context={{ table: southTable, rule: ruleNoMulti }}
+        />
       );
 
       // 意図的アサーション: 3つの役満名が表示されることを検証
@@ -281,12 +300,12 @@ describe('HoraDetail.test.tsx (E2 和了本体部品の表示)', () => {
       expect(html).toContain('大三元');
       expect(html).toContain('字一色');
       expect(html).toContain('二倍役満');
-      expect(html).toContain('64000');
+      expect(html).toContain('64,000');
       expect(html).not.toContain('ダブル');
     }
   });
 
-  it('E2-21: R07 本場と供託 - は 1400 と 合計 1000(+1400)点 が表示される', async () => {
+  it('E2-21: R07 本場と供託 - ツモに「は 600・900」「合計 1,100(+1,400)点」、ロンに「は 1,400」「(+1,400)点」があり「合計」が無い', async () => {
     const { generateResult, DEFAULT_RULE } = await getCore();
     const southTable: Table = {
       round: 'east',
@@ -325,13 +344,160 @@ describe('HoraDetail.test.tsx (E2 和了本体部品の表示)', () => {
 
     if (r07?.type === 'hora-shanten' && r07.info.type === 'hora') {
       const ron = r07.info.hora.filter(h => h.by === 'ron');
-      const html = renderToStaticMarkup(
-        <HoraDetail hora={ron} context={{ table: southTable }} />
+      const ronHtml = renderToStaticMarkup(
+        <HoraDetail
+          hora={ron}
+          context={{ table: southTable, rule: DEFAULT_RULE }}
+        />
       );
 
-      // 意図的アサーション: 本場込み打点と合計加算表示を検証
-      expect(html).toContain('は 1400');
-      expect(html).toContain('合計 1000(+1400)点');
+      // 意図的アサーション: ロンには「は 1,400」と「(+1,400)点」があり、「合計」が無い
+      expect(ronHtml).toContain('は 1,400');
+      expect(ronHtml).toContain('(+1,400)点');
+      expect(ronHtml).not.toContain('合計');
+
+      const tsumo = r07.info.hora.filter(h => h.by === 'tsumo');
+      const tsumoHtml = renderToStaticMarkup(
+        <HoraDetail
+          hora={tsumo}
+          context={{ table: southTable, rule: DEFAULT_RULE }}
+        />
+      );
+
+      // 意図的アサーション: ツモには「は 600・900」と「合計 1,100(+1,400)点」がある
+      expect(tsumoHtml).toContain('は 600・900');
+      expect(tsumoHtml).toContain('合計 1,100(+1,400)点');
+    }
+  });
+
+  it('E2-22: R28 13枚複数和了牌 - article.hora-item が6件、ron・tsumo が交互に並び和了牌まとめ見出しが無い', async () => {
+    const { generateResult, DEFAULT_RULE } = await getCore();
+
+    // R28: 13枚 234p567p34s678s99p (和了牌 2s, 5s, 赤5s)
+    const r28 = generateResult(
+      southTable,
+      {
+        hand: [
+          { type: 'p', n: 2 },
+          { type: 'p', n: 3 },
+          { type: 'p', n: 4 },
+          { type: 'p', n: 5, red: false },
+          { type: 'p', n: 6 },
+          { type: 'p', n: 7 },
+          { type: 's', n: 3 },
+          { type: 's', n: 4 },
+          { type: 's', n: 6 },
+          { type: 's', n: 7 },
+          { type: 's', n: 8 },
+          { type: 'p', n: 9 },
+          { type: 'p', n: 9 }
+        ],
+        melds: [],
+        dora: [],
+        nuki: 0
+      },
+      defaultOptions,
+      DEFAULT_RULE
+    );
+
+    if (r28?.type === 'hora-shanten' && r28.info.type === 'hora') {
+      const html = renderToStaticMarkup(
+        <HoraDetail
+          hora={r28.info.hora}
+          context={{ table: southTable, rule: DEFAULT_RULE }}
+        />
+      );
+
+      // 和了牌まとめの見出し (hora-group__tile や 和了候補) が無い
+      expect(html).not.toContain('hora-group');
+      expect(html).not.toContain('和了候補');
+
+      // article.hora-item が6件
+      const matches = html.match(/class="hora-item"/g);
+      expect(matches?.length).toBe(6);
+
+      // data-hora-by が ron, tsumo の順に交互
+      const byMatches = Array.from(
+        html.matchAll(/data-hora-by="(ron|tsumo)"/g)
+      ).map(m => m[1]);
+      expect(byMatches).toEqual([
+        'ron',
+        'tsumo',
+        'ron',
+        'tsumo',
+        'ron',
+        'tsumo'
+      ]);
+    }
+  });
+
+  it('E2-23: R13 と R14 で「＋」の文字が無い(次の段階が出ない)', async () => {
+    const { generateResult, DEFAULT_RULE } = await getCore();
+
+    // R13: 数え役満
+    const r11Hand = [
+      { type: 'p', n: 1 } as const,
+      { type: 'p', n: 2 } as const,
+      { type: 'p', n: 3 } as const,
+      { type: 'p', n: 4 } as const,
+      { type: 'p', n: 5, red: false } as const,
+      { type: 'p', n: 6 } as const,
+      { type: 'p', n: 7 } as const,
+      { type: 'p', n: 8 } as const,
+      { type: 'p', n: 9 } as const,
+      { type: 'p', n: 2 } as const,
+      { type: 'p', n: 3 } as const,
+      { type: 'p', n: 9 } as const,
+      { type: 'p', n: 9 } as const,
+      { type: 'p', n: 4 } as const
+    ];
+    const r13 = generateResult(
+      southTable,
+      { hand: r11Hand, melds: [], dora: [{ type: 'p', n: 3 }], nuki: 0 },
+      { ...defaultOptions, riichi: 'riichi', ippatsu: true },
+      DEFAULT_RULE
+    );
+    if (r13?.type === 'hora-shanten' && r13.info.type === 'hora') {
+      const html = renderToStaticMarkup(
+        <HoraDetail
+          hora={r13.info.hora}
+          context={{ table: southTable, rule: DEFAULT_RULE }}
+        />
+      );
+      expect(html).not.toContain('＋');
+    }
+
+    // R14: 大三元
+    const r14Hand = [
+      { type: 'z', n: 5 } as const,
+      { type: 'z', n: 5 } as const,
+      { type: 'z', n: 5 } as const,
+      { type: 'z', n: 6 } as const,
+      { type: 'z', n: 6 } as const,
+      { type: 'z', n: 6 } as const,
+      { type: 'z', n: 7 } as const,
+      { type: 'z', n: 7 } as const,
+      { type: 'p', n: 1 } as const,
+      { type: 'p', n: 2 } as const,
+      { type: 'p', n: 3 } as const,
+      { type: 's', n: 9 } as const,
+      { type: 's', n: 9 } as const,
+      { type: 'z', n: 7 } as const
+    ];
+    const r14 = generateResult(
+      southTable,
+      { hand: r14Hand, melds: [], dora: [], nuki: 0 },
+      defaultOptions,
+      DEFAULT_RULE
+    );
+    if (r14?.type === 'hora-shanten' && r14.info.type === 'hora') {
+      const html = renderToStaticMarkup(
+        <HoraDetail
+          hora={r14.info.hora}
+          context={{ table: southTable, rule: DEFAULT_RULE }}
+        />
+      );
+      expect(html).not.toContain('＋');
     }
   });
 });

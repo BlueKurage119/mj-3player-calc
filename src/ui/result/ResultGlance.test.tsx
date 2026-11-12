@@ -74,7 +74,7 @@ describe('ResultGlance', () => {
     expect(markup).toContain('data-result-kind="tempai"');
   });
 
-  it('E2-11: R02 で「ロン 1500 / ツモ 700オール」が出ること、和了牌の牌画像と「和了」の文字が無いこと', async () => {
+  it('E2-11: R02 で「ロン 1,500 / ツモ 700オール」が出ること、和了牌の牌画像と「和了」の文字が無いこと', async () => {
     const { generateResult } = await import('../../core/result');
     const { DEFAULT_RULE } = await import('../../core/rule');
     const eastTable = {
@@ -127,7 +127,7 @@ describe('ResultGlance', () => {
         <ResultGlance view={{ kind: 'hora', hora: res.info.hora }} />
       );
       expect(markup).toContain('ロン');
-      expect(markup).toContain('1500');
+      expect(markup).toContain('1,500');
       expect(markup).toContain('ツモ');
       expect(markup).toContain('700オール');
       expect(markup).toContain('data-result-kind="hora"');
@@ -136,7 +136,7 @@ describe('ResultGlance', () => {
     }
   });
 
-  it('E2-14: R24 で「ロン 役なし / ツモ 300·500」', async () => {
+  it('E2-14: R24 で「ロン 役なし / ツモ 300・500」', async () => {
     const { generateResult } = await import('../../core/result');
     const { DEFAULT_RULE } = await import('../../core/rule');
     const southTable = {
@@ -191,7 +191,7 @@ describe('ResultGlance', () => {
       expect(markup).toContain('ロン');
       expect(markup).toContain('役なし');
       expect(markup).toContain('ツモ');
-      expect(markup).toContain('300·500');
+      expect(markup).toContain('300・500');
     }
   });
 
