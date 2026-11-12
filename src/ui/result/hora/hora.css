@@ -225,6 +225,25 @@
   opacity: 0.5;
 }
 
+.fu-breakdown__win-tile {
+  position: relative;
+  display: inline-flex;
+}
+
+/* 和了牌の牌の上に、薄いピンク(エラー色を薄く重ねる。牌の絵は白地の画像なので、背景ではなく重ねて表す) */
+.fu-breakdown__win-tile::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 0.125rem;
+  background-color: color-mix(
+    in srgb,
+    var(--md-sys-color-error) 28%,
+    transparent
+  );
+  pointer-events: none;
+}
+
 .fu-breakdown__tiles {
   display: inline-flex;
   align-items: center;

@@ -59,6 +59,7 @@ export function HoraItem({ hora, context }: HoraItemProps): React.JSX.Element {
               displayFu={displayFu ?? 0}
               horaType={hora.type}
               table={context?.table}
+              horaTile={hora.horaTile}
               omitBasePoint
             />
           </>
@@ -135,6 +136,7 @@ export function HoraItem({ hora, context }: HoraItemProps): React.JSX.Element {
           displayFu={displayFu ?? 0}
           horaType={hora.type}
           table={context?.table}
+          horaTile={hora.horaTile}
         />
       ) : null}
 

@@ -190,4 +190,30 @@ describe('fu-rows.ts (E2 符の内訳行の組み立て)', () => {
     expect(byName('順子')?.muted).toBe(true);
     expect(byName('ツモ')?.muted).toBeFalsy();
   });
+
+  it('E2-15: fuRows - 待ちのブロックの和了牌の位置(winTileIndex)と、そのブロックの行は薄くしない', () => {
+    // 2s3s4s の 2s で和了(両面)。順子 0符 だが、待ちを含むので muted でない
+    const fu = [
+      { type: 'futei', fu: 20 },
+      { type: 'shuntsu', tile: 9, fu: 0 },
+      {
+        type: 'waiting',
+        waitingType: 'ryanmen',
+        block: { type: 'shuntsu', tile: 19, fu: 0 },
+        fu: 0
+      }
+    ] as Fu[];
+    const rows = fuRows(fu, undefined, 'mentsu', { type: 's', n: 2 });
+    const waitBlock = rows.find(r => r.winTileIndex !== undefined);
+    expect(waitBlock?.winTileIndex).toBe(0);
+    expect(waitBlock?.muted).toBe(false);
+    // ほかの順子(和了牌を含まない)は薄いまま
+    expect(rows.find(r => r.name === '順子' && r !== waitBlock)?.muted).toBe(
+      true
+    );
+    // 和了牌を渡さなければ、位置は付かない
+    expect(
+      fuRows(fu, undefined, 'mentsu').some(r => r.winTileIndex !== undefined)
+    ).toBe(false);
+  });
 });

@@ -2,6 +2,7 @@ import type React from 'react';
 import type { Fu } from '../../../core/fu';
 import type { HoraScore } from '../../../core/hora-score';
 import type { Table } from '../../../core/table';
+import type { Tile as CoreTile } from '../../../core/tile';
 import { Disclosure } from '../../expressive';
 import { Tile } from '../../tile';
 import { baseFormula, formatBasePointText, formatFuSummary } from './format';
@@ -14,6 +15,8 @@ export interface FuBreakdownProps {
   displayFu: number;
   horaType: 'mentsu' | 'chitoitsu' | 'kokushi' | 'shisanputa';
   table?: Table | undefined;
+  /** 和了牌(待ちのブロックの和了牌の背景に色を付ける) */
+  horaTile?: CoreTile | undefined;
   /** 基本点を出さない(役なしのカード) */
   omitBasePoint?: boolean | undefined;
 }
@@ -25,6 +28,7 @@ export function FuBreakdown(props: FuBreakdownProps): React.JSX.Element | null {
     displayFu,
     horaType,
     table,
+    horaTile,
     omitBasePoint = false
   } = props;
 
@@ -35,7 +39,7 @@ export function FuBreakdown(props: FuBreakdownProps): React.JSX.Element | null {
 
   const rawFu = sumRawFu(fu);
   const summaryText = formatFuSummary(rawFu, displayFu, horaType);
-  const rows = fuRows(fu, table, horaType);
+  const rows = fuRows(fu, table, horaType, horaTile);
   const formula = baseFormula(score, displayFu);
 
   return (
@@ -65,7 +69,13 @@ export function FuBreakdown(props: FuBreakdownProps): React.JSX.Element | null {
                     t.type === 'back'
                       ? `back-${ti}`
                       : `${t.type}${t.n}${t.type !== 'z' && t.n === 5 && t.red ? 'r' : ''}-${ti}`;
-                  return <Tile key={tileKey} tile={t} />;
+                  return ti === row.winTileIndex ? (
+                    <span key={tileKey} className="fu-breakdown__win-tile">
+                      <Tile tile={t} />
+                    </span>
+                  ) : (
+                    <Tile key={tileKey} tile={t} />
+                  );
                 })}
               </span>
               <span className="fu-breakdown__name">{row.name}</span>

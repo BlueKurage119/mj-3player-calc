@@ -17,7 +17,12 @@ export interface FuRow {
   tiles?: TileOrBack[] | undefined;
   /** 0符の行を薄く見せる(平和ツモを除く。UI 監修) */
   muted?: boolean | undefined;
+  /** 待ちのブロックの行で、和了牌にあたる牌の位置(tiles の添字。背景に色を付ける。UI 監修) */
+  winTileIndex?: number | undefined;
 }
+
+const sameKind = (a: TileOrBack, b: CoreTile): boolean =>
+  a.type !== 'back' && a.type === b.type && a.n === b.n;
 
 /** TileCountsIndex (0〜33) を CoreTile に変換 (5は赤にしない) */
 export const countsIndexToTile = (index: TileCountsIndex): CoreTile => {
@@ -89,7 +94,8 @@ const blockToRow = (block: BlockFu, table?: Table): FuRow => {
 export const fuRows = (
   fu: Fu[],
   table?: Table,
-  horaType?: 'mentsu' | 'chitoitsu' | 'kokushi' | 'shisanputa'
+  horaType?: 'mentsu' | 'chitoitsu' | 'kokushi' | 'shisanputa',
+  horaTile?: CoreTile
 ): FuRow[] => {
   if (horaType === 'chitoitsu') {
     return [{ name: FU_LABELS.chitoitsu, fu: 25 }];
@@ -109,7 +115,17 @@ export const fuRows = (
   for (const item of ordered) {
     if (item.type === 'waiting') {
       // 2行に分ける: (1) block を上の規則で1行、(2) 待ちの名と waiting.fu
-      rows.push(blockToRow(item.block, table));
+      const blockRow = blockToRow(item.block, table);
+      if (horaTile && blockRow.tiles) {
+        // 待ちのブロックの中の和了牌(同じ牌が複数あるときは先頭の1枚)
+        const idx = blockRow.tiles.findIndex(t => sameKind(t, horaTile));
+        if (idx >= 0) {
+          blockRow.winTileIndex = idx;
+          // 待ちの形を示す行なので、0符でも薄くしない
+          blockRow.muted = false;
+        }
+      }
+      rows.push(blockRow);
       rows.push({
         name: FU_LABELS[item.waitingType],
         fu: item.fu
