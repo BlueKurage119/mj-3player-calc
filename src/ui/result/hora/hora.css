@@ -225,6 +225,14 @@
   opacity: 0.5;
 }
 
+.fu-breakdown__list--no-tiles .fu-breakdown__row {
+  grid-template-columns: 1fr auto;
+}
+
+.fu-breakdown__list--no-tiles .fu-breakdown__tiles {
+  display: none;
+}
+
 .fu-breakdown__win-tile {
   position: relative;
   display: inline-flex;

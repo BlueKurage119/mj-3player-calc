@@ -211,6 +211,8 @@ describe('HoraDetail.test.tsx (E2 和了本体部品の表示)', () => {
         />
       );
       expect(html).toContain('符 25');
+      // 七対子は牌の行がないので、牌の列を詰める(名称を左端に寄せる。UI 監修)
+      expect(html).toContain('fu-breakdown__list--no-tiles');
     }
 
     // R16: 国士無双 (役満) -> 開閉ボタンなし

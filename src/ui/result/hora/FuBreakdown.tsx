@@ -41,6 +41,8 @@ export function FuBreakdown(props: FuBreakdownProps): React.JSX.Element | null {
   const summaryText = formatFuSummary(rawFu, displayFu, horaType);
   const rows = fuRows(fu, table, horaType, horaTile);
   const formula = baseFormula(score, displayFu);
+  // 牌の行が1つもないとき(七対子)は、牌の列を詰めて名称を左端に寄せる
+  const hasTiles = rows.some(r => (r.tiles?.length ?? 0) > 0);
 
   return (
     <div className="fu-breakdown">
@@ -53,7 +55,13 @@ export function FuBreakdown(props: FuBreakdownProps): React.JSX.Element | null {
           </span>
         }
       >
-        <ul className="fu-breakdown__list">
+        <ul
+          className={
+            hasTiles
+              ? 'fu-breakdown__list'
+              : 'fu-breakdown__list fu-breakdown__list--no-tiles'
+          }
+        >
           {rows.map((row, i) => (
             <li
               key={`${row.name}-${row.fu}-${i}`}
