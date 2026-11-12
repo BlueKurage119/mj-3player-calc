@@ -51,6 +51,10 @@ export const formatPoints = (payment: Payment, withHonba = false): string => {
   const dealerVal = withHonba
     ? payment.detail.dealer.withHonba
     : payment.detail.dealer.base;
+  // 子ツモでも2人の支払いが等しいとき(ロン打点折半・北家分折半など)は「オール」
+  if (nonDealerVal === dealerVal) {
+    return `${formatNumber(nonDealerVal)}オール`;
+  }
   return `${formatNumber(nonDealerVal)}${TSUMO_SEPARATOR}${formatNumber(dealerVal)}`;
 };
 

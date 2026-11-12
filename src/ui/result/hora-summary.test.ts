@@ -297,6 +297,40 @@ describe('hora-summary (E2 和了要約・役なし判定・バナー打点)', (
     expect(formatNumber(128000)).toBe('128,000');
   });
 
+  it('E2-7b: formatPoints - 子ツモでも2人の支払いが等しいとき(ロン打点折半など)は「オール」', () => {
+    // R05 相当: ロン打点折半で子ツモ 700・700 -> 700オール。本場込み(R07 相当 900・900)も同様
+    const splitPayment: Payment = {
+      detail: {
+        by: 'tsumo',
+        winner: 'nonDealer',
+        dealer: { base: 700, withHonba: 900 },
+        nonDealer: { base: 700, withHonba: 900 }
+      },
+      total: 1400,
+      honba: 400,
+      deposit: 0,
+      bonus: 400
+    };
+    expect(formatPoints(splitPayment)).toBe('700オール');
+    expect(formatPoints(splitPayment, true)).toBe('900オール');
+
+    // 本場込みで等しくなくなる場合は「・」(例: 基本 700・700 で本場込みが 900・1,000)
+    const unevenWithHonba: Payment = {
+      detail: {
+        by: 'tsumo',
+        winner: 'nonDealer',
+        dealer: { base: 700, withHonba: 1000 },
+        nonDealer: { base: 700, withHonba: 900 }
+      },
+      total: 1400,
+      honba: 400,
+      deposit: 0,
+      bonus: 400
+    };
+    expect(formatPoints(unevenWithHonba)).toBe('700オール');
+    expect(formatPoints(unevenWithHonba, true)).toBe('900・1,000');
+  });
+
   it('E2-7: formatPoints - ロン打点、子ツモ打点、親ツモ打点、withHonba を正しくフォーマットする', () => {
     // ロン: 1,000
     const ronPayment: Payment = {
