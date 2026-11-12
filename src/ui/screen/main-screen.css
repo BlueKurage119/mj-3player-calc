@@ -464,7 +464,7 @@ body {
 
 .main-screen__bottom-spacer {
   width: 100%;
-  height: var(--sheet-height, 0px);
+  height: calc(var(--sheet-height, 0px) + var(--result-banner-height, 0px));
   flex-shrink: 0;
 }
 

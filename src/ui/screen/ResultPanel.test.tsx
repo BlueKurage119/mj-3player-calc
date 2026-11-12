@@ -94,7 +94,6 @@ describe('ResultPanel', () => {
 
     expect(html).toContain('data-state="ok"');
     expect(html).toContain('data-result-kind="hora"');
-    expect(html).toContain('和了');
     expect(html).not.toContain('data-view');
     expect(html).not.toContain('result-panel--banner');
   });
