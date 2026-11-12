@@ -193,6 +193,7 @@ export function MainScreen(): React.JSX.Element {
           ref={resultPanelRef}
           resultState={resultState}
           dispatchTimestampRef={dispatchTimestampRef}
+          context={{ table }}
         />
         <div className="main-screen__bottom-spacer" aria-hidden="true" />
       </main>

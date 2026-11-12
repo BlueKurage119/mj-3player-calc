@@ -1,21 +1,12 @@
-import type React from 'react';
+import React, { Suspense, lazy } from 'react';
 import type { Discard, ScoredHora } from '../../core/result';
 import type { Tile as CoreTile, TileAvailability } from '../../core/tile';
 import { Tile } from '../tile';
+import { horaGlanceParts } from './hora-summary';
+import type { ResultContext } from './hora/HoraDetail';
 
-const tileKey = (tile: CoreTile): string =>
-  `${tile.type}${tile.n}${tile.type !== 'z' && tile.n === 5 && tile.red ? 'r' : ''}`;
-
-/** ツモ・ロンで同じ牌が重なるため、牌の重複を除く(並びは最初に現れた順) */
-const uniqueTiles = (tiles: CoreTile[]): CoreTile[] => {
-  const seen = new Set<string>();
-  return tiles.filter(t => {
-    const k = tileKey(t);
-    if (seen.has(k)) return false;
-    seen.add(k);
-    return true;
-  });
-};
+const HoraDetail = lazy(() => import('./hora/HoraDetail'));
+export const preloadHoraDetail = () => import('./hora/HoraDetail');
 
 export interface GlanceTilesProps {
   tiles: CoreTile[];
@@ -60,19 +51,15 @@ export function JustHoraBody(): React.JSX.Element {
 
 export interface HoraBodyProps {
   hora: ScoredHora[];
+  context?: ResultContext | undefined;
 }
 
-export function HoraBody({ hora }: HoraBodyProps): React.JSX.Element {
+export function HoraBody({ hora, context }: HoraBodyProps): React.JSX.Element {
   return (
     <div data-result-kind="hora" className="result-body result-body--hora">
-      <h2 className="result-body__title">和了</h2>
-      <div className="result-body__hora-list">
-        {uniqueTiles(hora.map(h => h.horaTile)).map(t => (
-          <div key={tileKey(t)} className="result-body__hora-item">
-            <Tile tile={t} />
-          </div>
-        ))}
-      </div>
+      <Suspense fallback={null}>
+        <HoraDetail hora={hora} context={context} />
+      </Suspense>
     </div>
   );
 }
@@ -165,11 +152,40 @@ export interface HoraGlanceProps {
 }
 
 export function HoraGlance({ hora }: HoraGlanceProps): React.JSX.Element {
-  const tiles = uniqueTiles(hora.map(h => h.horaTile));
+  const parts = horaGlanceParts(hora);
+  const hasAnyPoints = parts.some(p => p.kind === 'points');
+
+  if (!hasAnyPoints) {
+    return (
+      <div
+        data-result-kind="hora"
+        className="result-glance result-glance--hora"
+      >
+        <span className="result-glance__text">役なし</span>
+      </div>
+    );
+  }
+
+  const validParts = parts.filter(p => p.kind !== 'none');
+
   return (
     <div data-result-kind="hora" className="result-glance result-glance--hora">
-      <span className="result-glance__label">和了</span>
-      <GlanceTiles tiles={tiles} />
+      {validParts.map((part, index) => {
+        const label = part.by === 'ron' ? 'ロン' : 'ツモ';
+        return (
+          <React.Fragment key={part.by}>
+            {index > 0 && <span className="result-glance__sep"> / </span>}
+            <span className="result-glance__side" data-glance-by={part.by}>
+              <span className="result-glance__side-label">{label}</span>{' '}
+              {part.kind === 'points' ? (
+                <span className="tabular-nums">{part.text}</span>
+              ) : (
+                <span>役なし</span>
+              )}
+            </span>
+          </React.Fragment>
+        );
+      })}
     </div>
   );
 }

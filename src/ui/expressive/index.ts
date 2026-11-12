@@ -19,3 +19,8 @@ export {
   BottomSheet,
   type BottomSheetProps
 } from './BottomSheet';
+
+export {
+  Disclosure,
+  type DisclosureProps
+} from './Disclosure';
