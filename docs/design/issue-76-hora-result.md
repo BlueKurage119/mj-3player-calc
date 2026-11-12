@@ -4,7 +4,7 @@
 - ブランチ: `feature/issue-76-hora-result`
 - 依存: E1 #75(`docs/design/issue-75-result-switch.md`)。関連: #62
 - 後続: E3 #77(聴牌の結果)・E4 #78・Epic F
-- 改訂: 2026-11-12 第5版(製造検証で判明した R19 の符の不安定さを反映。10章)
+- 改訂: 2026-11-12 第6版(main の取り込みに伴う基準値・3章の更新。10章)
 
 ## 1. 参照資料と設計判断の根拠
 
@@ -378,10 +378,10 @@ export const YAKUMAN_MULTIPLE_LABELS: Record<number, string> = { 1: '役満', 2:
 
 ### 2.10 初回 JS(09号)
 
-- 基準値: **124,831 B**。本ブランチの起点 febdbe7 で 2026-11-12 に `npm run build` し、`dist/index.html` の `<script type="module" src>` が指す `assets/index-BcA3TqtJ.js` を `gzip -9 -c | wc -c` で測った(modulepreload なし。`registerSW.js` は対象外)。
+- 基準値: **124,850 B**(#62(PR #81)マージ後の main 9910db3。第6版で更新。当初は起点 febdbe7 の 124,831 B)。2026-11-12 に `npm run build` し、`dist/index.html` の `<script type="module" src>` が指す `assets/index-BcA3TqtJ.js` を `gzip -9 -c | wc -c` で測った(modulepreload なし。`registerSW.js` は対象外)。
 - 参考(遅延チャンク): `SettingsScreen-*.js` 15,267 B、`compute-*.js` 9,638 B。
 - 初回 JS の増分の積算: `lazy`/`Suspense` と先読み 約0.15 kB、`hora-summary.ts` 約0.4 kB、`context` の受け渡し 約0.05 kB、E1 の `HoraBody`/`HoraGlance` 仮表示の削除 約 −0.1 kB。計 **約 +0.5 kB**。`Tile`・`SymbolIcon`・`Ripple`・`FocusRing`・`Divider` は既に初回 JS にあり、遅延チャンクから参照しても初回 JS は増えない(製造でビルド後に確かめる)。
-- 目標値: **約 125,350 B**。超過は不合格にしない。
+- 目標値: **約 125,370 B**(基準値 124,850 B + 積算した増分 約 520 B)。超過は不合格にしない。
 - 遅延チャンク(`HoraDetail-*.js`)の見込み: 名前の表(72役+符名+限度名)約1.2 kB、`HoraDetail`・`HoraItem` 約1.6 kB、`FuBreakdown`・`fu-rows`・`Disclosure` 約1.2 kB、`format.ts` 約0.3 kB。計 **約 4.3 kB**(gzip -9)。CSS は別ファイル。
 
 ### 2.11 E1 持ち越し (b): 要約カードの表示遅れの調査タスク(修正しない)
@@ -426,7 +426,7 @@ export const YAKUMAN_MULTIPLE_LABELS: Record<number, string> = { 1: '役満', 2:
 - 複数の和了候補(分解の違い)の表示【確定8】。和了牌の発光表示【確定10】。
 - 赤牌の注意表示(確定事項9 で廃止)。赤牌の枚数を変えたときの入力のリセット(#62。4章)と `hora.ts` の変更。
 - **変更禁止**: `src/ui/state/app-state.ts`・`src/ui/state/hand-rules.ts`・`src/ui/settings/` 配下・`src/core/` 配下(受け入れ条件2)。
-- **既知の事実**: 赤牌のリセット(#62)が入るまでは、設定と食い違う赤5の入力(例: 赤5を入れた後に赤なしへ変更)が起こりうる。その赤5は赤ドラとして点数に数えられる(1.3 の旧 R27 で確認。#62 で既知)。E2 の検収・UI 監修ではこの状態を不具合として扱わない(本書の受け入れ条件に、この状態を不合格とする項目は無い)。
+- **既知の事実**: 赤牌のリセット(#62)は PR #81 でマージ済み(第6版で更新)。設定で赤牌の枚数を変えると入力がリセットされるため、設定と食い違う赤5の入力は UI からは起こらない。`hora.ts` が `rule.red` を参照しない件は #62 で「実害なし」として扱う(core は変えない)。
 - 要約カードの表示遅れの修正(2.11 は調査のみ)。
 - `src/core/` の変更。点差・+N飜で次の段階(mj-mighty-calc の `tier-hint`、livewing の `ScorePlusList`・`PointDiff`)。
 
@@ -457,7 +457,7 @@ export const YAKUMAN_MULTIPLE_LABELS: Record<number, string> = { 1: '役満', 2:
 2. **変更禁止ファイル**: (a) `git diff main --stat -- src/core src/ui/state/app-state.ts src/ui/state/hand-rules.ts src/ui/settings` が空(main にもこれらの変更は無いので、main 比で判定できる。赤牌のリセットは #62 で行う)。(b) `git diff <設計コミット> --stat -- docs/mahjong-rules.md` が空(正本の追記は本ブランチの設計コミットに含まれるため、main 比では差分が出る。2.13。`<設計コミット>` のハッシュは統括担当が製造・検収への依頼文で渡す)。
 3. **import type の規律**: `grep -rnE "^import [^t].*core/" src/ui/result` が0件。
 4. **遅延チャンク**: `npm run build` 後、`dist/assets` に `HoraDetail-*.js` があり、`dist/index.html` に書かれていない。`index-*.js` に `門前清自摸和`・`抜きドラ`・`倍役満` の文字列が含まれない(`grep -c` が 0)。`HoraDetail-*.js` には含まれる。
-5. **初回 JS の記録**: 09号の方法で初回 JS(B)と `HoraDetail-*.js` の gzip -9 の値を測り、基準値 124,831 B・目標値 約125,350 B・遅延チャンク見込み 約4.3 kB と並べて最終報告に書く。超過は不合格にしない。
+5. **初回 JS の記録**: 09号の方法で初回 JS(B)と `HoraDetail-*.js` の gzip -9 の値を測り、基準値 124,850 B・目標値 約125,370 B・遅延チャンク見込み 約4.3 kB と並べて最終報告に書く。超過は不合格にしない。
 6. **単体テスト**: `npx vitest run src/ui/result src/ui/expressive/Disclosure.test.tsx src/ui/screen/ResultPanel.test.tsx` が全件通過し、2.12 の各ケースがテスト名から確認できる。`package.json` に `jsdom`・`happy-dom`・`@testing-library/*` が無い。
 7. **名前の表**: `src/ui/result/hora/labels.ts` の72役が 2.7.1 の表のとおりで、各行に出典コメントがある(目視で照合)。`labels.ts` に関数・条件分岐が無い。試しに `YAKU_LABELS` から1行消すと `npm run typecheck` が失敗する(確認後に戻し、`git diff` が残らない)。
 8. **E1 の規律の維持**: E1 受け入れ条件3(振り分けの一意性)の grep が `classify.ts` のみ(テストファイルを除く)。
@@ -502,3 +502,4 @@ export const YAKUMAN_MULTIPLE_LABELS: Record<number, string> = { 1: '役満', 2:
   - リセットが入るまで食い違う赤5の入力が起こりうることを、既知の事実として 3章に記載した。
 - 2026-11-12 第4版: 独立レビューの真偽判定を反映。条件9〜17 の牌姿の期待値を再実行して確認(1.3)。`ResultPanel.test.tsx` の `toContain('和了')` の扱いを 2.12 に明記。受け入れ条件2 の正本の判定を設計コミット比に変更。条件番号の誤記(17→18、9〜16→9〜17)を訂正。ツモ・ロンの並び順の記述を統一(1.2・1.5)。条件8 にテストファイル除外を明記。`Tile` の裏向き(`{ type: 'back' }`)を確定事実に書き直し、`hora.ts` の行番号を実物に合わせた。
 - 2026-11-12 第5版: 製造の検証で、R19 の符が分解の順序の違いで「38 → 40」と「40」のどちらにもなる(core の挙動。同点の多面張)と判明。R19 の期待値を「どちらも合格」に直し、符の切り上げの確認は分解が1通りの R24+立直(生34 → 40)に替えた。core の変更はしない(後続の検討事項)。
+- 2026-11-12 第6版: main(#62 マージ済み、9910db3)を取り込み。基準値を 124,850 B、目標値を約 125,370 B に更新。3章の赤牌リセットの記述を「PR #81 でマージ済み」に更新。
