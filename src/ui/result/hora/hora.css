@@ -184,8 +184,14 @@
 .fu-breakdown__summary {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 0.5rem;
+  width: 100%;
   font-variant-numeric: tabular-nums;
+}
+
+.fu-breakdown__summary-base {
+  color: var(--md-sys-color-on-surface-variant);
 }
 
 .fu-breakdown__list {

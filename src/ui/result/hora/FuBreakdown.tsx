@@ -4,7 +4,7 @@ import type { HoraScore } from '../../../core/hora-score';
 import type { Table } from '../../../core/table';
 import { Disclosure } from '../../expressive';
 import { Tile } from '../../tile';
-import { formatFuSummary } from './format';
+import { formatBasePointText, formatFuSummary } from './format';
 import { fuRows, sumRawFu } from './fu-rows';
 
 export interface FuBreakdownProps {
@@ -32,7 +32,14 @@ export function FuBreakdown(props: FuBreakdownProps): React.JSX.Element | null {
   return (
     <div className="fu-breakdown">
       <Disclosure
-        summary={<span className="fu-breakdown__summary">{summaryText}</span>}
+        summary={
+          <span className="fu-breakdown__summary">
+            <span>{summaryText}</span>
+            <span className="fu-breakdown__summary-base tabular-nums">
+              {formatBasePointText(score.basePoint)}
+            </span>
+          </span>
+        }
       >
         <ul className="fu-breakdown__list">
           {rows.map((row, i) => (

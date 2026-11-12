@@ -104,7 +104,8 @@ export function HoraItem({ hora, context }: HoraItemProps): React.JSX.Element {
         ))}
       </ul>
 
-      {/* 2.6.3 符の内訳 */}
+      {/* 2.6.3 符の内訳(役一覧との間に仕切り線。UI 監修) */}
+      {showFuBreakdown ? <Divider /> : null}
       {showFuBreakdown ? (
         <FuBreakdown
           fu={hora.type === 'mentsu' ? hora.fu : undefined}
@@ -114,10 +115,12 @@ export function HoraItem({ hora, context }: HoraItemProps): React.JSX.Element {
         />
       ) : null}
 
-      {/* 2.6.4 基本点 */}
-      <div className="hora-item__base-point">
-        {formatBasePointText(score.basePoint)}
-      </div>
+      {/* 2.6.4 基本点。符の折りたたみがあるときは、その見出しに出す(UI 監修) */}
+      {showFuBreakdown ? null : (
+        <div className="hora-item__base-point">
+          {formatBasePointText(score.basePoint)}
+        </div>
+      )}
     </article>
   );
 }
