@@ -1,5 +1,5 @@
 import { renderToStaticMarkup } from 'react-dom/server';
-import { beforeAll, describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import type { HandOptions } from '../../../core/input';
 import type { Rule } from '../../../core/rule';
 import type { Table } from '../../../core/table';
@@ -29,64 +29,6 @@ describe('HoraDetail.test.tsx (E2 和了本体部品の表示)', () => {
     continue: 0,
     deposit: 0
   };
-
-  // R19 は両面(生符38)と単騎(生符40)が同点で同打点(1300点)の多面張。
-  // WASM の分解器の初期順序キャッシュを整え、両面待ち(生符38→40)を安定して得るためのウォームアップ
-  beforeAll(async () => {
-    const { generateResult, DEFAULT_RULE } = await getCore();
-    generateResult(
-      southTable,
-      {
-        hand: [
-          { type: 'p', n: 1 },
-          { type: 'p', n: 2 },
-          { type: 'p', n: 3 },
-          { type: 'p', n: 4 },
-          { type: 'p', n: 5, red: false },
-          { type: 'p', n: 6 },
-          { type: 's', n: 2 },
-          { type: 's', n: 3 },
-          { type: 's', n: 4 },
-          { type: 's', n: 7 },
-          { type: 's', n: 8 },
-          { type: 's', n: 9 },
-          { type: 'z', n: 1 },
-          { type: 'z', n: 1 }
-        ],
-        melds: [],
-        dora: [],
-        nuki: 0
-      },
-      defaultOptions,
-      DEFAULT_RULE
-    );
-    generateResult(
-      southTable,
-      {
-        hand: [
-          { type: 'z', n: 4 },
-          { type: 'z', n: 4 },
-          { type: 'z', n: 4 },
-          { type: 'p', n: 1 },
-          { type: 'p', n: 2 },
-          { type: 'p', n: 3 },
-          { type: 'p', n: 4 },
-          { type: 'p', n: 5, red: false },
-          { type: 'p', n: 6 },
-          { type: 's', n: 7 },
-          { type: 's', n: 8 },
-          { type: 's', n: 9 },
-          { type: 's', n: 9 },
-          { type: 's', n: 9 }
-        ],
-        melds: [],
-        dora: [],
-        nuki: 0
-      },
-      defaultOptions,
-      { ...DEFAULT_RULE, north: 'yakuhai' }
-    );
-  });
 
   it('E2-17: R01 ロン - 平和、1飜、30符、基本点 240、開閉ボタン 符 30 が描画される', async () => {
     const { generateResult, DEFAULT_RULE } = await getCore();
@@ -179,43 +121,45 @@ describe('HoraDetail.test.tsx (E2 和了本体部品の表示)', () => {
     }
   });
 
-  it('E2-19: R19 ロン(北=役牌)で 符 38 → 40、R17 七対子で 符 25、R16 国士無双で開閉ボタンなし', async () => {
+  it('E2-19: R24+立直 ロンで 符 34 → 40、R17 七対子で 符 25、R16 国士無双で開閉ボタンなし', async () => {
     const { generateResult, DEFAULT_RULE } = await getCore();
     const ruleYakuhai: Rule = { ...DEFAULT_RULE, north: 'yakuhai' };
 
-    // R19: 444z123p456p789s9s + 9s (北=役牌) -> 符 38 → 40
-    const r19 = generateResult(
+    // R24 + 立直: 123p456p234s789s11z。分解が1通り(単騎待ち)で、生符34 → 40 に切り上がる
+    // (R19 は両面と単騎が同点の多面張で、分解の順序が実行履歴で変わるため使わない)
+    const r24 = generateResult(
       southTable,
       {
         hand: [
-          { type: 'z', n: 4 },
-          { type: 'z', n: 4 },
-          { type: 'z', n: 4 },
           { type: 'p', n: 1 },
           { type: 'p', n: 2 },
           { type: 'p', n: 3 },
           { type: 'p', n: 4 },
           { type: 'p', n: 5, red: false },
           { type: 'p', n: 6 },
+          { type: 's', n: 2 },
+          { type: 's', n: 3 },
+          { type: 's', n: 4 },
           { type: 's', n: 7 },
           { type: 's', n: 8 },
           { type: 's', n: 9 },
-          { type: 's', n: 9 },
-          { type: 's', n: 9 }
+          { type: 'z', n: 1 },
+          { type: 'z', n: 1 }
         ],
         melds: [],
         dora: [],
         nuki: 0
       },
-      defaultOptions,
-      ruleYakuhai
+      { ...defaultOptions, riichi: 'riichi' },
+      DEFAULT_RULE
     );
-    if (r19?.type === 'hora-shanten' && r19.info.type === 'hora') {
-      const ron = r19.info.hora.filter(h => h.by === 'ron');
+    expect(r24?.type).toBe('hora-shanten');
+    if (r24?.type === 'hora-shanten' && r24.info.type === 'hora') {
+      const ron = r24.info.hora.filter(h => h.by === 'ron');
       const html = renderToStaticMarkup(
         <HoraDetail hora={ron} context={{ table: southTable }} />
       );
-      expect(html).toContain('符 38 → 40');
+      expect(html).toContain('符 34 → 40');
     }
 
     // R17: 1122p3344s5566s7z + 7z (七対子) -> 符 25
