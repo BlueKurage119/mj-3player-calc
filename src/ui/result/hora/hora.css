@@ -209,7 +209,8 @@
 
 .fu-breakdown__row {
   display: grid;
-  grid-template-columns: minmax(5rem, auto) 1fr auto;
+  /* 牌の列は、槓子(4枚)ぶんの幅で固定して、名称・符数の位置をそろえる(牌 1.25rem × 4 + 間隔 0.125rem × 3) */
+  grid-template-columns: 5.375rem 1fr auto;
   align-items: center;
   gap: 0.5rem;
   color: var(--md-sys-color-on-surface-variant);
