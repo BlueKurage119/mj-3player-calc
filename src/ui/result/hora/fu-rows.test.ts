@@ -22,7 +22,7 @@ describe('fu-rows.ts (E2 符の内訳行の組み立て)', () => {
     kanFuri: false
   };
 
-  it('E2-12: fuRows - R24 ロンで行が順に 副底 20、順子 0 ×4、風牌/場風牌雀頭 2、単騎待ち 2、門前ロン 10', async () => {
+  it('E2-12: fuRows - R24 ロンで行が順に 副底 20、門前ロン 10、順子 0 ×4、風牌/場風牌雀頭 2、単騎待ち 2', async () => {
     const { generateResult, DEFAULT_RULE } = await getCore();
     const southTable: Table = {
       round: 'east',
@@ -69,31 +69,31 @@ describe('fu-rows.ts (E2 符の内訳行の組み立て)', () => {
       const rowsWithoutTable = fuRows(ron.fu);
       expect(rowsWithoutTable.map(r => ({ name: r.name, fu: r.fu }))).toEqual([
         { name: '副底', fu: 20 },
+        { name: '門前ロン', fu: 10 },
         { name: '順子', fu: 0 },
         { name: '順子', fu: 0 },
         { name: '順子', fu: 0 },
         { name: '順子', fu: 0 },
         { name: '風牌雀頭', fu: 2 },
-        { name: '単騎待ち', fu: 2 },
-        { name: '門前ロン', fu: 10 }
+        { name: '単騎待ち', fu: 2 }
       ]);
-      // 各順子は牌3枚
-      expect(rowsWithoutTable[1]?.tiles).toHaveLength(3);
+      // 各順子は牌3枚(副底の次が門前ロンなので、順子は2〜5行目)
       expect(rowsWithoutTable[2]?.tiles).toHaveLength(3);
       expect(rowsWithoutTable[3]?.tiles).toHaveLength(3);
       expect(rowsWithoutTable[4]?.tiles).toHaveLength(3);
+      expect(rowsWithoutTable[5]?.tiles).toHaveLength(3);
       // 雀頭は牌2枚
-      expect(rowsWithoutTable[5]?.tiles).toHaveLength(2);
+      expect(rowsWithoutTable[6]?.tiles).toHaveLength(2);
       // 待ちと副底・門前ロンは牌なし
       expect(rowsWithoutTable[0]?.tiles).toBeUndefined();
-      expect(rowsWithoutTable[6]?.tiles).toBeUndefined();
+      expect(rowsWithoutTable[1]?.tiles).toBeUndefined();
       expect(rowsWithoutTable[7]?.tiles).toBeUndefined();
 
       // table あり (場風: 東): 場風牌雀頭 2
       const rowsWithTable = fuRows(ron.fu, southTable);
-      expect(rowsWithTable[5]?.name).toBe('場風牌雀頭');
-      expect(rowsWithTable[5]?.fu).toBe(2);
-      expect(rowsWithTable[5]?.tiles).toHaveLength(2);
+      expect(rowsWithTable[6]?.name).toBe('場風牌雀頭');
+      expect(rowsWithTable[6]?.fu).toBe(2);
+      expect(rowsWithTable[6]?.tiles).toHaveLength(2);
     }
   });
 

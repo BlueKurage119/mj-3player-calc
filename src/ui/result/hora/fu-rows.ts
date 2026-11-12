@@ -93,8 +93,18 @@ export const fuRows = (
     return [{ name: FU_LABELS.chitoitsu, fu: 25 }];
   }
 
+  // 副底の次に、ツモ符・門前加符(平和ツモを含む)を置く。ほかは core の並びのまま
+  const isFirstGroup = (f: Fu): boolean => f.type === 'futei';
+  const isSecondGroup = (f: Fu): boolean =>
+    f.type === 'menzen-ron' || f.type === 'tsumo' || f.type === 'pinfu-tsumo';
+  const ordered = [
+    ...fu.filter(isFirstGroup),
+    ...fu.filter(isSecondGroup),
+    ...fu.filter(f => !isFirstGroup(f) && !isSecondGroup(f))
+  ];
+
   const rows: FuRow[] = [];
-  for (const item of fu) {
+  for (const item of ordered) {
     if (item.type === 'waiting') {
       // 2行に分ける: (1) block を上の規則で1行、(2) 待ちの名と waiting.fu
       rows.push(blockToRow(item.block, table));
