@@ -1844,4 +1844,133 @@ describe('D5: 状況入力の reducer と結果連動 (C5〜C8, C13)', () => {
       ).toBe(false);
     });
   });
+
+  describe('F62: 赤ドラ設定変更時の入力リセット (Issue #62)', () => {
+    const p1: Tile = { type: 'p', n: 1 };
+    const p2: Tile = { type: 'p', n: 2 };
+    const p3: Tile = { type: 'p', n: 3 };
+    const p5: Tile = { type: 'p', n: 5, red: false };
+    const p5r: Tile = { type: 'p', n: 5, red: true };
+    const p6: Tile = { type: 'p', n: 6 };
+    const p7: Tile = { type: 'p', n: 7 };
+    const p9: Tile = { type: 'p', n: 9 };
+    const s1: Tile = { type: 's', n: 1 };
+    const s2: Tile = { type: 's', n: 2 };
+    const s3: Tile = { type: 's', n: 3 };
+    const s4: Tile = { type: 's', n: 4 };
+    const s5: Tile = { type: 's', n: 5, red: false };
+    const s5r: Tile = { type: 's', n: 5, red: true };
+    const s9: Tile = { type: 's', n: 9 };
+
+    const createTestState = (red: 0 | 1 | 2): AppState => {
+      const base = createInitialState({ ...createDefaultRule(), red });
+      const hand =
+        red === 0
+          ? [p1, p2, p3, p5, p6, p7, s1, s2, s3, s9]
+          : [p1, p2, p3, p5r, p6, p7, s1, s2, s3, s9];
+      const meldTile = red === 0 ? s5 : s5r;
+      return {
+        ...base,
+        table: {
+          round: 'south',
+          seat: 'west',
+          continue: 2,
+          deposit: 1
+        },
+        input: {
+          hand,
+          melds: [{ type: 'pon', tile: meldTile }],
+          dora: [s4],
+          uradora: [p9],
+          nuki: 1
+        },
+        inputFocus: { type: 'hand' },
+        handOptions: {
+          ...base.handOptions,
+          riichi: 'riichi'
+        },
+        sheetMode: 'palette',
+        tenkeyBuffer: '5'
+      };
+    };
+
+    it('F62-1: red が変わると手牌・副露・ドラ・裏ドラを空にし、抜き北・状況役・卓・sheetMode を保つ', () => {
+      const cases: Array<[0 | 1 | 2, 0 | 1 | 2]> = [
+        [1, 0],
+        [1, 2],
+        [0, 1],
+        [2, 1]
+      ];
+      for (const [from, to] of cases) {
+        const state = createTestState(from);
+        const next = appReducer(state, {
+          type: 'set-rule',
+          rule: { ...state.rule, red: to }
+        });
+
+        expect(next.rule.red).toBe(to);
+        expect(next.input).toEqual({
+          hand: [],
+          melds: [],
+          dora: [],
+          uradora: [],
+          nuki: 1
+        });
+        expect(next.handOptions.riichi).toBe('riichi');
+        expect(next.table).toEqual({
+          round: 'south',
+          seat: 'west',
+          continue: 2,
+          deposit: 1
+        });
+        expect(next.inputFocus).toBeNull();
+        expect(next.tenkeyBuffer).toBe('');
+        expect(next.sheetMode).toBe('palette');
+      }
+    });
+
+    it('F62-2: red が同じ set-rule では入力・フォーカス・テンキー入力を保つ', () => {
+      const state = createTestState(1);
+      const next = appReducer(state, {
+        type: 'set-rule',
+        rule: { ...state.rule, red: 1 }
+      });
+
+      expect(next.input).toBe(state.input);
+      expect(next.inputFocus).toEqual({ type: 'hand' });
+      expect(next.tenkeyBuffer).toBe('5');
+    });
+
+    it('F62-3: red と北の扱いが同時に変わると手牌類は空になり抜き北は 0 になる', () => {
+      const state = createTestState(1);
+      const next = appReducer(state, {
+        type: 'set-rule',
+        rule: { ...state.rule, red: 0, north: 'yakuhai' }
+      });
+
+      expect(next.rule.red).toBe(0);
+      expect(next.rule.north).toBe('yakuhai');
+      expect(next.input.hand).toEqual([]);
+      expect(next.input.melds).toEqual([]);
+      expect(next.input.dora).toEqual([]);
+      expect(next.input.uradora).toEqual([]);
+      expect(next.input.nuki).toBe(0);
+    });
+
+    it('F62-4: red を変えない北の扱いの変更では手牌・副露を保つ', () => {
+      const state = createTestState(1);
+      const next = appReducer(state, {
+        type: 'set-rule',
+        rule: { ...state.rule, north: 'yakuhai' }
+      });
+
+      expect(next.rule.north).toBe('yakuhai');
+      expect(next.rule.red).toBe(1);
+      expect(next.input.hand).toHaveLength(10);
+      expect(next.input.hand).toEqual(state.input.hand);
+      expect(next.input.melds).toHaveLength(1);
+      expect(next.input.melds).toEqual(state.input.melds);
+      expect(next.input.nuki).toBe(0);
+    });
+  });
 });
