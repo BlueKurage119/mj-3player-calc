@@ -14,6 +14,7 @@ import {
   yakuHanText,
   yakuLabel
 } from './format';
+import { sumRawFu } from './fu-rows';
 import { nextTier } from './next-tier';
 
 export interface HoraItemProps {
@@ -45,9 +46,15 @@ export function HoraItem({ hora, context }: HoraItemProps): React.JSX.Element {
   const limit = limitName(score);
   const tier = nextTier(score, context?.rule);
   const payLines = payDetailLines(score.payment);
-  const showFuBreakdown =
-    score.yakumanPoint === 0 &&
-    (hora.type === 'mentsu' || hora.type === 'chitoitsu');
+  // 符の概念がない国士無双・十三不塔以外は、役満でも符を出す(UI 監修)
+  const showFuBreakdown = hora.type === 'mentsu' || hora.type === 'chitoitsu';
+  const displayFu: number | null =
+    score.fu ??
+    (hora.type === 'chitoitsu'
+      ? 25
+      : hora.type === 'mentsu'
+        ? Math.ceil(sumRawFu(hora.fu) / 10) * 10
+        : null);
 
   return (
     <article className="hora-item" data-hora-by={hora.by}>
@@ -70,8 +77,10 @@ export function HoraItem({ hora, context }: HoraItemProps): React.JSX.Element {
           <div className="hora-item__sub-rank">
             {score.yakumanPoint === 0 ? (
               <span>
-                {score.han}飜{score.fu !== null ? ` ${score.fu}符` : ''}
+                {score.han}飜{displayFu !== null ? ` ${displayFu}符` : ''}
               </span>
+            ) : displayFu !== null ? (
+              <span>{displayFu}符</span>
             ) : null}
             {limit ? (
               <span className="hora-item__limit-name">{limit}</span>
@@ -110,6 +119,7 @@ export function HoraItem({ hora, context }: HoraItemProps): React.JSX.Element {
         <FuBreakdown
           fu={hora.type === 'mentsu' ? hora.fu : undefined}
           score={score}
+          displayFu={displayFu ?? 0}
           horaType={hora.type}
           table={context?.table}
         />

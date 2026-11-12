@@ -158,6 +158,19 @@ export const payDetailLines = (payment: Payment): string[] => {
 };
 
 /** 基本点行テキスト */
+/** 基本点の式(符の内訳の下に出す)。満貫以上は限度名と基本点だけ、満貫未満は 符 × 2^(飜+2) */
+export type BaseFormula =
+  | { kind: 'formula'; fu: number; han: number; base: number }
+  | { kind: 'limit'; name: string; base: number };
+
+export const baseFormula = (score: HoraScore, fu: number): BaseFormula => {
+  const name = limitName(score);
+  if (name !== null) {
+    return { kind: 'limit', name, base: score.basePoint };
+  }
+  return { kind: 'formula', fu, han: score.han, base: score.basePoint };
+};
+
 export const formatBasePointText = (basePoint: number): string => {
   return `基本点 ${basePoint}`;
 };

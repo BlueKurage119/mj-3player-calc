@@ -500,4 +500,50 @@ describe('HoraDetail.test.tsx (E2 和了本体部品の表示)', () => {
       expect(html).not.toContain('＋');
     }
   });
+
+  it('E2-24: R14 大三元(役満)でも、面子手なので符の折りたたみが出て、見出しに「・基本点 8000」、中に「役満 = 8000」', async () => {
+    const { generateResult, DEFAULT_RULE } = await getCore();
+    const t = (type: 'p' | 's' | 'z', n: number) =>
+      ({ type, n }) as import('../../../core/tile').Tile;
+    const r14 = generateResult(
+      southTable,
+      {
+        hand: [
+          t('z', 5),
+          t('z', 5),
+          t('z', 5),
+          t('z', 6),
+          t('z', 6),
+          t('z', 6),
+          t('z', 7),
+          t('z', 7),
+          t('p', 1),
+          t('p', 2),
+          t('p', 3),
+          t('s', 9),
+          t('s', 9),
+          t('z', 7)
+        ],
+        melds: [],
+        dora: [],
+        nuki: 0
+      },
+      defaultOptions,
+      DEFAULT_RULE
+    );
+    expect(r14?.type).toBe('hora-shanten');
+    if (r14?.type === 'hora-shanten' && r14.info.type === 'hora') {
+      const ron = r14.info.hora.filter(h => h.by === 'ron');
+      const html = renderToStaticMarkup(
+        <HoraDetail
+          hora={ron}
+          context={{ table: southTable, rule: DEFAULT_RULE }}
+        />
+      );
+      expect(html).toContain('fu-breakdown');
+      expect(html).toContain('・基本点 8000');
+      expect(html).toContain('役満 = 8000');
+      expect(html).toContain('符');
+    }
+  });
 });

@@ -6,6 +6,7 @@ import type { Result, ScoredHora } from '../../../core/result';
 import type { Table } from '../../../core/table';
 import type { NormalYaku, Yakuman } from '../../../core/yaku';
 import {
+  baseFormula,
   formatBasePointText,
   formatFuSummary,
   limitName,
@@ -71,6 +72,30 @@ describe('format.ts (E2 和了文言・書式関数)', () => {
       expect(name).not.toContain('ダブル');
       expect(name).not.toContain('トリプル');
     }
+  });
+
+  it('E2-9b: baseFormula - 満貫未満は 符 × 2^(飜+2)、満貫以上は限度名と基本点、役満も限度名', () => {
+    expect(baseFormula({ ...createScore(640), han: 2, fu: 40 }, 40)).toEqual({
+      kind: 'formula',
+      fu: 40,
+      han: 2,
+      base: 640
+    });
+    expect(baseFormula(createScore(2000), 30)).toEqual({
+      kind: 'limit',
+      name: '満貫',
+      base: 2000
+    });
+    expect(baseFormula(createScore(3000), 30)).toEqual({
+      kind: 'limit',
+      name: '跳満',
+      base: 3000
+    });
+    expect(baseFormula({ ...createScore(8000, 1), fu: null }, 40)).toEqual({
+      kind: 'limit',
+      name: '役満',
+      base: 8000
+    });
   });
 
   it('E2-10: yakuLabel, yakuHanText - 役名と飜数・役満表記の組み立て', () => {
