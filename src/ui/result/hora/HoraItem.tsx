@@ -77,7 +77,7 @@ export function HoraItem({ hora, context }: HoraItemProps): React.JSX.Element {
           <div className="hora-item__sub-rank">
             {score.yakumanPoint === 0 ? (
               <span>
-                {displayFu !== null ? `${displayFu}符` : ''}
+                {displayFu !== null ? `${displayFu}符 ` : ''}
                 {score.han}飜
               </span>
             ) : null}
@@ -130,6 +130,9 @@ export function HoraItem({ hora, context }: HoraItemProps): React.JSX.Element {
           {formatBasePointText(score.basePoint)}
         </div>
       )}
+
+      {/* 符・基本点のブロックの下の仕切り線(このあとに点数差の項目を足す。UI 監修) */}
+      <Divider />
     </article>
   );
 }

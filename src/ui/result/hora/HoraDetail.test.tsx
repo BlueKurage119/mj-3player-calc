@@ -73,7 +73,7 @@ describe('HoraDetail.test.tsx (E2 和了本体部品の表示)', () => {
 
       // 意図的アサーション: 和了カード内の各表示文言を検証
       expect(html).toContain('平和');
-      expect(html).toContain('30符1飜');
+      expect(html).toContain('30符 1飜');
       expect(html).toContain('＋4飜で満貫');
       expect(html).toContain('基本点 240');
       expect(html).toContain('符 30');
