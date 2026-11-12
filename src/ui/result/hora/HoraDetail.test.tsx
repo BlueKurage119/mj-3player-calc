@@ -73,7 +73,7 @@ describe('HoraDetail.test.tsx (E2 和了本体部品の表示)', () => {
 
       // 意図的アサーション: 和了カード内の各表示文言を検証
       expect(html).toContain('平和');
-      expect(html).toContain('1飜 30符');
+      expect(html).toContain('30符1飜');
       expect(html).toContain('＋4飜で満貫');
       expect(html).toContain('基本点 240');
       expect(html).toContain('符 30');
@@ -501,7 +501,7 @@ describe('HoraDetail.test.tsx (E2 和了本体部品の表示)', () => {
     }
   });
 
-  it('E2-24: R14 大三元(役満)でも、面子手なので符の折りたたみが出て、見出しに「・基本点 8000」、中に「役満 = 8000」', async () => {
+  it('E2-24: R14 大三元(役満)でも、面子手なので符の折りたたみが出て(見出しに「符 50・基本点 8000」、中に「役満 = 8000」)、飜符の行には符を出さない', async () => {
     const { generateResult, DEFAULT_RULE } = await getCore();
     const t = (type: 'p' | 's' | 'z', n: number) =>
       ({ type, n }) as import('../../../core/tile').Tile;
@@ -543,7 +543,9 @@ describe('HoraDetail.test.tsx (E2 和了本体部品の表示)', () => {
       expect(html).toContain('fu-breakdown');
       expect(html).toContain('・基本点 8000');
       expect(html).toContain('役満 = 8000');
-      expect(html).toContain('符');
+      // 飜符の行には、役満の符を出さない(折りたたみの見出しにだけ符が出る)
+      expect(html).not.toContain('50符</span>');
+      expect(html).toContain('符 50');
     }
   });
 });

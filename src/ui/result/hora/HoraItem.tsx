@@ -77,10 +77,9 @@ export function HoraItem({ hora, context }: HoraItemProps): React.JSX.Element {
           <div className="hora-item__sub-rank">
             {score.yakumanPoint === 0 ? (
               <span>
-                {score.han}飜{displayFu !== null ? ` ${displayFu}符` : ''}
+                {displayFu !== null ? `${displayFu}符` : ''}
+                {score.han}飜
               </span>
-            ) : displayFu !== null ? (
-              <span>{displayFu}符</span>
             ) : null}
             {limit ? (
               <span className="hora-item__limit-name">{limit}</span>
