@@ -50,7 +50,11 @@ export function ResultPanel(props: ResultPanelProps): React.JSX.Element {
       id="result-panel"
       aria-label="計算結果"
       data-state={contentState}
-      className="result-panel"
+      className={
+        view.kind === 'hora'
+          ? 'result-panel result-panel--flat'
+          : 'result-panel'
+      }
       style={
         {
           scrollMarginTop: 'calc(var(--app-header-height, 0px) + 0.5rem)'

@@ -387,6 +387,14 @@ body {
   box-sizing: border-box;
 }
 
+/* 和了の結果: 個別のカード(ロン・ツモ)を大きなカードでくくらない */
+.result-panel--flat {
+  background-color: transparent;
+  min-height: 0;
+  border-radius: 0;
+  padding: 0;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .summary-card {
     transition: none;

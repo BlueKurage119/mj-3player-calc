@@ -127,8 +127,19 @@ describe('ResultPanel', () => {
 
     expect(html).toContain('data-state="ok"');
     expect(html).toContain('data-result-kind="hora"');
+    // 和了の結果は、ロン・ツモのカードを大きなカードでくくらない
+    expect(html).toContain('result-panel--flat');
     expect(html).not.toContain('data-view');
     expect(html).not.toContain('result-panel--banner');
+  });
+
+  it('E2: 和了以外(tempai)では result-panel--flat が付かない', () => {
+    const state: ResultState = {
+      status: 'ok',
+      result: { type: 'tempai', tileAvailabilities: [] }
+    };
+    const html = renderToStaticMarkup(<ResultPanel resultState={state} />);
+    expect(html).not.toContain('result-panel--flat');
   });
 
   it('E1-7: ok で tempai のとき data-state="ok" かつ data-result-kind="tempai" が出る', () => {
