@@ -1,0 +1,302 @@
+/* 出典: mj-mighty-calc (src/index.css .candidate 系) を参考に作成 */
+.hora-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+/* 1枚の和了カード */
+.hora-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  background-color: var(--md-sys-color-surface-container-low);
+  border-radius: var(--md-sys-shape-corner-large);
+  padding: 0.75rem 1rem;
+  box-sizing: border-box;
+}
+
+/* ロン・ツモのバッジ色定義 (入れ替えはこの2行を入れ替える) */
+.hora-item[data-hora-by="ron"] {
+  --by-badge-bg: var(--md-sys-color-primary);
+  --by-badge-fg: var(--md-sys-color-on-primary);
+}
+
+.hora-item[data-hora-by="tsumo"] {
+  --by-badge-bg: var(--md-sys-color-tertiary);
+  --by-badge-fg: var(--md-sys-color-on-tertiary);
+}
+
+/* 2.6.1 見出し行 */
+.hora-item__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.hora-item__interp {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.hora-item__badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--by-badge-bg);
+  color: var(--by-badge-fg);
+  border-radius: var(--md-sys-shape-corner-small);
+  padding: 0.125rem 0.5rem;
+  font-family: var(--md-sys-typescale-label-medium-font);
+  font-size: var(--md-sys-typescale-label-medium-size);
+  line-height: var(--md-sys-typescale-label-medium-line-height);
+  font-weight: var(--md-sys-typescale-label-medium-weight);
+  letter-spacing: var(--md-sys-typescale-label-medium-tracking);
+}
+
+.hora-item__tile {
+  display: inline-flex;
+  align-items: center;
+  --tile-width: 1.75rem;
+}
+
+.hora-item__points {
+  color: var(--md-sys-color-on-surface);
+  font-family: var(--md-sys-typescale-headline-small-font);
+  font-size: var(--md-sys-typescale-headline-small-size);
+  line-height: var(--md-sys-typescale-headline-small-line-height);
+  font-weight: var(--md-sys-typescale-headline-small-weight);
+  letter-spacing: var(--md-sys-typescale-headline-small-tracking);
+  font-variant-numeric: tabular-nums;
+}
+
+.hora-item__no-yaku-text {
+  color: var(--md-sys-color-on-surface-variant);
+  font-family: var(--md-sys-typescale-body-medium-font);
+  font-size: var(--md-sys-typescale-body-medium-size);
+  line-height: var(--md-sys-typescale-body-medium-line-height);
+  font-weight: var(--md-sys-typescale-body-medium-weight);
+  letter-spacing: var(--md-sys-typescale-body-medium-tracking);
+}
+
+/* 2行目: 飜符・限度名・次の段階と支払い内訳 */
+.hora-item__sub {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.hora-item__sub-main {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.25rem;
+}
+
+.hora-item__sub-rank {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  color: var(--md-sys-color-on-surface-variant);
+  font-family: var(--md-sys-typescale-body-medium-font);
+  font-size: var(--md-sys-typescale-body-medium-size);
+  line-height: var(--md-sys-typescale-body-medium-line-height);
+  font-weight: var(--md-sys-typescale-body-medium-weight);
+  letter-spacing: var(--md-sys-typescale-body-medium-tracking);
+  font-variant-numeric: tabular-nums;
+}
+
+.hora-item__limit-name {
+  color: var(--md-sys-color-error);
+  font-family: var(--md-sys-typescale-title-small-font);
+  font-size: var(--md-sys-typescale-title-small-size);
+  line-height: var(--md-sys-typescale-title-small-line-height);
+  font-weight: var(--md-sys-typescale-title-small-weight);
+  letter-spacing: var(--md-sys-typescale-title-small-tracking);
+}
+
+.hora-item__tier-hint {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--md-sys-color-primary-container);
+  color: var(--md-sys-color-on-primary-container);
+  border-radius: var(--md-sys-shape-corner-small);
+  padding: 0.125rem 0.5rem;
+  font-family: var(--md-sys-typescale-label-medium-font);
+  font-size: var(--md-sys-typescale-label-medium-size);
+  line-height: var(--md-sys-typescale-label-medium-line-height);
+  font-weight: var(--md-sys-typescale-label-medium-weight);
+  letter-spacing: var(--md-sys-typescale-label-medium-tracking);
+}
+
+.hora-item__pay-detail {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  text-align: right;
+  white-space: nowrap;
+  color: var(--md-sys-color-on-surface-variant);
+  font-family: var(--md-sys-typescale-body-medium-font);
+  font-size: var(--md-sys-typescale-body-medium-size);
+  line-height: var(--md-sys-typescale-body-medium-line-height);
+  font-weight: var(--md-sys-typescale-body-medium-weight);
+  letter-spacing: var(--md-sys-typescale-body-medium-tracking);
+  font-variant-numeric: tabular-nums;
+}
+
+/* 2.6.2 役一覧 */
+.hora-item__yaku-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.hora-item__yaku-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--md-sys-color-on-surface);
+  font-family: var(--md-sys-typescale-body-medium-font);
+  font-size: var(--md-sys-typescale-body-medium-size);
+  line-height: var(--md-sys-typescale-body-medium-line-height);
+  font-weight: var(--md-sys-typescale-body-medium-weight);
+  letter-spacing: var(--md-sys-typescale-body-medium-tracking);
+}
+
+.hora-item__yaku-han {
+  color: var(--md-sys-color-on-surface-variant);
+  font-variant-numeric: tabular-nums;
+}
+
+/* 2.6.3 符の内訳 */
+.fu-breakdown {
+  width: 100%;
+}
+
+.fu-breakdown__summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  width: 100%;
+  font-variant-numeric: tabular-nums;
+}
+
+.fu-breakdown__formula {
+  padding: 0.25rem 0 0.5rem;
+  color: var(--md-sys-color-on-surface-variant);
+  font-family: var(--md-sys-typescale-body-medium-font);
+  font-size: var(--md-sys-typescale-body-medium-size);
+  line-height: var(--md-sys-typescale-body-medium-line-height);
+}
+
+.fu-breakdown__list {
+  list-style: none;
+  margin: 0;
+  padding: 0.25rem 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.fu-breakdown__row {
+  display: grid;
+  /* 牌の列は、槓子(4枚)ぶんの幅で固定して、名称・符数の位置をそろえる(牌 1.25rem × 4 + 間隔 0.125rem × 3) */
+  grid-template-columns: 5.375rem 1fr auto;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--md-sys-color-on-surface-variant);
+  font-family: var(--md-sys-typescale-body-medium-font);
+  font-size: var(--md-sys-typescale-body-medium-size);
+  line-height: var(--md-sys-typescale-body-medium-line-height);
+  font-weight: var(--md-sys-typescale-body-medium-weight);
+  letter-spacing: var(--md-sys-typescale-body-medium-tracking);
+}
+
+.fu-breakdown__row--muted {
+  opacity: 0.5;
+}
+
+.fu-breakdown__list--no-tiles .fu-breakdown__row {
+  grid-template-columns: 1fr auto;
+}
+
+.fu-breakdown__list--no-tiles .fu-breakdown__tiles {
+  display: none;
+}
+
+.fu-breakdown__win-tile {
+  position: relative;
+  display: inline-flex;
+}
+
+/* 和了牌の牌の上に、薄いピンク(エラー色を薄く重ねる。牌の絵は白地の画像なので、背景ではなく重ねて表す) */
+.fu-breakdown__win-tile::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 0.125rem;
+  background-color: color-mix(
+    in srgb,
+    var(--md-sys-color-error) 28%,
+    transparent
+  );
+  pointer-events: none;
+}
+
+.fu-breakdown__tiles {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.125rem;
+  --tile-width: 1.25rem;
+}
+
+.fu-breakdown__name {
+  color: var(--md-sys-color-on-surface);
+}
+
+.fu-breakdown__fu {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* 2.6.4 基本点 */
+.hora-item__base-point {
+  color: var(--md-sys-color-on-surface-variant);
+  font-family: var(--md-sys-typescale-body-medium-font);
+  font-size: var(--md-sys-typescale-body-medium-size);
+  line-height: var(--md-sys-typescale-body-medium-line-height);
+  font-weight: var(--md-sys-typescale-body-medium-weight);
+  letter-spacing: var(--md-sys-typescale-body-medium-tracking);
+  font-variant-numeric: tabular-nums;
+}
+
+/* 点差(折りたたみ) */
+.point-diff__list {
+  list-style: none;
+  margin: 0;
+  padding: 0.25rem 0.25rem 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.point-diff__row {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  color: var(--md-sys-color-on-surface-variant);
+  font-family: var(--md-sys-typescale-body-medium-font);
+  font-size: var(--md-sys-typescale-body-medium-size);
+  line-height: var(--md-sys-typescale-body-medium-line-height);
+  font-weight: var(--md-sys-typescale-body-medium-weight);
+  letter-spacing: var(--md-sys-typescale-body-medium-tracking);
+}

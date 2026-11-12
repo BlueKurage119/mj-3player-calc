@@ -1,6 +1,5 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
-import type { ScoredHora } from '../../core/result';
 import type { ResultState } from '../calc/result-state';
 import { ResultPanel } from './ResultPanel';
 
@@ -74,29 +73,73 @@ describe('ResultPanel', () => {
     expect(html).not.toContain('result-panel--banner');
   });
 
-  it('E1-7: ok で hora のとき data-state="ok" かつ data-result-kind="hora" が出る', () => {
+  it('E1-7: ok で hora のとき data-state="ok" かつ data-result-kind="hora" が出る', async () => {
+    const { generateResult } = await import('../../core/result');
+    const { DEFAULT_RULE } = await import('../../core/rule');
+    const table = {
+      round: 'east' as const,
+      seat: 'east' as const,
+      continue: 0,
+      deposit: 0
+    };
+    const options = {
+      riichi: 'none' as const,
+      ippatsu: false,
+      rinshan: false,
+      chankan: false,
+      haitei: false,
+      tenho: false,
+      tsubameGaeshi: false,
+      kanFuri: false
+    };
+    const res = generateResult(
+      table,
+      {
+        hand: [
+          { type: 'p', n: 2 },
+          { type: 'p', n: 3 },
+          { type: 'p', n: 4 },
+          { type: 'p', n: 5, red: false },
+          { type: 'p', n: 6 },
+          { type: 'p', n: 7 },
+          { type: 's', n: 3 },
+          { type: 's', n: 4 },
+          { type: 's', n: 6 },
+          { type: 's', n: 7 },
+          { type: 's', n: 8 },
+          { type: 'p', n: 9 },
+          { type: 'p', n: 9 },
+          { type: 's', n: 2 }
+        ],
+        melds: [],
+        dora: [],
+        nuki: 0
+      },
+      options,
+      DEFAULT_RULE
+    );
+
     const state: ResultState = {
       status: 'ok',
-      result: {
-        type: 'hora-shanten',
-        info: {
-          type: 'hora',
-          hora: [
-            {
-              horaTile: { type: 'm', n: 1 },
-              by: 'tsumo'
-            } as unknown as ScoredHora
-          ]
-        }
-      }
+      result: res
     };
     const html = renderToStaticMarkup(<ResultPanel resultState={state} />);
 
     expect(html).toContain('data-state="ok"');
     expect(html).toContain('data-result-kind="hora"');
-    expect(html).toContain('和了');
+    // 和了の結果は、ロン・ツモのカードを大きなカードでくくらない
+    expect(html).toContain('result-panel--flat');
     expect(html).not.toContain('data-view');
     expect(html).not.toContain('result-panel--banner');
+  });
+
+  it('E2: 和了以外(tempai)では result-panel--flat が付かない', () => {
+    const state: ResultState = {
+      status: 'ok',
+      result: { type: 'tempai', tileAvailabilities: [] }
+    };
+    const html = renderToStaticMarkup(<ResultPanel resultState={state} />);
+    expect(html).not.toContain('result-panel--flat');
   });
 
   it('E1-7: ok で tempai のとき data-state="ok" かつ data-result-kind="tempai" が出る', () => {
