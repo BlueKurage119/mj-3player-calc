@@ -42,7 +42,11 @@ export function FuBreakdown(props: FuBreakdownProps): React.JSX.Element | null {
           {rows.map((row, i) => (
             <li
               key={`${row.name}-${row.fu}-${i}`}
-              className="fu-breakdown__row"
+              className={
+                row.muted
+                  ? 'fu-breakdown__row fu-breakdown__row--muted'
+                  : 'fu-breakdown__row'
+              }
             >
               <span className="fu-breakdown__tiles">
                 {row.tiles?.map((t, ti) => {

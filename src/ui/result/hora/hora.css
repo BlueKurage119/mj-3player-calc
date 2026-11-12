@@ -220,6 +220,10 @@
   letter-spacing: var(--md-sys-typescale-body-medium-tracking);
 }
 
+.fu-breakdown__row--muted {
+  opacity: 0.5;
+}
+
 .fu-breakdown__tiles {
   display: inline-flex;
   align-items: center;

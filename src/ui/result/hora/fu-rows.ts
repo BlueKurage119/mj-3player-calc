@@ -15,6 +15,8 @@ export interface FuRow {
   name: string;
   fu: number;
   tiles?: TileOrBack[] | undefined;
+  /** 0符の行を薄く見せる(平和ツモを除く。UI 監修) */
+  muted?: boolean | undefined;
 }
 
 /** TileCountsIndex (0〜33) を CoreTile に変換 (5は赤にしない) */
@@ -122,9 +124,13 @@ export const fuRows = (
       const { name } = fuRowName(item, table);
       rows.push({
         name,
-        fu: item.fu
+        fu: item.fu,
+        muted: item.fu === 0 && item.type !== 'pinfu-tsumo'
       });
     }
   }
-  return rows;
+  return rows.map(r => ({
+    ...r,
+    muted: r.muted ?? r.fu === 0
+  }));
 };

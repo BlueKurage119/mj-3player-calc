@@ -176,4 +176,18 @@ describe('fu-rows.ts (E2 符の内訳行の組み立て)', () => {
       { type: 'back' }
     ]);
   });
+
+  it('E2-14: fuRows - 0符の行は muted(薄く)、平和ツモの行と 0 でない行は muted でない', () => {
+    const rows = fuRows([
+      { type: 'futei', fu: 20 },
+      { type: 'pinfu-tsumo', fu: 0 },
+      { type: 'shuntsu', tile: 9, fu: 0 },
+      { type: 'tsumo', fu: 2 }
+    ] as Fu[]);
+    const byName = (name: string) => rows.find(r => r.name === name);
+    expect(byName('副底')?.muted).toBeFalsy();
+    expect(byName('平和ツモ')?.muted).toBe(false);
+    expect(byName('順子')?.muted).toBe(true);
+    expect(byName('ツモ')?.muted).toBeFalsy();
+  });
 });
