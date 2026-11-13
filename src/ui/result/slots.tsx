@@ -1,4 +1,5 @@
-import React, { Suspense, lazy } from 'react';
+import type React from 'react';
+import { Suspense, lazy } from 'react';
 import type { Discard, ScoredHora } from '../../core/result';
 import type { Tile as CoreTile, TileAvailability } from '../../core/tile';
 import { Tile } from '../tile';
@@ -196,19 +197,6 @@ export function DiscardBody({
 }
 
 /* ================= バナー部品 (ResultGlance) ================= */
-
-export function JustHoraGlance(): React.JSX.Element {
-  return (
-    <div
-      data-result-kind="just-hora"
-      className="result-glance result-glance--just-hora"
-    >
-      <span className="result-glance__text">
-        和了です。牌をすべて入力して点数を計算します。
-      </span>
-    </div>
-  );
-}
 
 export interface HoraGlanceProps {
   hora: ScoredHora[];

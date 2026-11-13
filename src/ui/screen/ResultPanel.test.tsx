@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import type { ResultState } from '../calc/result-state';
@@ -36,6 +37,16 @@ describe('ResultPanel', () => {
     expect(html).not.toContain('data-result-kind');
     expect(html).not.toContain('data-view');
     expect(html).not.toContain('result-panel--banner');
+  });
+
+  it('E4-10: result が null(empty)のときはカードごと非表示にする CSS がある', () => {
+    const css = readFileSync(
+      new URL('./main-screen.css', import.meta.url),
+      'utf8'
+    );
+    expect(css).toMatch(
+      /\.result-panel\[data-state="empty"\]\s*\{\s*display:\s*none;/
+    );
   });
 
   it('E1-7: ok で just-hora のとき data-state="ok" かつ data-result-kind="just-hora" で指定文言が出る', () => {

@@ -317,6 +317,15 @@ UI 監修のたびに「9.N」として項目を追記する。各項目は「�
 - 変更ファイル: `src/ui/result/result.css` のみ(テストは色・高さを検証していないため変更なし)。
 - 実測: ダークテーマで確認。**ライトテーマは未確認**(淡色地が secondary-container の背景に対して薄すぎないかは、UI 監修で確認)。
 
+### 9.5 UI-5(第8版): 結果が空のときカードを出さない / 「和了です」をバナーに出さない
+
+- オーナーの UI 監修指示(引用): 「最後に、結果表示欄に何もないとき、カードを非表示にしてください。」「「和了です。牌をすべて入力して点数を計算します。」はバナーには出さないようにしてください。」
+- 空のカード: `ResultPanel` の `data-state="empty"`(`result === null`)のとき、`.result-panel[data-state="empty"] { display: none; }`(`main-screen.css`)でカードごと非表示にする。要素は残す(`ref`・バナーの表示判定の購読先のため)。読み込み中・エラーは従来どおり表示する。
+- 和了の案内: `shouldShowBanner`(`result-banner-logic.ts`)は `just-hora` のとき false を返す。`ResultGlance` は `just-hora` で `null` を返し、`JustHoraGlance` を削除する。本体(`JustHoraBody`)の案内文は従来どおり。
+- 変更ファイル: `main-screen.css`、`result-banner-logic.ts`、`ResultGlance.tsx`、`slots.tsx`(`JustHoraGlance` の削除と、不要になった `React` の値の import を型の import に変更)。
+- テスト: `ResultGlance.test.tsx` の E1-6(just-hora)を「バナーに何も出さない」に変更。`result-banner-logic.test.ts` は、表示条件のテストの基準の牌姿を just-hora から聴牌に替え、E4-09(just-hora で false)を新設。`ResultPanel.test.tsx` に E4-10(empty のカードを非表示にする CSS)を新設。
+- 実測(375×812): 手牌が空のとき `#result-panel` は `display: none`(高さ 0)。手牌 `1筒1筒`(just-hora)で本体に案内文が出て、バナーは出ない。
+
 ## 10. 改訂履歴
 
 - 第1版(2026-11-13): 新規作成。
@@ -326,3 +335,4 @@ UI 監修のたびに「9.N」として項目を追記する。各項目は「�
 - 第5版(2026-11-14): UI 監修(UI-2)でバッジの色を primary / on-primary に変更(9.2)。
 - 第6版(2026-11-14): UI 監修(UI-3)で向聴を secondary、聴牌を primary に分け、和了の打点バナーのロン・ツモをバッジ(primary / tertiary)にして「/」を省略(9.3)。
 - 第7版(2026-11-14): UI 監修(UI-4)でバナーの最小高さを牌1段に固定し、向聴バッジを要約カードの抜き北の丸と同じ淡色地+濃い文字に変更(9.4)。
+- 第8版(2026-11-14): UI 監修(UI-5)で、結果が空のときカードを非表示にし、just-hora の案内をバナーから外した(9.5)。

@@ -12,12 +12,11 @@ describe('ResultGlance', () => {
     expect(markup).toBe('');
   });
 
-  it('E1-6: just-hora のとき指定の文言が出る', () => {
+  it('E1-6: just-hora のときバナーには何も出さない(案内は本体だけ)', () => {
     const markup = renderToStaticMarkup(
       <ResultGlance view={{ kind: 'just-hora' }} />
     );
-    expect(markup).toContain('和了です。牌をすべて入力して点数を計算します。');
-    expect(markup).toContain('data-result-kind="just-hora"');
+    expect(markup).toBe('');
   });
 
   it('E1-6: shanten のとき「N向聴」のバッジと牌が表示される', () => {

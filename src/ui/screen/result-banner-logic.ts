@@ -27,7 +27,8 @@ export const shouldShowBanner = (input: BannerVisibilityInput): boolean => {
   }
 
   const view = classifyResult(resultState.result);
-  if (view.kind === 'none') {
+  // 何もないとき・和了(牌がそろった)の案内は、バナーには出さない(本体の案内だけ)
+  if (view.kind === 'none' || view.kind === 'just-hora') {
     return false;
   }
 
