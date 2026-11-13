@@ -124,7 +124,7 @@ export function MainScreen(): React.JSX.Element {
   }, []);
   const viewOptions = {
     rootMargin: `-${headerHeight + summaryMinHeight}px 0px 0px 0px`,
-    minRatio: 0.1
+    minRatio: 0.5
   };
   const statusInView = useInView(statusRef, viewOptions, true);
   const doraInView = useInView(doraRef, viewOptions, true);
