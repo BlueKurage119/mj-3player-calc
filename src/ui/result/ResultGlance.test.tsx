@@ -76,7 +76,7 @@ describe('ResultGlance', () => {
     expect(markup).toContain('data-result-kind="tempai"');
   });
 
-  it('E2-11: R02 で「ロン 1,500 / ツモ 700オール」が出ること、和了牌の牌画像と「和了」の文字が無いこと', async () => {
+  it('E2-11: R02 で「ロン」「ツモ」のバッジと「1,500」「700オール」が出る(区切りの「/」なし)こと、和了牌の牌画像と「和了」の文字が無いこと', async () => {
     const { generateResult } = await import('../../core/result');
     const { DEFAULT_RULE } = await import('../../core/rule');
     const eastTable = {
@@ -132,6 +132,14 @@ describe('ResultGlance', () => {
       expect(markup).toContain('1,500');
       expect(markup).toContain('ツモ');
       expect(markup).toContain('700オール');
+      expect(markup).toContain(
+        '<span class="result-glance__badge">ロン</span>'
+      );
+      expect(markup).toContain(
+        '<span class="result-glance__badge">ツモ</span>'
+      );
+      expect(markup).not.toContain(' / ');
+      expect(markup).not.toContain('result-glance__sep');
       expect(markup).toContain('data-result-kind="hora"');
       expect(markup).not.toContain('和了');
       expect(markup.match(/role="img"/g)).toBeNull();

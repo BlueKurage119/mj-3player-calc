@@ -291,6 +291,24 @@ UI 監修のたびに「9.N」として項目を追記する。各項目は「�
 - 変更: `.result-glance__badge` の色を `--md-sys-color-primary`(背景)/`--md-sys-color-on-primary`(文字)に替える(聴牌・向聴とも同色。9.1.4 の案2の分け方は採らない)。ライト・ダークとも、バナーの背景(secondary-container)と文字の対比が出る塗りのバッジになる。
 - 変更ファイル: `src/ui/result/result.css` のみ(テストは色を検証していないため変更なし)。バンドルへの影響なし(CSS は計測対象外)。
 
+### 9.3 UI-3(第6版): バッジの色分けと、和了の打点バナーのバッジ化
+
+- オーナーの UI 監修指示(引用):
+  - 「シャンテンではセカンダリカラー、聴牌はプライマリカラーとするのはどうでしょうか。」
+  - 「ロン=プライマリ・ツモ＝ターシャリのバッジ、ロンとツモの間のスラッシュ省略。」「(「和了」のバッジは)つけない」
+- 色の確定(9.1.4・9.2 の案を更新):
+
+| バッジ | 背景 / 文字 | 設定箇所 |
+| --- | --- | --- |
+| 聴牌(`TempaiGlance`・13枚形の `HoraGlance`) | `--md-sys-color-primary` / `--md-sys-color-on-primary` | `.result-glance__badge` の既定 |
+| N向聴(`ShantenGlance`) | `--md-sys-color-secondary` / `--md-sys-color-on-secondary`(塗り。バナーの背景 secondary-container とは別の色になる) | `.result-glance--shanten .result-glance__badge` |
+| ロン | primary / on-primary(既定) | `.result-glance__badge` |
+| ツモ | `--md-sys-color-tertiary` / `--md-sys-color-on-tertiary` | `.result-glance__side[data-glance-by="tsumo"] .result-glance__badge` |
+
+- 和了の打点バナー(`HoraGlance` の点数の分岐。E2 の部品、マージ済み): 「ロン」「ツモ」の文字を `<span class="result-glance__badge">ロン</span>` 等のバッジにし、`result-glance__sep`(` / `)を削除する。`.result-glance__side` を `inline-flex; gap: 0.375rem` にし、隣り合う `__side` の間に `margin-inline-start: 0.5rem` を置く。「和了」のバッジは付けない。ロンとツモの色は本体カード(`HoraItem`)と同じ組。
+- 変更ファイル: `slots.tsx`(`HoraGlance` の点数の分岐)、`result.css`、`ResultGlance.test.tsx`(E2-11 に、バッジの文字・「/」と `result-glance__sep` が無いことの検証を追加し、名前を更新)。他のテストの期待値は変わらない。
+- 実測(375×812、ダーク): R02 のバナーで「ロン」(rgb(161,211,153))と「ツモ」(rgb(160,207,212))のバッジ、「/」なし。向聴のバッジは rgb(186,204,179)(バナーの背景 rgb(59,75,56))。ライトテーマは未確認。
+
 ## 10. 改訂履歴
 
 - 第1版(2026-11-13): 新規作成。
@@ -298,3 +316,4 @@ UI 監修のたびに「9.N」として項目を追記する。各項目は「�
 - 第3版(2026-11-13): オーナー回答「Q1・Q2 とも A」を反映。確定事項9(本体の全0枚は見出し+「0種 0枚」+空の一覧)・10(バナーの全0枚はラベルのまま牌0枚)を追加し、1.3(d)(e)・2.3・2.4・E4-05・6(e) の設計案表記と Q1・Q2 への参照を確定の記述に改めた。未決事項はなし。
 - 第4版(2026-11-14): UI 監修(9章 UI-1)を反映。バナーの「聴牌」「N向聴」をバッジ化し「待ち」「受け入れ」を削除、牌の並びだけで折り返す。9章「UI 監修による変更」を新設(改訂履歴は10章へ)。確定事項3・10に文言変更の注記、2.4・E4-05・E4-06・6章 6(a)(e)・条件2・4・11 を新表記に更新、E4-08 を追加。
 - 第5版(2026-11-14): UI 監修(UI-2)でバッジの色を primary / on-primary に変更(9.2)。
+- 第6版(2026-11-14): UI 監修(UI-3)で向聴を secondary、聴牌を primary に分け、和了の打点バナーのロン・ツモをバッジ(primary / tertiary)にして「/」を省略(9.3)。

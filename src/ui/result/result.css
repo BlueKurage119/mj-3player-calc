@@ -108,6 +108,28 @@
   letter-spacing: var(--md-sys-typescale-label-medium-tracking);
 }
 
+/* 向聴は secondary、聴牌は primary(既定)。バナーの背景は secondary-container なので -container は使わない */
+.result-glance--shanten .result-glance__badge {
+  background-color: var(--md-sys-color-secondary);
+  color: var(--md-sys-color-on-secondary);
+}
+
+/* 和了の打点: ロンは primary(既定)、ツモは tertiary。本体カード(HoraItem)と同じ色の組 */
+.result-glance__side {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.result-glance__side + .result-glance__side {
+  margin-inline-start: 0.5rem;
+}
+
+.result-glance__side[data-glance-by="tsumo"] .result-glance__badge {
+  background-color: var(--md-sys-color-tertiary);
+  color: var(--md-sys-color-on-tertiary);
+}
+
 .result-glance__text {
   font-family: var(--md-sys-typescale-body-medium-font);
   font-size: var(--md-sys-typescale-body-medium-size);

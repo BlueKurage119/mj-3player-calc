@@ -270,20 +270,21 @@ export function HoraGlance({
 
   return (
     <div data-result-kind="hora" className="result-glance result-glance--hora">
-      {validParts.map((part, index) => {
+      {validParts.map(part => {
         const label = part.by === 'ron' ? 'ロン' : 'ツモ';
         return (
-          <React.Fragment key={part.by}>
-            {index > 0 && <span className="result-glance__sep"> / </span>}
-            <span className="result-glance__side" data-glance-by={part.by}>
-              <span className="result-glance__side-label">{label}</span>{' '}
-              {part.kind === 'points' ? (
-                <span className="tabular-nums">{part.text}</span>
-              ) : (
-                <span>役なし</span>
-              )}
-            </span>
-          </React.Fragment>
+          <span
+            key={part.by}
+            className="result-glance__side"
+            data-glance-by={part.by}
+          >
+            <span className="result-glance__badge">{label}</span>
+            {part.kind === 'points' ? (
+              <span className="tabular-nums">{part.text}</span>
+            ) : (
+              <span>役なし</span>
+            )}
+          </span>
         );
       })}
     </div>
