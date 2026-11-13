@@ -57,9 +57,13 @@ export interface HoraBodyProps {
 export function HoraBody({ hora, context }: HoraBodyProps): React.JSX.Element {
   return (
     <div data-result-kind="hora" className="result-body result-body--hora">
-      <Suspense fallback={null}>
-        <HoraDetail hora={hora} context={context} />
-      </Suspense>
+      {hora.length === 0 ? (
+        <p className="result-body__text">和了牌なし</p>
+      ) : (
+        <Suspense fallback={null}>
+          <HoraDetail hora={hora} context={context} />
+        </Suspense>
+      )}
     </div>
   );
 }
@@ -71,18 +75,36 @@ export interface TempaiBodyProps {
 export function TempaiBody({
   tileAvailabilities
 }: TempaiBodyProps): React.JSX.Element {
+  const available = tileAvailabilities.filter(a => a.count > 0);
   return (
     <div data-result-kind="tempai" className="result-body result-body--tempai">
-      <h2 className="result-body__title">聴牌</h2>
-      <div className="result-body__tiles">
-        {tileAvailabilities.map((a, i) => {
-          const t = a.tile;
-          const key = `${t.type}${t.n}${
-            t.type !== 'z' && t.n === 5 && t.red ? 'r' : ''
-          }-${i}`;
-          return <Tile key={key} tile={t} />;
-        })}
-      </div>
+      {available.length === 0 ? (
+        <p className="result-body__text">和了牌なし</p>
+      ) : (
+        <>
+          <h2 className="result-body__title">聴牌</h2>
+          <div className="result-body__tiles">
+            {available.map((a, i) => {
+              const t = a.tile;
+              const key = `${t.type}${t.n}${
+                t.type !== 'z' && t.n === 5 && t.red ? 'r' : ''
+              }-${i}`;
+              return (
+                <span
+                  key={key}
+                  className="result-body__wait"
+                  data-tile-count={a.count}
+                >
+                  <Tile tile={t} />
+                  <span className="result-body__wait-count tabular-nums">
+                    ×{a.count}
+                  </span>
+                </span>
+              );
+            })}
+          </div>
+        </>
+      )}
     </div>
   );
 }
@@ -152,6 +174,17 @@ export interface HoraGlanceProps {
 }
 
 export function HoraGlance({ hora }: HoraGlanceProps): React.JSX.Element {
+  if (hora.length === 0) {
+    return (
+      <div
+        data-result-kind="hora"
+        className="result-glance result-glance--hora"
+      >
+        <span className="result-glance__text">和了牌なし</span>
+      </div>
+    );
+  }
+
   const parts = horaGlanceParts(hora);
   const hasAnyPoints = parts.some(p => p.kind === 'points');
 
