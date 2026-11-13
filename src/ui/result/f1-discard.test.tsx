@@ -1,3 +1,4 @@
+import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import type { HandOptions, Meld } from '../../core/input';
 import {
@@ -9,6 +10,7 @@ import { DEFAULT_RULE } from '../../core/rule';
 import type { Table } from '../../core/table';
 import { type Tile, compareTiles } from '../../core/tile';
 import { classifyResult } from './classify';
+import { DiscardBody, DiscardGlance } from './discard';
 import {
   compareTileOrder,
   discardHeading,
@@ -148,7 +150,56 @@ const HANDS = {
   D13: '123p1z5z'
 } as const;
 
-describe('F1: 打牌候補の一覧 (F1-01〜F1-05, F1-12)', () => {
+const extractTileLabels = (markup: string) =>
+  [
+    ...markup.matchAll(/<span role="img" class="tile" aria-label="([^"]+)">/g)
+  ].map(m => m[1]);
+
+const extractDiscardItems = (markup: string) =>
+  [
+    ...markup.matchAll(
+      /<li class="discard-item" data-discard-next="([^"]+)">([\s\S]*?)<\/li>/g
+    )
+  ].map(m => ({
+    nextKind: m[1] ?? '',
+    html: m[2] ?? ''
+  }));
+
+const extractWaitGroups = (markup: string) =>
+  [
+    ...markup.matchAll(
+      /<span class="result-body__wait" data-tile-count="(\d+)"><span role="img" class="tile" aria-label="([^"]+)">.*?<\/span><span class="result-body__wait-count tabular-nums">([^<]*)<\/span><\/span>/g
+    )
+  ].map(m => ({
+    count: Number(m[1]),
+    tileLabel: m[2],
+    text: m[3]
+  }));
+
+const extractSummary = (html: string) => {
+  const m = html.match(
+    /<span class="result-body__summary tabular-nums" data-kinds="(\d+)" data-total="(\d+)">([^<]*)<\/span>/
+  );
+  if (!m) return null;
+  return {
+    kinds: Number(m[1]),
+    total: Number(m[2]),
+    text: m[3]
+  };
+};
+
+const extractRange = (html: string) => {
+  const m = html.match(
+    /<span class="discard-item__range tabular-nums" data-range-kind="([^"]+)">([^<]*)<\/span>/
+  );
+  if (!m) return null;
+  return {
+    kind: m[1],
+    text: m[2]
+  };
+};
+
+describe('F1: 打牌候補の一覧 (F1-01〜F1-12)', () => {
   it('F1-01: compareTileOrder は 1m〜7z の全ての組で符号が core の compareTiles と一致する', () => {
     const tiles = parseTiles('1m9m1p5p0p9p1s5s0s1z7z');
     for (const a of tiles) {
@@ -367,6 +418,269 @@ describe('F1: 打牌候補の一覧 (F1-01〜F1-05, F1-12)', () => {
       hasNoYakuWait: false
     });
     expect(formatDiscardRange(yakumanRange)).toBe('（32,000点）');
+  });
+
+  it('F1-06: DiscardBody は D3 で見出し「1向聴」と3件の向聴候補・有効牌を表示する', () => {
+    const markup = renderToStaticMarkup(
+      <DiscardBody discards={generateDiscards(HANDS.D3)} />
+    );
+
+    expect(
+      markup.match(/<h2 class="result-body__title">([^<]*)<\/h2>/)?.[1]
+    ).toBe('1向聴');
+
+    const items = extractDiscardItems(markup);
+    expect(items).toHaveLength(3);
+    expect(items.map(i => i.nextKind)).toEqual([
+      'shanten',
+      'shanten',
+      'shanten'
+    ]);
+    expect(
+      items.map(
+        i =>
+          i.html.match(
+            /<span class="discard-item__tile"><span role="img" class="tile" aria-label="([^"]+)">/
+          )?.[1]
+      )
+    ).toEqual(['西', '北', '9筒']);
+
+    const firstHtml = items[0]?.html ?? '';
+    expect(extractSummary(firstHtml)).toEqual({
+      kinds: 5,
+      total: 16,
+      text: '5種 16枚'
+    });
+    expect(extractWaitGroups(firstHtml)).toEqual([
+      { count: 4, tileLabel: '7筒', text: '×4' },
+      { count: 4, tileLabel: '8筒', text: '×4' },
+      { count: 3, tileLabel: '9筒', text: '×3' },
+      { count: 2, tileLabel: '東', text: '×2' },
+      { count: 3, tileLabel: '北', text: '×3' }
+    ]);
+    // 牌SVGのdata URIを含むため全体一致ができず、「×0」が表示されないことを部分一致否定で補う
+    expect(markup).not.toContain('×0');
+  });
+
+  it('F1-07: DiscardBody は D4 で見出し「聴牌」・1件・待ち牌3枚・レンジを表示し枚数表記を出さない', () => {
+    const markup = renderToStaticMarkup(
+      <DiscardBody discards={generateDiscards(HANDS.D4)} />
+    );
+
+    expect(
+      markup.match(/<h2 class="result-body__title">([^<]*)<\/h2>/)?.[1]
+    ).toBe('聴牌');
+
+    const items = extractDiscardItems(markup);
+    expect(items).toHaveLength(1);
+    expect(items[0]?.nextKind).toBe('tempai');
+
+    const detailHtml =
+      items[0]?.html.match(
+        /<div class="discard-item__detail">([\s\S]*)$/
+      )?.[1] ?? '';
+    expect(extractTileLabels(detailHtml)).toEqual(['2索', '5索', '赤5索']);
+    expect(extractRange(detailHtml)).toEqual({
+      kind: 'points',
+      text: '（1,000〜2,000点）'
+    });
+    // 牌SVGのdata URIを含むため全体一致ができず、枚数表記が出ないことを部分一致否定で補う
+    expect(markup).not.toContain('×');
+    expect(markup).not.toContain('種');
+    expect(markup).not.toContain('枚');
+  });
+
+  it('F1-08: DiscardBody は D7 で役なし前置、D8 で役なし、D12 で和了牌なしを表示する', () => {
+    const d7Markup = renderToStaticMarkup(
+      <DiscardBody discards={generateDiscards(HANDS.D7, pon1p)} />
+    );
+    const d7Items = extractDiscardItems(d7Markup);
+    expect(d7Items).toHaveLength(1);
+    expect(extractRange(d7Items[0]?.html ?? '')).toEqual({
+      kind: 'points',
+      text: '（役なし/1,000〜1,100点）'
+    });
+
+    const d8Markup = renderToStaticMarkup(
+      <DiscardBody discards={generateDiscards(HANDS.D8, pon1p)} />
+    );
+    const d8Items = extractDiscardItems(d8Markup);
+    expect(d8Items).toHaveLength(1);
+    expect(extractRange(d8Items[0]?.html ?? '')).toEqual({
+      kind: 'no-yaku',
+      text: '役なし'
+    });
+
+    const d12Markup = renderToStaticMarkup(
+      <DiscardBody discards={generateDiscards(HANDS.D12)} />
+    );
+    const d12Items = extractDiscardItems(d12Markup);
+    expect(d12Items).toHaveLength(2);
+    expect(
+      d12Items.map(
+        i =>
+          i.html.match(
+            /<span class="discard-item__tile"><span role="img" class="tile" aria-label="([^"]+)">/
+          )?.[1]
+      )
+    ).toEqual(['1筒', '南']);
+    expect(extractRange(d12Items[0]?.html ?? '')).toEqual({
+      kind: 'points',
+      text: '（1,600〜2,400点）'
+    });
+    const d12SecondHtml = d12Items[1]?.html ?? '';
+    expect(
+      d12SecondHtml.match(
+        /<span class="result-body__text">([^<]*)<\/span>/
+      )?.[1]
+    ).toBe('和了牌なし');
+    expect(extractRange(d12SecondHtml)).toBeNull();
+  });
+
+  it('F1-09: DiscardBody は tempai 型や全0枚で仕様どおりに待ち牌・和了牌なし・0種 0枚を表示する', () => {
+    const d13Markup = renderToStaticMarkup(
+      <DiscardBody discards={generateDiscards(HANDS.D13)} />
+    );
+    const d13Items = extractDiscardItems(d13Markup);
+    expect(d13Items).toHaveLength(2);
+    for (const item of d13Items) {
+      const detailHtml =
+        item.html.match(/<div class="discard-item__detail">([\s\S]*)$/)?.[1] ??
+        '';
+      expect(extractTileLabels(detailHtml)).toHaveLength(1);
+      expect(extractRange(detailHtml)).toBeNull();
+    }
+
+    const tempaiWithAvail: Discard[] = [
+      {
+        tile: { type: 'p', n: 1 },
+        next: {
+          type: 'tempai',
+          tileAvailabilities: [
+            { tile: { type: 'z', n: 1 }, count: 2 },
+            { tile: { type: 'z', n: 2 }, count: 0 },
+            { tile: { type: 'z', n: 3 }, count: 1 }
+          ]
+        }
+      }
+    ];
+    const tempaiMarkup = renderToStaticMarkup(
+      <DiscardBody discards={tempaiWithAvail} />
+    );
+    const tempaiItems = extractDiscardItems(tempaiMarkup);
+    expect(tempaiItems).toHaveLength(1);
+    const tempaiDetail =
+      tempaiItems[0]?.html.match(
+        /<div class="discard-item__detail">([\s\S]*)$/
+      )?.[1] ?? '';
+    expect(extractTileLabels(tempaiDetail)).toEqual(['東', '西']);
+    expect(extractRange(tempaiDetail)).toBeNull();
+
+    const tempaiAllZero: Discard[] = [
+      {
+        tile: { type: 'p', n: 1 },
+        next: {
+          type: 'tempai',
+          tileAvailabilities: [{ tile: { type: 'z', n: 1 }, count: 0 }]
+        }
+      }
+    ];
+    const tempaiZeroMarkup = renderToStaticMarkup(
+      <DiscardBody discards={tempaiAllZero} />
+    );
+    expect(
+      tempaiZeroMarkup.match(
+        /<span class="result-body__text">([^<]*)<\/span>/
+      )?.[1]
+    ).toBe('和了牌なし');
+
+    const shantenAllZero: Discard[] = [
+      {
+        tile: { type: 'p', n: 1 },
+        next: {
+          type: 'hora-shanten',
+          info: {
+            type: 'shanten',
+            shanten: 1,
+            tileAvailabilities: [{ tile: { type: 'z', n: 1 }, count: 0 }]
+          }
+        }
+      }
+    ];
+    const shantenZeroMarkup = renderToStaticMarkup(
+      <DiscardBody discards={shantenAllZero} />
+    );
+    expect(extractSummary(shantenZeroMarkup)).toEqual({
+      kinds: 0,
+      total: 0,
+      text: '0種 0枚'
+    });
+    expect(extractWaitGroups(shantenZeroMarkup)).toEqual([]);
+  });
+
+  it('F1-10: DiscardGlance は D2・D11 でバッジと打牌一覧を表示し不要なラベルを含まない', () => {
+    const d2Glance = renderToStaticMarkup(
+      <DiscardGlance discards={generateDiscards(HANDS.D2)} />
+    );
+    expect(
+      d2Glance
+        .match(
+          /<div data-result-kind="([^"]+)" data-discard-next="([^"]+)" class="([^"]+)">/
+        )
+        ?.slice(1, 4)
+    ).toEqual(['discard', 'shanten', 'result-glance result-glance--discard']);
+    const d2Badges = [
+      ...d2Glance.matchAll(
+        /<span class="result-glance__badge">([^<]*)<\/span>/g
+      )
+    ];
+    expect(d2Badges).toHaveLength(1);
+    expect(d2Badges[0]?.[1]).toBe('2向聴');
+    expect(extractTileLabels(d2Glance)).toEqual([
+      '東',
+      '南',
+      '西',
+      '北',
+      '白',
+      '發',
+      '1筒',
+      '9筒',
+      '1索',
+      '9索'
+    ]);
+
+    const d11Glance = renderToStaticMarkup(
+      <DiscardGlance discards={generateDiscards(HANDS.D11)} />
+    );
+    expect(
+      d11Glance
+        .match(
+          /<div data-result-kind="([^"]+)" data-discard-next="([^"]+)" class="([^"]+)">/
+        )
+        ?.slice(1, 4)
+    ).toEqual(['discard', 'tempai', 'result-glance result-glance--discard']);
+    expect(
+      d11Glance.match(/<span class="result-glance__badge">([^<]*)<\/span>/)?.[1]
+    ).toBe('聴牌');
+    expect(extractTileLabels(d11Glance)).toEqual(['8索', '赤5索', '5索', '東']);
+
+    for (const markup of [d2Glance, d11Glance]) {
+      // 牌SVGのdata URIを含むため全体一致ができず、禁止ラベル・旧クラスが含まれないことを部分一致否定で補う
+      expect(markup).not.toContain('打');
+      expect(markup).not.toContain('待ち');
+      expect(markup).not.toContain('受け入れ');
+      expect(markup).not.toContain('何切る');
+      expect(markup).not.toContain('result-glance__label');
+    }
+  });
+
+  it('F1-11: DiscardBody・DiscardGlance は空配列で外枠だけを描画する', () => {
+    expect(renderToStaticMarkup(<DiscardBody discards={[]} />)).toBe(
+      '<div data-result-kind="discard" class="result-body result-body--discard"></div>'
+    );
+    expect(renderToStaticMarkup(<DiscardGlance discards={[]} />)).toBe(
+      '<div data-result-kind="discard" class="result-glance result-glance--discard"></div>'
+    );
   });
 
   it('F1-12: 結合: generateResult → classifyResult で D1〜D13 が kind: discard、14枚和了が kind: hora になる', () => {
