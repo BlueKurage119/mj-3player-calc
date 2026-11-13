@@ -270,14 +270,14 @@ export const formatDiscardRange = (range: DiscardRange): string | null;
 4. `npx vitest run src/ui/result` の出力に `F1-01`〜`F1-12` がすべて現れ通過し、`E4-`・`E3-`・`E2-`・`E1-` 系も通過している。加えて `npx vitest run src/ui/screen/ResultPanel.test.tsx` で E1-7 が通過し、`ResultGlance.test.tsx` の E1-6(discard)が 2.7.1 の新しい名前で通過している。
 5. 初回 JS: `npm run build` 後、`dist/index.html` の `<script type="module" src>` が指すファイルを `gzip -9 -c <file> | wc -c` で測り記録。目標 126,818 B 以下(基準 125,908 B)。超過は不合格にせず、PR に 2.6 の記載事項を書く。
 6. 画面(dev。`npm run dev` を Browser pane で表示し、ペインを**表示した状態**で行う〔C-01〕。`resize_window` で 375×812。既定ルール・南家。他者の dev サーバーを止めない。`pkill` 禁止):
-   - (a) 手牌 `123p456p789s11z34z9p`(D3): 本体に見出し「1向聴」、候補3件が 西・北・9筒 の順、1件目に「5種 16枚」と 7筒「×4」・8筒「×4」・9筒「×3」・東「×2」・北「×3」。
+   - (a) 手牌 `123p456p789s11z34z9p`(D3): 本体に見出し「1向聴」、候補3件が 西・北・9筒 の順、各行の打牌の牌の上に「打」、1件目に「受け入れ」「5種 16枚」と有効牌 7筒・8筒・9筒・東・北の5枚(「×」が無い。第3版 UI-1)。
    - (b) 手牌 `1199p1199s1234z56z`(D2): 候補10件が 東・南・西・北・白・發・1筒・9筒・1索・9索 の順、字牌の行は「5種 15枚」、数牌の行は「3種 12枚」。
-   - (c) 手牌 `234p567p34s678s99p1z`(D4): 見出し「聴牌」、候補 東 の1件、待ち 2索・5索・赤5索、「（1,000〜2,000点）」。「×」「種」「待ち」が無い。
+   - (c) 手牌 `234p567p34s678s99p1z`(D4): 見出し「聴牌」、候補 東 の1件、「打」「待ち」の見出し、「待ち」の横に「（1,000〜2,000点）」、待ち牌 2索・5索・赤5索。「×」「種」「受け入れ」が無い(第3版 UI-1)。
    - (d) 手牌 `234s678s55z99s1z`・ポン 1筒(D7): 「（役なし/1,000〜1,100点）」。手牌 `234s678s99s22p1z`・ポン 1筒(D8): 「役なし」。
    - (e) 手牌 `1m9m19p19s123456z1z2p`(D9): 「（24,000〜32,000点）」で「役満」の文字が無い。
    - (f) 手牌 `234p567p34s678s0s5s1z`(D11): 候補が 8索・赤5索・5索・東 の順で、5索と赤5索が別の行。
    - (g) 手牌 `1111p456p789s111z2z`(D12): 南の行に「和了牌なし」。
-   - いずれも本体全体で「打」「受け入れ」「何切る」の文字が無い。`read_page`/`get_page_text`/`find`(`data-discard-next`・`data-kinds`・`data-range-kind`)で判定してよい。375px で横スクロールが出ない(`document.documentElement.scrollWidth <= 375`)。
+   - いずれも「何切る」の文字が無く、「×」が本体に無い(第3版 UI-1。「打」「受け入れ」「待ち」は 9.1 のとおり各行にある)。`read_page`/`get_page_text`/`find`(`data-discard-next`・`data-kinds`・`data-range-kind`)で判定してよい。375px で横スクロールが出ない(`document.documentElement.scrollWidth <= 375`)。
    - バナー: 375×500 にし、シートを閉じて `scrollTo(0,0)`、`button[aria-label="計算結果へ移動"]` が visible になってから確認する(E3・E4 と同じ手順。または `javascript_tool` で `.result-glance` の `textContent` と牌要素の数を読む)。(a) でバッジ「1向聴」+牌3枚、(b) でバッジ「2向聴」+牌10枚、(c) でバッジ「聴牌」+牌1枚。(b) で `.result-glance__badge` と `.result-glance .glance-tiles` の `getBoundingClientRect()` を読み、牌の並びの `left` がバッジの `right` 以上・牌の並びの `top` がバッジの `top` 以下(バッジの下に回り込まない)。
 7. 本番ビルド: `npm run build && npx vite preview` で 6(a)(c)(d) を再確認し、候補間の区切り線と2段の配置(CSS)が dev と同じに効いている(G-11)。
 8. ダークテーマ: 6(a)(c) をダークで表示し、「5種 16枚」・レンジ・区切り線・バッジが背景に溶けない(目視)。`git diff origin/main...HEAD -- src | grep -E '#[0-9a-fA-F]{3,8}\b'` で新規の HEX が無い。
@@ -298,9 +298,48 @@ export const formatDiscardRange = (range: DiscardRange): string | null;
 
 UI 監修のたびに「9.N」として項目を追記する。各項目は「指示・変更内容・根拠・対象・意匠・テスト・バンドル・受け入れ条件」の順に書く。既存章の記述と食い違う場合は、この章を優先し、既存章の該当箇所に「第N版 UI-N」と注記する。
 
-- (未実施)
+### 9.1 UI-1(第3版): 打牌の牌の拡大・有効牌の枚数の廃止・見出しの追加
+
+#### 9.1.1 指示(オーナー。引用。バナーは対象外)
+「打牌候補と待ちor有効牌の区別がつきにくいです。F1-1で打牌候補をタップして手牌を編集しますので、打牌候補は有効牌等より大きくしてください。」「何切る(14枚表示)の聴牌以外の場面では、枚数(xN)は表示せず有効牌のみ表示してください。」「livewingに合わせ、「打」「受け入れ」「待ち」の見出しをつけてはいかがでしょうか?」「バナーの表示は特に問題ありませんでした。」
+
+- 3つ目は提案の形だが、採用する(livewing の `DiscardItem` と同じ構成)。1.2 確定事項7の「ラベルを付けない」は、本体の打牌候補に限り、この指示で変える。バナー(`DiscardGlance`)は変えない。
+- 2つ目の「×N」の廃止は、`DiscardItem` の向聴の候補の有効牌だけが対象。E4 の `ShantenBody`(単独の向聴の結果。「牌×N」)は変えない。1.2 確定事項1の「有効牌『牌×N』」は、打牌候補では「有効牌(牌のみ)」に変える。「N種 M枚」は残す(livewing と同じ)。
+
+#### 9.1.2 変更内容
+- **打牌の牌の拡大**: `.discard-item__tile` の牌を `--tile-width: 2.25rem`(本体の有効牌・待ち牌の 1.5rem の1.5倍。livewing の `w-12` と `w-8` の比と同じ)にする。`Tile` は `--tile-width` を親から受ける(`src/ui/tile/tile.css`)。値は UI 監修で調整する(CSS 1行)。
+- **「打」の見出し**: `.discard-item__tile` を縦並びにし、牌の上に「打」(`<span class="discard-item__label">打</span>`)を中央揃えで置く。
+- **右の領域の見出し行**: `.discard-item__detail` の1段目を、見出し+付記の1行(`.discard-item__head`。`display:flex; align-items:baseline; gap:0.5rem`)にし、2段目に牌の並びを置く。
+  - 向聴: 1段目「受け入れ」+「N種 M枚」(`.result-body__summary`。`data-kinds`・`data-total` はそのまま)。2段目は有効牌の牌のみ(`Tile` を並べる。`.result-body__wait`・`.result-body__wait-count`・`data-tile-count`・「×」を出さない)。全0枚は「受け入れ」+「0種 0枚」で2段目は牌なし。
+  - 聴牌・和了: 1段目「待ち」+レンジ(`.discard-item__range`。`data-range-kind` はそのまま)。2段目は待ち牌の牌。レンジが無い(`none`)ときは1段目が「待ち」だけ。待ち牌が0枚のとき(`和了牌なし`の例外)は、1段目が「待ち」、2段目が「和了牌なし」(`.result-body__text`)。
+- 見出し(「打」「受け入れ」「待ち」)の見た目: `.discard-item__label` に label-large のタイポトークン5種(font・size・line-height・weight・tracking)と色 `--md-sys-color-on-surface`。HEX を書かない。
+- 変えない: 一覧の見出し(「N向聴」「聴牌」)・並び順・候補間の区切り線・バナー・純関数(`discard-summary.ts`)・core。
+
+#### 9.1.3 対象ファイル
+- `src/ui/result/discard.tsx`(`DiscardItem` の2つの中身〔`ShantenDiscardDetail`・`TempaiDiscardDetail`〕と `.discard-item__tile` まわりの DOM)、`src/ui/result/result.css`(F1 の区画。2.5 の `.discard-item__tile`・`.discard-item__detail` の規則の改修と、`.discard-item__label`・`.discard-item__head` の追加)、`src/ui/result/f1-discard.test.tsx`。それ以外は変えない。
+
+#### 9.1.4 テストの変更(`f1-discard.test.tsx`)
+| ID | 変更 |
+| --- | --- |
+| F1-06 | `.result-body__wait` が5組・`data-tile-count`・「×0」の検証を、「`li` 1件目の `.discard-item__detail` 内の有効牌の `aria-label` が 7筒・8筒・9筒・東・北の5枚」「`×` を含まない」「`result-body__wait`・`data-tile-count` を含まない」に替える。3件の各 `li` に「打」の見出し、1件目に「受け入れ」を含む |
+| F1-07 | D4 の `li` に「打」「待ち」の見出しがあり、「受け入れ」を含まない。レンジが「待ち」と同じ1段目(`.discard-item__head` 内)にあり、牌の並びが2段目。`×`・「種」「枚」を含まない |
+| F1-08 | D12 の 2z の行は「待ち」+「和了牌なし」で `.discard-item__range` が無い(従来どおり) |
+| F1-09 | 向聴の全0枚で「0種 0枚」・有効牌の牌が0個(「×0」の検証は `×` を含まないに統合)。他は従来どおり |
+| F1-10・F1-11 | 変えない(バナーに「打」「待ち」「受け入れ」「何切る」を含まない) |
+| F1-13(新設) | 打牌の牌の拡大: `result.css` に `.discard-item__tile` の `--tile-width` の宣言があり、値が `.result-body` の `--tile-width`(1.5rem)より大きい(文字列のテスト。既存の CSS 検査テストの流儀に従う) |
+
+#### 9.1.5 バンドル(09号)
+増分の見積り: ラベル2種・見出し行の DOM +60〜120 B、`×N` の組の削除 −40〜−80 B。合計 +0〜+80 B の見込み(CSS は初回 JS の外)。目標値は 2.6 のまま(126,818 B 以下)。実測を最終報告に書く。
+
+#### 9.1.6 受け入れ条件
+1. 6章 条件1〜5・9 が引き続き通過(初回 JS の実測と基準 125,908 B との差を記録)。
+2. 6章 6(a)(c) の手牌で、各行の打牌の牌の上に「打」。向聴の行は「受け入れ」+「N種 M枚」+有効牌が牌のみ(本体に「×」が無い)。聴牌の行は「待ち」+「（…点）」+待ち牌。打牌の牌の `getBoundingClientRect().width` が有効牌の牌の幅の約1.5倍(1.4〜1.6倍)。375px で横スクロールが出ない。
+3. 6(e) の国士の手(D9)と 6(g)(D12)で、「待ち」の見出しが出て D12 の南の行に「和了牌なし」。
+4. バナーは第2版のまま(「打」「待ち」「受け入れ」が無い)。
+5. 本番ビルド(`vite preview`)でも 2 が成り立つ(G-11)。
 
 ## 10. 改訂履歴
 
 - 第1版(2026-11-14): 新規作成。
 - 第2版(2026-11-14): 独立レビュー4点を反映。(1) 仮表示の廃止で失敗する既存テスト(`ResultGlance.test.tsx` 276行・`ResultPanel.test.tsx` 200行)を更新対象として 2.1・2.7.1・6章 条件2・4に明記。(2) D7 の待ちの並びを 9s・5z に訂正(再実行で確認)。(3) `tempai` 型の候補が現れる条件を実コードに合わせて整理し、5枚の部分入力 D13 で再現(F1-09 に追加)。(4) `tempai` 型では `discardRange` を呼ばず `none`、空配列のバナーは `data-discard-next` を省略、と明記。8章の参考記述を未決事項と区別した。
+- 第3版(2026-11-14): UI 監修(9.1 UI-1)を反映。打牌の牌を有効牌の1.5倍にし、向聴の候補の有効牌から「×N」を廃止、「打」「受け入れ」「待ち」の見出しを追加(livewing の `DiscardItem` と同じ構成)。9章を新設して 9.1 を記載し、1.2 確定事項1・7の該当箇所は 9.1 が優先、6章 6(a)(c) と末尾の文言を更新。
