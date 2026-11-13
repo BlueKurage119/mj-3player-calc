@@ -3,7 +3,7 @@
 - 親: Epic E(#6)
 - 依存: **E3(#77)のマージ後の main(`93e0388`)を起点とする。** E1(#75)の `classify.ts`・`slots.tsx`・`ResultBody`・`ResultGlance`、E3 の `TempaiBody`(「牌+×N」の組と `result.css` の `.result-body__wait` 系)を前提にする
 - ブランチ: `feature/issue-78-shanten-result`
-- 版: 第1版(2026-11-13)
+- 版: 第2版(2026-11-13)
 
 ## 1. 参照資料と設計判断の根拠
 
@@ -38,7 +38,7 @@
 | (b) 種類・枚数 | 「{{count}} 種」「{{count}} 枚」(`ja.yml` 107・108行)。種類 = `countBy(tilesToCounts(count>0 の牌), c => c > 0)`(**赤五と通常の五は同じ1種**)、枚数 = **全要素の `count` の合計** | なし | livewing どおり(2.2) |
 | (c) 有効牌の並び | `filter(a => a.count > 0)` を `flex-wrap` で「牌ボタン+`&times; {a.count}`」 | `tileAvailabilities` を全件 `Tile` で並べるだけ(0枚も出る・枚数なし) | E3 `TempaiBody` と同じ組(`.result-body__wait`)で `count > 0` のみ |
 | (d) 全0枚 | `Result.tsx` 47〜53行: `tempai` と違い**分岐なし**。`Shanten` をそのまま出すので「N 向聴」「0 種 0 枚」+空の一覧になる | 見出し+0枚の牌が並ぶ | 【設計案】livewing どおり(2.3。Q1) |
-| (e) バナー | `ResultGlance.tsx` に `hora-shanten` の `shanten` の表示は**無い**(和了・聴牌・何切るのみ) | `ShantenGlance`: ラベル+全有効牌(0枚も出る) | 確定事項3。`count > 0` で絞る。全0枚は【設計案】(2.4。Q2) |
+| (e) バナー | `ResultGlance.tsx` 78〜92行: `hora-shanten` かつ `info.type === 'shanten'` で「N 向聴」(太字)+「受け入れ」+有効牌の**全件**(`count > 0` の絞り込みも全0枚の分岐も無い) | `ShantenGlance`: ラベル「N向聴 受け入れ」+全有効牌(0枚も出る)。livewing のバナーの移植 | 確定事項3により `count > 0` で絞る(livewing との差分)。全0枚は【設計案】(2.4。Q2) |
 
 - 表記の差: livewing は「1 向聴」「4 種 14 枚」(数字の後に空白)。本機は既存の見出し「1向聴」に合わせ空白なし「4種 14枚」(種と枚の間は空白1つ)。E3 の「×N」と同じく見た目の差のみ。
 
@@ -131,8 +131,8 @@ export function summarizeAcceptance(tileAvailabilities: TileAvailability[]): Acc
 | ID | 対象 | 内容 |
 | --- | --- | --- |
 | E4-01 | `summarizeAcceptance` | S5 の値で `kinds: 4`・`total: 14`・`available` が5要素(順序維持)。S4 の値で `0`・`0`・`[]`。空配列で `0`・`0`・`[]` |
-| E4-02 | `ShantenBody` | S1 で見出し「1向聴」、`data-kinds="3"`・`data-total="8"`・文字「3種 8枚」、`.result-body__wait` が3組で `data-tile-count` が順に 2,3,3、「×2」「×3」「×3」、外枠 `data-result-kind="shanten"` |
-| E4-03 | `ShantenBody` | S5 で `.result-body__wait` が5組(赤5索を含む。牌の `aria-label` が順に 2索・5索・赤5索・東・白〔実装の表記に従う〕)、「4種 14枚」 |
+| E4-02 | `ShantenBody` | S1 で見出し「1向聴」、`data-kinds="3"`・`data-total="8"`・文字「3種 8枚」、`.result-body__wait` が3組で `aria-label` が順に 東・西・北、`data-tile-count` が順に 2,3,3、「×2」「×3」「×3」、外枠 `data-result-kind="shanten"` |
+| E4-03 | `ShantenBody` | S5 で `.result-body__wait` が5組(牌の `aria-label` が順に 2索・5索・赤5索・東・白。表記は `src/ui/tile/tile-image.ts` の `tileLabelOf`)、「4種 14枚」 |
 | E4-04 | `ShantenBody`・`ShantenGlance` | 一部だけ0枚(手で与える `[1z:2, 4z:0, 5z:3]`)で本体の組が2つ(北が無い)、「×0」を含まない、「2種 5枚」。バナーの牌が2枚(東・白) |
 | E4-05 | `ShantenBody`・`ShantenGlance` | 全0枚(S4)で本体に見出し「1向聴」・「0種 0枚」・`.result-body__wait` 0個・「×0」なし。バナーにラベル「1向聴 受け入れ」・牌0枚(2.3・2.4 の設計案。Q1・Q2 の回答で変わればこの項目を改訂) |
 | E4-06 | `ShantenGlance` | S1 でラベル「1向聴 受け入れ」・牌3枚・「×」と「枚」を含まない |
@@ -166,10 +166,10 @@ export function summarizeAcceptance(tileAvailabilities: TileAvailability[]): Acc
 1. `npm run lint`・`npm run typecheck`・`npm run format:check`・`npm test` がすべてエラーなし。
 2. `git diff --stat main...HEAD -- src/core src/ui/result/classify.ts src/ui/result/hora src/ui/result/hora-summary.ts src/ui/result/ResultGlance.test.tsx src/ui/result/e3-tempai.test.tsx` が空。`git diff main...HEAD -- src/ui/result/slots.tsx` で、変更が `summarizeAcceptance`(新規)・`ShantenBody`・`ShantenGlance` の中だけ(`TempaiBody`・`TempaiGlance`・`Hora*`・`Discard*`・`GlanceTiles` に差分なし)。
 3. import 規律: `grep -rnE "^import [^t].*from '(\.\./)+core/" src/ui/result --include='*.ts' --include='*.tsx' | grep -v '\.test\.'` が 0件(`import { type …` だけの行は目視で除く)。
-4. `npx vitest run src/ui/result` の出力に `E4-01`〜`E4-07` がすべて現れ通過し、`E3-01`〜`E3-08`・`E1-` 系も通過している。
+4. `npx vitest run src/ui/result` の出力に `E4-01`〜`E4-07` がすべて現れ通過し、`E3-01`〜`E3-08`・`E2-` 系・`E1-` 系も通過している。
 5. 初回 JS: `npm run build` 後、`dist/index.html` の `<script type="module" src>` が指すファイルを `gzip -9 -c <file> | wc -c` で測り記録。目標 126,070 B 以下(基準 125,827 B)。超過は不合格にせず PR に記録する。
 6. 画面(dev。`npm run dev` を Browser pane で表示し、ペインを**表示した状態**で行う〔C-01〕。既定ルール・南家):
-   - (a) 手牌 `123p456p789s11z34z`: 本体に見出し「1向聴」と「3種 8枚」、東「×2」・發〔3z の表示名は実装に従う〕「×3」・北「×3」の3組。バナーは「1向聴 受け入れ」+牌3枚で枚数なし。
+   - (a) 手牌 `123p456p789s11z34z`: 本体に見出し「1向聴」と「3種 8枚」、東「×2」・西「×3」・北「×3」の3組。バナーは「1向聴 受け入れ」+牌3枚で枚数なし。
    - (b) 手牌 `1199p1199s12345z`: 本体「2向聴」「5種 15枚」で、「七対子」の文字が出ない。
    - (c) 手牌 `1m19p19s1234567z5p`: 本体「1向聴」「13種 40枚」、13組が折り返して並び、2m〜8m が無い。「国士」の文字が出ない。
    - (d) 手牌 `123p456p789p34s15z`: 本体「4種 14枚」で 5索「×3」と赤5索「×1」が別の組。
@@ -185,14 +185,15 @@ export function summarizeAcceptance(tileAvailabilities: TileAvailability[]): Acc
 
 - iPhone の PWA で 6(a)(c) を表示し、見出し行と有効牌の組が読みやすく折り返されること。
 
-## 9. 未決事項(要ヒアリング)
+## 8. 未決事項(要ヒアリング)
 
 - **Q1 本体の全0枚(S4)**: 有効牌が全て0枚のとき、本体をどう出すか。
   - 案A【設計案】livewing どおり: 見出し「1向聴」+「0種 0枚」、一覧は空。利点: livewing 準拠、向聴数は見える。欠点: 空の一覧が残る。
   - 案B: 見出し「1向聴」+「0種 0枚」の下に「有効牌なし」の一文。利点: 状態が明確。欠点: livewing に無い文言。
   - 案C: E3 の聴牌と同様に文言だけ(例「有効牌なし」)で見出しも出さない。欠点: 向聴数が見えなくなる。
-- **Q2 バナーの全0枚**: 案A【設計案】ラベル「N向聴 受け入れ」のまま牌0枚 / 案B「N向聴 受け入れなし」と文言を変える(livewing はバナーに向聴の表示自体が無いため照合先なし)。
+- **Q2 バナーの全0枚**: 案A【設計案】ラベル「N向聴 受け入れ」のまま牌0枚 / 案B「N向聴 受け入れなし」と文言を変える。照合先の livewing `ResultGlance.tsx` 78〜92行は全件を絞らず出すため、全0枚では「N 向聴 受け入れ」+0枚の牌が並ぶ(案Aは確定事項3の絞り込みの結果、牌が消える形)。
 
-## 10. 改訂履歴
+## 9. 改訂履歴
 
 - 第1版(2026-11-13): 新規作成。
+- 第2版(2026-11-13): 独立レビュー4点を反映。(1) 3z の表記を「西」に訂正し、E4-02・E4-03・6(a) の牌の表記を `tileLabelOf` で確定(留保を削除)。(2) livewing の `ResultGlance.tsx` 78〜92行に向聴のバナーがあることを 1.3(e)・Q2 に反映し、本機 `ShantenGlance` はその移植で `count > 0` の絞り込みが確定事項3による差分と整理。(3) 受け入れ条件4に `E2-` 系を追加。(4) 章番号の欠番を詰めた(未決事項 8章・改訂履歴 9章)。
