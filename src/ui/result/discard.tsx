@@ -32,27 +32,23 @@ function ShantenDiscardDetail({
   );
   return (
     <>
-      <span
-        className="result-body__summary tabular-nums"
-        data-kinds={kinds}
-        data-total={total}
-      >
-        {kinds}種 {total}枚
-      </span>
-      <div className="result-body__tiles">
-        {available.map((a, i) => (
-          <span
-            key={`${tileKey(a.tile)}-${i}`}
-            className="result-body__wait"
-            data-tile-count={a.count}
-          >
-            <Tile tile={a.tile} />
-            <span className="result-body__wait-count tabular-nums">
-              ×{a.count}
-            </span>
-          </span>
-        ))}
+      <div className="discard-item__head">
+        <span className="discard-item__label">受け入れ</span>
+        <span
+          className="result-body__summary tabular-nums"
+          data-kinds={kinds}
+          data-total={total}
+        >
+          {kinds}種 {total}枚
+        </span>
       </div>
+      {available.length > 0 && (
+        <div className="result-body__tiles">
+          {available.map((a, i) => (
+            <Tile key={`${tileKey(a.tile)}-${i}`} tile={a.tile} />
+          ))}
+        </div>
+      )}
     </>
   );
 }
@@ -69,20 +65,25 @@ function TempaiDiscardDetail({
       : { kind: 'none' };
   const rangeText = formatDiscardRange(range);
 
-  if (range.kind === 'none' && waits.length === 0) {
-    return <span className="result-body__text">和了牌なし</span>;
-  }
+  const empty = range.kind === 'none' && waits.length === 0;
 
   return (
     <>
-      <GlanceTiles tiles={waits} />
-      {rangeText !== null && (
-        <span
-          className="discard-item__range tabular-nums"
-          data-range-kind={range.kind}
-        >
-          {rangeText}
-        </span>
+      <div className="discard-item__head">
+        <span className="discard-item__label">待ち</span>
+        {rangeText !== null && (
+          <span
+            className="discard-item__range tabular-nums"
+            data-range-kind={range.kind}
+          >
+            {rangeText}
+          </span>
+        )}
+      </div>
+      {empty ? (
+        <span className="result-body__text">和了牌なし</span>
+      ) : (
+        <GlanceTiles tiles={waits} />
       )}
     </>
   );
@@ -97,6 +98,7 @@ export function DiscardItem({ discard }: DiscardItemProps): React.JSX.Element {
   return (
     <li className="discard-item" data-discard-next={nextKind}>
       <span className="discard-item__tile">
+        <span className="discard-item__label">打</span>
         <Tile tile={discard.tile} />
       </span>
       <div className="discard-item__detail">
