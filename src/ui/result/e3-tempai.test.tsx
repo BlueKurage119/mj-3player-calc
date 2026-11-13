@@ -135,7 +135,7 @@ describe('E3: 聴牌・和了0件の表示 (E3-01〜E3-06)', () => {
     }
   });
 
-  it('E3-05: TempaiBody・TempaiGlance は一部だけ0枚(T10)で本体に「×2」1組のみ、バナーに「聴牌 待ち」と牌1枚を表示する', () => {
+  it('E3-05: TempaiBody・TempaiGlance は一部だけ0枚(T10)で本体に「×2」1組のみ、バナーに「聴牌」のバッジと牌1枚を表示する', () => {
     // T10: 4枚 1144z・抜き北2 -> [1z:2, 4z:0]
     const tileAvailabilities: TileAvailability[] = [
       { tile: { type: 'z', n: 1 }, count: 2 },
@@ -170,9 +170,9 @@ describe('E3: 聴牌・和了0件の表示 (E3-01〜E3-06)', () => {
     expect(glanceRoot?.[2]).toBe('result-glance result-glance--tempai');
     expect(
       glanceMarkup.match(
-        /<span class="result-glance__label">([^<]*)<\/span>/
+        /<span class="result-glance__badge">([^<]*)<\/span>/
       )?.[1]
-    ).toBe('聴牌 待ち');
+    ).toBe('聴牌');
     expect(extractTileLabels(glanceMarkup)).toEqual(['東']);
   });
 
@@ -268,7 +268,7 @@ describe('E3: 聴牌・和了0件の表示 (E3-01〜E3-06)', () => {
 });
 
 describe('E3: 13枚形のバナーは点数でなく待ちを出す', () => {
-  it('E3-07: waitInput で 13枚 234p567p34s678s99p は「聴牌 待ち」+ 2s・5s・赤5s(重複なし)、ロン・ツモの文字が無い', () => {
+  it('E3-07: waitInput で 13枚 234p567p34s678s99p は「聴牌」のバッジ + 2s・5s・赤5s(重複なし)、ロン・ツモの文字が無い', () => {
     const view = classifyResult(
       generateResult(
         southTable,
@@ -286,7 +286,8 @@ describe('E3: 13枚形のバナーは点数でなく待ちを出す', () => {
     const markup = renderToStaticMarkup(
       <HoraGlance hora={view.hora} waitInput />
     );
-    expect(markup).toContain('聴牌 待ち');
+    expect(markup).toContain('<span class="result-glance__badge">聴牌</span>');
+    expect(markup).not.toContain('待ち');
     expect(extractTileLabels(markup)).toHaveLength(3);
     expect(markup).not.toContain('ロン');
     expect(markup).not.toContain('ツモ');

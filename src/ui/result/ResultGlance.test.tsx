@@ -20,7 +20,7 @@ describe('ResultGlance', () => {
     expect(markup).toContain('data-result-kind="just-hora"');
   });
 
-  it('E1-6: shanten のとき「N向聴」「受け入れ」と牌が表示される', () => {
+  it('E1-6: shanten のとき「N向聴」のバッジと牌が表示される', () => {
     const tileAvailabilities: TileAvailability[] = [
       { tile: { type: 'm', n: 1 }, count: 3 },
       { tile: { type: 'p', n: 9 }, count: 1 }
@@ -34,12 +34,13 @@ describe('ResultGlance', () => {
         }}
       />
     );
-    expect(markup).toContain('1向聴 受け入れ');
+    expect(markup).toContain('<span class="result-glance__badge">1向聴</span>');
+    expect(markup).not.toContain('受け入れ');
     expect(markup).toContain('data-result-kind="shanten"');
     expect(markup).toContain('tile');
   });
 
-  it('E1-6: tempai で残りが1枚以上あるとき「聴牌 待ち」と牌が表示される', () => {
+  it('E1-6: tempai で残りが1枚以上あるとき「聴牌」のバッジと牌が表示される', () => {
     const tileAvailabilities: TileAvailability[] = [
       { tile: { type: 's', n: 5, red: false }, count: 2 }
     ];
@@ -51,7 +52,8 @@ describe('ResultGlance', () => {
         }}
       />
     );
-    expect(markup).toContain('聴牌 待ち');
+    expect(markup).toContain('<span class="result-glance__badge">聴牌</span>');
+    expect(markup).not.toContain('待ち');
     expect(markup).toContain('data-result-kind="tempai"');
     expect(markup).toContain('tile');
   });
@@ -70,7 +72,7 @@ describe('ResultGlance', () => {
       />
     );
     expect(markup).toContain('和了牌なし');
-    expect(markup).not.toContain('聴牌 待ち');
+    expect(markup).not.toContain('result-glance__badge');
     expect(markup).toContain('data-result-kind="tempai"');
   });
 

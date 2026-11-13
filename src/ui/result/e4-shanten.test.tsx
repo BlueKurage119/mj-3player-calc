@@ -6,7 +6,13 @@ import { DEFAULT_RULE } from '../../core/rule';
 import type { Table } from '../../core/table';
 import type { Tile, TileAvailability } from '../../core/tile';
 import { classifyResult } from './classify';
-import { ShantenBody, ShantenGlance, summarizeAcceptance } from './slots';
+import {
+  HoraGlance,
+  ShantenBody,
+  ShantenGlance,
+  TempaiGlance,
+  summarizeAcceptance
+} from './slots';
 
 const southTable: Table = {
   round: 'east',
@@ -83,7 +89,7 @@ const extractTileLabels = (markup: string) =>
     ...markup.matchAll(/<span role="img" class="tile" aria-label="([^"]+)">/g)
   ].map(m => m[1]);
 
-describe('E4: 向聴数・有効牌の結果表示 (E4-01〜E4-07)', () => {
+describe('E4: 向聴数・有効牌の結果表示 (E4-01〜E4-08)', () => {
   it('E4-01: summarizeAcceptance は S5 で赤5sを同一種として 4種14枚・5要素を返し、S4 と空配列で 0種0枚・空配列を返す', () => {
     const s5: TileAvailability[] = [
       { tile: { type: 's', n: 2 }, count: 4 },
@@ -207,13 +213,13 @@ describe('E4: 向聴数・有効牌の結果表示 (E4-01〜E4-07)', () => {
     expect(glanceRoot?.[2]).toBe('result-glance result-glance--shanten');
     expect(
       glanceMarkup.match(
-        /<span class="result-glance__label">([^<]*)<\/span>/
+        /<span class="result-glance__badge">([^<]*)<\/span>/
       )?.[1]
-    ).toBe('1向聴 受け入れ');
+    ).toBe('1向聴');
     expect(extractTileLabels(glanceMarkup)).toEqual(['東', '白']);
   });
 
-  it('E4-05: ShantenBody・ShantenGlance は全0枚(S4)で本体に見出しと「0種 0枚」・空の牌一覧、バナーにラベルのみ表示する', () => {
+  it('E4-05: ShantenBody・ShantenGlance は全0枚(S4)で本体に見出しと「0種 0枚」・空の牌一覧、バナーにバッジのみ表示する', () => {
     const s4: TileAvailability[] = [
       { tile: { type: 'z', n: 1 }, count: 0 },
       { tile: { type: 'z', n: 4 }, count: 0 },
@@ -231,11 +237,11 @@ describe('E4: 向聴数・有効牌の結果表示 (E4-01〜E4-07)', () => {
       <ShantenGlance shanten={1} tileAvailabilities={s4} />
     );
     expect(glanceMarkup).toBe(
-      '<div data-result-kind="shanten" class="result-glance result-glance--shanten"><span class="result-glance__label">1向聴 受け入れ</span><div class="glance-tiles"></div></div>'
+      '<div data-result-kind="shanten" class="result-glance result-glance--shanten"><span class="result-glance__badge">1向聴</span><div class="glance-tiles"></div></div>'
     );
   });
 
-  it('E4-06: ShantenGlance は S1 で「1向聴 受け入れ」と牌3枚を表示し「×」と「枚」を含まない', () => {
+  it('E4-06: ShantenGlance は S1 でバッジ「1向聴」と牌3枚を表示し「×」と「枚」を含まない', () => {
     const s1: TileAvailability[] = [
       { tile: { type: 'z', n: 1 }, count: 2 },
       { tile: { type: 'z', n: 3 }, count: 3 },
@@ -251,8 +257,8 @@ describe('E4: 向聴数・有効牌の結果表示 (E4-01〜E4-07)', () => {
     expect(rootMatch?.[1]).toBe('shanten');
     expect(rootMatch?.[2]).toBe('result-glance result-glance--shanten');
     expect(
-      markup.match(/<span class="result-glance__label">([^<]*)<\/span>/)?.[1]
-    ).toBe('1向聴 受け入れ');
+      markup.match(/<span class="result-glance__badge">([^<]*)<\/span>/)?.[1]
+    ).toBe('1向聴');
     expect(extractTileLabels(markup)).toEqual(['東', '西', '北']);
     // 牌SVGのdata URIを含むため全体一致ができず、バナーに枚数表記が出ないことを部分一致否定で補う
     expect(markup).not.toContain('×');
@@ -338,5 +344,66 @@ describe('E4: 向聴数・有効牌の結果表示 (E4-01〜E4-07)', () => {
         { tile: { type: 'z', n: 5 }, count: 3 }
       ]
     });
+  });
+
+  it('E4-08: バナー3種のバッジの文字は「聴牌」「N向聴」だけで、「待ち」「受け入れ」と result-glance__label を含まない', () => {
+    const s1: TileAvailability[] = [
+      { tile: { type: 'z', n: 1 }, count: 2 },
+      { tile: { type: 'z', n: 3 }, count: 3 },
+      { tile: { type: 'z', n: 4 }, count: 3 }
+    ];
+    const t10: TileAvailability[] = [{ tile: { type: 'z', n: 1 }, count: 2 }];
+    const horaView = classifyResult(
+      generateResult(
+        southTable,
+        {
+          hand: parseTiles('234p567p34s678s99p'),
+          melds: [],
+          dora: [],
+          nuki: 0
+        },
+        defaultOptions,
+        DEFAULT_RULE
+      )
+    );
+    if (horaView.kind !== 'hora') throw new Error('hora ではない');
+
+    const cases = [
+      {
+        markup: renderToStaticMarkup(
+          <ShantenGlance shanten={1} tileAvailabilities={s1} />
+        ),
+        expected: '1向聴'
+      },
+      {
+        markup: renderToStaticMarkup(
+          <ShantenGlance shanten={2} tileAvailabilities={s1} />
+        ),
+        expected: '2向聴'
+      },
+      {
+        markup: renderToStaticMarkup(<TempaiGlance tileAvailabilities={t10} />),
+        expected: '聴牌'
+      },
+      {
+        markup: renderToStaticMarkup(
+          <HoraGlance hora={horaView.hora} waitInput />
+        ),
+        expected: '聴牌'
+      }
+    ];
+
+    for (const { markup, expected } of cases) {
+      const badges = [
+        ...markup.matchAll(
+          /<span class="result-glance__badge">([^<]*)<\/span>/g
+        )
+      ];
+      expect(badges).toHaveLength(1);
+      expect(badges[0]?.[1]).toBe(expected);
+      expect(markup).not.toContain('待ち');
+      expect(markup).not.toContain('受け入れ');
+      expect(markup).not.toContain('result-glance__label');
+    }
   });
 });
