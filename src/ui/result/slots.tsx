@@ -235,7 +235,7 @@ export function HoraGlance({
         data-result-kind="hora"
         className="result-glance result-glance--hora"
       >
-        <span className="result-glance__label">聴牌 待ち</span>
+        <span className="result-glance__badge">聴牌</span>
         <GlanceTiles tiles={waits} />
       </div>
     );
@@ -305,7 +305,7 @@ export function TempaiGlance({
     >
       {available.length > 0 ? (
         <>
-          <span className="result-glance__label">聴牌 待ち</span>
+          <span className="result-glance__badge">聴牌</span>
           <GlanceTiles tiles={available.map(a => a.tile)} />
         </>
       ) : (
@@ -330,7 +330,7 @@ export function ShantenGlance({
       data-result-kind="shanten"
       className="result-glance result-glance--shanten"
     >
-      <span className="result-glance__label">{shanten}向聴 受け入れ</span>
+      <span className="result-glance__badge">{shanten}向聴</span>
       <GlanceTiles tiles={available.map(a => a.tile)} />
     </div>
   );
