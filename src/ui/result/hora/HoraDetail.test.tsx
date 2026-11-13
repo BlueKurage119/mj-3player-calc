@@ -251,6 +251,10 @@ describe('HoraDetail.test.tsx (E2 和了本体部品の表示)', () => {
         />
       );
       expect(html).not.toContain('fu-breakdown');
+      // 符のない国士無双でも、役一覧と基本点の間に仕切り線がある(UI 監修)
+      expect(html).toMatch(
+        /<\/ul><md-divider[^>]*><\/md-divider><div class="hora-item__base-point">/
+      );
     }
   });
 

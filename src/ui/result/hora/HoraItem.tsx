@@ -127,8 +127,8 @@ export function HoraItem({ hora, context }: HoraItemProps): React.JSX.Element {
         ))}
       </ul>
 
-      {/* 2.6.3 符の内訳(役一覧との間に仕切り線。UI 監修) */}
-      {showFuBreakdown ? <Divider /> : null}
+      {/* 2.6.3 役一覧と、符の内訳または基本点との間の仕切り線(符のない国士無双・十三不塔にも出す。UI 監修) */}
+      <Divider />
       {showFuBreakdown ? (
         <FuBreakdown
           fu={hora.type === 'mentsu' ? hora.fu : undefined}
