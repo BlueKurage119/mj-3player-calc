@@ -40,9 +40,10 @@ products: [Claude, Codex, Antigravity]
 
 #### 現在の基準値
 
-初回 JS **122,779 B**(gzip -9。D6 完了後の確定値)。
+初回 JS **125,908 B**(gzip -9。Epic E〔E1〜E4〕完了後の確定値)。
 
-- 確定の根拠: `origin/main` の 3c40672(PR #71 マージ後)を 2026-11-11 に `npm ci` と `npm run build` でビルドし、`dist/index.html` の `<script type="module" src>` が指す `assets/index-*.js`(`modulepreload` はなし)を `gzip -9 -c <file> | wc -c` で測った。2 回の実測は同値(122,779 B)。`registerSW.js`(通常の `<script src>`、140 B)は計測方法の対象外のため含めない。
+- 確定の根拠: `origin/main` の 82de410(PR #86 マージ後)を 2026-11-14 に `npm run build` でビルドし、`dist/index.html` の `<script type="module" src>` が指す `assets/index-*.js`(`modulepreload` はなし)を `gzip -9 -c <file> | wc -c` で測った。2 回の実測は同値(125,908 B)。E4 の検収担当の実測(PR #86 本文)とも一致する。遅延チャンク `HoraDetail-*.js`(4,665 B)は初回 JS に含まれないため、この値に含めない。
+- 2026-11-11 までの基準値は 122,779 B(D6 完了後)。Epic E の増分は、下の表のとおり。
 
 | 時点 | 初回 JS | 備考 |
 | --- | --- | --- |
@@ -50,3 +51,8 @@ products: [Claude, Codex, Antigravity]
 | D6 PR #63(設定画面の遅延読み込み) | 122,853 B | 基準 122,100 B との差 +753 B |
 | D6 PR #70(Symbols のインライン SVG 化) | 122,670 B | 基準 122,853 B との差 −183 B |
 | D6 完了後(main 3c40672) | 122,779 B | 確定値。PR #70 本文の値から +109 B(PR #70 の計測はマージ前のブランチ上のもの。内訳は未調査) |
+| E1 PR #80(結果の枠・固定バナー) | 124,831 B | 基準 123,289 B との差 +1,542 B。PR #80 本文の値(マージ前のブランチ上の測定) |
+| E2 設計時(main 9910db3) | 124,850 B | E2 の基準値(設計担当の実測) |
+| E2 PR #83(和了の結果) | 125,485 B | 基準 124,850 B との差 +635 B。目標値の約 125,400 B を 85 B 超過したが、目標値の運用により不合格にしていない |
+| E3 設計時(main 93e0388) | 125,827 B | E4 の基準値(設計担当の実測)。E3 PR #84 の検収時の実測は 125,879 B(Codex 指摘の修正前)で、修正後に減っている |
+| E4 PR #86 マージ後(main 82de410) | 125,908 B | 確定値。基準 125,827 B との差 +81 B。目標 126,070 B 以下 |
