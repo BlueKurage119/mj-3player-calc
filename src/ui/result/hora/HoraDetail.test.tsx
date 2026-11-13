@@ -136,7 +136,6 @@ describe('HoraDetail.test.tsx (E2 和了本体部品の表示)', () => {
     const { generateResult, DEFAULT_RULE } = await getCore();
 
     // R24 + 立直: 123p456p234s789s11z。分解が1通り(単騎待ち)で、生符34 → 40 に切り上がる
-    // (R19 は両面と単騎が同点の多面張で、分解の順序が実行履歴で変わるため使わない)
     const r24 = generateResult(
       southTable,
       {
