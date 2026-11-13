@@ -6,6 +6,14 @@
   width: 100%;
 }
 
+.result-body__heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: 1rem;
+  row-gap: 0.25rem;
+}
+
 .result-body__title {
   margin: 0;
   font-family: var(--md-sys-typescale-title-medium-font);
@@ -34,7 +42,8 @@
   align-items: center;
 }
 
-.result-body--tempai .result-body__tiles {
+.result-body--tempai .result-body__tiles,
+.result-body--shanten .result-body__tiles {
   gap: 0.5rem 0.75rem;
 }
 
@@ -44,6 +53,7 @@
   gap: 0.25rem;
 }
 
+.result-body__summary,
 .result-body__wait-count {
   font-family: var(--md-sys-typescale-body-medium-font);
   font-size: var(--md-sys-typescale-body-medium-size);
@@ -64,6 +74,8 @@
 
 .result-glance {
   --tile-width: 1.25rem;
+  /* 牌が出るときと文字だけのときで高さを変えない(牌1段の高さ) */
+  min-height: calc(var(--tile-width) * 4 / 3);
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -81,6 +93,49 @@
   white-space: nowrap;
 }
 
+.result-glance__badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  white-space: nowrap;
+  background-color: var(--md-sys-color-primary);
+  color: var(--md-sys-color-on-primary);
+  border-radius: var(--md-sys-shape-corner-small);
+  padding: 0.125rem 0.5rem;
+  font-family: var(--md-sys-typescale-label-medium-font);
+  font-size: var(--md-sys-typescale-label-medium-size);
+  line-height: var(--md-sys-typescale-label-medium-line-height);
+  font-weight: var(--md-sys-typescale-label-medium-weight);
+  letter-spacing: var(--md-sys-typescale-label-medium-tracking);
+}
+
+/* 向聴は要約カードの抜き北の丸(summary-card__pill)と同じ淡色地+濃い文字。聴牌は primary(既定) */
+.result-glance--shanten .result-glance__badge {
+  background-color: color-mix(
+    in srgb,
+    var(--md-sys-color-on-secondary-container) 16%,
+    transparent
+  );
+  color: var(--md-sys-color-on-secondary-container);
+}
+
+/* 和了の打点: ロンは primary(既定)、ツモは tertiary。本体カード(HoraItem)と同じ色の組 */
+.result-glance__side {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.result-glance__side + .result-glance__side {
+  margin-inline-start: 0.5rem;
+}
+
+.result-glance__side[data-glance-by="tsumo"] .result-glance__badge {
+  background-color: var(--md-sys-color-tertiary);
+  color: var(--md-sys-color-on-tertiary);
+}
+
 .result-glance__text {
   font-family: var(--md-sys-typescale-body-medium-font);
   font-size: var(--md-sys-typescale-body-medium-size);
@@ -96,4 +151,9 @@
   flex-wrap: wrap;
   gap: 2px;
   align-items: center;
+}
+
+.result-glance > .glance-tiles {
+  flex: 1 1 0;
+  min-width: 0;
 }

@@ -1,4 +1,5 @@
-import React, { Suspense, lazy } from 'react';
+import type React from 'react';
+import { Suspense, lazy } from 'react';
 import type { Discard, ScoredHora } from '../../core/result';
 import type { Tile as CoreTile, TileAvailability } from '../../core/tile';
 import { Tile } from '../tile';
@@ -109,6 +110,26 @@ export function TempaiBody({
   );
 }
 
+export interface AcceptanceSummary {
+  available: TileAvailability[];
+  kinds: number;
+  total: number;
+}
+
+/** 有効牌から残り1枚以上の牌・種類数(赤五と通常の五は同一視)・合計枚数を集計する */
+export function summarizeAcceptance(
+  tileAvailabilities: TileAvailability[]
+): AcceptanceSummary {
+  const available = tileAvailabilities.filter(a => a.count > 0);
+  const kinds = new Set<string>();
+  let total = 0;
+  for (const a of available) {
+    kinds.add(`${a.tile.type}${a.tile.n}`);
+    total += a.count;
+  }
+  return { available, kinds: kinds.size, total };
+}
+
 export interface ShantenBodyProps {
   shanten: number;
   tileAvailabilities: TileAvailability[];
@@ -118,19 +139,40 @@ export function ShantenBody({
   shanten,
   tileAvailabilities
 }: ShantenBodyProps): React.JSX.Element {
+  const { available, kinds, total } = summarizeAcceptance(tileAvailabilities);
   return (
     <div
       data-result-kind="shanten"
       className="result-body result-body--shanten"
     >
-      <h2 className="result-body__title">{shanten}向聴</h2>
+      <div className="result-body__heading">
+        <h2 className="result-body__title">{shanten}向聴</h2>
+        <span
+          className="result-body__summary tabular-nums"
+          data-kinds={kinds}
+          data-total={total}
+        >
+          {kinds}種 {total}枚
+        </span>
+      </div>
       <div className="result-body__tiles">
-        {tileAvailabilities.map((a, i) => {
+        {available.map((a, i) => {
           const t = a.tile;
           const key = `${t.type}${t.n}${
             t.type !== 'z' && t.n === 5 && t.red ? 'r' : ''
           }-${i}`;
-          return <Tile key={key} tile={t} />;
+          return (
+            <span
+              key={key}
+              className="result-body__wait"
+              data-tile-count={a.count}
+            >
+              <Tile tile={t} />
+              <span className="result-body__wait-count tabular-nums">
+                ×{a.count}
+              </span>
+            </span>
+          );
         })}
       </div>
     </div>
@@ -155,19 +197,6 @@ export function DiscardBody({
 }
 
 /* ================= バナー部品 (ResultGlance) ================= */
-
-export function JustHoraGlance(): React.JSX.Element {
-  return (
-    <div
-      data-result-kind="just-hora"
-      className="result-glance result-glance--just-hora"
-    >
-      <span className="result-glance__text">
-        和了です。牌をすべて入力して点数を計算します。
-      </span>
-    </div>
-  );
-}
 
 export interface HoraGlanceProps {
   hora: ScoredHora[];
@@ -194,7 +223,7 @@ export function HoraGlance({
         data-result-kind="hora"
         className="result-glance result-glance--hora"
       >
-        <span className="result-glance__label">聴牌 待ち</span>
+        <span className="result-glance__badge">聴牌</span>
         <GlanceTiles tiles={waits} />
       </div>
     );
@@ -229,20 +258,21 @@ export function HoraGlance({
 
   return (
     <div data-result-kind="hora" className="result-glance result-glance--hora">
-      {validParts.map((part, index) => {
+      {validParts.map(part => {
         const label = part.by === 'ron' ? 'ロン' : 'ツモ';
         return (
-          <React.Fragment key={part.by}>
-            {index > 0 && <span className="result-glance__sep"> / </span>}
-            <span className="result-glance__side" data-glance-by={part.by}>
-              <span className="result-glance__side-label">{label}</span>{' '}
-              {part.kind === 'points' ? (
-                <span className="tabular-nums">{part.text}</span>
-              ) : (
-                <span>役なし</span>
-              )}
-            </span>
-          </React.Fragment>
+          <span
+            key={part.by}
+            className="result-glance__side"
+            data-glance-by={part.by}
+          >
+            <span className="result-glance__badge">{label}</span>
+            {part.kind === 'points' ? (
+              <span className="tabular-nums">{part.text}</span>
+            ) : (
+              <span>役なし</span>
+            )}
+          </span>
         );
       })}
     </div>
@@ -264,7 +294,7 @@ export function TempaiGlance({
     >
       {available.length > 0 ? (
         <>
-          <span className="result-glance__label">聴牌 待ち</span>
+          <span className="result-glance__badge">聴牌</span>
           <GlanceTiles tiles={available.map(a => a.tile)} />
         </>
       ) : (
@@ -283,14 +313,14 @@ export function ShantenGlance({
   shanten,
   tileAvailabilities
 }: ShantenGlanceProps): React.JSX.Element {
-  const tiles = tileAvailabilities.map(a => a.tile);
+  const available = tileAvailabilities.filter(a => a.count > 0);
   return (
     <div
       data-result-kind="shanten"
       className="result-glance result-glance--shanten"
     >
-      <span className="result-glance__label">{shanten}向聴 受け入れ</span>
-      <GlanceTiles tiles={tiles} />
+      <span className="result-glance__badge">{shanten}向聴</span>
+      <GlanceTiles tiles={available.map(a => a.tile)} />
     </div>
   );
 }

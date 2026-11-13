@@ -4,7 +4,6 @@ import './result.css';
 import {
   DiscardGlance,
   HoraGlance,
-  JustHoraGlance,
   ShantenGlance,
   TempaiGlance
 } from './slots';
@@ -23,7 +22,7 @@ export function ResultGlance({
     case 'none':
       return null;
     case 'just-hora':
-      return <JustHoraGlance />;
+      return null;
     case 'hora':
       return <HoraGlance hora={view.hora} waitInput={waitInput} />;
     case 'tempai':

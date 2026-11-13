@@ -386,6 +386,11 @@ body {
   box-sizing: border-box;
 }
 
+/* 結果が何もないとき(牌が足りない等)はカードごと出さない */
+.result-panel[data-state="empty"] {
+  display: none;
+}
+
 /* 和了の結果: 個別のカード(ロン・ツモ)を大きなカードでくくらない */
 .result-panel--flat {
   background-color: transparent;

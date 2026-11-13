@@ -10,7 +10,7 @@ import {
 describe('result-banner-logic', () => {
   const okState: ResultState = {
     status: 'ok',
-    result: { type: 'just-hora' }
+    result: { type: 'tempai', tileAvailabilities: [] }
   };
 
   const defaultInput: BannerVisibilityInput = {
@@ -87,6 +87,15 @@ describe('result-banner-logic', () => {
 
     it('E1-6: (d) すべての条件を満たすときは true を返す', () => {
       expect(shouldShowBanner(defaultInput)).toBe(true);
+    });
+
+    it('E4-09: just-hora のときはバナーを出さない(本体の案内だけ)', () => {
+      expect(
+        shouldShowBanner({
+          ...defaultInput,
+          resultState: { status: 'ok', result: { type: 'just-hora' } }
+        })
+      ).toBe(false);
     });
 
     it('E1-6: MIN_INPUT_VISIBLE 定数が 160 である', () => {

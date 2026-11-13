@@ -12,15 +12,14 @@ describe('ResultGlance', () => {
     expect(markup).toBe('');
   });
 
-  it('E1-6: just-hora のとき指定の文言が出る', () => {
+  it('E1-6: just-hora のときバナーには何も出さない(案内は本体だけ)', () => {
     const markup = renderToStaticMarkup(
       <ResultGlance view={{ kind: 'just-hora' }} />
     );
-    expect(markup).toContain('和了です。牌をすべて入力して点数を計算します。');
-    expect(markup).toContain('data-result-kind="just-hora"');
+    expect(markup).toBe('');
   });
 
-  it('E1-6: shanten のとき「N向聴」「受け入れ」と牌が表示される', () => {
+  it('E1-6: shanten のとき「N向聴」のバッジと牌が表示される', () => {
     const tileAvailabilities: TileAvailability[] = [
       { tile: { type: 'm', n: 1 }, count: 3 },
       { tile: { type: 'p', n: 9 }, count: 1 }
@@ -34,12 +33,13 @@ describe('ResultGlance', () => {
         }}
       />
     );
-    expect(markup).toContain('1向聴 受け入れ');
+    expect(markup).toContain('<span class="result-glance__badge">1向聴</span>');
+    expect(markup).not.toContain('受け入れ');
     expect(markup).toContain('data-result-kind="shanten"');
     expect(markup).toContain('tile');
   });
 
-  it('E1-6: tempai で残りが1枚以上あるとき「聴牌 待ち」と牌が表示される', () => {
+  it('E1-6: tempai で残りが1枚以上あるとき「聴牌」のバッジと牌が表示される', () => {
     const tileAvailabilities: TileAvailability[] = [
       { tile: { type: 's', n: 5, red: false }, count: 2 }
     ];
@@ -51,7 +51,8 @@ describe('ResultGlance', () => {
         }}
       />
     );
-    expect(markup).toContain('聴牌 待ち');
+    expect(markup).toContain('<span class="result-glance__badge">聴牌</span>');
+    expect(markup).not.toContain('待ち');
     expect(markup).toContain('data-result-kind="tempai"');
     expect(markup).toContain('tile');
   });
@@ -70,11 +71,11 @@ describe('ResultGlance', () => {
       />
     );
     expect(markup).toContain('和了牌なし');
-    expect(markup).not.toContain('聴牌 待ち');
+    expect(markup).not.toContain('result-glance__badge');
     expect(markup).toContain('data-result-kind="tempai"');
   });
 
-  it('E2-11: R02 で「ロン 1,500 / ツモ 700オール」が出ること、和了牌の牌画像と「和了」の文字が無いこと', async () => {
+  it('E2-11: R02 で「ロン」「ツモ」のバッジと「1,500」「700オール」が出る(区切りの「/」なし)こと、和了牌の牌画像と「和了」の文字が無いこと', async () => {
     const { generateResult } = await import('../../core/result');
     const { DEFAULT_RULE } = await import('../../core/rule');
     const eastTable = {
@@ -130,6 +131,14 @@ describe('ResultGlance', () => {
       expect(markup).toContain('1,500');
       expect(markup).toContain('ツモ');
       expect(markup).toContain('700オール');
+      expect(markup).toContain(
+        '<span class="result-glance__badge">ロン</span>'
+      );
+      expect(markup).toContain(
+        '<span class="result-glance__badge">ツモ</span>'
+      );
+      expect(markup).not.toContain(' / ');
+      expect(markup).not.toContain('result-glance__sep');
       expect(markup).toContain('data-result-kind="hora"');
       expect(markup).not.toContain('和了');
       expect(markup.match(/role="img"/g)).toBeNull();
