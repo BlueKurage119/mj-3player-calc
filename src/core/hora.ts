@@ -1251,29 +1251,68 @@ export const generateKokushiHora = (
   }));
 };
 
+const waitingRankMap: Record<
+  'tanki' | 'kanchan' | 'penchan' | 'shampon' | 'ryammen',
+  number
+> = {
+  tanki: 0,
+  kanchan: 1,
+  penchan: 2,
+  shampon: 3,
+  ryammen: 4
+};
+
+const waitingRank = (h: Hora): number => {
+  if (h.type !== 'mentsu') return 5;
+  const waiting = h.fu.find(f => f.type === 'waiting');
+  return waiting ? waitingRankMap[waiting.waitingType] : 5;
+};
+
+const canonicalKey = (h: Hora): string =>
+  JSON.stringify([
+    h.type,
+    h.type === 'mentsu' ? h.melds : [],
+    h.type === 'mentsu' ? h.fu : [],
+    h.yaku
+  ]);
+
 export const uniqueHoras = (horas: Hora[], rule: Rule): Hora[] => {
   const ret = [...horas];
   ret.sort((a, b) => {
+    // 段1: 和了牌の昇順
     const t = compareTiles(a.horaTile, b.horaTile);
     if (t !== 0) return t;
+    // 段2: ron -> tsumo
     if (a.by !== b.by) return a.by === 'tsumo' ? 1 : -1;
+    // 段3: 役満の倍数の降順(役満でない候補は 0)
+    const ay = yakumanMultiplier(a.yaku, rule.multipleYakuman);
+    const by = yakumanMultiplier(b.yaku, rule.multipleYakuman);
+    if (ay !== by) return by - ay;
+    // 段4〜6: 両方とも役満でないときだけ基本点・飜数・生の符で比べる
     if (
-      a.yaku.some(y => y.type === 'yakuman') ||
-      b.yaku.some(y => y.type === 'yakuman')
-    )
-      return (
-        yakumanMultiplier(b.yaku, rule.multipleYakuman) -
-        yakumanMultiplier(a.yaku, rule.multipleYakuman)
-      );
-    const ah = sumBy(a.yaku, y => (y.type === 'yaku' ? y.han : 0));
-    const bh = sumBy(b.yaku, y => (y.type === 'yaku' ? y.han : 0));
-    if (ah >= 5 || bh >= 5) return bh - ah;
-    const af = a.type === 'mentsu' ? sumOfFu(a.fu) : 25;
-    const bf = b.type === 'mentsu' ? sumOfFu(b.fu) : 25;
-    const ap = calculateBasePoint(af, ah, rule.roundedMangan, false);
-    const bp = calculateBasePoint(bf, bh, rule.roundedMangan, false);
-    if (ap !== bp) return bp - ap;
-    return bh - ah;
+      !a.yaku.some(y => y.type === 'yakuman') &&
+      !b.yaku.some(y => y.type === 'yakuman')
+    ) {
+      const ah = sumBy(a.yaku, y => (y.type === 'yaku' ? y.han : 0));
+      const bh = sumBy(b.yaku, y => (y.type === 'yaku' ? y.han : 0));
+      const af = a.type === 'mentsu' ? sumOfFu(a.fu) : 25;
+      const bf = b.type === 'mentsu' ? sumOfFu(b.fu) : 25;
+      // 段4: 基本点の降順
+      const ap = calculateBasePoint(af, ah, rule.roundedMangan, false);
+      const bp = calculateBasePoint(bf, bh, rule.roundedMangan, false);
+      if (ap !== bp) return bp - ap;
+      // 段5: 飜数の降順
+      if (ah !== bh) return bh - ah;
+      // 段6: 生の符の降順
+      if (af !== bf) return bf - af;
+    }
+    // 段7a: 待ちの順位の昇順
+    const wr = waitingRank(a) - waitingRank(b);
+    if (wr !== 0) return wr;
+    // 段7b: 正準文字列の文字コード昇順
+    const ka = canonicalKey(a);
+    const kb = canonicalKey(b);
+    return ka < kb ? -1 : ka > kb ? 1 : 0;
   });
 
   return uniqueSorted(
