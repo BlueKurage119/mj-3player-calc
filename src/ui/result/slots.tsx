@@ -171,9 +171,35 @@ export function JustHoraGlance(): React.JSX.Element {
 
 export interface HoraGlanceProps {
   hora: ScoredHora[];
+  /** 13枚形(和了牌が未入力)のとき true。点数でなく待ち牌を出す */
+  waitInput?: boolean;
 }
 
-export function HoraGlance({ hora }: HoraGlanceProps): React.JSX.Element {
+export function HoraGlance({
+  hora,
+  waitInput = false
+}: HoraGlanceProps): React.JSX.Element {
+  if (waitInput && hora.length > 0) {
+    const seen = new Set<string>();
+    const waits: CoreTile[] = [];
+    for (const h of hora) {
+      const t = h.horaTile;
+      const key = `${t.type}${t.n}${t.type !== 'z' && t.n === 5 && t.red ? 'r' : ''}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      waits.push(t);
+    }
+    return (
+      <div
+        data-result-kind="hora"
+        className="result-glance result-glance--hora"
+      >
+        <span className="result-glance__label">聴牌 待ち</span>
+        <GlanceTiles tiles={waits} />
+      </div>
+    );
+  }
+
   if (hora.length === 0) {
     return (
       <div

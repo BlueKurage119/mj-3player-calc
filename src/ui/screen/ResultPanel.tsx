@@ -51,7 +51,7 @@ export function ResultPanel(props: ResultPanelProps): React.JSX.Element {
       aria-label="計算結果"
       data-state={contentState}
       className={
-        view.kind === 'hora'
+        view.kind === 'hora' && view.hora.length > 0
           ? 'result-panel result-panel--flat'
           : 'result-panel'
       }

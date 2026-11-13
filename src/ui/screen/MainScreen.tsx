@@ -201,6 +201,7 @@ export function MainScreen(): React.JSX.Element {
         resultState={resultState}
         panelRef={resultPanelRef}
         headerHeight={headerHeight}
+        waitInput={input.hand.length % 3 === 1}
       />
       <BottomSheet
         open={sheetOpen}

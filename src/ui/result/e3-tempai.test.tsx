@@ -266,3 +266,38 @@ describe('E3: 聴牌・和了0件の表示 (E3-01〜E3-06)', () => {
     });
   });
 });
+
+describe('E3: 13枚形のバナーは点数でなく待ちを出す', () => {
+  it('E3-07: waitInput で 13枚 234p567p34s678s99p は「聴牌 待ち」+ 2s・5s・赤5s(重複なし)、ロン・ツモの文字が無い', () => {
+    const view = classifyResult(
+      generateResult(
+        southTable,
+        {
+          hand: parseTiles('234p567p34s678s99p'),
+          melds: [],
+          dora: [],
+          nuki: 0
+        },
+        defaultOptions,
+        DEFAULT_RULE
+      )
+    );
+    if (view.kind !== 'hora') throw new Error('hora ではない');
+    const markup = renderToStaticMarkup(
+      <HoraGlance hora={view.hora} waitInput />
+    );
+    expect(markup).toContain('聴牌 待ち');
+    expect(extractTileLabels(markup)).toHaveLength(3);
+    expect(markup).not.toContain('ロン');
+    expect(markup).not.toContain('ツモ');
+    // waitInput なし(14枚形)は従来どおり点数
+    expect(renderToStaticMarkup(<HoraGlance hora={view.hora} />)).toContain(
+      'ロン'
+    );
+  });
+
+  it('E3-08: waitInput でも hora[] が空なら「和了牌なし」', () => {
+    const markup = renderToStaticMarkup(<HoraGlance hora={[]} waitInput />);
+    expect(markup).toContain('和了牌なし');
+  });
+});

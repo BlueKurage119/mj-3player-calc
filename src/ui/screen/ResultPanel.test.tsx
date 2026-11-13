@@ -142,6 +142,19 @@ describe('ResultPanel', () => {
     expect(html).not.toContain('result-panel--flat');
   });
 
+  it('E3: 和了0件(hora[]が空)では result-panel--flat が付かず、カードの中に「和了牌なし」が出る', () => {
+    const state = {
+      status: 'ok',
+      result: {
+        type: 'hora-shanten',
+        info: { type: 'hora', hora: [] }
+      }
+    } as unknown as ResultState;
+    const html = renderToStaticMarkup(<ResultPanel resultState={state} />);
+    expect(html).toContain('和了牌なし');
+    expect(html).not.toContain('result-panel--flat');
+  });
+
   it('E1-7: ok で tempai のとき data-state="ok" かつ data-result-kind="tempai" が出る', () => {
     const state: ResultState = {
       status: 'ok',
