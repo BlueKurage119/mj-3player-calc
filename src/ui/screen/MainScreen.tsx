@@ -73,6 +73,9 @@ function SheetModeToggle(): React.JSX.Element {
   );
 }
 
+/** 要約カードを出す判定の上端に足す高さ(カードの最小の高さの約半分。先頭で出ないよう半分にとどめる) */
+const SUMMARY_SHOW_EXTRA_PX = 20;
+
 export function MainScreen(): React.JSX.Element {
   const { rule, table, input, inputFocus, sheetMode } = useAppState();
   const dispatch = useAppDispatch();
@@ -105,8 +108,11 @@ export function MainScreen(): React.JSX.Element {
   const doraRef = useRef<HTMLDivElement | null>(null);
   const handRef = useRef<HTMLDivElement | null>(null);
   const resultPanelRef = useRef<HTMLElement | null>(null);
+  // 要約カードを出すときだけ、判定の上端をヘッダーの下に SUMMARY_SHOW_EXTRA_PX 足す
+  // (カードが覆う位置に入った時点で出す)。出ている間は足さず、しきい値の差でちらつきを抑える
+  const [summaryShown, setSummaryShown] = useState(false);
   const viewOptions = {
-    rootMargin: `-${headerHeight}px 0px 0px 0px`,
+    rootMargin: `-${headerHeight + (summaryShown ? 0 : SUMMARY_SHOW_EXTRA_PX)}px 0px 0px 0px`,
     minRatio: 0.5
   };
   const statusInView = useInView(statusRef, viewOptions, true);
@@ -117,6 +123,11 @@ export function MainScreen(): React.JSX.Element {
     dora: !statusInView && !doraInView,
     hand: !statusInView && !handInView
   };
+  const summaryVisible =
+    summaryRows.status || summaryRows.dora || summaryRows.hand;
+  useEffect(() => {
+    setSummaryShown(summaryVisible);
+  }, [summaryVisible]);
   const sheetOpen = inputFocus !== null;
 
   return (
