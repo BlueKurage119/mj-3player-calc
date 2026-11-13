@@ -3,7 +3,7 @@
 - 親: Epic E(#6)
 - 依存: **E3(#77)のマージ後の main(`93e0388`)を起点とする。** E1(#75)の `classify.ts`・`slots.tsx`・`ResultBody`・`ResultGlance`、E3 の `TempaiBody`(「牌+×N」の組と `result.css` の `.result-body__wait` 系)を前提にする
 - ブランチ: `feature/issue-78-shanten-result`
-- 版: 第4版(2026-11-14)
+- 版: 第10版(2026-11-14)
 
 ## 1. 参照資料と設計判断の根拠
 
@@ -169,7 +169,7 @@ export function summarizeAcceptance(tileAvailabilities: TileAvailability[]): Acc
 検収担当は上から順に実行する。期待値は 1.4 による。
 
 1. `npm run lint`・`npm run typecheck`・`npm run format:check`・`npm test` がすべてエラーなし。
-2. `git diff --stat main...HEAD -- src/core src/ui/result/classify.ts src/ui/result/hora src/ui/result/hora-summary.ts` が空。`git diff main...HEAD -- src/ui/result/slots.tsx` で、変更が `summarizeAcceptance`(新規)・`ShantenBody`・`ShantenGlance`・`TempaiGlance` と `HoraGlance` の13枚形の分岐(第4版 UI-1)の中だけ(`TempaiBody`・`HoraBody`・`HoraGlance` の14枚形の分岐・`Discard*`・`GlanceTiles` に差分なし)。`ResultGlance.test.tsx`・`e3-tempai.test.tsx` の差分は 9.1.5 に挙げた期待値の行だけ。
+2. `git diff --stat main...HEAD -- src/core src/ui/result/classify.ts src/ui/result/hora src/ui/result/hora-summary.ts` が空。`git diff main...HEAD -- src/ui/result/slots.tsx` で、変更が `summarizeAcceptance`(新規)・`ShantenBody`・`ShantenGlance`・`TempaiGlance` と `HoraGlance` の13枚形の分岐(第4版 UI-1)の中だけ(`TempaiBody`・`HoraBody`・`HoraGlance` の14枚形の分岐・`Discard*`・`GlanceTiles` に差分なし)。`ResultGlance.test.tsx`・`e3-tempai.test.tsx` の差分は 9.1.5 に挙げた期待値の行だけ。**(第10版の注記)9章で変更を許した範囲は、この条件の対象から外す**: 9.5(結果が空のカード・just-hora のバナー)による `ResultGlance.tsx`・`slots.tsx`(`JustHoraGlance` の削除)・`result-banner-logic.ts`・`main-screen.css` と、そのテスト(`ResultGlance.test.tsx` の E1-6 just-hora、`result-banner-logic.test.ts`、`ResultPanel.test.tsx`)、9.6(仕切り線)による `src/ui/result/hora/HoraItem.tsx`・`HoraDetail.test.tsx`。これらには差分があってよい。`src/core/`・`classify.ts`・`hora-summary.ts`・上記以外の `hora/` 配下は、引き続き差分なし。基準は `origin/main`(ローカルの `main` が古いと E3 の差分が混ざる)。
 3. import 規律: `grep -rnE "^import [^t].*from '(\.\./)+core/" src/ui/result --include='*.ts' --include='*.tsx' | grep -v '\.test\.'` が 0件(`import { type …` だけの行は目視で除く)。
 4. `npx vitest run src/ui/result` の出力に `E4-01`〜`E4-08` がすべて現れ通過し、`E3-01`〜`E3-08`・`E2-` 系・`E1-` 系も通過している。
 5. 初回 JS: `npm run build` 後、`dist/index.html` の `<script type="module" src>` が指すファイルを `gzip -9 -c <file> | wc -c` で測り記録。目標 126,070 B 以下(基準 125,827 B。第4版 UI-1 の増分は 9.1.6)。超過は不合格にせず PR に記録する。
@@ -230,6 +230,7 @@ UI 監修のたびに「9.N」として項目を追記する。各項目は「�
 | --- | --- | --- |
 | `src/ui/result/ResultGlance.tsx` 14行 | コメント「待ちで出す」 | コメント。表示文字ではない |
 | `src/ui/screen/ResultBanner.tsx` 24行 | コメント「待ちを出す」 | 同上 |
+| `src/ui/result/slots.tsx` 203行(`HoraGlanceProps.waitInput` の JSDoc) | コメント「点数でなく待ち牌を出す」(E3 で main に入っていた) | 同上。変更しない |
 | `src/ui/result/hora/FuBreakdown.tsx` 18行、`hora/fu-rows.ts` 20・117〜124行 | コメント | 同上 |
 | `src/ui/result/hora/labels.ts` 91・95・142〜146行 | 役名「国士無双十三面待ち」、符の待ちの名「両面待ち」「単騎待ち」等 | 役・符の名称。バナーのラベルではない |
 
@@ -277,7 +278,7 @@ UI 監修のたびに「9.N」として項目を追記する。各項目は「�
 #### 9.1.7 受け入れ条件
 
 1. `npx vitest run src/ui/result` で E4-08 と、9.1.5 で期待値を変えた E1-6・E3-05・E3-07・E4-04〜E4-06 が通過する。
-2. `grep -n "待ち\|受け入れ" src/ui/result/slots.tsx` が 0件。
+2. `grep -n "待ち\|受け入れ" src/ui/result/slots.tsx` が、表示される文字としては 0件(ヒットするのは 203行の JSDoc コメント「点数でなく待ち牌を出す」の1件だけ。9.1.3 の表のとおり変更しない)。
 3. 画面(dev。6章の手順):
    - (a) 6章 6(a) の手牌で、バナーがバッジ「1向聴」+牌3枚。手牌 `123456p1z` でバッジ「聴牌」+東。13枚 `234p567p34s678s99p` でバッジ「聴牌」+牌3枚。いずれも「待ち」「受け入れ」が無い。
    - (b) 折り返し: 375×500 で 6章 6(c) の手牌(有効牌13種)のバナーを表示し、`javascript_tool` で `.result-glance__badge` と `.result-glance .glance-tiles` の `getBoundingClientRect()` を読む。牌の並びの `left` がバッジの `right` 以上で、牌の並びの `top` がバッジの `top` 以下(バッジの下に回り込まない)。牌の並びが2行以上なら、その中で折り返している(高さが牌1枚分より大きい)。バッジの `height` が1行分(折り返していない)。
@@ -345,3 +346,4 @@ UI 監修のたびに「9.N」として項目を追記する。各項目は「�
 - 第7版(2026-11-14): UI 監修(UI-4)でバナーの最小高さを牌1段に固定し、向聴バッジを要約カードの抜き北の丸と同じ淡色地+濃い文字に変更(9.4)。
 - 第8版(2026-11-14): UI 監修(UI-5)で、結果が空のときカードを非表示にし、just-hora の案内をバナーから外した(9.5)。
 - 第9版(2026-11-14): UI 監修(UI-6)で、符のない和了(国士無双・十三不搭)の役一覧と基本点の間に仕切り線を出すようにした(9.6)。
+- 第10版(2026-11-14): 検収で見つかった記載不整合3点を修正(版の表記を改訂履歴に合わせた、9.1.3 の grep 一覧に `slots.tsx` 203行のコメントを追加し 9.1.7 条件2を「表示文字では0件」に直した、6章の条件2に9章で変更を許した範囲を注記した)。
