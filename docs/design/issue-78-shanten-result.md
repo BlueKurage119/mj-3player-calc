@@ -3,7 +3,7 @@
 - 親: Epic E(#6)
 - 依存: **E3(#77)のマージ後の main(`93e0388`)を起点とする。** E1(#75)の `classify.ts`・`slots.tsx`・`ResultBody`・`ResultGlance`、E3 の `TempaiBody`(「牌+×N」の組と `result.css` の `.result-body__wait` 系)を前提にする
 - ブランチ: `feature/issue-78-shanten-result`
-- 版: 第3版(2026-11-13)
+- 版: 第4版(2026-11-14)
 
 ## 1. 参照資料と設計判断の根拠
 
@@ -31,6 +31,8 @@
 | 8 | 境界: E4=`shanten`、F1=`discard` の一覧 |
 | 9 | (オーナー回答・第2版 Q1=A)本体の全0枚は livewing どおり、見出し「N向聴」+「0種 0枚」、有効牌の一覧は空(「×0」は出さない) |
 | 10 | (オーナー回答・第2版 Q2=A)バナーの全0枚はラベル「N向聴 受け入れ」のまま、牌は0枚 |
+
+- 注記(第4版): 確定事項3・10のラベル「N向聴 受け入れ」は、UI 監修(9章 UI-1)によりバッジ「N向聴」に文言を変更した。確定事項の意図(3: バナーは牌のみで `count > 0` で絞る、10: 全0枚でもバナーを出し牌は出さない)は変わらない。
 
 ### 1.3 livewing の実物と main の現状の照合(2026-11-13)
 
@@ -76,7 +78,7 @@
 | `src/ui/result/result.css` | 改修 | 見出し行(`.result-body__heading`)・種類枚数(`.result-body__summary`)の書式。`.result-body--tempai .result-body__tiles` の間隔指定を `--shanten` にも効かせる |
 | `src/ui/result/e4-shanten.test.tsx` | 新規 | 2.6 のテスト |
 
-変更しないもの: `src/core/`、`classify.ts`、`TempaiBody`・`TempaiGlance`・`Hora*`・`DiscardBody`・`DiscardGlance`・`GlanceTiles`、`hora/` 配下、既存テスト(`ResultGlance.test.tsx`・`e3-tempai.test.tsx` ほか)。`src/ui/result/` から core への import は従来どおり `import type` のみ(種類数は core の `tilesToCounts` を使わず UI で数える)。
+変更しないもの: `src/core/`、`classify.ts`、`TempaiBody`・`TempaiGlance`・`Hora*`・`DiscardBody`・`DiscardGlance`・`GlanceTiles`、`hora/` 配下、既存テスト(`ResultGlance.test.tsx`・`e3-tempai.test.tsx` ほか)。**第4版 UI-1 により `TempaiGlance`・`HoraGlance` の13枚形の分岐・`ResultGlance.test.tsx`・`e3-tempai.test.tsx` は 9.1.5 の箇所に限り変更する。**`src/ui/result/` から core への import は従来どおり `import type` のみ(種類数は core の `tilesToCounts` を使わず UI で数える)。
 
 ### 2.2 純関数 `summarizeAcceptance`
 
@@ -117,8 +119,8 @@ export function summarizeAcceptance(tileAvailabilities: TileAvailability[]): Acc
 
 ### 2.4 `ShantenGlance`(バナー)
 
-- `const available = tileAvailabilities.filter(a => a.count > 0)`。ラベル `<span class="result-glance__label">{shanten}向聴 受け入れ</span>` は現行のまま、`<GlanceTiles tiles={available.map(a => a.tile)} />`。枚数は出さない。
-- **全0枚(確定事項10)**: ラベル「N向聴 受け入れ」はそのまま出し、`GlanceTiles` は空(子なし)で出す。
+- `const available = tileAvailabilities.filter(a => a.count > 0)`。先頭はバッジ `<span class="result-glance__badge">{shanten}向聴</span>`(第4版 UI-1。旧ラベル「N向聴 受け入れ」)、続けて `<GlanceTiles tiles={available.map(a => a.tile)} />`。枚数は出さない。
+- **全0枚(確定事項10)**: バッジ「N向聴」だけを出し、`GlanceTiles` は空(子なし)で出す。
 - `onTileClick` は渡さない(現行どおり。`GlanceTiles` の引数は残す)。
 
 ### 2.5 初回 JS(09号)
@@ -136,9 +138,10 @@ export function summarizeAcceptance(tileAvailabilities: TileAvailability[]): Acc
 | E4-02 | `ShantenBody` | S1 で見出し「1向聴」、`data-kinds="3"`・`data-total="8"`・文字「3種 8枚」、`.result-body__wait` が3組で `aria-label` が順に 東・西・北、`data-tile-count` が順に 2,3,3、「×2」「×3」「×3」、外枠 `data-result-kind="shanten"` |
 | E4-03 | `ShantenBody` | S5 で `.result-body__wait` が5組(牌の `aria-label` が順に 2索・5索・赤5索・東・白。表記は `src/ui/tile/tile-image.ts` の `tileLabelOf`)、「4種 14枚」 |
 | E4-04 | `ShantenBody`・`ShantenGlance` | 一部だけ0枚(手で与える `[1z:2, 4z:0, 5z:3]`)で本体の組が2つ(北が無い)、「×0」を含まない、「2種 5枚」。バナーの牌が2枚(東・白) |
-| E4-05 | `ShantenBody`・`ShantenGlance` | 全0枚(S4)で本体に見出し「1向聴」・「0種 0枚」・`.result-body__wait` 0個・「×0」なし。バナーにラベル「1向聴 受け入れ」・牌0枚(確定事項9・10) |
-| E4-06 | `ShantenGlance` | S1 でラベル「1向聴 受け入れ」・牌3枚・「×」と「枚」を含まない |
+| E4-05 | `ShantenBody`・`ShantenGlance` | 全0枚(S4)で本体に見出し「1向聴」・「0種 0枚」・`.result-body__wait` 0個・「×0」なし。バナーはバッジ「1向聴」・牌0枚(確定事項9・10。第4版 UI-1 の表記) |
+| E4-06 | `ShantenGlance` | S1 でバッジ「1向聴」・牌3枚・「×」と「枚」を含まない(第4版 UI-1 の表記) |
 | E4-07 | 結合 | `generateResult` → `classifyResult` で S1〜S5 が 1.4 の `shanten`・`tileAvailabilities` と一致 |
+| E4-08 | バナー3種 | 第4版 UI-1(9章 9.1.5)。バッジの文字は「聴牌」「N向聴」だけで、「待ち」「受け入れ」を含まない |
 
 - 補助関数(`southTable`・`defaultOptions`・`parseTiles`)は `e3-tempai.test.tsx` から複製してよい(既存テストを書き換えない)。
 
@@ -166,22 +169,23 @@ export function summarizeAcceptance(tileAvailabilities: TileAvailability[]): Acc
 検収担当は上から順に実行する。期待値は 1.4 による。
 
 1. `npm run lint`・`npm run typecheck`・`npm run format:check`・`npm test` がすべてエラーなし。
-2. `git diff --stat main...HEAD -- src/core src/ui/result/classify.ts src/ui/result/hora src/ui/result/hora-summary.ts src/ui/result/ResultGlance.test.tsx src/ui/result/e3-tempai.test.tsx` が空。`git diff main...HEAD -- src/ui/result/slots.tsx` で、変更が `summarizeAcceptance`(新規)・`ShantenBody`・`ShantenGlance` の中だけ(`TempaiBody`・`TempaiGlance`・`Hora*`・`Discard*`・`GlanceTiles` に差分なし)。
+2. `git diff --stat main...HEAD -- src/core src/ui/result/classify.ts src/ui/result/hora src/ui/result/hora-summary.ts` が空。`git diff main...HEAD -- src/ui/result/slots.tsx` で、変更が `summarizeAcceptance`(新規)・`ShantenBody`・`ShantenGlance`・`TempaiGlance` と `HoraGlance` の13枚形の分岐(第4版 UI-1)の中だけ(`TempaiBody`・`HoraBody`・`HoraGlance` の14枚形の分岐・`Discard*`・`GlanceTiles` に差分なし)。`ResultGlance.test.tsx`・`e3-tempai.test.tsx` の差分は 9.1.5 に挙げた期待値の行だけ。
 3. import 規律: `grep -rnE "^import [^t].*from '(\.\./)+core/" src/ui/result --include='*.ts' --include='*.tsx' | grep -v '\.test\.'` が 0件(`import { type …` だけの行は目視で除く)。
-4. `npx vitest run src/ui/result` の出力に `E4-01`〜`E4-07` がすべて現れ通過し、`E3-01`〜`E3-08`・`E2-` 系・`E1-` 系も通過している。
-5. 初回 JS: `npm run build` 後、`dist/index.html` の `<script type="module" src>` が指すファイルを `gzip -9 -c <file> | wc -c` で測り記録。目標 126,070 B 以下(基準 125,827 B)。超過は不合格にせず PR に記録する。
+4. `npx vitest run src/ui/result` の出力に `E4-01`〜`E4-08` がすべて現れ通過し、`E3-01`〜`E3-08`・`E2-` 系・`E1-` 系も通過している。
+5. 初回 JS: `npm run build` 後、`dist/index.html` の `<script type="module" src>` が指すファイルを `gzip -9 -c <file> | wc -c` で測り記録。目標 126,070 B 以下(基準 125,827 B。第4版 UI-1 の増分は 9.1.6)。超過は不合格にせず PR に記録する。
 6. 画面(dev。`npm run dev` を Browser pane で表示し、ペインを**表示した状態**で行う〔C-01〕。既定ルール・南家):
-   - (a) 手牌 `123p456p789s11z34z`: 本体に見出し「1向聴」と「3種 8枚」、東「×2」・西「×3」・北「×3」の3組。バナーは「1向聴 受け入れ」+牌3枚で枚数なし。
+   - (a) 手牌 `123p456p789s11z34z`: 本体に見出し「1向聴」と「3種 8枚」、東「×2」・西「×3」・北「×3」の3組。バナーはバッジ「1向聴」+牌3枚で枚数なし、「受け入れ」の文字が無い。
    - (b) 手牌 `1199p1199s12345z`: 本体「2向聴」「5種 15枚」で、「七対子」の文字が出ない。
    - (c) 手牌 `1m19p19s1234567z5p`: 本体「1向聴」「13種 40枚」、13組が折り返して並び、2m〜8m が無い。「国士」の文字が出ない。
    - (d) 手牌 `123p456p789p34s15z`: 本体「4種 14枚」で 5索「×3」と赤5索「×1」が別の組。
-   - (e) 手牌 `1145z`・ドラ表示 `11555z`・抜き北3: 本体「1向聴」「0種 0枚」で牌の組が無く「×0」も無い。バナーは「1向聴 受け入れ」で牌0枚。
+   - (e) 手牌 `1145z`・ドラ表示 `11555z`・抜き北3: 本体「1向聴」「0種 0枚」で牌の組が無く「×0」も無い。バナーはバッジ「1向聴」のみで牌0枚。
    - 本体は 375×812 で `read_page`/`get_page_text`/`find`(`data-tile-count`・`data-kinds`)で判定してよい。375px で横スクロールが出ない(`document.documentElement.scrollWidth <= 375`)。
    - バナー: E3 受け入れ条件6の補足と同じ手順(375×500、シートを閉じて `scrollTo(0,0)`、`button[aria-label="計算結果へ移動"]` が visible になってから確認。または `javascript_tool` で `.result-glance` の `textContent` と牌要素の数を読む)。
 7. 本番ビルド: `npm run build && npx vite preview` で 6(a)(c)(e) を再確認し、見出し行と組の書式(CSS)が dev と同じに効いている(G-11)。
 8. ダークテーマ: 6(a) をダークで表示し「3種 8枚」「×N」が背景に溶けない。`git diff main...HEAD -- src | grep -E '#[0-9a-fA-F]{3,8}\b'` で新規の HEX が無い。
 9. ホームディレクトリ名: `git diff main...HEAD | grep -n "$(basename "$HOME")"` が空(docs も対象)。
 10. 起動した dev/preview サーバーは自分で止める(01号)。
+11. UI 監修(9章)の各項目の受け入れ条件(9.1.7 ほか)をすべて満たす。
 
 ## 7. 実機確認(検収後にユーザーが行う。合否に含めない。C-02)
 
@@ -191,8 +195,98 @@ export function summarizeAcceptance(tileAvailabilities: TileAvailability[]): Acc
 
 - なし(第2版の Q1・Q2 はオーナー回答により案Aで確定し、1.2 確定事項9・10に移した)。
 
-## 9. 改訂履歴
+## 9. UI 監修による変更
+
+UI 監修のたびに「9.N」として項目を追記する。各項目は「指示・変更内容・根拠・対象・意匠・テスト・バンドル・受け入れ条件」の順に書く。既存章の記述と食い違う場合は、この章を優先し、既存章の該当箇所に「第N版 UI-N」と注記する。
+
+### 9.1 UI-1(第4版): バナーのラベルのバッジ化と、牌の並びだけの折り返し
+
+#### 9.1.1 指示(オーナー。引用)
+
+「まず、要約バナーで、「聴牌」「X向聴」をバッジ化して「受け入れ」「待ち」を削除します。また、livewingのように有効牌・和了牌部分だけで折り返すようにしてください。」
+
+#### 9.1.2 変更内容と livewing の根拠
+
+- バナーの「聴牌」「N向聴」をバッジ(ラベルの見た目の部品)にし、「待ち」「受け入れ」の文字を削除する。
+- バッジは縮まず折り返さない。牌の並び `.glance-tiles` はバッジの右の領域の中だけで `flex-wrap` により折り返す(バッジの下に牌が回り込まない)。
+- 根拠(`../ref-repo/mahjong-calc/src/components/ResultGlance.tsx`、2026-11-14 に実物を確認):
+  - tempai(32〜46行)・hora-shanten の hora(93〜109行)・discard-shanten(47〜77行)・hora-shanten の shanten(78〜92行)の4ブロックとも、外枠は `flex items-center gap-2`(折り返さない)、ラベル(「聴牌」「N 向聴」)は `shrink-0 font-bold`、補助語(「待ち」「受け入れ」「打」)は `shrink-0 text-sm`、牌の並びは `flex flex-wrap gap-px`。
+  - livewing の牌の並びは `flex-1`・`min-w-0` を持たないが、外枠が折り返さないため、牌の並びが残りの幅で縮み、その中で折り返す。本機は外枠 `.result-glance` が `flex-wrap: wrap`(他のバナーと共用)のため、外枠を変えずに同じ効果を得る方法として、牌の並びに `flex: 1 1 0; min-width: 0` を与える(基準幅0なのでバッジと同じ行に必ず収まり、残りの幅に伸びてその中で折り返す)。
+  - 補助語の削除は livewing との差分(オーナー指示)。
+
+#### 9.1.3 対象
+
+| 箇所(`src/ui/result/slots.tsx`、ef2063c 時点の行) | 現在 | 変更後 |
+| --- | --- | --- |
+| `HoraGlance` の13枚形の分岐(`waitInput`。238行) | `<span class="result-glance__label">聴牌 待ち</span>` | `<span class="result-glance__badge">聴牌</span>` |
+| `TempaiGlance`(308行。E3 でマージ済み) | 同上 | 同上 |
+| `ShantenGlance`(333行) | `<span class="result-glance__label">{shanten}向聴 受け入れ</span>` | `<span class="result-glance__badge">{shanten}向聴</span>` |
+
+- バッジの DOM は `<span class="result-glance__badge">…</span>`(確定案。data 属性なし)。直後の `GlanceTiles` は変えない。
+- 変えないバナー: `HoraGlance` の14枚形(点数。`result-glance__side` 系)・0件の「和了牌なし」・全件役なしの「役なし」、`TempaiGlance` の「和了牌なし」、`DiscardGlance`(「何切る」。F1 の領分)、`ResultGlance` の just-hora など他の分岐。十三不搭のバナーは本機に無い(#85)。`.result-glance__label` のクラスは `DiscardGlance` が使い続けるため残す。
+- `src/ui` 全体の grep(`grep -rn "待ち\|受け入れ" src/ui`。テストを除く)で残る箇所と、対象外の理由:
+
+| 箇所 | 内容 | 対象外の理由 |
+| --- | --- | --- |
+| `src/ui/result/ResultGlance.tsx` 14行 | コメント「待ちで出す」 | コメント。表示文字ではない |
+| `src/ui/screen/ResultBanner.tsx` 24行 | コメント「待ちを出す」 | 同上 |
+| `src/ui/result/hora/FuBreakdown.tsx` 18行、`hora/fu-rows.ts` 20・117〜124行 | コメント | 同上 |
+| `src/ui/result/hora/labels.ts` 91・95・142〜146行 | 役名「国士無双十三面待ち」、符の待ちの名「両面待ち」「単騎待ち」等 | 役・符の名称。バナーのラベルではない |
+
+#### 9.1.4 バッジの意匠
+
+- 既存部品の調査結論: **再利用できる部品は無い。**
+  - `src/ui/md/Chip.tsx`: `md-chip-set`・`FilterChip`(Material Web の操作用チップ)。押せる部品で、表示だけのバッジには重く、初回 JS にも響く。
+  - `src/ui/expressive/`: BottomSheet・ConnectedButtonGroup・Disclosure・Stepper・shape-morph のみ。バッジ相当なし。
+  - `src/ui/result/hora/hora.css` の `.hora-item__badge`: 書式はバッジそのものだが、色がロン/ツモ専用の変数 `--by-badge-bg`/`--by-badge-fg`(`[data-hora-by]` で primary/tertiary を切り替え)に依存し、遅延チャンク側の CSS(`HoraDetail`)に属する。クラスを流用すると色と読み込みの両方で依存が生じる。
+- 自作(06号): `result.css` に `.result-glance__badge` を追加する。
+  - 書式は `.hora-item__badge` に揃える: `display:inline-flex; align-items:center; justify-content:center; border-radius: var(--md-sys-shape-corner-small); padding: 0.125rem 0.5rem;` label-medium のタイポトークン5種(font・size・line-height・weight・tracking)。
+  - 加えて `flex-shrink: 0; white-space: nowrap;`。
+  - 色は MD3 ロールのトークンのみ。HEX を書かない。背景と文字は対のロール(`X-container` と `on-X-container`)で、ライト・ダークの両方で溶けない。
+  - **色ロールの案(未確定。UI 監修で確認)**: 案1 聴牌・向聴とも `--md-sys-color-secondary-container` / `--md-sys-color-on-secondary-container`(本機で使用実績が多い組)。案2 聴牌を `primary-container` / `on-primary-container`、向聴を `secondary-container` / `on-secondary-container` に分け、聴牌を目立たせる(分ける場合は `.result-glance--tempai .result-glance__badge` 等で上書きし、`HoraGlance` 13枚形は聴牌側に入れる)。製造は案1で実装し、監修で案2に替える場合は CSS のみの変更とする。
+- 牌の並び: `.result-glance > .glance-tiles { flex: 1 1 0; min-width: 0; }` を追加する(9.1.2)。`.glance-tiles` 自体の `flex-wrap: wrap; gap: 2px` は変えない。
+
+#### 9.1.5 変更するファイルとテストの期待値
+
+従来「変更しない」としていた `TempaiGlance`・`HoraGlance`(13枚形の分岐)・`ResultGlance.test.tsx`・`e3-tempai.test.tsx` は、この指示でバナーの文言が変わるため、下表の箇所に限り変更を解除する(2.1 の「変更しないもの」・6章 条件2はこの範囲で読み替える)。行番号は ef2063c 時点。
+
+| ファイル | 箇所 | 変更 |
+| --- | --- | --- |
+| `src/ui/result/slots.tsx` | 238・308・333行 | 9.1.3 の表のとおり |
+| `src/ui/result/result.css` | 追記 | `.result-glance__badge`・`.result-glance > .glance-tiles`(9.1.4) |
+| `ResultGlance.test.tsx` | 23行 `it('E1-6: shanten のとき「N向聴」「受け入れ」と牌が表示される'` | 名前を「「N向聴」のバッジと牌が表示される」に。37行 `toContain('1向聴 受け入れ')` → `toContain('<span class="result-glance__badge">1向聴</span>')` と `not.toContain('受け入れ')` |
+| 同 | 42行 `it('E1-6: tempai で残りが1枚以上あるとき「聴牌 待ち」…'` | 名前を「「聴牌」のバッジと牌…」に。54行 `toContain('聴牌 待ち')` → `toContain('<span class="result-glance__badge">聴牌</span>')` と `not.toContain('待ち')` |
+| 同 | 73行 `not.toContain('聴牌 待ち')`(全0枚) | `not.toContain('result-glance__badge')` |
+| `e3-tempai.test.tsx` | 138行 E3-05 の名前「バナーに「聴牌 待ち」と牌1枚」 | 「バナーに「聴牌」のバッジと牌1枚」 |
+| 同 | 173〜175行 `/<span class="result-glance__label">([^<]*)<\/span>/` → `'聴牌 待ち'` | 正規表現のクラスを `result-glance__badge` に、期待値を `'聴牌'` に |
+| 同 | 271行 E3-07 の名前「「聴牌 待ち」+ 2s・5s・赤5s」 | 「「聴牌」のバッジ + 2s・5s・赤5s」 |
+| 同 | 289行 `toContain('聴牌 待ち')` | `toContain('<span class="result-glance__badge">聴牌</span>')` と `not.toContain('待ち')` |
+| `e4-shanten.test.tsx` | E4-04 の 208〜212行(`result-glance__label` → `'1向聴 受け入れ'`) | クラスを `result-glance__badge`、期待値を `'1向聴'` |
+| 同 | E4-05 の 234行(全文一致) | `'<div data-result-kind="shanten" class="result-glance result-glance--shanten"><span class="result-glance__badge">1向聴</span><div class="glance-tiles"></div></div>'` |
+| 同 | E4-05 の `it` の名前「バナーにラベルのみ表示する」 | 「バナーにバッジのみ表示する」 |
+| 同 | E4-06 の名前と 253〜255行 | 名前「バッジ「1向聴」と牌3枚」。正規表現のクラスを `result-glance__badge`、期待値 `'1向聴'` |
+| 同 | 新設 E4-08 | 下記 |
+
+- **E4-08**(`e4-shanten.test.tsx` に追加): `ShantenGlance`(S1。shanten 1 と 2 の2通り)・`TempaiGlance`(T10 相当 `[1z:2]`)・`HoraGlance`(13枚 `234p567p34s678s99p` の `waitInput`。E3-07 と同じ組み立て)の各マークアップで、(i) `/<span class="result-glance__badge">([^<]*)<\/span>/g` の一致が各1件で、文字がそれぞれ「1向聴」「2向聴」「聴牌」「聴牌」、(ii) マークアップ全体に「待ち」「受け入れ」を含まない、(iii) `result-glance__label` を含まない。
+
+#### 9.1.6 バンドル(09号)
+
+- 増分の積算: クラス名の差し替えと文字の削除のみで JS はほぼ増えない(「 待ち」「 受け入れ」の削除で減り、`result-glance__badge` の文字列で増える。−20〜+20 B)。CSS は計測対象外。
+- 目標値は 2.5 のまま(126,070 B 以下)。超過は不合格にしない。
+
+#### 9.1.7 受け入れ条件
+
+1. `npx vitest run src/ui/result` で E4-08 と、9.1.5 で期待値を変えた E1-6・E3-05・E3-07・E4-04〜E4-06 が通過する。
+2. `grep -n "待ち\|受け入れ" src/ui/result/slots.tsx` が 0件。
+3. 画面(dev。6章の手順):
+   - (a) 6章 6(a) の手牌で、バナーがバッジ「1向聴」+牌3枚。手牌 `123456p1z` でバッジ「聴牌」+東。13枚 `234p567p34s678s99p` でバッジ「聴牌」+牌3枚。いずれも「待ち」「受け入れ」が無い。
+   - (b) 折り返し: 375×500 で 6章 6(c) の手牌(有効牌13種)のバナーを表示し、`javascript_tool` で `.result-glance__badge` と `.result-glance .glance-tiles` の `getBoundingClientRect()` を読む。牌の並びの `left` がバッジの `right` 以上で、牌の並びの `top` がバッジの `top` 以下(バッジの下に回り込まない)。牌の並びが2行以上なら、その中で折り返している(高さが牌1枚分より大きい)。バッジの `height` が1行分(折り返していない)。
+   - (c) ダークテーマで (a) のバッジの文字が背景に溶けない(目視)。`git diff main...HEAD -- src | grep -E '#[0-9a-fA-F]{3,8}\b'` で新規の HEX が無い。
+4. 本番ビルド(`npx vite preview`)で (b) を再確認する(G-11)。
+
+## 10. 改訂履歴
 
 - 第1版(2026-11-13): 新規作成。
 - 第2版(2026-11-13): 独立レビュー4点を反映。(1) 3z の表記を「西」に訂正し、E4-02・E4-03・6(a) の牌の表記を `tileLabelOf` で確定(留保を削除)。(2) livewing の `ResultGlance.tsx` 78〜92行に向聴のバナーがあることを 1.3(e)・Q2 に反映し、本機 `ShantenGlance` はその移植で `count > 0` の絞り込みが確定事項3による差分と整理。(3) 受け入れ条件4に `E2-` 系を追加。(4) 章番号の欠番を詰めた(未決事項 8章・改訂履歴 9章)。
 - 第3版(2026-11-13): オーナー回答「Q1・Q2 とも A」を反映。確定事項9(本体の全0枚は見出し+「0種 0枚」+空の一覧)・10(バナーの全0枚はラベルのまま牌0枚)を追加し、1.3(d)(e)・2.3・2.4・E4-05・6(e) の設計案表記と Q1・Q2 への参照を確定の記述に改めた。未決事項はなし。
+- 第4版(2026-11-14): UI 監修(9章 UI-1)を反映。バナーの「聴牌」「N向聴」をバッジ化し「待ち」「受け入れ」を削除、牌の並びだけで折り返す。9章「UI 監修による変更」を新設(改訂履歴は10章へ)。確定事項3・10に文言変更の注記、2.4・E4-05・E4-06・6章 6(a)(e)・条件2・4・11 を新表記に更新、E4-08 を追加。
