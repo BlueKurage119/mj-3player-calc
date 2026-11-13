@@ -73,6 +73,12 @@ function SheetModeToggle(): React.JSX.Element {
   );
 }
 
+/** 状況の行の判定の上端に、ヘッダーの下から足す高さ(カードの最小の高さの約半分。先頭で出ないよう半分にとどめる) */
+const SUMMARY_SHOW_EXTRA_PX = 20;
+/** 要約カードが覆う高さの初期値(表示中の実測で更新する)。状況の行だけ / 状況+ドラ */
+const SUMMARY_COVER_STATUS_PX = 36;
+const SUMMARY_COVER_DORA_PX = 68;
+
 export function MainScreen(): React.JSX.Element {
   const { rule, table, input, inputFocus, sheetMode } = useAppState();
   const dispatch = useAppDispatch();
@@ -105,18 +111,46 @@ export function MainScreen(): React.JSX.Element {
   const doraRef = useRef<HTMLDivElement | null>(null);
   const handRef = useRef<HTMLDivElement | null>(null);
   const resultPanelRef = useRef<HTMLElement | null>(null);
-  const viewOptions = {
-    rootMargin: `-${headerHeight}px 0px 0px 0px`,
-    minRatio: 0.1
-  };
-  const statusInView = useInView(statusRef, viewOptions, true);
-  const doraInView = useInView(doraRef, viewOptions, true);
-  const handInView = useInView(handRef, viewOptions, true);
+  // 状況の行の判定の上端は、常にヘッダーの下 SUMMARY_SHOW_EXTRA_PX とする
+  // (カードが覆う位置に入った時点で出す)。しきい値を1つに固定し、出入りの反転を避ける
+  // ドラ・手牌の行は、要約カードの上の行が覆う高さ分も「隠れた」とみなす
+  // (状況の行だけのカード、状況+ドラのカードの高さ。表示中に実測して更新する)
+  const summaryInnerRef = useRef<HTMLDivElement | null>(null);
+  const [cover, setCover] = useState({
+    status: SUMMARY_COVER_STATUS_PX,
+    dora: SUMMARY_COVER_DORA_PX
+  });
+  const margin = (px: number) => ({
+    rootMargin: `-${headerHeight + px}px 0px 0px 0px`,
+    minRatio: 0.5
+  });
+  const statusInView = useInView(
+    statusRef,
+    margin(SUMMARY_SHOW_EXTRA_PX),
+    true
+  );
+  const doraInView = useInView(doraRef, margin(cover.status), true);
+  const handDoraShown = !statusInView && !doraInView;
+  const handInView = useInView(
+    handRef,
+    margin(handDoraShown ? cover.dora : cover.status),
+    true
+  );
   const summaryRows = {
     status: !statusInView,
     dora: !statusInView && !doraInView,
     hand: !statusInView && !handInView
   };
+  const { status: rowStatus, dora: rowDora, hand: rowHand } = summaryRows;
+  useEffect(() => {
+    const h = summaryInnerRef.current?.offsetHeight ?? 0;
+    if (h === 0) return;
+    if (rowStatus && !rowDora && !rowHand) {
+      setCover(c => (c.status === h ? c : { ...c, status: h }));
+    } else if (rowStatus && rowDora && !rowHand) {
+      setCover(c => (c.dora === h ? c : { ...c, dora: h }));
+    }
+  }, [rowStatus, rowDora, rowHand]);
   const sheetOpen = inputFocus !== null;
 
   return (
@@ -128,7 +162,7 @@ export function MainScreen(): React.JSX.Element {
     >
       <AppHeader headerRef={headerRef} />
       <main className="main-screen">
-        <SummaryCard rows={summaryRows} />
+        <SummaryCard rows={summaryRows} innerRef={summaryInnerRef} />
         <section className="input-section" aria-label="入力">
           <div className="input-group">
             <div
@@ -201,6 +235,7 @@ export function MainScreen(): React.JSX.Element {
         resultState={resultState}
         panelRef={resultPanelRef}
         headerHeight={headerHeight}
+        waitInput={input.hand.length % 3 === 1}
       />
       <BottomSheet
         open={sheetOpen}

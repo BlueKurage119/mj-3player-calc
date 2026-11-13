@@ -21,10 +21,12 @@ export interface ResultBannerProps {
   resultState: ResultState;
   panelRef: RefObject<HTMLElement | null>;
   headerHeight: number;
+  /** 手牌が13枚形(和了牌が未入力)のとき true。バナーに点数ではなく待ちを出す */
+  waitInput?: boolean;
 }
 
 export function ResultBanner(props: ResultBannerProps): React.JSX.Element {
-  const { resultState, panelRef, headerHeight } = props;
+  const { resultState, panelRef, headerHeight, waitInput = false } = props;
   const bannerRef = useRef<HTMLButtonElement | null>(null);
 
   const sheetHeight = useSheetHeight();
@@ -119,7 +121,7 @@ export function ResultBanner(props: ResultBannerProps): React.JSX.Element {
       className={bannerClassName}
       onClick={handleClick}
     >
-      <ResultGlance view={view} />
+      <ResultGlance view={view} waitInput={waitInput} />
     </button>
   );
 }
