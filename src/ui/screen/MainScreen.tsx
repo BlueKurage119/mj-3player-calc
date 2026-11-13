@@ -73,7 +73,7 @@ function SheetModeToggle(): React.JSX.Element {
   );
 }
 
-/** 要約カードを出す判定の上端に足す高さ(カードの最小の高さの約半分。先頭で出ないよう半分にとどめる) */
+/** 状況の行の判定の上端に、ヘッダーの下から足す高さ(カードの最小の高さの約半分。先頭で出ないよう半分にとどめる) */
 const SUMMARY_SHOW_EXTRA_PX = 20;
 /** 要約カードが覆う高さの初期値(表示中の実測で更新する)。状況の行だけ / 状況+ドラ */
 const SUMMARY_COVER_STATUS_PX = 36;
@@ -111,9 +111,8 @@ export function MainScreen(): React.JSX.Element {
   const doraRef = useRef<HTMLDivElement | null>(null);
   const handRef = useRef<HTMLDivElement | null>(null);
   const resultPanelRef = useRef<HTMLElement | null>(null);
-  // 要約カードを出すときだけ、判定の上端をヘッダーの下に SUMMARY_SHOW_EXTRA_PX 足す
-  // (カードが覆う位置に入った時点で出す)。出ている間は足さず、しきい値の差でちらつきを抑える
-  const [summaryShown, setSummaryShown] = useState(false);
+  // 状況の行の判定の上端は、常にヘッダーの下 SUMMARY_SHOW_EXTRA_PX とする
+  // (カードが覆う位置に入った時点で出す)。しきい値を1つに固定し、出入りの反転を避ける
   // ドラ・手牌の行は、要約カードの上の行が覆う高さ分も「隠れた」とみなす
   // (状況の行だけのカード、状況+ドラのカードの高さ。表示中に実測して更新する)
   const summaryInnerRef = useRef<HTMLDivElement | null>(null);
@@ -127,7 +126,7 @@ export function MainScreen(): React.JSX.Element {
   });
   const statusInView = useInView(
     statusRef,
-    margin(summaryShown ? 0 : SUMMARY_SHOW_EXTRA_PX),
+    margin(SUMMARY_SHOW_EXTRA_PX),
     true
   );
   const doraInView = useInView(doraRef, margin(cover.status), true);
@@ -142,11 +141,6 @@ export function MainScreen(): React.JSX.Element {
     dora: !statusInView && !doraInView,
     hand: !statusInView && !handInView
   };
-  const summaryVisible =
-    summaryRows.status || summaryRows.dora || summaryRows.hand;
-  useEffect(() => {
-    setSummaryShown(summaryVisible);
-  }, [summaryVisible]);
   const { status: rowStatus, dora: rowDora, hand: rowHand } = summaryRows;
   useEffect(() => {
     const h = summaryInnerRef.current?.offsetHeight ?? 0;
