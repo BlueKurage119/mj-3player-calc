@@ -105,25 +105,8 @@ export function MainScreen(): React.JSX.Element {
   const doraRef = useRef<HTMLDivElement | null>(null);
   const handRef = useRef<HTMLDivElement | null>(null);
   const resultPanelRef = useRef<HTMLElement | null>(null);
-  // 要約カードが出ると、ヘッダーの下をカードの高さ分だけ覆う。
-  // 覆われる位置まで来たら「見えていない」とみなすため、カードの最小の高さ(状況の1行だけのとき)を足す
-  const summaryInnerRef = useRef<HTMLDivElement | null>(null);
-  const [summaryMinHeight, setSummaryMinHeight] = useState(0);
-  useEffect(() => {
-    const el = summaryInnerRef.current;
-    if (!el || typeof ResizeObserver === 'undefined') return;
-    const update = () => {
-      const card = el.closest<HTMLElement>('.summary-card');
-      if (card?.dataset.visible !== 'true') return;
-      const h = el.offsetHeight;
-      setSummaryMinHeight(prev => (prev === 0 ? h : Math.min(prev, h)));
-    };
-    const observer = new ResizeObserver(update);
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, []);
   const viewOptions = {
-    rootMargin: `-${headerHeight + summaryMinHeight}px 0px 0px 0px`,
+    rootMargin: `-${headerHeight}px 0px 0px 0px`,
     minRatio: 0.5
   };
   const statusInView = useInView(statusRef, viewOptions, true);
@@ -145,7 +128,7 @@ export function MainScreen(): React.JSX.Element {
     >
       <AppHeader headerRef={headerRef} />
       <main className="main-screen">
-        <SummaryCard rows={summaryRows} innerRef={summaryInnerRef} />
+        <SummaryCard rows={summaryRows} />
         <section className="input-section" aria-label="入力">
           <div className="input-group">
             <div

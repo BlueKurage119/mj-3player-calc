@@ -182,12 +182,10 @@ export interface SummaryRowsVisible {
 
 export interface SummaryCardProps {
   rows: SummaryRowsVisible;
-  /** 要約カード本体の要素(高さの計測用) */
-  innerRef?: React.Ref<HTMLDivElement>;
 }
 
 export function SummaryCard(props: SummaryCardProps): React.JSX.Element {
-  const { rows, innerRef } = props;
+  const { rows } = props;
   const { input, table, rule } = useAppState();
 
   const visible = rows.status || rows.dora || rows.hand;
@@ -202,7 +200,7 @@ export function SummaryCard(props: SummaryCardProps): React.JSX.Element {
       data-visible={visible ? 'true' : 'false'}
       className={className}
     >
-      <div ref={innerRef} className="summary-card__inner">
+      <div className="summary-card__inner">
         {rows.status ? (
           <SummaryStatusRow
             table={table}
