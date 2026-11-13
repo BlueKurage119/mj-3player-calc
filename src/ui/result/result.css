@@ -74,6 +74,8 @@
 
 .result-glance {
   --tile-width: 1.25rem;
+  /* 牌が出るときと文字だけのときで高さを変えない(牌1段の高さ) */
+  min-height: calc(var(--tile-width) * 4 / 3);
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -108,10 +110,14 @@
   letter-spacing: var(--md-sys-typescale-label-medium-tracking);
 }
 
-/* 向聴は secondary、聴牌は primary(既定)。バナーの背景は secondary-container なので -container は使わない */
+/* 向聴は要約カードの抜き北の丸(summary-card__pill)と同じ淡色地+濃い文字。聴牌は primary(既定) */
 .result-glance--shanten .result-glance__badge {
-  background-color: var(--md-sys-color-secondary);
-  color: var(--md-sys-color-on-secondary);
+  background-color: color-mix(
+    in srgb,
+    var(--md-sys-color-on-secondary-container) 16%,
+    transparent
+  );
+  color: var(--md-sys-color-on-secondary-container);
 }
 
 /* 和了の打点: ロンは primary(既定)、ツモは tertiary。本体カード(HoraItem)と同じ色の組 */
