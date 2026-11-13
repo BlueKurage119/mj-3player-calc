@@ -381,8 +381,7 @@ body {
 .result-panel {
   background-color: var(--md-sys-color-surface-container);
   color: var(--md-sys-color-on-surface);
-  min-height: 16rem;
-  border-radius: var(--md-sys-shape-corner-extra-large);
+  border-radius: var(--md-sys-shape-corner-large);
   padding: 1rem;
   box-sizing: border-box;
 }
