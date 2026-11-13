@@ -1,6 +1,6 @@
 import type React from 'react';
 import { Suspense, lazy } from 'react';
-import type { Discard, ScoredHora } from '../../core/result';
+import type { ScoredHora } from '../../core/result';
 import type { Tile as CoreTile, TileAvailability } from '../../core/tile';
 import { Tile } from '../tile';
 import { horaGlanceParts } from './hora-summary';
@@ -179,23 +179,6 @@ export function ShantenBody({
   );
 }
 
-export interface DiscardBodyProps {
-  discards: Discard[];
-}
-
-export function DiscardBody({
-  discards: _discards
-}: DiscardBodyProps): React.JSX.Element {
-  return (
-    <div
-      data-result-kind="discard"
-      className="result-body result-body--discard"
-    >
-      <h2 className="result-body__title">何切る</h2>
-    </div>
-  );
-}
-
 /* ================= バナー部品 (ResultGlance) ================= */
 
 export interface HoraGlanceProps {
@@ -321,23 +304,6 @@ export function ShantenGlance({
     >
       <span className="result-glance__badge">{shanten}向聴</span>
       <GlanceTiles tiles={available.map(a => a.tile)} />
-    </div>
-  );
-}
-
-export interface DiscardGlanceProps {
-  discards: Discard[];
-}
-
-export function DiscardGlance({
-  discards: _discards
-}: DiscardGlanceProps): React.JSX.Element {
-  return (
-    <div
-      data-result-kind="discard"
-      className="result-glance result-glance--discard"
-    >
-      <span className="result-glance__label">何切る</span>
     </div>
   );
 }

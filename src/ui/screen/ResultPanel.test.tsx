@@ -197,7 +197,7 @@ describe('ResultPanel', () => {
 
     expect(html).toContain('data-state="ok"');
     expect(html).toContain('data-result-kind="discard"');
-    expect(html).toContain('何切る');
+    expect(html).not.toContain('何切る');
     expect(html).not.toContain('data-view');
     expect(html).not.toContain('result-panel--banner');
   });

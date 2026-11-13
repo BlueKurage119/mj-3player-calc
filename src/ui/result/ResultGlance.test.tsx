@@ -264,7 +264,7 @@ describe('ResultGlance', () => {
     expect(markup).not.toContain(' / ');
   });
 
-  it('E1-6: discard のとき「何切る」が表示される', () => {
+  it('E1-6: discard のとき空の discards でバナーの外枠だけを出す', () => {
     const markup = renderToStaticMarkup(
       <ResultGlance
         view={{
@@ -273,7 +273,9 @@ describe('ResultGlance', () => {
         }}
       />
     );
-    expect(markup).toContain('何切る');
+    expect(markup).not.toContain('何切る');
+    expect(markup).not.toContain('result-glance__badge');
+    expect(markup).not.toContain('data-discard-next');
     expect(markup).toContain('data-result-kind="discard"');
   });
 });

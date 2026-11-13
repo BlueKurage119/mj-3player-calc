@@ -1,12 +1,8 @@
 import type React from 'react';
 import type { ResultView } from './classify';
 import './result.css';
-import {
-  DiscardGlance,
-  HoraGlance,
-  ShantenGlance,
-  TempaiGlance
-} from './slots';
+import { DiscardGlance } from './discard';
+import { HoraGlance, ShantenGlance, TempaiGlance } from './slots';
 
 export interface ResultGlanceProps {
   view: ResultView;
