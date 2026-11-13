@@ -97,8 +97,8 @@
   justify-content: center;
   flex-shrink: 0;
   white-space: nowrap;
-  background-color: var(--md-sys-color-secondary-container);
-  color: var(--md-sys-color-on-secondary-container);
+  background-color: var(--md-sys-color-primary);
+  color: var(--md-sys-color-on-primary);
   border-radius: var(--md-sys-shape-corner-small);
   padding: 0.125rem 0.5rem;
   font-family: var(--md-sys-typescale-label-medium-font);
