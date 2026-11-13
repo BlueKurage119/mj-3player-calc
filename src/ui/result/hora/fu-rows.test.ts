@@ -97,7 +97,7 @@ describe('fu-rows.ts (E2 符の内訳行の組み立て)', () => {
     }
   });
 
-  it('E2-13: sumRawFu, fuRows - R19 ロンで么九牌暗刻 8 を含み、生の符の合計が 38 または 40', async () => {
+  it('E2-13: sumRawFu, fuRows - R19 ロンで么九牌暗刻 8 と単騎待ち 2 を含み、生の符の合計が 40', async () => {
     const { generateResult, DEFAULT_RULE } = await getCore();
     const southTable: Table = {
       round: 'east',
@@ -142,14 +142,17 @@ describe('fu-rows.ts (E2 符の内訳行の組み立て)', () => {
       if (!ron || ron.type !== 'mentsu') return;
 
       const rawTotal = sumRawFu(ron.fu);
-      // 多面張で両面(38)と単騎(40)が同点。core の分解の順序が実行履歴で変わるため、どちらも許す
-      expect([38, 40]).toContain(rawTotal);
+      expect(rawTotal).toBe(40);
 
       const rows = fuRows(ron.fu, southTable);
       const kotsuRow = rows.find(r => r.name === '么九牌暗刻');
       expect(kotsuRow).toBeDefined();
       expect(kotsuRow?.fu).toBe(8);
       expect(kotsuRow?.tiles).toHaveLength(3);
+
+      const tankiRow = rows.find(r => r.name === '単騎待ち');
+      expect(tankiRow).toBeDefined();
+      expect(tankiRow?.fu).toBe(2);
     }
   });
 
