@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import type { HandOptions, Meld } from '../../core/input';
@@ -165,16 +166,21 @@ const extractDiscardItems = (markup: string) =>
     html: m[2] ?? ''
   }));
 
-const extractWaitGroups = (markup: string) =>
-  [
-    ...markup.matchAll(
-      /<span class="result-body__wait" data-tile-count="(\d+)"><span role="img" class="tile" aria-label="([^"]+)">.*?<\/span><span class="result-body__wait-count tabular-nums">([^<]*)<\/span><\/span>/g
-    )
-  ].map(m => ({
-    count: Number(m[1]),
-    tileLabel: m[2],
-    text: m[3]
-  }));
+const discardTileLabel = (html: string) =>
+  html.match(
+    /<span class="discard-item__tile"><span class="discard-item__label">打<\/span><span role="img" class="tile" aria-label="([^"]+)">/
+  )?.[1];
+
+const extractHeadLabels = (html: string) =>
+  [...html.matchAll(/<span class="discard-item__label">([^<]*)<\/span>/g)].map(
+    m => m[1]
+  );
+
+const extractHead = (html: string) =>
+  html.match(/<div class="discard-item__head">([\s\S]*?)<\/div>/)?.[1] ?? '';
+
+const detailOf = (html: string) =>
+  html.match(/<div class="discard-item__detail">([\s\S]*)$/)?.[1] ?? '';
 
 const extractSummary = (html: string) => {
   const m = html.match(
@@ -436,14 +442,11 @@ describe('F1: 打牌候補の一覧 (F1-01〜F1-12)', () => {
       'shanten',
       'shanten'
     ]);
-    expect(
-      items.map(
-        i =>
-          i.html.match(
-            /<span class="discard-item__tile"><span role="img" class="tile" aria-label="([^"]+)">/
-          )?.[1]
-      )
-    ).toEqual(['西', '北', '9筒']);
+    expect(items.map(i => discardTileLabel(i.html))).toEqual([
+      '西',
+      '北',
+      '9筒'
+    ]);
 
     const firstHtml = items[0]?.html ?? '';
     expect(extractSummary(firstHtml)).toEqual({
@@ -451,15 +454,22 @@ describe('F1: 打牌候補の一覧 (F1-01〜F1-12)', () => {
       total: 16,
       text: '5種 16枚'
     });
-    expect(extractWaitGroups(firstHtml)).toEqual([
-      { count: 4, tileLabel: '7筒', text: '×4' },
-      { count: 4, tileLabel: '8筒', text: '×4' },
-      { count: 3, tileLabel: '9筒', text: '×3' },
-      { count: 2, tileLabel: '東', text: '×2' },
-      { count: 3, tileLabel: '北', text: '×3' }
+    const firstDetail = detailOf(firstHtml);
+    expect(extractTileLabels(firstDetail)).toEqual([
+      '7筒',
+      '8筒',
+      '9筒',
+      '東',
+      '北'
     ]);
-    // 牌SVGのdata URIを含むため全体一致ができず、「×0」が表示されないことを部分一致否定で補う
-    expect(markup).not.toContain('×0');
+    expect(firstDetail).not.toContain('×');
+    expect(firstDetail).not.toContain('result-body__wait');
+    expect(firstDetail).not.toContain('data-tile-count');
+    expect(markup).not.toContain('×');
+    for (const item of items) {
+      expect(extractHeadLabels(item.html)[0]).toBe('打');
+    }
+    expect(extractHeadLabels(firstHtml)).toContain('受け入れ');
   });
 
   it('F1-07: DiscardBody は D4 で見出し「聴牌」・1件・待ち牌3枚・レンジを表示し枚数表記を出さない', () => {
@@ -475,15 +485,21 @@ describe('F1: 打牌候補の一覧 (F1-01〜F1-12)', () => {
     expect(items).toHaveLength(1);
     expect(items[0]?.nextKind).toBe('tempai');
 
-    const detailHtml =
-      items[0]?.html.match(
-        /<div class="discard-item__detail">([\s\S]*)$/
-      )?.[1] ?? '';
-    expect(extractTileLabels(detailHtml)).toEqual(['2索', '5索', '赤5索']);
-    expect(extractRange(detailHtml)).toEqual({
+    const itemHtml = items[0]?.html ?? '';
+    const detailHtml = detailOf(itemHtml);
+    expect(extractHeadLabels(itemHtml)).toEqual(['打', '待ち']);
+    expect(itemHtml).not.toContain('受け入れ');
+    const head = extractHead(detailHtml);
+    expect(head).toContain('待ち');
+    expect(extractRange(head)).toEqual({
       kind: 'points',
       text: '（1,000〜2,000点）'
     });
+    expect(extractTileLabels(head)).toEqual([]);
+    expect(extractTileLabels(detailHtml)).toEqual(['2索', '5索', '赤5索']);
+    expect(detailHtml.indexOf('glance-tiles')).toBeGreaterThan(
+      detailHtml.indexOf('discard-item__head')
+    );
     // 牌SVGのdata URIを含むため全体一致ができず、枚数表記が出ないことを部分一致否定で補う
     expect(markup).not.toContain('×');
     expect(markup).not.toContain('種');
@@ -516,19 +532,14 @@ describe('F1: 打牌候補の一覧 (F1-01〜F1-12)', () => {
     );
     const d12Items = extractDiscardItems(d12Markup);
     expect(d12Items).toHaveLength(2);
-    expect(
-      d12Items.map(
-        i =>
-          i.html.match(
-            /<span class="discard-item__tile"><span role="img" class="tile" aria-label="([^"]+)">/
-          )?.[1]
-      )
-    ).toEqual(['1筒', '南']);
+    expect(d12Items.map(i => discardTileLabel(i.html))).toEqual(['1筒', '南']);
     expect(extractRange(d12Items[0]?.html ?? '')).toEqual({
       kind: 'points',
       text: '（1,600〜2,400点）'
     });
     const d12SecondHtml = d12Items[1]?.html ?? '';
+    expect(extractHeadLabels(d12SecondHtml)).toEqual(['打', '待ち']);
+    expect(extractHead(d12SecondHtml)).not.toContain('discard-item__range');
     expect(
       d12SecondHtml.match(
         /<span class="result-body__text">([^<]*)<\/span>/
@@ -615,7 +626,12 @@ describe('F1: 打牌候補の一覧 (F1-01〜F1-12)', () => {
       total: 0,
       text: '0種 0枚'
     });
-    expect(extractWaitGroups(shantenZeroMarkup)).toEqual([]);
+    expect(
+      extractTileLabels(
+        detailOf(extractDiscardItems(shantenZeroMarkup)[0]?.html ?? '')
+      )
+    ).toEqual([]);
+    expect(shantenZeroMarkup).not.toContain('×');
   });
 
   it('F1-10: DiscardGlance は D2・D11 でバッジと打牌一覧を表示し不要なラベルを含まない', () => {
@@ -857,5 +873,21 @@ describe('F1: 打牌候補の一覧 (F1-01〜F1-12)', () => {
       )
     );
     expect(horaView.kind).toBe('hora');
+  });
+
+  it('F1-13: 打牌の牌の --tile-width は本体の有効牌・待ち牌より大きい', () => {
+    const css = readFileSync(new URL('./result.css', import.meta.url), 'utf8');
+    const rem = (selector: string): number | null => {
+      const escaped = selector.replace(/[.]/g, '\\$&');
+      const b =
+        css.match(new RegExp(`(?:^|\\n)${escaped}\\s*\\{[^}]*\\}`))?.[0] ?? '';
+      const m = b.match(/--tile-width:\s*([\d.]+)rem/);
+      return m?.[1] ? Number(m[1]) : null;
+    };
+    const base = rem('.result-body');
+    const discard = rem('.discard-item__tile');
+    expect(base).toBe(1.5);
+    expect(discard).not.toBeNull();
+    expect(discard ?? 0).toBeGreaterThan(base ?? Number.POSITIVE_INFINITY);
   });
 });
