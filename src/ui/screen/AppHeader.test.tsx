@@ -44,6 +44,11 @@ describe('F1-2: ヘッダーメニュー (ランダム14枚・ランダム清一
         className: 'app-header__menu-item',
         innerHtml: '<div slot="headline">設定</div>'
       },
+      {
+        kind: 'item',
+        className: 'app-header__menu-item',
+        innerHtml: '<div slot="headline">点数計算表</div>'
+      },
       { kind: 'divider' },
       {
         kind: 'item',
@@ -64,9 +69,10 @@ describe('F1-2: ヘッダーメニュー (ランダム14枚・ランダム清一
     ]);
   });
 
-  it('F1-2-13: getHeaderMenuEntries が設定・Divider・ランダム2項目・Divider・オールクリアを返す', () => {
+  it('F1-2-13: getHeaderMenuEntries が設定・点数計算表・Divider・ランダム2項目・Divider・オールクリアを返す', () => {
     expect(getHeaderMenuEntries()).toEqual([
       { type: 'item', id: 'settings', label: '設定' },
+      { type: 'item', id: 'scoring-table', label: '点数計算表' },
       { type: 'divider' },
       { type: 'item', id: 'random14', label: 'ランダム14枚' },
       { type: 'item', id: 'chinitsu', label: 'ランダム清一色' },
@@ -110,6 +116,12 @@ describe('F1-2: ヘッダーメニュー (ランダム14枚・ランダム清一
     selectHeaderMenuItem('clear-all', closeMenu, dispatch);
     expect(dispatch).toHaveBeenNthCalledWith(4, {
       type: 'clear-all'
+    });
+
+    selectHeaderMenuItem('scoring-table', closeMenu, dispatch);
+    expect(dispatch).toHaveBeenNthCalledWith(5, {
+      type: 'navigate',
+      screen: 'scoring-table'
     });
   });
 });
