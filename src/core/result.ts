@@ -187,7 +187,8 @@ const generateResultInner = (
                 options,
                 input.dora,
                 rule,
-                input.nuki
+                input.nuki,
+                input.uradora ?? []
               )
             : []),
           ...(kokushiShanten === 0
