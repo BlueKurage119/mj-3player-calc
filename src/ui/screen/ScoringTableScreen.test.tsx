@@ -13,9 +13,14 @@ const defaultRule = () => {
   };
 };
 
-/** 親子の切替ボタンの現在値(aria-label から取る) */
-const extractDealerState = (html: string): string | undefined =>
-  html.match(/aria-label="親子の切替\(現在: (親|子)\)"/)?.[1];
+const extractRadioStates = (html: string) => {
+  const matches = [
+    ...html.matchAll(
+      /<button[^>]*role="radio"[^>]*aria-checked="(true|false)"[^>]*>[\s\S]*?<span>([^<]+)<\/span><\/button>/g
+    )
+  ];
+  return matches.map(m => ({ label: m[2] ?? '', checked: m[1] === 'true' }));
+};
 
 describe('H1: 点数計算表画面 (ScoringTableView)', () => {
   it('H1-20: 題「点数計算表」と戻るボタンが出る', () => {
@@ -36,12 +41,18 @@ describe('H1: 点数計算表画面 (ScoringTableView)', () => {
     const eastHtml = renderToStaticMarkup(
       <ScoringTableView seat="east" rule={defaultRule()} onBack={() => {}} />
     );
-    expect(extractDealerState(eastHtml)).toBe('親');
+    expect(extractRadioStates(eastHtml)).toEqual([
+      { label: '親', checked: true },
+      { label: '子', checked: false }
+    ]);
 
     const southHtml = renderToStaticMarkup(
       <ScoringTableView seat="south" rule={defaultRule()} onBack={() => {}} />
     );
-    expect(extractDealerState(southHtml)).toBe('子');
+    expect(extractRadioStates(southHtml)).toEqual([
+      { label: '親', checked: false },
+      { label: '子', checked: true }
+    ]);
 
     const overrideChildHtml = renderToStaticMarkup(
       <ScoringTableView
@@ -51,7 +62,10 @@ describe('H1: 点数計算表画面 (ScoringTableView)', () => {
         onBack={() => {}}
       />
     );
-    expect(extractDealerState(overrideChildHtml)).toBe('子');
+    expect(extractRadioStates(overrideChildHtml)).toEqual([
+      { label: '親', checked: false },
+      { label: '子', checked: true }
+    ]);
 
     const overrideDealerHtml = renderToStaticMarkup(
       <ScoringTableView
@@ -61,7 +75,10 @@ describe('H1: 点数計算表画面 (ScoringTableView)', () => {
         onBack={() => {}}
       />
     );
-    expect(extractDealerState(overrideDealerHtml)).toBe('親');
+    expect(extractRadioStates(overrideDealerHtml)).toEqual([
+      { label: '親', checked: true },
+      { label: '子', checked: false }
+    ]);
   });
 
   it('H1-22: 本場・供託の文字が描画結果に出ない', () => {

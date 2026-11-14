@@ -2,8 +2,9 @@ import { useState } from 'react';
 import type React from 'react';
 import { RULE_ITEMS } from '../../core/rule-items';
 import type { Wind } from '../../core/table';
+import { ConnectedButtonGroup } from '../expressive';
 import { SYMBOL_ARROW_BACK, SymbolIcon } from '../icons';
-import { Button, IconButton } from '../md';
+import { IconButton } from '../md';
 import {
   type Cell,
   HAN_LIST,
@@ -30,6 +31,11 @@ export function getTsumoLossLabel(
   if (item?.kind !== 'select') return null;
   return item.options.find(o => o.value === tsumoLoss)?.label ?? null;
 }
+
+const DEALER_OPTIONS = [
+  { value: 'dealer' as const, label: '親' },
+  { value: 'child' as const, label: '子' }
+] as const;
 
 function renderCellLine(cell: Cell, by: 'ron' | 'tsumo'): React.JSX.Element {
   if (cell.kind === 'absent') {
@@ -92,14 +98,13 @@ export function ScoringTableView({
         </div>
       </header>
       <main className="scoring-table-screen__content">
-        <Button
-          variant="tonal"
+        <ConnectedButtonGroup<'dealer' | 'child'>
+          label="親子"
           className="scoring-table-screen__dealer-toggle"
-          aria-label={`親子の切替(現在: ${dealer ? '親' : '子'})`}
-          onClick={() => setDealer(prev => !prev)}
-        >
-          {dealer ? '親' : '子'}
-        </Button>
+          options={DEALER_OPTIONS}
+          value={dealer ? 'dealer' : 'child'}
+          onValueChange={val => setDealer(val === 'dealer')}
+        />
 
         <div className="scoring-table__scroll">
           <table className="scoring-table scoring-table--fu-han">
