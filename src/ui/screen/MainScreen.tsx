@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type React from 'react';
+import type { Tile as CoreTile } from '../../core/tile';
 import { useResult } from '../calc/use-result';
 import { BottomSheet, ConnectedButtonGroup, Stepper } from '../expressive';
 import { SYMBOL_DIALPAD, SYMBOL_KEYBOARD_KEYS, SymbolIcon } from '../icons';
@@ -92,6 +93,12 @@ export function MainScreen(): React.JSX.Element {
       dispatchTimestampRef.current = performance.now();
     }
     dispatch(action);
+  };
+
+  const tileActions = {
+    tsumo: (tile: CoreTile) => trackedDispatch({ type: 'add-hand-tile', tile }),
+    discard: (tile: CoreTile) =>
+      trackedDispatch({ type: 'discard-hand-tile', tile })
   };
 
   const headerRef = useRef<HTMLElement | null>(null);
@@ -228,6 +235,7 @@ export function MainScreen(): React.JSX.Element {
           resultState={resultState}
           dispatchTimestampRef={dispatchTimestampRef}
           context={{ table, rule }}
+          tileActions={tileActions}
         />
         <div className="main-screen__bottom-spacer" aria-hidden="true" />
       </main>

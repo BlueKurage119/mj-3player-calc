@@ -2,7 +2,7 @@ import type React from 'react';
 import { Suspense, lazy } from 'react';
 import type { ScoredHora } from '../../core/result';
 import type { Tile as CoreTile, TileAvailability } from '../../core/tile';
-import { Tile } from '../tile';
+import { Tile, tileLabelOf } from '../tile';
 import { horaGlanceParts } from './hora-summary';
 import type { ResultContext } from './hora/HoraDetail';
 
@@ -71,10 +71,37 @@ export function HoraBody({ hora, context }: HoraBodyProps): React.JSX.Element {
 
 export interface TempaiBodyProps {
   tileAvailabilities: TileAvailability[];
+  onTsumo?: ((tile: CoreTile) => void) | undefined;
 }
 
+const renderWaitTiles = (
+  available: TileAvailability[],
+  onTsumo?: (tile: CoreTile) => void
+): React.JSX.Element[] =>
+  available.map((a, i) => {
+    const t = a.tile;
+    const key = `${t.type}${t.n}${
+      t.type !== 'z' && t.n === 5 && t.red ? 'r' : ''
+    }-${i}`;
+    return (
+      <span key={key} className="result-body__wait" data-tile-count={a.count}>
+        {onTsumo ? (
+          <Tile
+            tile={t}
+            onClick={() => onTsumo(t)}
+            aria-label={`${tileLabelOf(t)}をツモ`}
+          />
+        ) : (
+          <Tile tile={t} />
+        )}
+        <span className="result-body__wait-count tabular-nums">×{a.count}</span>
+      </span>
+    );
+  });
+
 export function TempaiBody({
-  tileAvailabilities
+  tileAvailabilities,
+  onTsumo
 }: TempaiBodyProps): React.JSX.Element {
   const available = tileAvailabilities.filter(a => a.count > 0);
   return (
@@ -85,24 +112,7 @@ export function TempaiBody({
         <>
           <h2 className="result-body__title">聴牌</h2>
           <div className="result-body__tiles">
-            {available.map((a, i) => {
-              const t = a.tile;
-              const key = `${t.type}${t.n}${
-                t.type !== 'z' && t.n === 5 && t.red ? 'r' : ''
-              }-${i}`;
-              return (
-                <span
-                  key={key}
-                  className="result-body__wait"
-                  data-tile-count={a.count}
-                >
-                  <Tile tile={t} />
-                  <span className="result-body__wait-count tabular-nums">
-                    ×{a.count}
-                  </span>
-                </span>
-              );
-            })}
+            {renderWaitTiles(available, onTsumo)}
           </div>
         </>
       )}
@@ -133,11 +143,13 @@ export function summarizeAcceptance(
 export interface ShantenBodyProps {
   shanten: number;
   tileAvailabilities: TileAvailability[];
+  onTsumo?: ((tile: CoreTile) => void) | undefined;
 }
 
 export function ShantenBody({
   shanten,
-  tileAvailabilities
+  tileAvailabilities,
+  onTsumo
 }: ShantenBodyProps): React.JSX.Element {
   const { available, kinds, total } = summarizeAcceptance(tileAvailabilities);
   return (
@@ -156,24 +168,7 @@ export function ShantenBody({
         </span>
       </div>
       <div className="result-body__tiles">
-        {available.map((a, i) => {
-          const t = a.tile;
-          const key = `${t.type}${t.n}${
-            t.type !== 'z' && t.n === 5 && t.red ? 'r' : ''
-          }-${i}`;
-          return (
-            <span
-              key={key}
-              className="result-body__wait"
-              data-tile-count={a.count}
-            >
-              <Tile tile={t} />
-              <span className="result-body__wait-count tabular-nums">
-                ×{a.count}
-              </span>
-            </span>
-          );
-        })}
+        {renderWaitTiles(available, onTsumo)}
       </div>
     </div>
   );
