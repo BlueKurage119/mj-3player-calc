@@ -61,12 +61,8 @@
   line-height: var(--md-sys-typescale-label-medium-line-height);
   font-weight: var(--md-sys-typescale-label-medium-weight);
   letter-spacing: var(--md-sys-typescale-label-medium-tracking);
-  text-align: right;
+  text-align: center;
   border-bottom: 1px solid var(--md-sys-color-outline-variant);
-}
-
-.scoring-table thead th.scoring-table__corner {
-  text-align: left;
 }
 
 .scoring-table tbody th {
@@ -76,12 +72,21 @@
   font-size: var(--md-sys-typescale-label-medium-size);
   line-height: var(--md-sys-typescale-label-medium-line-height);
   font-weight: var(--md-sys-typescale-label-medium-weight);
-  text-align: left;
+  text-align: center;
   border-top: 1px solid var(--md-sys-color-outline-variant);
 }
 
+/* 符の列(左端)は横スクロール時に固定する */
+.scoring-table--fu-han thead th:first-child,
+.scoring-table--fu-han tbody th {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  box-shadow: 1px 0 0 var(--md-sys-color-outline-variant);
+}
+
 .scoring-table tbody td {
-  text-align: right;
+  text-align: center;
   vertical-align: middle;
   border-top: 1px solid var(--md-sys-color-outline-variant);
   border-left: 1px solid var(--md-sys-color-outline-variant);
@@ -99,7 +104,7 @@
 .scoring-table__cell-values {
   display: flex;
   flex-direction: column;
-  align-items: flex-end;
+  align-items: center;
   gap: 0.125rem;
 }
 
