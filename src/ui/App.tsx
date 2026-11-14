@@ -9,6 +9,7 @@ import { MainScreen } from './screen/MainScreen';
 import { AppStateProvider, useAppState } from './state';
 
 const SettingsScreen = lazy(() => import('./screen/SettingsScreen'));
+const ScoringTableScreen = lazy(() => import('./screen/ScoringTableScreen'));
 
 let DevTileGallery: ComponentType | null = null;
 let DevMdGallery: ComponentType | null = null;
@@ -20,13 +21,21 @@ if (import.meta.env.DEV) {
 
 function AppContent(): React.JSX.Element {
   const { screen } = useAppState();
-  return screen === 'settings' ? (
-    <Suspense fallback={null}>
-      <SettingsScreen />
-    </Suspense>
-  ) : (
-    <MainScreen />
-  );
+  if (screen === 'settings') {
+    return (
+      <Suspense fallback={null}>
+        <SettingsScreen />
+      </Suspense>
+    );
+  }
+  if (screen === 'scoring-table') {
+    return (
+      <Suspense fallback={null}>
+        <ScoringTableScreen />
+      </Suspense>
+    );
+  }
+  return <MainScreen />;
 }
 
 export const App = (): React.JSX.Element => {
