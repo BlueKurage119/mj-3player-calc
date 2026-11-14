@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { generateResult } from '../../core/result';
 import { createDefaultRule } from '../../core/rule';
-import type { Tile } from '../../core/tile';
+import { type Tile, isAvailableTiles } from '../../core/tile';
 import { computeResult } from '../calc/compute';
 import { classifyResult } from '../result/classify';
 import {
@@ -2186,6 +2186,145 @@ describe('D5: 状況入力の reducer と結果連動 (C5〜C8, C13)', () => {
             t => t.type === 's' && t.n === 5 && t.red === true
           )
         ).toBe(true);
+      }
+    });
+  });
+
+  describe('F1-2: ランダム入力 reducer (set-random-hand)', () => {
+    const createSeeded = (seed: number) => {
+      let s = seed >>> 0;
+      return () => {
+        s = (Math.imul(s, 1664525) + 1013904223) >>> 0;
+        return s / 0x100000000;
+      };
+    };
+
+    it('F1-2-8: 副露・ドラ・裏ドラ・抜き北を消去し手牌を14枚に置換する', () => {
+      const rule = createDefaultRule();
+      const base = createInitialState(rule);
+      const dirty: AppState = {
+        ...base,
+        input: {
+          hand: [{ type: 'm', n: 1 }],
+          melds: [{ type: 'pon', tile: { type: 'z', n: 5 } }],
+          dora: [{ type: 'p', n: 1 }],
+          uradora: [{ type: 's', n: 9 }],
+          nuki: 2
+        }
+      };
+
+      const nextRandom14 = appReducer(dirty, {
+        type: 'set-random-hand',
+        kind: 'random14',
+        random: createSeeded(1)
+      });
+      expect(nextRandom14.input.hand).toHaveLength(14);
+      expect(nextRandom14.input.melds).toEqual([]);
+      expect(nextRandom14.input.dora).toEqual([]);
+      expect(nextRandom14.input.uradora).toEqual([]);
+      expect(nextRandom14.input.nuki).toBe(0);
+      expect(isAvailableTiles(rule.red, [], nextRandom14.input.hand)).toBe(
+        true
+      );
+
+      const nextChinitsu = appReducer(dirty, {
+        type: 'set-random-hand',
+        kind: 'chinitsu',
+        random: createSeeded(2)
+      });
+      expect(nextChinitsu.input.hand).toHaveLength(14);
+      expect(nextChinitsu.input.melds).toEqual([]);
+      expect(nextChinitsu.input.dora).toEqual([]);
+      expect(nextChinitsu.input.uradora).toEqual([]);
+      expect(nextChinitsu.input.nuki).toBe(0);
+      expect(
+        nextChinitsu.input.hand.every(t => t.type === 'p') ||
+          nextChinitsu.input.hand.every(t => t.type === 's')
+      ).toBe(true);
+    });
+
+    it('F1-2-9: table・handOptions・rule・screen・sheetMode は維持される', () => {
+      const rule = { ...createDefaultRule(), localYaku: true };
+      const base = createInitialState(rule);
+      const customState: AppState = {
+        ...base,
+        screen: 'main',
+        sheetMode: 'tenkey',
+        table: {
+          round: 'south',
+          seat: 'west',
+          continue: 3,
+          deposit: 2
+        },
+        handOptions: {
+          riichi: 'riichi',
+          ippatsu: true,
+          rinshan: true,
+          chankan: false,
+          haitei: true,
+          tenho: false,
+          tsubameGaeshi: true,
+          kanFuri: false
+        }
+      };
+
+      const next = appReducer(customState, {
+        type: 'set-random-hand',
+        kind: 'random14',
+        random: createSeeded(10)
+      });
+
+      expect(next.table).toEqual(customState.table);
+      expect(next.handOptions).toEqual(customState.handOptions);
+      expect(next.rule).toEqual(customState.rule);
+      expect(next.screen).toBe('main');
+      expect(next.sheetMode).toBe('tenkey');
+    });
+
+    it('F1-2-10: inputFocus が null になり tenkeyBuffer が空文字になる', () => {
+      const base = createInitialState(createDefaultRule());
+      const opened: AppState = {
+        ...base,
+        inputFocus: { type: 'hand' },
+        tenkeyBuffer: '123'
+      };
+
+      const next = appReducer(opened, {
+        type: 'set-random-hand',
+        kind: 'random14',
+        random: createSeeded(20)
+      });
+
+      expect(next.inputFocus).toBeNull();
+      expect(next.tenkeyBuffer).toBe('');
+    });
+
+    it('F1-2-11: rule.red が 0 または 2 のとき生成手牌の赤枚数が上限を超えない', () => {
+      for (const red of [0, 2] as const) {
+        const rule = { ...createDefaultRule(), red };
+        const state = createInitialState(rule);
+        for (const kind of ['random14', 'chinitsu'] as const) {
+          for (let seed = 1; seed <= 20; seed++) {
+            const next = appReducer(state, {
+              type: 'set-random-hand',
+              kind,
+              random: createSeeded(seed)
+            });
+            expect(isAvailableTiles(red, [], next.input.hand)).toBe(true);
+            const red5p = next.input.hand.filter(
+              t => t.type === 'p' && t.n === 5 && t.red
+            ).length;
+            const red5s = next.input.hand.filter(
+              t => t.type === 's' && t.n === 5 && t.red
+            ).length;
+            expect(red5p).toBeLessThanOrEqual(red);
+            expect(red5s).toBeLessThanOrEqual(red);
+            if (red === 0) {
+              expect(red5p).toBe(0);
+              expect(red5s).toBe(0);
+            }
+          }
+        }
       }
     });
   });

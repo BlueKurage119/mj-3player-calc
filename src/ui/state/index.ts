@@ -48,6 +48,14 @@ export {
 } from './AppStateProvider';
 
 export {
+  type RandomFn,
+  type RandomHandKind,
+  createWall,
+  shuffleWith,
+  generateRandomHand
+} from './random-hand';
+
+export {
   type RiichiBase,
   type SituationToggleKey,
   type SituationChipItem,
