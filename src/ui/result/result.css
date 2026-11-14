@@ -43,7 +43,8 @@
 }
 
 .result-body--tempai .result-body__tiles,
-.result-body--shanten .result-body__tiles {
+.result-body--shanten .result-body__tiles,
+.result-body--discard .result-body__tiles {
   gap: 0.5rem 0.75rem;
 }
 
@@ -111,7 +112,8 @@
 }
 
 /* 向聴は要約カードの抜き北の丸(summary-card__pill)と同じ淡色地+濃い文字。聴牌は primary(既定) */
-.result-glance--shanten .result-glance__badge {
+.result-glance--shanten .result-glance__badge,
+.result-glance--discard[data-discard-next="shanten"] .result-glance__badge {
   background-color: color-mix(
     in srgb,
     var(--md-sys-color-on-secondary-container) 16%,
@@ -156,4 +158,66 @@
 .result-glance > .glance-tiles {
   flex: 1 1 0;
   min-width: 0;
+}
+
+/* ===== F1 打牌候補(#88) ===== */
+
+.discard-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.discard-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding-block: 0.5rem;
+}
+
+.discard-item + .discard-item {
+  border-top: 1px solid var(--md-sys-color-outline-variant);
+}
+
+.discard-item__tile {
+  --tile-width: 2.25rem;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.125rem;
+}
+
+.discard-item__label {
+  font-family: var(--md-sys-typescale-label-large-font);
+  font-size: var(--md-sys-typescale-label-large-size);
+  line-height: var(--md-sys-typescale-label-large-line-height);
+  font-weight: var(--md-sys-typescale-label-large-weight);
+  letter-spacing: var(--md-sys-typescale-label-large-tracking);
+  color: var(--md-sys-color-on-surface);
+}
+
+.discard-item__head {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.discard-item__detail {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.discard-item__range {
+  font-family: var(--md-sys-typescale-body-medium-font);
+  font-size: var(--md-sys-typescale-body-medium-size);
+  line-height: var(--md-sys-typescale-body-medium-line-height);
+  font-weight: var(--md-sys-typescale-body-medium-weight);
+  letter-spacing: var(--md-sys-typescale-body-medium-tracking);
+  color: var(--md-sys-color-on-surface-variant);
 }
