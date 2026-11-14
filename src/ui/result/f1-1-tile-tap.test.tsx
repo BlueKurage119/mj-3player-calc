@@ -25,9 +25,11 @@ describe('F1-1: 結果本体の牌ボタン化 (slots・discard・ResultBody)', 
     const withHandler = renderToStaticMarkup(
       <TempaiBody tileAvailabilities={avail} onTsumo={noop} />
     );
+    // 理由: トグル状態を持たない結果欄の牌ボタンに aria-pressed を出さないことを検証するため
+    expect(withHandler.includes('aria-pressed')).toBe(false);
     const waitButtons = [
       ...withHandler.matchAll(
-        /<span class="result-body__wait" data-tile-count="(\d+)"><button type="button" class="tile" aria-label="([^"]+)" aria-pressed="false">[\s\S]*?<\/button><span class="result-body__wait-count tabular-nums">([^<]*)<\/span><\/span>/g
+        /<span class="result-body__wait" data-tile-count="(\d+)"><button type="button" class="tile" aria-label="([^"]+)">[\s\S]*?<\/button><span class="result-body__wait-count tabular-nums">([^<]*)<\/span><\/span>/g
       )
     ].map(m => ({ count: Number(m[1]), ariaLabel: m[2], text: m[3] }));
 
@@ -52,9 +54,11 @@ describe('F1-1: 結果本体の牌ボタン化 (slots・discard・ResultBody)', 
     const withHandler = renderToStaticMarkup(
       <ShantenBody shanten={1} tileAvailabilities={avail} onTsumo={noop} />
     );
+    // 理由: トグル状態を持たない結果欄の牌ボタンに aria-pressed を出さないことを検証するため
+    expect(withHandler.includes('aria-pressed')).toBe(false);
     const waitButtons = [
       ...withHandler.matchAll(
-        /<span class="result-body__wait" data-tile-count="(\d+)"><button type="button" class="tile" aria-label="([^"]+)" aria-pressed="false">[\s\S]*?<\/button><span class="result-body__wait-count tabular-nums">([^<]*)<\/span><\/span>/g
+        /<span class="result-body__wait" data-tile-count="(\d+)"><button type="button" class="tile" aria-label="([^"]+)">[\s\S]*?<\/button><span class="result-body__wait-count tabular-nums">([^<]*)<\/span><\/span>/g
       )
     ].map(m => ({ count: Number(m[1]), ariaLabel: m[2], text: m[3] }));
 
@@ -96,9 +100,11 @@ describe('F1-1: 結果本体の牌ボタン化 (slots・discard・ResultBody)', 
       <DiscardBody discards={discards} onDiscard={noop} />
     );
 
+    // 理由: トグル状態を持たない結果欄の牌ボタンに aria-pressed を出さないことを検証するため
+    expect(withHandler.includes('aria-pressed')).toBe(false);
     const discardButtons = [
       ...withHandler.matchAll(
-        /<span class="discard-item__tile"><span class="discard-item__label">打<\/span><button type="button" class="tile" aria-label="([^"]+)" aria-pressed="false">/g
+        /<span class="discard-item__tile"><span class="discard-item__label">打<\/span><button type="button" class="tile" aria-label="([^"]+)">/g
       )
     ].map(m => m[1]);
     expect(discardButtons).toEqual(['赤5索を切る', '5索を切る']);

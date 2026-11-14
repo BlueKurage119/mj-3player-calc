@@ -2,7 +2,7 @@
 
 - 対象 Issue: #89(Epic F #7 の Sub-Issue。F1 #88 の関連)
 - ブランチ: `feature/issue-89-tile-tap-delete`(main `fa55cee` から)
-- 版: 第4版(2026-11-14。第3版で独立レビューの指摘2〜8を反映。第4版で指摘1をオーナー回答により案aで確定し 2.11 を改訂)
+- 版: 第5版(2026-11-14。第3版で独立レビューの指摘2〜8を反映。第4版で指摘1をオーナー回答により案aで確定し 2.11 を改訂。第5版で PR #94 の Codex レビュー指摘〔2.12〕に対応し 2.1 に `Tile.tsx` を追記)
 - 依存: F1(#88)は main に `a519454` でマージ済みで、本ブランチに取り込み済み。本書はマージ済みの `src/ui/result/discard.tsx` を前提とする(F1 ブランチ上の版と同一であることを確認済み)。
 - 範囲: 手牌の牌の2段階タップ削除、結果本体(`TempaiBody`・`ShantenBody`・`DiscardBody`)の牌のタップによるツモ・打牌、要件§4 の例外追加と D1・D2・E1 設計書への事後注記
 - 範囲外: バナー(`ResultGlance`・`ResultBanner`)の牌、副露・ドラ・裏ドラ・抜き北の牌、和了表示(`HoraBody`)の牌、`DiscardItem` 内の待ち・受け入れの牌、アンドゥ、ロン・ツモの区別、タップ後のスクロール
@@ -72,6 +72,7 @@
 | `src/ui/result/discard.tsx`(F1) | 改修 | `DiscardBody`・`DiscardItem` に `onDiscard?` |
 | `src/ui/result/ResultBody.tsx`・`src/ui/screen/ResultPanel.tsx`・`MainScreen.tsx` | 改修 | `tileActions` の受け渡し |
 | `src/ui/result/result.css` | 改修 | 必要なら結果の牌ボタンの微調整のみ |
+| `src/ui/tile/Tile.tsx` | 改修(第5版) | `selected` を明示したときだけ `aria-pressed` を出す(2.12) |
 | テスト | 新規・改修 | 2.7 |
 | `docs/requirements.md`・`docs/design/issue-46/51/75` | 改訂 | 2.8(製造フェーズの着手時) |
 
@@ -253,6 +254,13 @@ Issue 本文に従い、【確定】の扱いの変更はオーナーの確認�
 - 決定: 範囲を変えない(案a)。`HoraBody` の待ち牌はタップ不可のままとし、13枚の聴牌形からは結果欄でツモしない(確定事項7)。
 - 根拠(オーナー回答の要旨): 13枚の聴牌形で和了牌をツモしても、ツモの前後で得られる情報(待ちごとの役・打点)は変わらない。
 - 経緯: ほかに、`HoraBody` の待ち牌もタップ可にする案(b)と、13枚聴牌の結果を別表示にする案(c)を比べたが、上の理由で採らなかった。
+
+### 2.12 Codex レビュー指摘への対応(第5版。PR #94)
+
+- 指摘(P2): 結果欄の牌ボタン(ツモ・打牌)に `aria-pressed="false"` が出て、トグルボタンとして支援技術に伝わる。実物で真と確認し、オーナー回答「Aで進めてください」(A案)で `Tile.tsx` を改修する。
+- 改修: `selected` の既定値(`false`)を廃し、`selected` が明示されたときだけ `aria-pressed` を出す。選択色の `tile--selected` は `selected === true` のときだけ付ける。
+- 影響範囲(`onClick` つきの `Tile` の使用箇所を grep で洗い出した): `selected` を渡す箇所(`HandCard`、`TileGallery` の対話例)は不変。渡していない箇所(結果欄の `slots.tsx` の `TempaiBody`・`ShantenBody`・`GlanceTiles` の `onTileClick`、`discard.tsx` の `DiscardItem`)だけ、`aria-pressed` が出なくなる。`TilePalette` の赤五トグルは `Tile` を使わず独自の button で `aria-pressed` を持つので不変。
+- テスト: `Tile.test.tsx` を新設(未指定・true・false・非ボタン)。`f1-1-tile-tap.test.tsx` の期待値から `aria-pressed="false"` を外し、出ないことを明示的に検証する。`Tile.tsx` を元に戻すと失敗することを確認した(05号の red 確認)。
 
 ## 3. テスト方針(05号)
 
