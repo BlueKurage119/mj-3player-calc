@@ -18,6 +18,11 @@ import {
   sortHand
 } from './hand-rules';
 import {
+  type RandomFn,
+  type RandomHandKind,
+  generateRandomHand
+} from './random-hand';
+import {
   type SituationToggleKey,
   areHandOptionsEqual,
   isSituationKeyEnabled,
@@ -60,6 +65,7 @@ export type AppAction =
   | { type: 'discard-hand-tile'; tile: Tile }
   | { type: 'clear-hand' }
   | { type: 'clear-all' }
+  | { type: 'set-random-hand'; kind: RandomHandKind; random?: RandomFn }
   | { type: 'set-rule'; rule: Rule } // D6 が使う。D1 では reducer とテストのみ
   | { type: 'set-sheet-mode'; mode: SheetMode }
   | { type: 'tenkey-digit'; digit: string } // '0'〜'9' の 1 文字
@@ -341,6 +347,19 @@ export const appReducer = (state: AppState, action: AppAction): AppState => {
         inputFocus: null,
         tenkeyBuffer: ''
       };
+
+    case 'set-random-hand': {
+      const random = action.random ?? Math.random;
+      return {
+        ...state,
+        input: {
+          ...createInitialInput(),
+          hand: generateRandomHand(action.kind, state.rule.red, random)
+        },
+        inputFocus: null,
+        tenkeyBuffer: ''
+      };
+    }
 
     case 'set-rule': {
       const nextRule = action.rule;
