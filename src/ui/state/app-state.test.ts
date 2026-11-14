@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
+import { generateResult } from '../../core/result';
 import { createDefaultRule } from '../../core/rule';
 import type { Tile } from '../../core/tile';
 import { computeResult } from '../calc/compute';
+import { classifyResult } from '../result/classify';
 import {
   type AppAction,
   type AppState,
@@ -1971,6 +1973,220 @@ describe('D5: 状況入力の reducer と結果連動 (C5〜C8, C13)', () => {
       expect(next.input.melds).toHaveLength(1);
       expect(next.input.melds).toEqual(state.input.melds);
       expect(next.input.nuki).toBe(0);
+    });
+  });
+
+  describe('F1-1: discard-hand-tile と core 結合 (ツモ・打牌)', () => {
+    it('F1-1: discard-hand-tile は一致で1枚減り tenkeyBuffer が空になり、一致なしで同じ参照を返す', () => {
+      const base = createInitialState(createDefaultRule());
+      const state: AppState = {
+        ...base,
+        input: {
+          ...base.input,
+          hand: [
+            { type: 'p', n: 1 },
+            { type: 'p', n: 5, red: false },
+            { type: 'p', n: 5, red: true },
+            { type: 'p', n: 1 }
+          ]
+        },
+        tenkeyBuffer: '3'
+      };
+
+      // 一致あり: 末尾側の 1p(index 3) が消え、tenkeyBuffer が '' になる
+      const next = appReducer(state, {
+        type: 'discard-hand-tile',
+        tile: { type: 'p', n: 1 }
+      });
+      expect(next.input.hand).toEqual([
+        { type: 'p', n: 1 },
+        { type: 'p', n: 5, red: false },
+        { type: 'p', n: 5, red: true }
+      ]);
+      expect(next.tenkeyBuffer).toBe('');
+
+      // 一致なし: 同じ参照の state を返す
+      const unchanged = appReducer(state, {
+        type: 'discard-hand-tile',
+        tile: { type: 'z', n: 7 }
+      });
+      expect(unchanged).toBe(state);
+    });
+
+    it('F1-1: 結合: 部分入力聴牌・13枚向聴の tileAvailabilities から add-hand-tile で手牌が1枚増え末尾がその牌になる', () => {
+      const rule = createDefaultRule();
+      const base = createInitialState(rule);
+
+      // 1) 部分入力の聴牌 (7枚: 34s567p11z -> tempai, 待ち 2s/5s/赤5s)
+      const tempaiState: AppState = {
+        ...base,
+        input: {
+          ...base.input,
+          hand: [
+            { type: 's', n: 3 },
+            { type: 's', n: 4 },
+            { type: 'p', n: 5, red: false },
+            { type: 'p', n: 6 },
+            { type: 'p', n: 7 },
+            { type: 'z', n: 1 },
+            { type: 'z', n: 1 }
+          ]
+        }
+      };
+      const tempaiView = classifyResult(
+        generateResult(
+          tempaiState.table,
+          tempaiState.input,
+          tempaiState.handOptions,
+          tempaiState.rule
+        )
+      );
+      expect(tempaiView.kind).toBe('tempai');
+      if (tempaiView.kind !== 'tempai') return;
+      const tsumoTile1 = tempaiView.tileAvailabilities.find(
+        a => a.count > 0
+      )?.tile;
+      expect(tsumoTile1).toBeDefined();
+      if (!tsumoTile1) return;
+
+      const afterTempaiTsumo = appReducer(tempaiState, {
+        type: 'add-hand-tile',
+        tile: tsumoTile1
+      });
+      expect(afterTempaiTsumo.input.hand).toHaveLength(8);
+      expect(afterTempaiTsumo.input.hand[7]).toEqual(tsumoTile1);
+
+      // 2) 向聴形の13枚 (123p456p789s1134z -> 1向聴)
+      const shantenState: AppState = {
+        ...base,
+        input: {
+          ...base.input,
+          hand: [
+            { type: 'p', n: 1 },
+            { type: 'p', n: 2 },
+            { type: 'p', n: 3 },
+            { type: 'p', n: 4 },
+            { type: 'p', n: 5, red: false },
+            { type: 'p', n: 6 },
+            { type: 's', n: 7 },
+            { type: 's', n: 8 },
+            { type: 's', n: 9 },
+            { type: 'z', n: 1 },
+            { type: 'z', n: 1 },
+            { type: 'z', n: 3 },
+            { type: 'z', n: 4 }
+          ]
+        }
+      };
+      const shantenView = classifyResult(
+        generateResult(
+          shantenState.table,
+          shantenState.input,
+          shantenState.handOptions,
+          shantenState.rule
+        )
+      );
+      expect(shantenView.kind).toBe('shanten');
+      if (shantenView.kind !== 'shanten') return;
+      const tsumoTile2 = shantenView.tileAvailabilities.find(
+        a => a.count > 0
+      )?.tile;
+      expect(tsumoTile2).toBeDefined();
+      if (!tsumoTile2) return;
+
+      const afterShantenTsumo = appReducer(shantenState, {
+        type: 'add-hand-tile',
+        tile: tsumoTile2
+      });
+      expect(afterShantenTsumo.input.hand).toHaveLength(14);
+      expect(afterShantenTsumo.input.hand[13]).toEqual(tsumoTile2);
+    });
+
+    it('F1-1: 結合: 14枚 discards の各候補で discard-hand-tile を送ると13枚になり、赤5と非赤5を区別して消す', () => {
+      const rule = createDefaultRule();
+      const base = createInitialState(rule);
+      // D11: 234p567p34s678s0s5s1z (赤5s と 非赤5s の両方が候補になる)
+      const hand14: Tile[] = [
+        { type: 'p', n: 2 },
+        { type: 'p', n: 3 },
+        { type: 'p', n: 4 },
+        { type: 'p', n: 5, red: false },
+        { type: 'p', n: 6 },
+        { type: 'p', n: 7 },
+        { type: 's', n: 3 },
+        { type: 's', n: 4 },
+        { type: 's', n: 6 },
+        { type: 's', n: 7 },
+        { type: 's', n: 8 },
+        { type: 's', n: 5, red: true },
+        { type: 's', n: 5, red: false },
+        { type: 'z', n: 1 }
+      ];
+      const state14: AppState = {
+        ...base,
+        input: { ...base.input, hand: hand14 }
+      };
+      const view = classifyResult(
+        generateResult(
+          state14.table,
+          state14.input,
+          state14.handOptions,
+          state14.rule
+        )
+      );
+      expect(view.kind).toBe('discard');
+      if (view.kind !== 'discard') return;
+
+      const red5sCandidate = view.discards.find(
+        d => d.tile.type === 's' && d.tile.n === 5 && d.tile.red === true
+      );
+      const normal5sCandidate = view.discards.find(
+        d => d.tile.type === 's' && d.tile.n === 5 && d.tile.red !== true
+      );
+      expect(red5sCandidate).toBeDefined();
+      expect(normal5sCandidate).toBeDefined();
+
+      for (const candidate of view.discards) {
+        const next = appReducer(state14, {
+          type: 'discard-hand-tile',
+          tile: candidate.tile
+        });
+        expect(next.input.hand).toHaveLength(13);
+      }
+
+      if (red5sCandidate) {
+        const afterRed = appReducer(state14, {
+          type: 'discard-hand-tile',
+          tile: red5sCandidate.tile
+        });
+        expect(
+          afterRed.input.hand.some(
+            t => t.type === 's' && t.n === 5 && t.red === true
+          )
+        ).toBe(false);
+        expect(
+          afterRed.input.hand.some(
+            t => t.type === 's' && t.n === 5 && t.red === false
+          )
+        ).toBe(true);
+      }
+
+      if (normal5sCandidate) {
+        const afterNormal = appReducer(state14, {
+          type: 'discard-hand-tile',
+          tile: normal5sCandidate.tile
+        });
+        expect(
+          afterNormal.input.hand.some(
+            t => t.type === 's' && t.n === 5 && t.red === false
+          )
+        ).toBe(false);
+        expect(
+          afterNormal.input.hand.some(
+            t => t.type === 's' && t.n === 5 && t.red === true
+          )
+        ).toBe(true);
+      }
     });
   });
 });

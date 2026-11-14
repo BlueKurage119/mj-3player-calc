@@ -33,7 +33,8 @@ export {
   resolveTenkeyBuffer,
   canAppendTenkeyDigit,
   canAppendTenkeyDigitFor,
-  planAddTiles
+  planAddTiles,
+  findDiscardIndex
 } from './hand-rules';
 
 export {

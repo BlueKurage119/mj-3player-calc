@@ -303,3 +303,14 @@ export const planAddTiles = (
   }
   return tiles;
 };
+
+/** 打牌候補に一致する手牌の index を末尾から探す(ツモ切り優先)。無ければ -1 */
+export const findDiscardIndex = (hand: Tile[], tile: Tile): number => {
+  for (let i = hand.length - 1; i >= 0; i--) {
+    const h = hand[i];
+    if (h !== undefined && compareTiles(h, tile) === 0) {
+      return i;
+    }
+  }
+  return -1;
+};
