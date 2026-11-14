@@ -8,6 +8,7 @@ import {
   canAddIndicatorTile,
   canAppendTenkeyDigitFor,
   canSetMeld,
+  findDiscardIndex,
   kindOfMeld,
   maxHandLength,
   meldOfKind,
@@ -56,6 +57,7 @@ export type AppAction =
   | { type: 'add-hand-tile'; tile: Tile }
   | { type: 'remove-last-hand-tile' }
   | { type: 'remove-hand-tile'; index: number }
+  | { type: 'discard-hand-tile'; tile: Tile }
   | { type: 'clear-hand' }
   | { type: 'clear-all' }
   | { type: 'set-rule'; rule: Rule } // D6 が使う。D1 では reducer とテストのみ
@@ -114,6 +116,24 @@ export const createInitialState = (rule: Rule): AppState => ({
   sheetMode: 'palette',
   tenkeyBuffer: ''
 });
+
+const removeHandTileAt = (state: AppState, index: number): AppState => {
+  if (
+    !Number.isInteger(index) ||
+    index < 0 ||
+    index >= state.input.hand.length
+  ) {
+    return state;
+  }
+  return {
+    ...state,
+    input: {
+      ...state.input,
+      hand: state.input.hand.filter((_, i) => i !== index)
+    },
+    tenkeyBuffer: ''
+  };
+};
 
 const clearMeldTileAt = (state: AppState, i: number): AppState => {
   if (!Number.isInteger(i) || i < 0 || i >= state.input.melds.length) {
@@ -278,22 +298,12 @@ export const appReducer = (state: AppState, action: AppAction): AppState => {
       };
     }
 
-    case 'remove-hand-tile': {
-      if (
-        !Number.isInteger(action.index) ||
-        action.index < 0 ||
-        action.index >= state.input.hand.length
-      ) {
-        return state;
-      }
-      return {
-        ...state,
-        input: {
-          ...state.input,
-          hand: state.input.hand.filter((_, i) => i !== action.index)
-        },
-        tenkeyBuffer: ''
-      };
+    case 'remove-hand-tile':
+      return removeHandTileAt(state, action.index);
+
+    case 'discard-hand-tile': {
+      const index = findDiscardIndex(state.input.hand, action.tile);
+      return removeHandTileAt(state, index);
     }
 
     case 'step': {

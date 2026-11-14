@@ -201,4 +201,25 @@ describe('ResultPanel', () => {
     expect(html).not.toContain('data-view');
     expect(html).not.toContain('result-panel--banner');
   });
+
+  it('F1-1: tileActions を渡すと ResultPanel 経由で tempai の牌ボタンが描画される', () => {
+    const state: ResultState = {
+      status: 'ok',
+      result: {
+        type: 'tempai',
+        tileAvailabilities: [
+          { tile: { type: 's', n: 5, red: false }, count: 1 }
+        ]
+      }
+    };
+    const html = renderToStaticMarkup(
+      <ResultPanel
+        resultState={state}
+        tileActions={{ tsumo: () => {}, discard: () => {} }}
+      />
+    );
+    // 理由: preload リンクや SVG URL を含む HTML から牌ボタン化と aria-label を検証するため
+    expect(html).toContain('<button type="button" class="tile"');
+    expect(html).toContain('aria-label="5索をツモ"');
+  });
 });

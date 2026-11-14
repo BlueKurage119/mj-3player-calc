@@ -1,7 +1,7 @@
 import type React from 'react';
 import type { Discard } from '../../core/result';
 import type { Tile as CoreTile } from '../../core/tile';
-import { Tile } from '../tile';
+import { Tile, tileLabelOf } from '../tile';
 import {
   type DiscardRange,
   discardHeading,
@@ -91,15 +91,27 @@ function TempaiDiscardDetail({
 
 export interface DiscardItemProps {
   discard: Discard;
+  onDiscard?: ((tile: CoreTile) => void) | undefined;
 }
 
-export function DiscardItem({ discard }: DiscardItemProps): React.JSX.Element {
+export function DiscardItem({
+  discard,
+  onDiscard
+}: DiscardItemProps): React.JSX.Element {
   const nextKind = discardNextKind(discard);
   return (
     <li className="discard-item" data-discard-next={nextKind}>
       <span className="discard-item__tile">
         <span className="discard-item__label">打</span>
-        <Tile tile={discard.tile} />
+        {onDiscard ? (
+          <Tile
+            tile={discard.tile}
+            onClick={() => onDiscard(discard.tile)}
+            aria-label={`${tileLabelOf(discard.tile)}を切る`}
+          />
+        ) : (
+          <Tile tile={discard.tile} />
+        )}
       </span>
       <div className="discard-item__detail">
         {nextKind === 'shanten' ? (
@@ -114,9 +126,13 @@ export function DiscardItem({ discard }: DiscardItemProps): React.JSX.Element {
 
 export interface DiscardBodyProps {
   discards: Discard[];
+  onDiscard?: ((tile: CoreTile) => void) | undefined;
 }
 
-export function DiscardBody({ discards }: DiscardBodyProps): React.JSX.Element {
+export function DiscardBody({
+  discards,
+  onDiscard
+}: DiscardBodyProps): React.JSX.Element {
   if (discards.length === 0) {
     return (
       <div
@@ -135,7 +151,11 @@ export function DiscardBody({ discards }: DiscardBodyProps): React.JSX.Element {
       <h2 className="result-body__title">{heading}</h2>
       <ul className="discard-list">
         {sorted.map((d, i) => (
-          <DiscardItem key={`${tileKey(d.tile)}-${i}`} discard={d} />
+          <DiscardItem
+            key={`${tileKey(d.tile)}-${i}`}
+            discard={d}
+            onDiscard={onDiscard}
+          />
         ))}
       </ul>
     </div>

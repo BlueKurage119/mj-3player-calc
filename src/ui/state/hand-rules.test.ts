@@ -8,6 +8,7 @@ import {
   canAppendTenkeyDigit,
   canAppendTenkeyDigitFor,
   canSetMeld,
+  findDiscardIndex,
   isHandFull,
   kindOfMeld,
   maxHandLength,
@@ -910,5 +911,60 @@ describe('D4-C24・C25: 赤牌切替の判定と5キーの代替 (確定事項 2
       { type: 'tenkey-commit', suit: 'p' }
     );
     expect(plain.input.melds[0]).toEqual({ type: 'pon', tile: p5 });
+  });
+});
+
+describe('F1-1: findDiscardIndex (打牌候補からの検索)', () => {
+  it('F1-1: 一致なしは -1、同じ牌が先頭と末尾にあるときは末尾の index を返す', () => {
+    const hand: Tile[] = [
+      { type: 'p', n: 1 },
+      { type: 's', n: 2 },
+      { type: 'p', n: 1 }
+    ];
+    expect(findDiscardIndex(hand, { type: 'm', n: 9 })).toBe(-1);
+    expect(findDiscardIndex([], { type: 'p', n: 1 })).toBe(-1);
+    expect(findDiscardIndex(hand, { type: 'p', n: 1 })).toBe(2);
+    expect(findDiscardIndex(hand, { type: 's', n: 2 })).toBe(1);
+  });
+
+  it('F1-1: 赤5と非赤5を区別し、非赤は red の undefined と false のどちらでも一致する', () => {
+    const hand: Tile[] = [
+      { type: 'p', n: 5, red: false },
+      { type: 's', n: 5, red: true },
+      { type: 'p', n: 5, red: true }
+    ];
+    expect(findDiscardIndex(hand, { type: 'p', n: 5, red: true })).toBe(2);
+    expect(findDiscardIndex(hand, { type: 'p', n: 5, red: false })).toBe(0);
+    // red: undefined 相当の非赤指定でも非赤5に一致し、赤5とは一致しない
+    const undefNonRed = { type: 'p', n: 5 } as Tile;
+    expect(findDiscardIndex(hand, undefNonRed)).toBe(0);
+    expect(findDiscardIndex(hand, { type: 's', n: 5, red: false })).toBe(-1);
+
+    const handWithUndefinedNonRed = [{ type: 's', n: 5 } as Tile];
+    expect(
+      findDiscardIndex(handWithUndefinedNonRed, {
+        type: 's',
+        n: 5,
+        red: false
+      })
+    ).toBe(0);
+    expect(
+      findDiscardIndex(handWithUndefinedNonRed, {
+        type: 's',
+        n: 5,
+        red: true
+      })
+    ).toBe(-1);
+  });
+
+  it('F1-1: 字牌の検索で一致する末尾の index を返す', () => {
+    const hand: Tile[] = [
+      { type: 'z', n: 1 },
+      { type: 'z', n: 5 },
+      { type: 'z', n: 1 }
+    ];
+    expect(findDiscardIndex(hand, { type: 'z', n: 1 })).toBe(2);
+    expect(findDiscardIndex(hand, { type: 'z', n: 5 })).toBe(1);
+    expect(findDiscardIndex(hand, { type: 'z', n: 7 })).toBe(-1);
   });
 });

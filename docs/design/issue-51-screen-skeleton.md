@@ -37,6 +37,8 @@
 | 12 | バンドル予算 102,000 B 維持。計算部を `lazy` 分離。超過時は G-09 | 2.11・5章 条件 12 |
 | 13 | 底部シート機構(開閉・フォーカス・Esc/戻る・safe-area・下余白・中身スロット)は D1 | 2.6 |
 
+【事後注記】Issue #89([issue-89-tile-tap.md](issue-89-tile-tap.md))で牌のタップ削除(2段階)を採用し、キーボードでシートを開く入口をカード本体からタイトルのボタンに移した。ポインタではカード全体で開く動作を維持する。
+
 ### 1.3 設計担当の判断と根拠
 
 - **計算部の遅延読み込みは「モジュールを動的 import し、関数が届いたら `useMemo` で同期計算」とする。** `generateResult` は WASM の分解器(`src/core/tile/shanten.ts` が `decomposer` を import)に依存し、初回 JS に入れると予算を圧迫する。`useMemo` は同期でしか使えないため、起動時に `import('../calc/compute')` を1回だけ実行し、得た関数を state 外の ref ではなく `useState` に保持して `useMemo` の依存に入れる。届くまでは結果側を「読み込み中」状態にする。mahjong-calc の AppContent が計算部を lazy にしている構成に倣う。
@@ -279,6 +281,7 @@ export interface StepperProps {
 
 - カード全体が1つのボタン(`role="button"`、`tabIndex=0`、Enter/Space で開く)。押すと `open-sheet { type: 'hand' }`。高さ 48dp 以上。
 - 牌列: `input.hand` を `Tile`(`onClick` なし=非ボタン)で並べる。牌のタップで削除しない。和了牌は手牌の最後の牌(D2 が見せ方を決める)。
+  【事後注記】Issue #89([issue-89-tile-tap.md](issue-89-tile-tap.md))で牌のタップ削除(2段階)を採用し、キーボードでシートを開く入口をカード本体からタイトルのボタンに移した。ポインタではカード全体で開く動作を維持する。
 - バケツの配置【確定、A 案(UI 監修で修正する場合がある)】:
 
 | 案 | 配置 | 牌幅(328dp・14枚) | カード高さ | 備考 |

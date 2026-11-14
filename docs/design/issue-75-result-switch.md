@@ -31,6 +31,8 @@
 | 11 | E1 時点のバナー仮表示: `tempai` は「聴牌 待ち+待ち牌」、`discard` は「何切る」とだけ表示 | 2.5 |
 | 12 | E2/E3 の境界: 和了の一覧(待ち牌ごとのまとめ)は E3、和了1件の中身は E2。14枚の和了は E3 の一覧部品が E2 の部品を1種ぶん並べる | 3・4 |
 
+【事後注記】Issue #89([issue-89-tile-tap.md](issue-89-tile-tap.md))で本体(聴牌・向聴・何切る)の牌のタップによるツモ・打牌を実装した。バナーは対象外のまま(申し送り(2)のバナー分割は未実施)。操作は `MainScreen` から props(`tileActions`)で渡した。
+
 ### 1.3 事実確認の結果(実物との照合)
 
 - `Result` の生成(`src/core/result.ts`):
@@ -183,6 +185,7 @@ export const scrollToResultPanel = (
 - 牌画像は既存の牌表示部品(手牌カードで使っているもの)を流用し、新しい画像経路は作らない。牌は1行に収まらなければ折り返す(livewing どおり)。
 - バナー全体は1つの `<button type="button" aria-label="計算結果へ移動">`(押すと `panelRef.current.scrollIntoView({ behavior, block: 'start' })`。`behavior` は既存の `getScrollBehavior()` を使い reduced-motion に従う)【確定(issue-51 確定事項8を維持)】。
 - 牌のタップ(打牌・自摸)は E1 では実装しない【確定】。4章の引き継ぎに従い、牌を button の子に入れても将来分離できる構造にする(バナー部品の中で牌列を `GlanceTiles({ tiles, onTileClick?: (tile) => void })` という部品に切り出し、E1 では `onTileClick` を渡さない)。
+  【事後注記】Issue #89([issue-89-tile-tap.md](issue-89-tile-tap.md))で本体(聴牌・向聴・何切る)の牌のタップによるツモ・打牌を実装した。バナーは対象外のまま(申し送り(2)のバナー分割は未実施)。操作は `MainScreen` から props(`tileActions`)で渡した。
 
 ### 2.6 issue-51 設計書への事後注記(本 Issue の製造で追記する)
 
@@ -223,6 +226,7 @@ export const scrollToResultPanel = (
 - **E4**: `shanten`(本体・バナー)。
 - **F**: `discard`(本体・バナー)。
 - **牌タップ(打牌・自摸)の申し送り**: ユーザーから「有効牌・待ち牌のタップで打牌・自摸に対応できるようにする見込み」との申し送りがある。E1 は次で構造を開けておく。(1) 牌列は `GlanceTiles({ tiles, onTileClick? })` に切り出し済み。(2) 現状バナー全体が1つの button なので、牌タップを入れるときはバナーを「スクロール用の button」と「牌ごとの button 群」に分割する(button の入れ子は不可)。(3) 打牌・自摸の操作は reducer の action として `MainScreen` から props で渡す形にし、スロット部品から `dispatch` を直接呼ばない。
+  【事後注記】Issue #89([issue-89-tile-tap.md](issue-89-tile-tap.md))で本体(聴牌・向聴・何切る)の牌のタップによるツモ・打牌を実装した。バナーは対象外のまま(申し送り(2)のバナー分割は未実施)。操作は `MainScreen` から props(`tileActions`)で渡した。
 - 種類の判定は必ず `classifyResult` を使い、新しい種類が増えたら `ResultView` に追加する。
 
 ## 5. 受け入れ条件

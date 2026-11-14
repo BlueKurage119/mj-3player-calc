@@ -130,6 +130,16 @@ body {
   padding-block-start: 2px;
 }
 
+.hand-card__opener {
+  cursor: pointer;
+  border-radius: var(--md-sys-shape-corner-extra-small);
+}
+
+.hand-card__opener:focus-visible {
+  outline: 2px solid var(--md-sys-color-primary);
+  outline-offset: 2px;
+}
+
 .card-clear-zone {
   padding-inline-start: 0.5rem;
   display: flex;
@@ -195,11 +205,6 @@ body {
   );
 }
 
-.hand-card__body:focus-visible {
-  outline: 2px solid var(--md-sys-color-primary);
-  outline-offset: 2px;
-}
-
 .hand-card__tiles {
   display: flex;
   flex-wrap: nowrap;
@@ -210,6 +215,25 @@ body {
   padding: 2px;
   min-height: calc(var(--tile-width) * 4 / 3 + 4px);
   box-sizing: border-box;
+}
+
+/* 手牌の牌タップ選択(Issue #89): 枠は消し、色トークンを重ねてホバー・押下と混ざらないようにする */
+.hand-card__tiles button.tile[aria-pressed="true"],
+.hand-card__tiles button.tile[aria-pressed="true"]:focus-visible {
+  outline: none;
+}
+
+.hand-card__tiles button.tile[aria-pressed="true"]:focus-visible {
+  outline: 2px solid var(--md-sys-color-secondary);
+  outline-offset: -2px;
+}
+
+.hand-card__tiles button.tile[aria-pressed="true"]::after,
+.hand-card__tiles button.tile[aria-pressed="true"]:hover::after,
+.hand-card__tiles button.tile[aria-pressed="true"]:focus-visible::after,
+.hand-card__tiles button.tile[aria-pressed="true"]:active::after {
+  background: var(--md-sys-color-on-primary-fixed-variant);
+  opacity: 0.38;
 }
 
 .hand-card__winning-tile {
