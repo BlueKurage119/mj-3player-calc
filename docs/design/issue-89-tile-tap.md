@@ -2,7 +2,8 @@
 
 - 対象 Issue: #89(Epic F #7 の Sub-Issue。F1 #88 の関連)
 - ブランチ: `feature/issue-89-tile-tap-delete`(main `fa55cee` から)
-- 依存: **F1(#88、ブランチ `feature/issue-88-discard-list`、未マージ)が main に取り込まれていること**。製造は F1 のマージ後、main を取り込んでから着手する(5章)。
+- 版: 第3版(2026-11-14。独立レビューの指摘2〜8を反映。指摘1は 2.11 に【未確定】として記録)
+- 依存: F1(#88)は main に `a519454` でマージ済みで、本ブランチに取り込み済み。本書はマージ済みの `src/ui/result/discard.tsx` を前提とする(F1 ブランチ上の版と同一であることを確認済み)。
 - 範囲: 手牌の牌の2段階タップ削除、結果本体(`TempaiBody`・`ShantenBody`・`DiscardBody`)の牌のタップによるツモ・打牌、要件§4 の例外追加と D1・D2・E1 設計書への事後注記
 - 範囲外: バナー(`ResultGlance`・`ResultBanner`)の牌、副露・ドラ・裏ドラ・抜き北の牌、和了表示(`HoraBody`)の牌、`DiscardItem` 内の待ち・受け入れの牌、アンドゥ、ロン・ツモの区別、タップ後のスクロール
 
@@ -14,7 +15,7 @@
 - Issue #89 本文、統括のヒアリング報告(F1-1。1〜3章=事実と論点、5章=オーナー確定、6章=未確定点)
 - `docs/requirements.md` §4(68行目のタップ領域の【確定】)
 - 設計書 `issue-46-palette-input.md`(D2)、`issue-51-screen-skeleton.md`(D1)、`issue-75-result-switch.md`(E1)、F1 の `issue-88-discard-list.md`(ブランチ上の第4版)
-- コード: `src/ui/state/app-state.ts`・`hand-rules.ts`、`src/ui/screen/HandCard.tsx`・`main-screen.css`・`MainScreen.tsx`・`ResultPanel.tsx`、`src/ui/result/slots.tsx`・`ResultBody.tsx`・`result.css`、`src/ui/tile/Tile.tsx`・`tile.css`、`src/ui/input/tenkey-logic.ts`、F1 ブランチの `src/ui/result/discard.tsx`・`result.css`・`ResultBody.tsx`
+- コード: `src/ui/state/app-state.ts`・`hand-rules.ts`、`src/ui/screen/HandCard.tsx`・`main-screen.css`・`MainScreen.tsx`・`ResultPanel.tsx`、`src/ui/result/slots.tsx`・`ResultBody.tsx`・`result.css`、`src/ui/tile/Tile.tsx`・`tile.css`、`src/ui/input/tenkey-logic.ts`、`src/ui/result/discard.tsx`(F1)、`src/ui/expressive/BottomSheet.tsx`、`src/ui/input/use-tenkey-keyboard.ts`、`src/core/result.ts`・`src/core/tile/index.ts`、`src/ui/result/classify.ts`、既存テスト `src/ui/screen/HandCard.test.tsx`・`buffer-selection.test.tsx`、`package.json`
 
 ### 1.2 確定事項(オーナー確定。再検討しない)
 
@@ -46,7 +47,11 @@
 - `Tile.tsx`: `onClick` を渡すと `button.tile`(`aria-pressed={selected}`)。`selected` は `outline: 2px solid var(--md-sys-color-primary); outline-offset: 1px`(色の変化ではなく枠)。`button.tile::after` に scrim の状態層がある。
 - `tenkey-logic.ts`: 物理キーは `.bottom-sheet` 内か `[data-sheet-opener]` 内にフォーカスがあるときだけ拾う。よって `data-sheet-opener` の外に置いたボタンでは Enter/Space はブラウザ既定(click)になる。
 - `slots.tsx`(main): `TempaiBody`・`ShantenBody` は `.result-body__wait`(`Tile` と `×N` の span)を `.result-body__tiles`(`gap: 0.5rem 0.75rem`)に並べる。`GlanceTiles` には `onTileClick?` があり、バナーと F1 の `TempaiDiscardDetail` が使う。
-- F1(ブランチ)`discard.tsx`: `DiscardBody({ discards })` → `ul.discard-list` → `DiscardItem({ discard })` → `span.discard-item__tile`(「打」ラベル+`Tile`。`--tile-width: 2.25rem`)と `div.discard-item__detail`(待ち・受け入れの牌)。`ResultBody` は `view.kind === 'discard'` で `<DiscardBody discards={view.discards} />`。
+- 打牌候補の牌と赤5【確定。コード読解で確認】: `src/core/result.ts` の打牌候補は `input.hand` の牌そのもの(末尾を除く手牌を `compareTiles` で重複除去したものと、末尾の牌)である。`compareTiles`(`src/core/tile/index.ts`)は数牌の 5 で赤の有無を区別するので、手牌に赤5と非赤5があればそれぞれ別の候補になり、候補の `red` は手牌の牌と一致する。よって `findDiscardIndex` は候補に対して必ず一致を見つける(ただし非赤は `red` が `undefined` と `false` のどちらもあり得るので、2.2 のとおり「`red === true` か否か」で比べる)。
+- 13枚の完全入力の聴牌: `generateResult` は手牌13枚で向聴 0(または七対子・国士の聴牌)のとき `hora-shanten`/`hora`(待ちごとの和了)を返し(`src/core/result.ts` 166〜205行付近。副露込みで13枚のときも 235〜251行付近で同じ)、`classifyResult` はこれを `kind: 'hora'` にする(`classify.ts` 28行付近)。結果欄は `HoraBody` で描画され、`TempaiBody`(`kind: 'tempai'`)は部分入力の手牌でしか出ない。2.11 参照。
+- `BottomSheet.tsx`: シートが開いている間、`window` の `keydown` で Escape を受け、`!event.defaultPrevented` のときだけ `preventDefault()` して閉じる。`use-tenkey-keyboard.ts` は `window` の `keydown` で、`mapTenkeyKey` が Backspace・Enter・数字・`m/p/s/z` だけを拾う(Space は `null` で preventDefault しない)。
+- テスト環境: `package.json` に jsdom・`@testing-library/*` は無い。既存の UI テストは `renderToStaticMarkup` による文字列検査と純関数の単体テストで書かれている(E1 設計書の受け入れ条件6でも依存追加をしない方針)。
+- F1 `discard.tsx`(main): `DiscardBody({ discards })` → `ul.discard-list` → `DiscardItem({ discard })` → `span.discard-item__tile`(「打」ラベル+`Tile`。`--tile-width: 2.25rem`)と `div.discard-item__detail`(待ち・受け入れの牌)。`ResultBody` は `view.kind === 'discard'` で `<DiscardBody discards={view.discards} />`。
 - 結果は `MainScreen` → `ResultPanel`(`resultState`・`dispatchTimestampRef`・`context`)→ `ResultBody`。E1 4章の申し送りで「打牌・自摸の操作は `MainScreen` から props で渡し、スロット部品から `dispatch` を直接呼ばない」。`MainScreen` の `trackedDispatch` が 100ms 計測用の時刻を記録する。
 
 ## 2. 設計
@@ -62,6 +67,7 @@
 | `src/ui/screen/hand-selection.ts` | 新規 | 選択の遷移の純関数(2.4) |
 | `src/ui/screen/main-screen.css` | 改修 | 開くボタン・牌ボタン・選択色 |
 | `src/ui/result/slots.tsx` | 改修 | `TempaiBody`・`ShantenBody` に `onTsumo?` |
+| `src/ui/screen/HandCard.test.tsx` | 改修 | D1-1-C4 の期待値を新しい DOM に合わせる(2.3 の表) |
 | `src/ui/result/discard.tsx`(F1) | 改修 | `DiscardBody`・`DiscardItem` に `onDiscard?` |
 | `src/ui/result/ResultBody.tsx`・`src/ui/screen/ResultPanel.tsx`・`MainScreen.tsx` | 改修 | `tileActions` の受け渡し |
 | `src/ui/result/result.css` | 改修 | 必要なら結果の牌ボタンの微調整のみ |
@@ -90,7 +96,7 @@
 ```
 div.hand-card(onClick: 牌ボタン・ゴミ箱以外ならシートを開く。従来どおり)
 ├ div.hand-card__top-row
-│ ├ button.hand-card__opener(type=button, data-sheet-opener, aria-label="手牌を入力",
+│ ├ span.hand-card__opener(role=button, tabIndex=0, data-sheet-opener, aria-label="手牌を入力",
 │ │   onKeyDown=handleHandBodyKey, 中身はタイトル文字列 "手牌 (n/max)")
 │ └ CardClearButton(従来どおり)
 └ div.hand-card__body(role・tabIndex・aria-label・data-sheet-opener・onKeyDown を外す。style の --hand-max は残す)
@@ -105,7 +111,17 @@ div.hand-card(onClick: 牌ボタン・ゴミ箱以外ならシートを開く。
 - ポインタの当たり判定は従来どおりカード外枠のクリックで開く。`handleCardClick` の除外条件に `target.closest('.hand-card__tiles button.tile')` を足す(牌のタップではシートを開かない)。
 - 物理キー: 牌ボタンは `data-sheet-opener` の外になるので、フォーカス中の Enter/Space はテンキー処理に拾われず、ブラウザ既定の click になる(1.4)。
 - 却下した案: (a) 牌列を本体ボタンの外に絶対配置で重ねる(当たり判定が二重になり、空の手牌の扱いが複雑)。(b) 本体を `role="group"` にして tabIndex だけ残す(非ボタンのフォーカス可能要素が Enter で開くのは a11y 上不適切)。
-- `formatHandCardTitle` の文字列は変えない。既存テストのうち `role="button"` 名「手牌を入力」を引くものは、opener を引くように直す。
+- `formatHandCardTitle` の文字列は変えない。
+- **opener はネイティブ `<button>` にしない。`<span role="button" tabIndex={0}>` とする【設計案。指摘4への対策】**。理由: ネイティブ button だと、選択中(シートが手牌で開いている間)の Space で `handleHandBodyKey` が素通し(preventDefault しない)するため、ブラウザの合成 click が外枠の `handleCardClick` にバブリングし、`open-sheet`(`tenkeyBuffer` のリセット)が走る。Enter は `useTenkeyKeyboard` が preventDefault するので起きないが、Space は `mapTenkeyKey` が `null` で止まらない。`span role="button"` なら合成 click が起きず、従来の `.hand-card__body` と同じ挙動を保てる。キー操作は従来どおり `handleHandBodyKey`(非選択時の Enter/Space で開く)だけが担う。上の木はこの形で書いてある。
+- 属性の順序: JSX で `role` → `tabIndex` → `aria-label` → `data-sheet-opener` → `className` の順に書く(既存テスト D4-C30a の文字列一致を保つため)。`biome-ignore lint/a11y/useSemanticElements` の注記は従来の本体から移す。
+
+**壊れる既存テストと更新後の期待値**(実物で確認)
+
+| テスト | 行 | 現在の期待 | 更新後 |
+| --- | --- | --- | --- |
+| `HandCard.test.tsx` D1-1-C4 | 56〜74行付近 | `.hand-card__body` の開始タグに `role="button"`、その中に `<button` が無い | `.hand-card__opener` の開始タグに `role="button"`・`tabindex="0"`・`aria-label="手牌を入力"`・`data-sheet-opener=""` があり、その中に `<button` が無い。`.hand-card__body` の開始タグに `role=` が無い。外枠に `role=` が無い(従来どおり)。ゴミ箱の disabled(従来どおり) |
+| `HandCard.test.tsx` D1-1-C4-static | 87〜100行付近 | `className="hand-card__body"` の開始タグに `onClick` が無い | 変更不要(本体に onClick を付けない。opener にも onClick を付けない旨を同じ方法で1行追加してよい) |
+| `buffer-selection.test.tsx` D4-C30a | 299〜315行付近 | `'role="button" tabindex="0" aria-label="手牌を入力" data-sheet-opener=""'` を含む(または本体に `data-sheet-opener`) | 上の属性順を守れば変更不要(1つ目の条件で一致する)。属性順を変えた場合は opener の開始タグに4属性があることを個別に確かめる形に直す |
 
 ### 2.4 手牌の選択と2段階削除
 
@@ -128,7 +144,7 @@ div.hand-card(onClick: 牌ボタン・ゴミ箱以外ならシートを開く。
 | i | 牌 i をタップ | `remove-hand-tile { index: i }` を送る。選択なし(手牌が変わるので自動でも解除) |
 | i | 牌 j(≠i)をタップ | j を選択 |
 | i | 牌ボタン以外をポインタで押す(画面のどこでも。カード本体・ゴミ箱・シート・結果欄・ヘッダ等) | 選択なし |
-| i | Esc | 選択なし(Esc が別の機能も持つ場合はその動作も従来どおり行う) |
+| i | Esc | 選択なし(シートが開いていればシートも閉じる。下記) |
 
 - 「別の場所」の検出: 選択中だけ `document` に `pointerdown`(capture)を登録し、`event.target` が `.hand-card__tiles button.tile` の内側でなければ解除する(HelpTooltip の外側 pointerdown と同じ方式)。
 - **カード本体(牌以外)のタップは「選択解除」と「シートを開く(従来動作)」を同時に行う【確定】**(オーナー確定。2026-11-14)。理由: 解除のためだけに1タップを消費させない。従来動作を変えない。
@@ -140,6 +156,16 @@ div.hand-card(onClick: 牌ボタン・ゴミ箱以外ならシートを開く。
 - `Tile` の `selected` を渡す(`aria-pressed="true"` を得るため)が、見た目は手牌カード内で上書きする。理由: 既存の `selected` は 2px の枠(offset 1px)で、牌の間隔 1px の手牌では隣の牌に枠が重なり、確定事項1の「色が変わる」とも異なる。
 - 選択色は primary 系・tertiary 系の既存トークンから選ぶ【確定】(オーナー確定。2026-11-14)。推奨は次の1つ。UI 監修での微調整(トークン・不透明度の変更。primary 系・tertiary 系の範囲内)は可。
 - `main-screen.css` で `.hand-card__tiles .tile[aria-pressed="true"]` の outline を消し、`::after` の状態層を `background: var(--md-sys-color-on-primary-fixed-variant); opacity: 0.38` にする(推奨)。押下中・ホバーの状態層(scrim)と重ねない(選択中は選択色を優先)。HEX 不可。
+- **状態層との詳細度の扱い【設計案。指摘5】**: `tile.css` の `button.tile:hover::after`(詳細度 0,2,2 相当)・`:focus-visible::after`・`:active::after` は `opacity` を 0.08〜0.1 にし、`background` は scrim。選択中が常に勝つよう、`main-screen.css` に次の順で書く(`main-screen.css` は `tile.css` より後に読み込まれるが、順序に頼らず詳細度で勝たせる)。
+  - `.hand-card__tiles button.tile[aria-pressed="true"]::after`(詳細度 0,3,2)と、同じ前置きの `:hover::after`・`:focus-visible::after`・`:active::after`(0,4,2)を1つのセレクタ群にまとめ、`background`・`opacity` を選択色の値で固定する。
+  - `.hand-card__tiles button.tile[aria-pressed="true"]`・同 `:focus-visible` で `outline: none` を指定する(`tile.css` の `.tile[aria-pressed="true"]:focus-visible` の枠を打ち消す)。ただしキーボードのフォーカス位置が見えなくならないよう、選択中の `:focus-visible` には `outline: 2px solid var(--md-sys-color-secondary); outline-offset: -2px`(内側。隣の牌に重ならない)を付ける。
+  - 非選択の牌のホバー・フォーカス・押下は `tile.css` の既定のまま。
+- **Esc の登録先と `BottomSheet` との共存【設計案。指摘6】**: 選択中だけ `document` に `keydown` を登録し、`event.key === 'Escape'` で選択を解除する。`preventDefault()` は呼ばない。`document` のリスナーは `window`(`BottomSheet` の Esc、`useTenkeyKeyboard`)より先にバブリング段階で呼ばれる。preventDefault しないので、シートが開いていれば続けて `BottomSheet` が閉じる。結果、選択中の Esc 1回で「選択解除+シート閉じる」となる(シートが閉じていれば選択解除だけ)。二つの処理は別の状態(HandCard のローカル状態とシートの開閉)を変えるので、二重に動いても同じ処理が2回走ることはない。シートが閉じても手牌は変わらないので、選択の解除は Esc の処理が担う。
+- **純関数への切り出し(`hand-selection.ts`。指摘2)**: 次の3つを純関数にし、`HandCard` はイベントからそれを呼ぶだけにする。
+  - `nextHandTap(selected, tapped)`(上の表の牌タップの行)
+  - `isHandTileTarget(target: { closest?(sel: string): unknown } | null): boolean` — `closest('.hand-card__tiles button.tile')` が非 null なら真。外側 pointerdown で解除するかの判定に使う(偽なら解除)
+  - `isSelectionCancelKey(key: string): boolean` — `'Escape'` のときだけ真
+- **選択状態の描画の検証用**: `HandCard` に内部用の省略可能 props `initialSelectedIndex?: number` を足す(`useState` の初期値を `{ index: initialSelectedIndex, hand: input.hand }` にする。本番では渡さない)。`renderToStaticMarkup` で選択中の `aria-pressed`・`aria-label` を検証するため。
 - 候補の比較(`src/ui/theme/tokens.css` の実値。ライト / ダーク):
 
 | 候補 | ライト | ダーク | 評価 |
@@ -164,12 +190,12 @@ div.hand-card(onClick: 牌ボタン・ゴミ箱以外ならシートを開く。
 - `count > 0` の牌だけが表示されるので、通常 `canAddHandTile` は拒否しない。拒否されても無変化。
 - 牌の見た目(幅 24px 前後)は変えない。当たり判定の拡張もしない(確定事項4。要件§4 に例外)。横方向の隣のボタンとの間には `×N` の文字と `column-gap: 0.75rem` があり、縦は `row-gap: 0.5rem`(8px)。いずれも実測で確認する(条件 B3)。
 
-### 2.6 打牌候補のボタン化(F1 の構造に依存)
+### 2.6 打牌候補のボタン化(F1 のマージ済みの構造に依存)
 
 - `DiscardBodyProps`・`DiscardItemProps` に `onDiscard?: (tile: CoreTile) => void` を足す。渡されたとき、`span.discard-item__tile` 内の `Tile` に `onClick={() => onDiscard(discard.tile)}`・`aria-label={`${tileLabelOf(discard.tile)}を切る`}` を渡す【設計案】。「打」のラベルは button の外(牌のみボタン)。
 - `DiscardItem` 内の待ち・受け入れの牌(`TempaiDiscardDetail` の `GlanceTiles`、`ShantenDiscardDetail` の `Tile`)はボタンにしない(打牌前の手牌に加える操作は意味がないため。`onTileClick` を渡さない)。
 - 打牌候補の牌は幅 2.25rem(36px)。隣の候補(`li` の縦並び)との間隔は実測する(条件 C3)。
-- **F1 の構造が変わった場合の影響箇所**: 本節は F1 第4版のブランチ上の実装に合わせている。マージ時に (1) `DiscardItem` の名前・props、(2) 打牌牌の要素(`span.discard-item__tile` と `Tile`)、(3) `ResultBody` から `DiscardBody` への props の渡し方、(4) `--tile-width` が変わっていたら、本節・2.7・条件 C1〜C4・2.8 の要件文言の数値(36px)を F1 の実物に合わせて読み替える。構造が大きく変わった(例: 打牌牌が既に button の中にある)場合は製造を止め、統括へ差し戻す。
+- **前提とする F1 の実物(main `a519454` 時点)**: (1) `DiscardItem({ discard })`・`DiscardBody({ discards })`、(2) 打牌牌は `span.discard-item__tile` 内の非ボタンの `Tile`、(3) `ResultBody` は `<DiscardBody discards={view.discards} />`、(4) `.discard-item__tile` の `--tile-width: 2.25rem`(`result.css`)。製造着手時にこの4点が変わっていれば(別 Issue で main が更新された場合)、本節・2.7・条件 C1〜C4・2.8 の数値を実物に合わせて読み替える。打牌牌が既に button の中にあるなど、牌だけをボタンにできない構造になっていた場合は製造を止め、統括へ差し戻す。
 
 ### 2.7 受け渡し(`MainScreen` → `ResultPanel` → `ResultBody`)
 
@@ -193,7 +219,7 @@ Issue 本文に従い、【確定】の扱いの変更はオーナーの確認�
 
 **(1) `docs/requirements.md` §4(68行目の【確定】の段落)**: ゴミ箱の例外の文の後(「…他の入力欄には広げない(Issue #55・#48)。」の後、「牌・数値の入力(…)は底部シートで行い」の前)に次を挿入し、冒頭の更新日の行に「Issue #89 で§4 に手牌の牌と結果欄の牌のタップ領域の例外を追加」を追記する。数値は条件 A3・B3・C3 の実測値で置き換える(下の〔 〕)。
 
-> 手牌カードの牌(タップで選択、もう一度のタップで削除)に限り、タップ領域を牌の見た目と同じ大きさとする(375px 幅・14枚で幅約〔A3 の実測〕dp・高さ約〔同〕dp)。この幅は WCAG 2.2 の AA(24px)を満たさない場合がある。牌の間隔は 1dp とし、隣接ターゲット間隔 8dp の例外とする。誤操作は2段階の操作(選択→削除)で防ぐ。結果欄の本体の牌(聴牌・向聴の待ち牌・有効牌、何切るの打牌候補)に限り、タップ領域を牌の見た目と同じ大きさとする(待ち牌・有効牌は幅約〔B3〕dp、打牌候補は幅約〔C3〕dp)。枚数表示はタップ領域に含めない。隣接ターゲット間隔は〔B3・C3 の実測。8dp 未満ならその値と例外である旨〕とする。これらの緩和は手牌と結果欄の本体の牌にだけ適用し、他の入力欄・バナーの牌には広げない(Issue #89)。
+> 手牌カードの牌(タップで選択、もう一度のタップで削除)に限り、タップ領域を牌の見た目と同じ大きさとする(375px 幅・14枚で幅約〔A3 の実測〕dp・高さ約〔同〕dp)。この幅は WCAG 2.2 の AA(24px)を満たさない場合がある。牌の間隔は 1dp とし、隣接ターゲット間隔 8dp の例外とする。誤操作は2段階の操作(選択→削除)で防ぐ。結果欄の本体の牌(聴牌・向聴の待ち牌・有効牌、何切るの打牌候補)に限り、タップ領域を牌の見た目と同じ大きさとする(待ち牌・有効牌は幅約〔B3〕dp・高さ約〔B3〕dp、打牌候補は幅約〔C3〕dp・高さ約〔C3〕dp)。枚数表示はタップ領域に含めない。隣接ターゲット間隔は〔B3・C3 の実測。8dp 未満ならその値と例外である旨〕とする。これらの緩和は手牌と結果欄の本体の牌にだけ適用し、他の入力欄・バナーの牌には広げない(Issue #89)。
 
 **(2) `docs/design/issue-46-palette-input.md`(D2)**: 次の各箇所の直後に事後注記を1行ずつ置く(本文は消さない)。
 - 7行目(範囲外「牌タップ削除の接続」)、32行目(確定事項10)、149行目(「牌タップで削除|移さない」の表行。表の直後)、194行目の 2.10 節(d の行を含む表の直後)、255行目(引き継ぎ)、260行目(範囲外)。
@@ -203,11 +229,15 @@ Issue 本文に従い、【確定】の扱いの変更はオーナーの確認�
 
 **(4) `docs/design/issue-75-result-switch.md`(E1)**: 29行目(確定事項9)の表の直後、185行目(2.5 の牌タップ)の直後、225行目(4章の申し送り)の直後に事後注記: 「【事後注記】Issue #89([issue-89-tile-tap.md](issue-89-tile-tap.md))で本体(聴牌・向聴・何切る)の牌のタップによるツモ・打牌を実装した。バナーは対象外のまま(申し送り(2)のバナー分割は未実施)。操作は `MainScreen` から props(`tileActions`)で渡した。」
 
-行番号は main `fa55cee` 時点。F1 のマージ等でずれていれば、引用した文言で位置を特定する。
+行番号は main `fa55cee` 時点(`fa55cee` から本ブランチの HEAD までにこれら4文書の変更が無いことを `git diff --stat` で確認済み)。ずれていれば、引用した文言で位置を特定する。
 
 ### 2.9 初回 JS(09号)
 
-`HandCard`・`slots.tsx`・`ResultBody`・状態層はすべて初回チャンク。増分の積算【設計案】: 状態層(`findDiscardIndex`・action)約 0.15 kB、`hand-selection.ts`・`HandCard` の選択と pointerdown 約 0.35 kB、結果本体・受け渡し約 0.2 kB。計 約 +0.7 kB(gzip)。CSS は JS 外。条件 E2 で実測し、PR に記録する。
+`HandCard`・`slots.tsx`・`ResultBody`・状態層はすべて初回チャンク。増分の積算【設計案】: 状態層(`findDiscardIndex`・action)約 0.15 kB、`hand-selection.ts`・`HandCard` の選択と pointerdown 約 0.35 kB、結果本体・受け渡し約 0.2 kB。計 約 +0.7 kB(約 700 B。gzip)。CSS は JS 外。条件 E2 で実測し、PR に記録する。
+
+- **基準値**: **126,855 B**(F1 マージ後の `origin/main` `a519454` の初回 JS。統括の実測値。09号の方法)。設計担当は再実測していない(実挙動未確認。E2 で検収担当が main を同じ方法で測り、この値と一致するか確かめる)。
+- **目標値**: 126,855 + 700 = **127,555 B**。超過しても不合格にしない(09号)。
+- **09号の「現在の基準値」**: 現行の記載は 125,908 B(Epic E 完了後。F1 マージ前)で、F1 の増分(約 +947 B)が反映されていない。本 Issue では 09号を改訂しない。基準値の更新(F1 マージ後の値への差し替え)が要るかは統括の判断とする(4章に申し送り)。
 
 ### 2.10 UI 監修の観点
 
@@ -216,26 +246,42 @@ Issue 本文に従い、【確定】の扱いの変更はオーナーの確認�
 - タイトルが opener になったことの見た目(ボタンらしさを足さない方針の妥当性)とフォーカスリングの位置。
 - 結果欄の牌が押せることの示唆(ホバーの状態層のみ。追加のラベルは付けない=見ればわかるラベルは省略)。
 
+### 2.11 13枚の完全入力の聴牌で待ち牌が押せない件【未確定】オーナー判断待ち(独立レビュー指摘1。本版では着手しない)
+
+- 事実(1.4): 手牌13枚(副露込みで13枚を含む)の聴牌は `kind: 'hora'` になり、結果欄は `HoraBody`(待ちごとの和了の一覧)で描画される。`TempaiBody` は部分入力でしか出ない。`HoraBody` は本書の範囲外なので、**本書のままでは、ふつうの13枚聴牌から結果欄でツモする操作ができない**。
+- 影響: 受け入れ条件 B1(13枚の聴牌形で待ち牌をタップ)と3章の結合テストの「聴牌の待ち牌タップで14枚」は、現状の範囲では成立しない。本版では B1 と結合テストを部分入力の聴牌(`TempaiBody` が出る手牌)に置き換えて書き、13枚の場合は判断後に追記する。
+- 選択肢の候補:
+
+| 案 | 内容 | 得るもの | 失うもの・コスト |
+| --- | --- | --- | --- |
+| a | 範囲を変えない(ツモは部分入力の聴牌と向聴の有効牌のみ) | 本書のまま。追加なし | 最もよく使う13枚聴牌でツモできず、機能の価値が下がる |
+| b | `HoraBody` の和了一覧の和了牌(待ち牌)もタップ可にする(牌のみボタン) | 13枚聴牌からツモできる。表示は変えない | `HoraBody`・`HoraItem`(遅延チャンク `HoraDetail` との境界)の改修。待ちごとの行の当たり判定・間隔の実測と要件§4 の例外の対象追加。E2(和了表示)の設計書への注記 |
+| c | 13枚の聴牌の結果を別表示にする(例: 待ち牌の列を `HoraBody` の上に足す、または `TempaiBody` 相当で出す) | 待ち牌の列を `TempaiBody` と共通にでき、操作がそろう | 結果表示の仕様変更(E1〜E3 の確定に触れる)。表示の重複・画面の長さの増加。設計の追加が大きい |
+
 ## 3. テスト方針(05号)
 
-- `hand-rules.test.ts`: `findDiscardIndex` — 一致なし `-1`、末尾優先(同じ牌が先頭と末尾にあるとき末尾の index)、赤5と非赤5の区別(赤の打牌は赤だけ、非赤は非赤だけ)、字牌。
-- `app-state.test.ts`: `discard-hand-tile` — 一致で1枚減る・`tenkeyBuffer` が `''`、一致なしで同じ参照の `state`。`add-hand-tile` の拒否(上限・残り0)が結果欄経路でも無変化であることは既存テストで担保済みなら追加不要。
-- `hand-selection.test.ts`: 2.4 の遷移表の全行。
-- `HandCard` のテスト(Testing Library): 牌が button として取れる/1回目のタップで `aria-pressed="true"`・手牌は不変/同じ牌の2回目で1枚減る(和了牌の位置の牌も)/別の牌で選択が移る/牌以外(カード本体)の pointerdown で解除され、かつシートが開く/Esc で解除/手牌が外部で変わると解除/牌のタップでシートが開かない/opener の Enter で開く(非選択時)・既存の `handleHandBodyKey` テストの維持。
-- `TempaiBody`・`ShantenBody`・`DiscardBody` のテスト: `onTsumo`/`onDiscard` を渡すと牌だけが button(`×N`・「打」は button 外)、押すとその牌で呼ばれる/未指定なら button が無い/`DiscardItem` 内の待ち・受け入れの牌は button でない。
-- 結合(`MainScreen` か `ResultPanel`): 聴牌の待ち牌タップで手牌が 14 枚になる、打牌候補タップで 13 枚になる。
+jsdom・Testing Library は使わない(依存を追加しない。1.4)。純関数の単体テストと `renderToStaticMarkup` による DOM 文字列の検査で書く。クリック・pointerdown・Esc の実挙動は画面確認(6章 A・B・C)と、reducer の結合テストで担保する。
+
+- `hand-rules.test.ts`: `findDiscardIndex` — 一致なし `-1`、末尾優先(同じ牌が先頭と末尾にあるとき末尾の index)、赤5と非赤5の区別(赤の打牌は赤だけ、非赤は非赤だけ。非赤の `red` が `undefined`・`false` のどちらでも一致)、字牌。
+- `app-state.test.ts`: `discard-hand-tile` — 一致で1枚減る・`tenkeyBuffer` が `''`、一致なしで同じ参照の `state`。
+- `hand-selection.test.ts`: `nextHandTap` の遷移表の牌タップの全行、`isHandTileTarget`(牌ボタン内なら真、カード本体・ゴミ箱・null なら偽。`closest` を持つ簡易オブジェクトで検査)、`isSelectionCancelKey`(`'Escape'` のみ真)。
+- `HandCard.test.tsx`(`renderToStaticMarkup`): 手牌ありで牌が `<button` として出る/`initialSelectedIndex` を渡すとその牌だけ `aria-pressed="true"` と選択中の `aria-label`、他は `aria-pressed="false"`/和了牌(14枚目)も button/`.hand-card__opener` に4属性があり中に `<button` が無い/`.hand-card__body` に `role=` が無い(2.3 の表の更新を含む)。`handleHandBodyKey` の既存テストは維持。
+- `slots`・`discard` のテスト(`renderToStaticMarkup`): `onTsumo`/`onDiscard` を渡すと牌だけが `<button`(`×N`・「打」の文字は button の外)で `aria-label` が「〜をツモ」「〜を切る」/未指定なら `<button` が無い/`DiscardItem` 内の待ち・受け入れの牌は button でない。
+- 結合(状態層+core。純関数のみ): (1) `TempaiBody` が出る部分入力の聴牌、および向聴形の13枚から、`generateResult`→`classifyResult` で得た `tileAvailabilities` の牌で `add-hand-tile` を送ると手牌が1枚増え末尾がその牌になる。(2) 14枚から `kind: 'discard'` の `discards` の各牌で `discard-hand-tile` を送ると手牌が13枚になり、赤5の候補なら赤5が、非赤5の候補なら非赤5が消える。(13枚の完全入力の聴牌は 2.11 の判断待ち)
 
 ## 4. 後続 Issue への引き継ぎ
 
 - バナーの牌タップを採る場合は、E1 申し送り(2)のバナー分割が未実施のまま残る。
 - 副露・ドラ・裏ドラの牌タップは未対応。同じ2段階の部品(`hand-selection.ts`)を流用できる形にしてある。
 - アンドゥは無い。必要になれば reducer の外側で直前状態を持つ形を検討する。
+- 2.11(13枚の聴牌のツモ)はオーナー判断待ち。
+- 09号の「現在の基準値」(125,908 B)は F1 マージ前の値のまま。更新の要否は統括が判断する(2.9)。
 - `discard-hand-tile` は何切る以外(例: 牌譜入力)でも使える。
 
 ## 5. 製造の前提と手順
 
-1. F1(#88)が main にマージされていることを確認し、`feature/issue-89-tile-tap-delete` に main を取り込む。F1 未マージなら着手しない。
-2. 2.6 の「影響箇所」を F1 の実物と照合する。
+1. 本ブランチには F1 マージ後の main(`a519454`)が取り込み済み。着手時に main が更に進んでいれば取り込む。
+2. 2.6 の「前提とする F1 の実物」4点を照合する。
 3. 2.8 の文書改訂は、統括がオーナーの確認を取った後に行う(実測値の〔 〕は検収前に製造が実測して埋め、検収で再確認する)。
 
 ## 6. 受け入れ条件
@@ -246,20 +292,20 @@ Issue 本文に従い、【確定】の扱いの変更はオーナーの確認�
 - A1: 手牌に13枚入力し牌を1回タップ → 手牌の枚数表示は不変、その牌だけ色が変わる(`aria-pressed="true"`)、シートは開かない(閉じていた場合)。
 - A2: 同じ牌をもう一度タップ → その牌が1枚消え、タイトルが「手牌 (12/14)」になる。別の牌をタップ → 選択が移り、元の牌の色が戻る。
 - A3: 375px 幅・14枚で、各牌ボタンの幅・高さ、隣の牌ボタンとの間隔を記録する(数値を PR に書く。期待は幅約 21〜22px・間隔 1px 前後。この値が 2.8 の要件文言に入っていることを確認)。360px でも同様に記録する(合否は問わない)。和了牌(14枚目)も押せて2段階で消える。
-- A4: 選択中にカード本体(牌の無い余白)を押す → 選択が解除され、シートが開く。選択中に結果欄・ヘッダ・シートを押す → 解除される。Esc → 解除。
+- A4: 選択中にカード本体(牌の無い余白)を押す → 選択が解除され、シートが開く。選択中に結果欄・ヘッダ・シートを押す → 解除される。シートが閉じた状態で Esc → 選択だけ解除。シートが開いた状態で Esc → 選択が解除され、シートも閉じる(1回の Esc で両方。2回目の Esc で何も起きない)。選択中の牌にホバー・キーボードフォーカスしても選択色が保たれ、フォーカスは内側の枠で見える。
 - A5: 選択中にパレットで牌を加える → 選択が解除される。ゴミ箱で手牌クリア → クリアされ選択も無い。
-- A6: キーボード: Tab で opener(タイトル)に到達し Enter でシートが開く。Tab で牌ボタンに到達し Enter/Space で選択→もう一度で削除。テンキー方式でシートを開いたまま牌ボタンにフォーカスして数字キーを押しても手牌に牌が入らない。
+- A6: キーボード: Tab で opener(タイトル)に到達し Enter でシートが開く。シートを手牌で開いたまま opener にフォーカスして Space を押しても、シートが開き直されず、テンキーの入力途中の数字(バッファ表示)が消えない(指摘4)。Tab で牌ボタンに到達し Enter/Space で選択→もう一度で削除。テンキー方式でシートを開いたまま牌ボタンにフォーカスして数字キーを押しても手牌に牌が入らない。
 - A7: 選択色が `main-screen.css` でトークン(`var(--md-sys-color-*)`)で指定され、HEX が無い(`grep` で確認)。ライト・ダーク両方で、萬子・筒子・索子・字牌・赤5の各1枚を選択状態にし、図柄が判別でき、かつ隣の通常の牌と区別できる(スクリーンショットを PR に添付)。
 
 **B. 結果欄の待ち牌・有効牌(ツモ)**
-- B1: 13枚の聴牌形で結果本体の待ち牌をタップ → 手牌が14枚になり末尾(和了牌の位置)にその牌が入る。結果が和了等に切り替わる。画面はスクロールしない。
+- B1: 結果欄が「聴牌」(`TempaiBody`)になる部分入力の手牌(製造が実例を特定し PR に記す)で待ち牌をタップ → 手牌が1枚増え、末尾にその牌が入る。結果が切り替わる。画面はスクロールしない。(13枚の完全入力の聴牌は 2.11 の判断待ちのため本条件に含めない)
 - B2: 向聴形の有効牌でも同様に手牌に加わる。`×N` の文字を押しても何も起きない。バナー(`ResultBanner`)の牌は button でない。
 - B3: 375px 幅で牌ボタンの幅・高さ、左右・上下の隣の牌ボタンとの間隔を記録する(PR に記載。2.8 の文言に反映されていること)。
 - B4: テンキーで数字を打った状態(バッファ表示あり)で待ち牌をタップ → バッファが消え、牌が加わる。
 
 **C. 打牌候補(打牌)**
 - C1: 14枚の手牌で何切るの打牌候補の牌をタップ → その牌が1枚消えて13枚になる。結果が聴牌・向聴に切り替わる。
-- C2: 赤5を含む手牌で、赤5の候補を押すと赤5が、非赤5の候補を押すと非赤5が消える(手牌に両方ある場合)。
+- C2: 赤5と非赤5の両方を含む14枚の手牌で、打牌候補に両方が別々に出る(どちらも最善の候補に残る手牌を選ぶ)。赤5の候補を押すと赤5が、非赤5の候補を押すと非赤5が消える(赤の有無はタイトル・牌画像で確認)。
 - C3: 打牌候補の牌ボタンの幅・高さ、上下の隣の候補の牌ボタンとの間隔を記録する(PR に記載)。
 - C4: 候補内の待ち・受け入れの牌、「打」の文字は button でない(押しても何も起きない)。
 
@@ -269,7 +315,7 @@ Issue 本文に従い、【確定】の扱いの変更はオーナーの確認�
 
 **E. 共通**
 - E1: `npm run lint`・`typecheck`・`format:check`・`test` がすべて成功する。3章のテストが存在する。
-- E2: 09号の方法で初回 JS の gzip 合計を実測し、main(F1 マージ後)との差分を PR に記録する。
+- E2: 09号の方法で初回 JS の gzip 合計を実測し、基準値(main `a519454`。126,855 B。検収担当も同じ方法で main を測って確かめる)・実測値・増分・目標値 127,555 B との差を PR に記録する。超過は不合格にしない。
 - E3: 変更ファイルにホームディレクトリ名が含まれない(docs を含めて検査)。
 
 ## 7. 実挙動未確認・要確認の一覧
@@ -277,5 +323,6 @@ Issue 本文に従い、【確定】の扱いの変更はオーナーの確認�
 - 手牌の牌の実寸(概算 21〜22px)と、`button.tile` 化で寸法・間隔が変わらないこと(A3)。
 - 選択色(`on-primary-fixed-variant`・0.38)の視認性と、牌の画像の地がダークテーマでも明るいこと(A7・UI 監修)。
 - 牌ボタンの `pointerdown` が `document` の capture で先に処理されても、続く click で選択が成立すること(順序: pointerdown で「牌ボタン内」と判定して解除しない → click で遷移)。
-- F1 の `Discard.tile` が赤5を `red: true` で返すか(core が赤を区別するか)。区別しない場合、C2 は成立しない(打牌候補が非赤5で表示され、赤5しか無い手牌では `-1` で無変化になる)。製造時に確認し、成立しなければ統括へ報告する。
-- F1 マージ後の行番号・構造(2.6)。
+- 赤5の打牌候補の扱いはコード読解で確定し 1.4 に移した。画面での確認は C2。
+- 基準値 126,855 B は統括の実測で、設計担当は再実測していない(E2)。
+- Esc の処理順(`document` → `window`)と、opener の Space が合成 click を起こさないこと(A4・A6)。
