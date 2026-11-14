@@ -4,6 +4,8 @@
 
 第3版の変更: 第2版の要確認 Q1(裏ドラ表示牌が西のときの抜き北)が、オーナー確定(案a「数える」)になった。`docs/mahjong-rules.md` §1 への追記を範囲に含めた。
 
+第4版の変更: Codex 指摘(PR #98 P2)を受け、範囲を result.ts の3か所へ拡大
+
 ## 1. 確定事項と根拠
 
 統括担当から渡された確定事項(オーナー確認済み)。
@@ -62,6 +64,10 @@
   - `generateChitoitsuHora`: 引数の末尾に `uradora: Tile[] = []` を追加し、同じ規則で積む。
   - 表ドラ・裏ドラの計算は2か所で同じ式になるため、`hora.ts` 内に小さなヘルパー(例: 表示牌の配列・全牌の枚数・nuki から飜を返す関数)を作ってもよい(製造担当の裁量)。
 - `src/core/result.ts`: `generateChitoitsuHora` の呼び出しに `input.uradora ?? []` を足す。`generateHora` は `input` をそのまま受け取るので変更不要。
+- `src/core/result.ts`(第4版で追加): 裏ドラを `Input.uradora` として分離した結果、従来 `dora` に結合していたため暗黙に扱われていた次の3か所が `uradora` を見なくなる。いずれも `input.uradora ?? []` を含める。
+  - `allInputTiles`(残り枚数の計算): `uradora` を含める。含めないと、裏ドラ表示牌と待ち牌が同じとき残り枚数が1枚多く出る。
+  - `isValidSanmaInput`: `uradora` の三麻牌検査(萬子2〜8などの不正牌)を `dora` と同様に行う。
+  - 北の枚数集計 `northCount`: `uradora` の北も数える。
 - `src/core/yaku.ts`: `yakuNames` の `'dora'` の直後に `'ura-dora'` を追加する。
 
 ### 3.3 UI の変更
@@ -151,8 +157,8 @@ main の ce595e5 で `npx vitest run` を実行した結果は、74ファイル�
 
 ## 8. 変更ファイル一覧
 
-- 本番コード(7本): `src/core/input.ts`、`src/core/yaku.ts`、`src/core/hora.ts`、`src/core/result.ts`、`src/ui/calc/compute.ts`、`src/ui/result/hora/labels.ts`、`src/ui/result/hora-summary.ts`
-- テスト(5本): `src/core/ura-dora.test.ts`(新規)、`src/ui/calc/result-state.test.ts`、`src/ui/result/hora-summary.test.ts`、`src/ui/result/hora/names.test.ts`、`src/core/golden.test.ts`(注記コメントのみ)
+- 本番コード(7本): `src/core/input.ts`、`src/core/yaku.ts`、`src/core/hora.ts`、`src/core/result.ts`(`generateChitoitsuHora` 呼び出しと上記3か所)、`src/ui/calc/compute.ts`、`src/ui/result/hora/labels.ts`、`src/ui/result/hora-summary.ts`
+- テスト(5本): `src/core/ura-dora.test.ts`(新規。第4版で残り枚数・三麻牌検査・北の枚数の3件を追加)、`src/ui/calc/result-state.test.ts`、`src/ui/result/hora-summary.test.ts`、`src/ui/result/hora/names.test.ts`、`src/core/golden.test.ts`(注記コメントのみ)
 - docs: 本設計書、`docs/mahjong-rules.md`(§1 に1行追記)
 
 ## 9. 実挙動未確認の箇所
