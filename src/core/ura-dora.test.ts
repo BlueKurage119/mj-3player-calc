@@ -294,4 +294,81 @@ describe('Issue #96: 裏ドラの立直条件と ura-dora 役', () => {
     ]);
     expect(ronNoRiichi.score.han).toBe(3);
   });
+  // 一向聴(13枚): 234p 567p 99p 34s 68s 1z。受け入れに 2s を含む。
+  // 受け入れ牌 2s と同じ牌を裏ドラ表示牌にして、残り枚数を見る
+  const tempaiHand = parseTiles('234567p99p3468s1z');
+  const findCount = (
+    result: ReturnType<typeof generateResult>,
+    tile: Tile
+  ): number | null | undefined => {
+    if (result?.type !== 'hora-shanten' || result.info.type !== 'shanten') {
+      return undefined;
+    }
+    return result.info.tileAvailabilities.find(
+      a => a.tile.type === tile.type && a.tile.n === tile.n
+    )?.count;
+  };
+
+  it('I96-6: 裏ドラ表示牌と同じ牌は残り枚数から引かれる', () => {
+    const base = generateResult(
+      southTable,
+      { hand: tempaiHand, melds: [], dora: [], nuki: 0 },
+      makeOptions('none'),
+      ruleWithOpenRiichi
+    );
+    const withUra = generateResult(
+      southTable,
+      {
+        hand: tempaiHand,
+        melds: [],
+        dora: [],
+        uradora: parseTiles('2s'),
+        nuki: 0
+      },
+      makeOptions('none'),
+      ruleWithOpenRiichi
+    );
+    const two = parseTiles('2s')[0] as Tile;
+    expect(findCount(base, two)).toBe(4);
+    expect(findCount(withUra, two)).toBe(3);
+  });
+
+  it('I96-7: uradora に三麻で使えない牌(2m)があると入力不正で null になる', () => {
+    const result = generateResult(
+      southTable,
+      {
+        hand: pinfuHand,
+        melds: [],
+        dora: [],
+        uradora: parseTiles('2m'),
+        nuki: 0
+      },
+      makeOptions('riichi'),
+      ruleWithOpenRiichi
+    );
+    expect(result).toBeNull();
+  });
+
+  it('I96-8: uradora の北が北の枚数集計に入り、5枚以上で null になる', () => {
+    const base = {
+      hand: parseTiles('234p567p99p34678s'),
+      melds: [],
+      dora: parseTiles('444z'),
+      nuki: 0
+    };
+    const ok = generateResult(
+      southTable,
+      { ...base, uradora: parseTiles('4z') },
+      makeOptions('riichi'),
+      ruleWithOpenRiichi
+    );
+    const ng = generateResult(
+      southTable,
+      { ...base, nuki: 1, uradora: parseTiles('4z') },
+      makeOptions('riichi'),
+      ruleWithOpenRiichi
+    );
+    expect(ok).not.toBeNull();
+    expect(ng).toBeNull();
+  });
 });
