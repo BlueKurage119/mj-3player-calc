@@ -28,6 +28,19 @@
   width: 100%;
 }
 
+.scoring-table-screen__rule-label {
+  margin: 0;
+  align-self: center;
+  padding: 0.25rem 0.75rem;
+  border-radius: var(--md-sys-shape-corner-full);
+  background-color: var(--md-sys-color-surface-container);
+  color: var(--md-sys-color-on-surface-variant);
+  font-family: var(--md-sys-typescale-label-medium-font);
+  font-size: var(--md-sys-typescale-label-medium-size);
+  line-height: var(--md-sys-typescale-label-medium-line-height);
+  font-weight: var(--md-sys-typescale-label-medium-weight);
+}
+
 .scoring-table__scroll {
   width: 100%;
   overflow-x: auto;

@@ -1,7 +1,7 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import { createDefaultRule } from '../../core/rule';
-import { ScoringTableView } from './ScoringTableScreen';
+import { ScoringTableView, getTsumoLossLabel } from './ScoringTableScreen';
 
 const defaultRule = () => {
   const rule = createDefaultRule();
@@ -99,5 +99,28 @@ describe('H1: 点数計算表画面 (ScoringTableView)', () => {
 
     // 理由: 色指定はすべて MD3 CSS トークンに委ね、HTML 文字列内に HEX リテラルが混入していないことを検証するため
     expect(/#[0-9a-fA-F]{3,8}\b/.test(html)).toBe(false);
+  });
+
+  it('H1-25: ツモ損の方式の表示名が出て、設定を変えると切り替わる', () => {
+    expect(getTsumoLossLabel('loss')).toBe('ツモ損あり');
+    expect(getTsumoLossLabel('north-split')).toBe('北家分折半');
+    expect(getTsumoLossLabel('ron-split')).toBe('ロン打点折半');
+
+    for (const [value, label] of [
+      ['loss', 'ツモ損あり'],
+      ['north-split', '北家分折半'],
+      ['ron-split', 'ロン打点折半']
+    ] as const) {
+      const html = renderToStaticMarkup(
+        <ScoringTableView
+          seat="east"
+          rule={{ ...defaultRule(), tsumoLoss: value }}
+          onBack={() => {}}
+        />
+      );
+      expect(html).toContain(
+        `<p class="scoring-table-screen__rule-label">${label}</p>`
+      );
+    }
   });
 });

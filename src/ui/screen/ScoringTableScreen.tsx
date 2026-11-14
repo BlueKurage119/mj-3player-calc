@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type React from 'react';
+import { RULE_ITEMS } from '../../core/rule-items';
 import type { Wind } from '../../core/table';
 import { ConnectedButtonGroup } from '../expressive';
 import { SYMBOL_ARROW_BACK, SymbolIcon } from '../icons';
@@ -26,6 +27,15 @@ const DEALER_OPTIONS = [
   { value: 'dealer' as const, label: '親' },
   { value: 'child' as const, label: '子' }
 ] as const;
+
+/** ツモ損の方式の表示名(設定画面と同じラベル)。該当がなければ null */
+export function getTsumoLossLabel(
+  tsumoLoss: ScoringRule['tsumoLoss']
+): string | null {
+  const item = RULE_ITEMS.find(i => i.key === 'tsumoLoss');
+  if (item?.kind !== 'select') return null;
+  return item.options.find(o => o.value === tsumoLoss)?.label ?? null;
+}
 
 function renderCellLine(cell: Cell, by: 'ron' | 'tsumo'): React.JSX.Element {
   if (cell.kind === 'absent') {
@@ -92,6 +102,10 @@ export function ScoringTableView({
           value={dealer ? 'dealer' : 'child'}
           onValueChange={val => setDealer(val === 'dealer')}
         />
+
+        <p className="scoring-table-screen__rule-label">
+          {getTsumoLossLabel(rule.tsumoLoss)}
+        </p>
 
         <div className="scoring-table__scroll">
           <table className="scoring-table scoring-table--fu-han">
