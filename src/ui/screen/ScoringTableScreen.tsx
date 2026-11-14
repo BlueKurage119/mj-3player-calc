@@ -2,9 +2,8 @@ import { useState } from 'react';
 import type React from 'react';
 import { RULE_ITEMS } from '../../core/rule-items';
 import type { Wind } from '../../core/table';
-import { ConnectedButtonGroup } from '../expressive';
 import { SYMBOL_ARROW_BACK, SymbolIcon } from '../icons';
-import { IconButton } from '../md';
+import { Button, IconButton } from '../md';
 import {
   type Cell,
   HAN_LIST,
@@ -22,11 +21,6 @@ export interface ScoringTableViewProps {
   initialDealer?: boolean;
   onBack: () => void;
 }
-
-const DEALER_OPTIONS = [
-  { value: 'dealer' as const, label: '親' },
-  { value: 'child' as const, label: '子' }
-] as const;
 
 /** ツモ損の方式の表示名(設定画面と同じラベル)。該当がなければ null */
 export function getTsumoLossLabel(
@@ -92,20 +86,20 @@ export function ScoringTableView({
             <SymbolIcon d={SYMBOL_ARROW_BACK} />
           </IconButton>
           <h1 className="app-header__title">点数計算表</h1>
+          <span className="scoring-table-screen__rule-label">
+            {getTsumoLossLabel(rule.tsumoLoss)}
+          </span>
         </div>
       </header>
       <main className="scoring-table-screen__content">
-        <ConnectedButtonGroup<'dealer' | 'child'>
-          label="親子"
+        <Button
+          variant="tonal"
           className="scoring-table-screen__dealer-toggle"
-          options={DEALER_OPTIONS}
-          value={dealer ? 'dealer' : 'child'}
-          onValueChange={val => setDealer(val === 'dealer')}
-        />
-
-        <p className="scoring-table-screen__rule-label">
-          {getTsumoLossLabel(rule.tsumoLoss)}
-        </p>
+          aria-label={`親子の切替(現在: ${dealer ? '親' : '子'})`}
+          onClick={() => setDealer(prev => !prev)}
+        >
+          {dealer ? '親' : '子'}
+        </Button>
 
         <div className="scoring-table__scroll">
           <table className="scoring-table scoring-table--fu-han">

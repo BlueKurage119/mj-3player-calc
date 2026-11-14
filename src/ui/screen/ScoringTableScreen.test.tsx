@@ -13,14 +13,9 @@ const defaultRule = () => {
   };
 };
 
-const extractRadioStates = (html: string) => {
-  const matches = [
-    ...html.matchAll(
-      /<button[^>]*role="radio"[^>]*aria-checked="(true|false)"[^>]*>[\s\S]*?<span>([^<]+)<\/span><\/button>/g
-    )
-  ];
-  return matches.map(m => ({ label: m[2] ?? '', checked: m[1] === 'true' }));
-};
+/** 親子の切替ボタンの現在値(aria-label から取る) */
+const extractDealerState = (html: string): string | undefined =>
+  html.match(/aria-label="親子の切替\(現在: (親|子)\)"/)?.[1];
 
 describe('H1: 点数計算表画面 (ScoringTableView)', () => {
   it('H1-20: 題「点数計算表」と戻るボタンが出る', () => {
@@ -41,18 +36,12 @@ describe('H1: 点数計算表画面 (ScoringTableView)', () => {
     const eastHtml = renderToStaticMarkup(
       <ScoringTableView seat="east" rule={defaultRule()} onBack={() => {}} />
     );
-    expect(extractRadioStates(eastHtml)).toEqual([
-      { label: '親', checked: true },
-      { label: '子', checked: false }
-    ]);
+    expect(extractDealerState(eastHtml)).toBe('親');
 
     const southHtml = renderToStaticMarkup(
       <ScoringTableView seat="south" rule={defaultRule()} onBack={() => {}} />
     );
-    expect(extractRadioStates(southHtml)).toEqual([
-      { label: '親', checked: false },
-      { label: '子', checked: true }
-    ]);
+    expect(extractDealerState(southHtml)).toBe('子');
 
     const overrideChildHtml = renderToStaticMarkup(
       <ScoringTableView
@@ -62,10 +51,7 @@ describe('H1: 点数計算表画面 (ScoringTableView)', () => {
         onBack={() => {}}
       />
     );
-    expect(extractRadioStates(overrideChildHtml)).toEqual([
-      { label: '親', checked: false },
-      { label: '子', checked: true }
-    ]);
+    expect(extractDealerState(overrideChildHtml)).toBe('子');
 
     const overrideDealerHtml = renderToStaticMarkup(
       <ScoringTableView
@@ -75,10 +61,7 @@ describe('H1: 点数計算表画面 (ScoringTableView)', () => {
         onBack={() => {}}
       />
     );
-    expect(extractRadioStates(overrideDealerHtml)).toEqual([
-      { label: '親', checked: true },
-      { label: '子', checked: false }
-    ]);
+    expect(extractDealerState(overrideDealerHtml)).toBe('親');
   });
 
   it('H1-22: 本場・供託の文字が描画結果に出ない', () => {
@@ -119,7 +102,7 @@ describe('H1: 点数計算表画面 (ScoringTableView)', () => {
         />
       );
       expect(html).toContain(
-        `<p class="scoring-table-screen__rule-label">${label}</p>`
+        `<span class="scoring-table-screen__rule-label">${label}</span>`
       );
     }
   });
