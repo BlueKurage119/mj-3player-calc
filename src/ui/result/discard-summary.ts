@@ -92,7 +92,8 @@ export const discardWaits = (d: Discard): Tile[] => {
 export type DiscardRange =
   | { kind: 'none' } // 待ちの和了が無い(hora が空、tempai 型)。レンジを出さない
   | { kind: 'no-yaku' } // すべての待ちでロン・ツモとも役なし
-  | { kind: 'points'; min: number; max: number; hasNoYakuWait: boolean };
+  // hasNoYaku: いずれかの待ちで、和了が存在する by(ロン・ツモ)のうち役なしの by がある
+  | { kind: 'points'; min: number; max: number; hasNoYaku: boolean };
 
 /** 確定事項5。hora: ScoredHora[] から集計する */
 export const discardRange = (hora: ScoredHora[]): DiscardRange => {
@@ -112,19 +113,18 @@ export const discardRange = (hora: ScoredHora[]): DiscardRange => {
   }
 
   const totals: number[] = [];
-  let hasNoYakuWait = false;
+  let hasNoYaku = false;
 
   for (const group of byWait.values()) {
-    let waitHasYaku = false;
     for (const by of ['ron', 'tsumo'] as const) {
+      // その by の和了が存在しない場合は役なし扱いにしない
+      if (!group.some(h => h.by === by)) continue;
       const best = pickBestByBy(group, by);
       if (best) {
         totals.push(best.score.payment.total);
-        waitHasYaku = true;
+      } else {
+        hasNoYaku = true;
       }
-    }
-    if (!waitHasYaku) {
-      hasNoYakuWait = true;
     }
   }
 
@@ -136,11 +136,11 @@ export const discardRange = (hora: ScoredHora[]): DiscardRange => {
     kind: 'points',
     min: Math.min(...totals),
     max: Math.max(...totals),
-    hasNoYakuWait
+    hasNoYaku
   };
 };
 
-/** 'none' → null、'no-yaku' → '役なし'、points → '（1,000〜2,000点）' / '（800点）' / '（役なし/1,000〜1,100点）' */
+/** 'none' → null、'no-yaku' → '役なし'、points → '（1,000〜2,000点）' / '（800点）' / '（役なし / 1,000〜1,100点）' */
 export const formatDiscardRange = (range: DiscardRange): string | null => {
   if (range.kind === 'none') return null;
   if (range.kind === 'no-yaku') return '役なし';
@@ -148,6 +148,6 @@ export const formatDiscardRange = (range: DiscardRange): string | null => {
     range.min === range.max
       ? `${formatNumber(range.min)}点`
       : `${formatNumber(range.min)}〜${formatNumber(range.max)}点`;
-  const prefix = range.hasNoYakuWait ? '役なし/' : '';
+  const prefix = range.hasNoYaku ? '役なし / ' : '';
   return `（${prefix}${points}）`;
 };

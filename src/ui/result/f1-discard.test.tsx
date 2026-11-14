@@ -306,7 +306,7 @@ describe('F1: 打牌候補の一覧 (F1-01〜F1-12)', () => {
           kind: 'points' as const,
           min: 1000,
           max: 2000,
-          hasNoYakuWait: false
+          hasNoYaku: false
         },
         expectedText: '（1,000〜2,000点）'
       },
@@ -317,7 +317,7 @@ describe('F1: 打牌候補の一覧 (F1-01〜F1-12)', () => {
           kind: 'points' as const,
           min: 2600,
           max: 3000,
-          hasNoYakuWait: false
+          hasNoYaku: false
         },
         expectedText: '（2,600〜3,000点）'
       },
@@ -328,9 +328,9 @@ describe('F1: 打牌候補の一覧 (F1-01〜F1-12)', () => {
           kind: 'points' as const,
           min: 800,
           max: 800,
-          hasNoYakuWait: false
+          hasNoYaku: true
         },
-        expectedText: '（800点）'
+        expectedText: '（役なし / 800点）'
       },
       {
         name: 'D7 1z',
@@ -339,9 +339,9 @@ describe('F1: 打牌候補の一覧 (F1-01〜F1-12)', () => {
           kind: 'points' as const,
           min: 1000,
           max: 1100,
-          hasNoYakuWait: true
+          hasNoYaku: true
         },
-        expectedText: '（役なし/1,000〜1,100点）'
+        expectedText: '（役なし / 1,000〜1,100点）'
       },
       {
         name: 'D8 1z',
@@ -356,7 +356,7 @@ describe('F1: 打牌候補の一覧 (F1-01〜F1-12)', () => {
           kind: 'points' as const,
           min: 24000,
           max: 32000,
-          hasNoYakuWait: false
+          hasNoYaku: false
         },
         expectedText: '（24,000〜32,000点）'
       },
@@ -367,9 +367,9 @@ describe('F1: 打牌候補の一覧 (F1-01〜F1-12)', () => {
           kind: 'points' as const,
           min: 800,
           max: 800,
-          hasNoYakuWait: false
+          hasNoYaku: true
         },
-        expectedText: '（800点）'
+        expectedText: '（役なし / 800点）'
       },
       {
         name: 'D11 1z',
@@ -378,7 +378,7 @@ describe('F1: 打牌候補の一覧 (F1-01〜F1-12)', () => {
           kind: 'points' as const,
           min: 2600,
           max: 3900,
-          hasNoYakuWait: false
+          hasNoYaku: false
         },
         expectedText: '（2,600〜3,900点）'
       },
@@ -409,7 +409,7 @@ describe('F1: 打牌候補の一覧 (F1-01〜F1-12)', () => {
       kind: 'points',
       min: 3900,
       max: 3900,
-      hasNoYakuWait: false
+      hasNoYaku: false
     });
     expect(formatDiscardRange(mixedRange)).toBe('（3,900点）');
 
@@ -421,9 +421,64 @@ describe('F1: 打牌候補の一覧 (F1-01〜F1-12)', () => {
       kind: 'points',
       min: 32000,
       max: 32000,
-      hasNoYakuWait: false
+      hasNoYaku: false
     });
     expect(formatDiscardRange(yakumanRange)).toBe('（32,000点）');
+  });
+
+  it('F1-05b: discardRange は待ちごと・by ごとに役なしを判定し、片側だけ役なしでも前置する', () => {
+    const w1: Tile = { type: 's', n: 3 };
+    const w2: Tile = { type: 's', n: 6 };
+    const noYaku = { noYaku: true };
+    const table = [
+      {
+        name: 'ロンだけ役なし',
+        hora: [
+          makeMockHora(w1, 'ron', 700, noYaku),
+          makeMockHora(w1, 'tsumo', 800)
+        ],
+        text: '（役なし / 800点）'
+      },
+      {
+        name: 'ツモだけ役なし',
+        hora: [
+          makeMockHora(w1, 'ron', 1000),
+          makeMockHora(w1, 'tsumo', 600, noYaku)
+        ],
+        text: '（役なし / 1,000点）'
+      },
+      {
+        name: '一方の待ちだけ両側役なし',
+        hora: [
+          makeMockHora(w1, 'ron', 500, noYaku),
+          makeMockHora(w1, 'tsumo', 600, noYaku),
+          makeMockHora(w2, 'ron', 1000),
+          makeMockHora(w2, 'tsumo', 1100)
+        ],
+        text: '（役なし / 1,000〜1,100点）'
+      },
+      {
+        name: '全部役あり',
+        hora: [makeMockHora(w1, 'ron', 1000), makeMockHora(w1, 'tsumo', 1100)],
+        text: '（1,000〜1,100点）'
+      },
+      {
+        name: 'ツモのみ存在し役あり(ロン無しは役なし扱いしない)',
+        hora: [makeMockHora(w1, 'tsumo', 1100)],
+        text: '（1,100点）'
+      },
+      {
+        name: '全部役なし',
+        hora: [
+          makeMockHora(w1, 'ron', 500, noYaku),
+          makeMockHora(w1, 'tsumo', 600, noYaku)
+        ],
+        text: '役なし'
+      }
+    ];
+    for (const c of table) {
+      expect(formatDiscardRange(discardRange(c.hora)), c.name).toBe(c.text);
+    }
   });
 
   it('F1-06: DiscardBody は D3 で見出し「1向聴」と3件の向聴候補・有効牌を表示する', () => {
@@ -514,7 +569,7 @@ describe('F1: 打牌候補の一覧 (F1-01〜F1-12)', () => {
     expect(d7Items).toHaveLength(1);
     expect(extractRange(d7Items[0]?.html ?? '')).toEqual({
       kind: 'points',
-      text: '（役なし/1,000〜1,100点）'
+      text: '（役なし / 1,000〜1,100点）'
     });
 
     const d8Markup = renderToStaticMarkup(
@@ -771,7 +826,7 @@ describe('F1: 打牌候補の一覧 (F1-01〜F1-12)', () => {
           tile: '1z',
           nextKind: 'tempai',
           waits: ['3s'],
-          range: '（800点）'
+          range: '（役なし / 800点）'
         }
       ]
     });
@@ -782,7 +837,7 @@ describe('F1: 打牌候補の一覧 (F1-01〜F1-12)', () => {
           tile: '1z',
           nextKind: 'tempai',
           waits: ['9s', '5z'],
-          range: '（役なし/1,000〜1,100点）'
+          range: '（役なし / 1,000〜1,100点）'
         }
       ]
     });
@@ -828,9 +883,24 @@ describe('F1: 打牌候補の一覧 (F1-01〜F1-12)', () => {
     expect(summarize(HANDS.D11)).toEqual({
       heading: '聴牌',
       items: [
-        { tile: '8s', nextKind: 'tempai', waits: ['1z'], range: '（1,500点）' },
-        { tile: '0s', nextKind: 'tempai', waits: ['1z'], range: '（800点）' },
-        { tile: '5s', nextKind: 'tempai', waits: ['1z'], range: '（1,500点）' },
+        {
+          tile: '8s',
+          nextKind: 'tempai',
+          waits: ['1z'],
+          range: '（役なし / 1,500点）'
+        },
+        {
+          tile: '0s',
+          nextKind: 'tempai',
+          waits: ['1z'],
+          range: '（役なし / 800点）'
+        },
+        {
+          tile: '5s',
+          nextKind: 'tempai',
+          waits: ['1z'],
+          range: '（役なし / 1,500点）'
+        },
         {
           tile: '1z',
           nextKind: 'tempai',
