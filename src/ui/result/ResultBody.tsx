@@ -2,13 +2,8 @@ import type React from 'react';
 import type { ResultView } from './classify';
 import type { ResultContext } from './hora/HoraDetail';
 import './result.css';
-import {
-  DiscardBody,
-  HoraBody,
-  JustHoraBody,
-  ShantenBody,
-  TempaiBody
-} from './slots';
+import { DiscardBody } from './discard';
+import { HoraBody, JustHoraBody, ShantenBody, TempaiBody } from './slots';
 
 export interface ResultBodyProps {
   view: ResultView;
