@@ -29,7 +29,7 @@ import {
   normalizeHandOptions
 } from './situation-rules';
 
-export type Screen = 'main' | 'settings';
+export type Screen = 'main' | 'settings' | 'scoring-table';
 export type SheetMode = 'palette' | 'tenkey';
 export type TenkeySuit = 'm' | 'p' | 's' | 'z';
 export type MeldKind = 'pon' | 'minkan' | 'ankan';
