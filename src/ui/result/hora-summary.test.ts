@@ -273,6 +273,17 @@ describe('hora-summary (E2 和了要約・役なし判定・バナー打点)', (
       true
     );
     expect(
+      isNoYaku(createHora([{ type: 'yaku', name: 'ura-dora', han: 1 }]))
+    ).toBe(true);
+    expect(
+      isNoYaku(
+        createHora([
+          { type: 'yaku', name: 'dora', han: 1 },
+          { type: 'yaku', name: 'ura-dora', han: 1 }
+        ])
+      )
+    ).toBe(true);
+    expect(
       isNoYaku(createHora([{ type: 'yaku', name: 'red-dora', han: 1 }]))
     ).toBe(true);
     expect(
@@ -281,6 +292,14 @@ describe('hora-summary (E2 和了要約・役なし判定・バナー打点)', (
     expect(
       isNoYaku(createHora([{ type: 'yaku', name: 'ippatsu', han: 1 }]))
     ).toBe(true);
+    expect(
+      isNoYaku(
+        createHora([
+          { type: 'yaku', name: 'ura-dora', han: 1 },
+          { type: 'yaku', name: 'riichi', han: 1 }
+        ])
+      )
+    ).toBe(false);
     expect(
       isNoYaku(
         createHora([

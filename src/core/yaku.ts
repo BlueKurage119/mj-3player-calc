@@ -31,6 +31,7 @@ export const yakuNames = [
   'ryampeko',
   'chinitsu',
   'dora',
+  'ura-dora',
   'red-dora',
   'nuki-dora',
   'open-riichi',

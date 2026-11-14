@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import * as coreResult from '../../core/result';
 import { createDefaultRule } from '../../core/rule';
 import type { Tile } from '../../core/tile';
-import { createInitialState } from '../state';
+import { appReducer, createInitialState } from '../state';
 import { computeResult } from './compute';
 import { evaluateResult } from './result-state';
 
@@ -36,7 +36,7 @@ const parseTiles = (s: string): Tile[] => {
 };
 
 describe('D1: 計算の呼び出し口と速度 (条件10・11)', () => {
-  it('D1-10a: computeResult は dora と uradora を結合して generateResult に渡し、uradora キーを取り除く', () => {
+  it('D1-10a: computeResult は dora と uradora を結合せずそのまま generateResult に渡す', () => {
     const spy = vi.spyOn(coreResult, 'generateResult');
     try {
       const base = createInitialState(createDefaultRule());
@@ -60,13 +60,61 @@ describe('D1: 計算の呼び出し口と速度 (条件10・11)', () => {
       expect(passedInput).toEqual({
         hand: [],
         melds: [],
-        dora: [tileA, tileB],
+        dora: [tileA],
+        uradora: [tileB],
         nuki: 1
       });
-      expect(passedInput && 'uradora' in passedInput).toBe(false);
     } finally {
       spy.mockRestore();
     }
+  });
+
+  it('I96-7: computeResult で立直を解除すると ura-dora が消え、input.uradora は残る', () => {
+    const base = createInitialState(createDefaultRule());
+    const dora = parseTiles('1p');
+    const uradora = parseTiles('8p');
+    const hand = parseTiles('23456799p346782s');
+
+    const withInput = {
+      ...base,
+      input: {
+        ...base.input,
+        hand,
+        dora,
+        uradora
+      }
+    };
+
+    const stateRiichi = appReducer(withInput, {
+      type: 'set-riichi',
+      riichi: 'riichi'
+    });
+    const resRiichi = computeResult(stateRiichi);
+    expect(resRiichi?.type).toBe('hora-shanten');
+    if (resRiichi?.type === 'hora-shanten' && resRiichi.info.type === 'hora') {
+      const ron = resRiichi.info.hora.find(h => h.by === 'ron');
+      expect(ron?.yaku).toEqual([
+        { type: 'yaku', name: 'riichi', han: 1 },
+        { type: 'yaku', name: 'pinfu', han: 1 },
+        { type: 'yaku', name: 'dora', han: 1 },
+        { type: 'yaku', name: 'ura-dora', han: 2 }
+      ]);
+    }
+
+    const stateNone = appReducer(stateRiichi, {
+      type: 'set-riichi',
+      riichi: 'none'
+    });
+    const resNone = computeResult(stateNone);
+    expect(resNone?.type).toBe('hora-shanten');
+    if (resNone?.type === 'hora-shanten' && resNone.info.type === 'hora') {
+      const ron = resNone.info.hora.find(h => h.by === 'ron');
+      expect(ron?.yaku).toEqual([
+        { type: 'yaku', name: 'pinfu', han: 1 },
+        { type: 'yaku', name: 'dora', han: 1 }
+      ]);
+    }
+    expect(stateNone.input.uradora).toEqual(uradora);
   });
 
   it('D1-10b: evaluateResult は loadError・loading・error・ok(null)・ok(Result) を正しく判定する', () => {

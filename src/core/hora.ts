@@ -67,6 +67,19 @@ const riichiHan = (r: HandOptions['riichi']): number => {
   }
 };
 
+/** ドラ表示牌と抜き北からドラ飜数を数える(表ドラ・裏ドラ共通) */
+const countDoraHan = (
+  indicators: Tile[],
+  allCounts: TileCounts,
+  nuki: number
+): number => {
+  const westCount = countBy(indicators, t => t.type === 'z' && t.n === 3);
+  return (
+    sumBy(indicators, t => allCounts[nextIndex(tileToCountsIndex(t))]) +
+    nuki * westCount
+  );
+};
+
 export const generateHora = (
   table: Table,
   options: HandOptions,
@@ -800,19 +813,27 @@ export const generateHora = (
           });
         }
 
-        const westCount = countBy(input.dora, t => t.type === 'z' && t.n === 3);
-        const d =
-          sumBy(
-            input.dora,
-            t => allTilesCounts[nextIndex(tileToCountsIndex(t))]
-          ) +
-          input.nuki * westCount;
+        const d = countDoraHan(input.dora, allTilesCounts, input.nuki);
         if (d > 0) {
           yaku.push({
             yaku: { type: 'yaku', name: 'dora', han: d },
             ron: true,
             tsumo: true
           });
+        }
+        if (options.riichi !== 'none') {
+          const u = countDoraHan(
+            input.uradora ?? [],
+            allTilesCounts,
+            input.nuki
+          );
+          if (u > 0) {
+            yaku.push({
+              yaku: { type: 'yaku', name: 'ura-dora', han: u },
+              ron: true,
+              tsumo: true
+            });
+          }
         }
         const r = countBy(allTiles, t => t.type !== 'z' && t.n === 5 && t.red);
         if (r > 0) {
@@ -894,7 +915,8 @@ export const generateChitoitsuHora = (
   options: HandOptions,
   dora: Tile[],
   rule: Rule,
-  nuki: number
+  nuki: number,
+  uradora: Tile[] = []
 ): Hora[] => {
   const counts = tilesToCounts(hand);
   const stats = colorStats(counts);
@@ -1098,16 +1120,23 @@ export const generateChitoitsuHora = (
         tsumo: true
       });
     }
-    const westCount = countBy(dora, t => t.type === 'z' && t.n === 3);
-    const d =
-      sumBy(dora, t => allCounts[nextIndex(tileToCountsIndex(t))]) +
-      nuki * westCount;
+    const d = countDoraHan(dora, allCounts, nuki);
     if (d > 0) {
       yaku.push({
         yaku: { type: 'yaku', name: 'dora', han: d },
         ron: true,
         tsumo: true
       });
+    }
+    if (options.riichi !== 'none') {
+      const u = countDoraHan(uradora, allCounts, nuki);
+      if (u > 0) {
+        yaku.push({
+          yaku: { type: 'yaku', name: 'ura-dora', han: u },
+          ron: true,
+          tsumo: true
+        });
+      }
     }
     const r = countBy(all, t => t.type !== 'z' && t.n === 5 && t.red);
     if (r > 0) {

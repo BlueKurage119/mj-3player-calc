@@ -79,6 +79,7 @@ export type Result = HoraShanten | DiscardShanten | Tempai | JustHora | null;
 const isValidSanmaInput = (input: Input): boolean => {
   if (input.hand.some(t => !isSanmaTile(t))) return false;
   if (input.dora.some(t => !isSanmaTile(t))) return false;
+  if ((input.uradora ?? []).some(t => !isSanmaTile(t))) return false;
   for (const meld of input.melds) {
     if (meld.tile !== null && !isSanmaTile(meld.tile)) return false;
   }
@@ -123,7 +124,8 @@ const generateResultInner = (
     input.hand.filter(isNorth).length +
     meldTiles.filter(isNorth).length +
     input.nuki +
-    input.dora.filter(isNorth).length;
+    input.dora.filter(isNorth).length +
+    (input.uradora ?? []).filter(isNorth).length;
   if (northCount >= 5) {
     return null;
   }
@@ -135,6 +137,7 @@ const generateResultInner = (
   const allInputTiles = [
     ...handAndMelds,
     ...input.dora,
+    ...(input.uradora ?? []),
     ...Array(input.nuki).fill(northTile)
   ];
   const handAndMeldsCounts = tilesToCounts(handAndMelds);
@@ -187,7 +190,8 @@ const generateResultInner = (
                 options,
                 input.dora,
                 rule,
-                input.nuki
+                input.nuki,
+                input.uradora ?? []
               )
             : []),
           ...(kokushiShanten === 0

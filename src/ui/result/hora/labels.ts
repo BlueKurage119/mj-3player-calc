@@ -52,6 +52,7 @@ export const YAKU_LABELS: Record<NormalYaku['name'], string> = {
   chinitsu: '清一色', // L
   iipeko: '一盃口', // L
   dora: 'ドラ', // L
+  'ura-dora': '裏ドラ', // U・R・I96
   'field-wind': '場風牌', // L
   'red-dora': '赤ドラ', // R・L
   'seat-wind': '自風牌', // L

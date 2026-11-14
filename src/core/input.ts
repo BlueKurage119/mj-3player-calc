@@ -18,6 +18,8 @@ export interface Input {
   hand: Tile[];
   melds: Meld[];
   dora: Tile[];
+  /** 裏ドラ表示牌。立直時のみ計算に入る。省略時は無し */
+  uradora?: Tile[];
   /** 抜き北の枚数(0〜4の整数)。副露ではない。手牌の枚数に数えない */
   nuki: number;
 }
