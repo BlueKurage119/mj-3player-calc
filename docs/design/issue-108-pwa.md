@@ -14,7 +14,7 @@
 | H2 | アイコンは自作SVGから再現可能なスクリプトでPNG生成。ファイル名・サイズ・manifest は素材の中身に依存させない | §3.2 |
 | H3 | `display=standalone`、`start_url`・`scope`=`/mj-3player-calc/`、`lang=ja`、`name`=「三麻点数計算機」、`short_name`=「三麻計算機」、`orientation` は固定しない、`base` は変更しない、`description`・`apple-touch-icon`・`theme-color` を `index.html` に追加 | §3.1・§3.3 |
 | H4 | 実機でしか確認できない項目は受け入れ条件で区別 | §8.2 |
-| H5 | (ユーザー回答・設計承認時)製造段階のアイコンは仮で C案「北牌」とする。最終デザイン(点棒を逆三角形に組み数字の3を併記、ユーザー案)は UI監修中に支給または作成され、この PR(#108)内で差し替える。A案は見送り | §3.2・§5 |
+| H5 | (ユーザー回答・設計承認時)アイコンは、点棒を逆三角形に組み数字の3を併記した最終デザイン(オーナー制作・支給SVG)を採用する。仮のC案「北牌」は採用せず、A案も見送り | §3.2・§5 |
 | H6 | (ユーザー回答)ステータスバー色はシード色で固定。`meta theme-color` は `media` で出し分けず1つの固定値、manifest の `theme_color` も同値。シード定義を単一の正本とし手書きHEXの二重管理を避ける | §3.3・§4 |
 | H7 | (ユーザー回答)§9 の Q1〜Q7 の回答 | §9 |
 
@@ -78,22 +78,22 @@ manifest: {
 
 | パス | 役割 | 生成元 |
 | --- | --- | --- |
-| `assets-src/icon/icon.svg` | 通常アイコンの原画(仮=C案、正方形 viewBox 0 0 512 512、地は全面塗り) | 自作 |
-| `assets-src/icon/icon-maskable.svg` | maskable 用原画(モチーフを中心直径 80% の円=セーフゾーン内に収め、地は全面塗り) | 自作 |
+| `assets-src/icon/icon.svg` | 通常アイコンの原画(最終アイコン。viewBox 0 0 800 800、地は全面塗り) | オーナー制作(MIT) |
+| `assets-src/icon/icon-maskable.svg` | maskable 用原画(図形を 0.69 倍・中央寄せして中心直径 80% の円=セーフゾーン内に収め、地は全面塗り) | オーナー制作の図形を加工(MIT) |
 | `public/icons/icon-192.png` | 192×192 | `icon.svg` |
 | `public/icons/icon-512.png` | 512×512 | `icon.svg` |
 | `public/icons/icon-maskable-512.png` | 512×512 | `icon-maskable.svg` |
 | `public/icons/apple-touch-icon-180.png` | 180×180、透過なし(iOS は透過部を黒にするため) | `icon-maskable.svg` |
 | `public/favicon.svg` | ファビコン | `icon.svg` のプレースホルダを解決したSVG |
 
-- 最終デザインへの差し替え手順は §5.2。
+- 最終アイコンへの差し替えの記録は §5.2。
 - 生成PNGと `favicon.svg` はコミットする(ビルド時生成にしない。CI にネイティブ依存を増やさないため)。`public/` は Vite がそのまま `dist/` にコピーし、`globPatterns` の `png`・`svg` で precache に載る。
 - `assets-src/` は `src/` の外に置く(Vite のモジュールグラフに入れないため)。ディレクトリ名は製造で変えてよい。
 
 #### 原画の色(Q1【確定】(b))
 
 - 原画SVGの色(地・牌地・枠)は値でなく `var(--md-sys-color-<役割>)` の形のプレースホルダで書く(例 `fill="var(--md-sys-color-primary)"`)。
-- `gen-icons.ts` は `src/ui/theme/tokens.css` の `:root`(ライト)ブロックから役割名→値の対応を取り出し、原画中のプレースホルダを置換してから描画する。`favicon.svg` も置換後の内容を書き出す(ブラウザのファビコンは CSS 変数を解決しないため)。
+- `gen-icons.ts` は `src/ui/theme/tokens.css` の `:root`(ライト)ブロックから役割名→値の対応を取り出し、原画中のプレースホルダ(`var(--md-sys-color-…)`)があれば置換してから描画する。`favicon.svg` も置換後の内容を書き出す(ブラウザのファビコンは CSS 変数を解決しないため)。**最終アイコンの原画は色を値で直接書いておりプレースホルダを含まないため、置換は何もせずそのまま描画される。したがってアイコンは seed 変更に追随しない**(値は tokens.css ライトの primary・surface・secondary-container と一致しているが、seed を変えるときは原画の色を手で更新する)。
 - 未知の役割名・tokens.css の読み取り失敗は例外で終了する(非0終了)。プレースホルダを含まない原画(支給素材)はそのまま描画する。
 - tokens.css の読み取り関数は §4 の `vite.config.ts` 側と共用する(例 `scripts/theme-colors.ts` に `readTokenValues(cssText, block: 'light' | 'dark')` を置く)。
 - 根拠: 06号の色トークン義務の対象は `src/ui/` のUIで、アイコン原画は `src/ui/` 外の画像素材であるが、値を直書きすると seed 変更(`npm run gen:theme`)に追随せず二重管理になる。#102 の `src/ui/share/share-theme.ts` が Canvas 描画の色を値でなく役割名(`ShareColorRole`)で定義している先例に揃える。
@@ -106,13 +106,12 @@ manifest: {
 - ラスタライザ: `@resvg/resvg-js`(2.6.2、MPL-2.0、devDependency、キャレットなしで固定)。SVG を忠実にラスタライズでき、ネイティブ libvips を要する `sharp` より依存が軽い。配布物に含まれない。`docs/license-policy.md` に記録する【確定】(Q6)。`CREDITS.md` は配布物の第三者素材の一覧であり、記載しない。
 - 処理: 各原画のプレースホルダを解決 → `fitTo: { mode: 'width', value: N }` で描画 → PNG を書く。`apple-touch-icon-180.png` は `background` に地色を指定するか原画の全面塗りでアルファなしにする(製造で選択。G1-T5 で検査)。`--check` は生成結果と既存ファイルのバイト一致を比較し、差分があれば非0終了。
 - 型検査: `tsconfig.node.json` は `files` を明示列挙しているため、`files` に `./scripts/gen-icons.ts`(と共用モジュールを別ファイルにする場合はそれ)を追加する。追加しないと `npm run typecheck`(`tsc -b`)の対象にならない。
-- 原画に文字(フォント)を使わない(C案の北はパスで描かれた牌画像)。
+- 原画に文字(フォント)を使わない(数字の「3」はパス)。
 
 #### 権利
 
-- 牌形(地・牌地・枠)は本プロジェクトで新規に描いた図形で、権利はリポジトリの MIT ライセンスに従う。
-- 北の絵柄は `src/ui/tile/assets/Pei.svg` の流用。出典は FluffyStuff/riichi-mahjong-tiles の `Regular/Pei.svg`(CC0 1.0、コミット `26e127ba2117f45cdce5ea0225748cc0cfad3169`)で、既存収録分(SVGO最適化済み)をアイコン用に縮小・再配置したもの。CC0 のため義務はないが、`CREDITS.md` の牌画像素材の「加工内容」に追記する(G1-AC15)。絵柄の色は06号の牌画像の例外として原画のまま。
-- 原画には、北の絵柄の出典を XML コメントで記す。
+- 原画はオーナー制作(支給SVG)で、権利はリポジトリの MIT ライセンスに従う。第三者素材を含まないため `CREDITS.md` への追記は不要。
+- 原画には「オーナー制作」の出典コメントを XML コメントで記す。Illustrator 由来の DOCTYPE・私有データ(`<i:aipgf>`)・`<switch>`・`<foreignObject>`・クリップパスは除去済みで、図形・色は変更していない(除去前後の resvg 描画は 512px・192px で最大 5/255 の差のみ)。
 
 ### 3.3 `index.html` の追加要素
 
@@ -171,29 +170,24 @@ manifest と `meta theme-color` は 06号の色トークン義務の対象外(�
 
 ## 5. アイコン意匠
 
-### 5.1 製造段階の仮アイコン(C案「北牌」)
+### 5.1 採用アイコン(最終デザイン)
 
-| 要素 | 内容 | 色 |
+オーナー制作の支給SVG(800×800)。淡い地に、点棒を逆三角形に組んだ3本の濃い棒(各棒に白い円)、右下に淡緑の塊と図形の数字「3」。
+
+| 要素 | 色の値 | tokens.css(ライト)との照合 |
 | --- | --- | --- |
-| 地 | 正方形の全面塗り | プレースホルダ `primary-container` |
-| 牌地 | 中央の角丸矩形((256,256) 中心で x -140〜140、y -185〜185、rx 34) | プレースホルダ `surface-container-lowest` |
-| 枠 | 牌地の線(幅 10) | プレースホルダ `on-primary-container` |
-| 北の絵柄 | `Pei.svg` の中身を入れ子の `<svg viewBox="0 0 300 400">` で牌地内(中心基準で x -126、y -168、幅 252、高さ 336)に配置 | 原画のまま(06号 牌画像の例外。プレースホルダにしない) |
+| 地 | `#F7FBF1` | `surface` と一致 |
+| 右下の塊 | `#D6E8CE` | `secondary-container` と一致 |
+| 棒・「3」 | `#3C6939` | `primary` と一致 |
 
-- 元になる原画: 設計時にスクラッチ領域で作成したモック `icon-mock/mock-C.svg`(リポジトリ外。製造担当には統括担当がファイルを渡す)。モックは色を値で転記しているため、製造では上表のプレースホルダに置き換える。
-- maskable 版は、牌形と絵柄の全体を (256,256) 中心に 0.8 倍。地は全面塗りのまま。
-- 既知の弱点: 48px 以下では北の絵柄が潰れて判別しにくい(モックで目視確認)。小サイズでの判別性は最終デザインで再評価する。
-- モックはコミットしない【確定】(Q7)。
+- 色は値で直接書いてあり、プレースホルダを含まない。`gen-icons.ts` は置換をせずそのまま描画する。seed 変更には追随しない(§3.2)。
+- maskable 版は図形を 0.69 倍して中央寄せし、全図形が中心直径 80% の円(半径 320/800)に収まる(最大半径 311/800)。塊は図形と同じ変換で移し、地は全面塗り。
+- 小サイズ: 48px でも逆三角形と「3」は判別できる。棒の白い円は 48px では潰れる。
+- C案「北牌」は採用せず、リポジトリに入れない。
 
-### 5.2 最終デザインへの差し替え手順(UI監修中・この PR 内)
+### 5.2 差し替えの記録(完了)
 
-最終デザインはユーザー案「点棒を逆三角形に組み、数字の3を併記」。UI監修中に SVG の支給または作成を受け、この PR(#108)に含めて次のとおり差し替える。差し替え後は CREDITS.md・本設計書・PR本文の仮アイコンの記述を削除し、権利・出典を更新する。
-
-1. SVG で原画を用意する(支給は SVG【確定】Q5)。数字の「3」はパス化する。地・枠の色はプレースホルダ(`var(--md-sys-color-<役割>)`)で書くことを推奨(値のままでも描画できる)。
-2. `assets-src/icon/icon.svg`(通常版)と `assets-src/icon/icon-maskable.svg`(モチーフを中心直径 80% の円内に収めた版)を置き換える。ファイル名は変えない。
-3. `npm run icons:gen` を実行し、`public/icons/icon-192.png`・`icon-512.png`・`icon-maskable-512.png`・`apple-touch-icon-180.png` と `public/favicon.svg` を再生成する。`npm run check:icons` が終了コード0になることを確かめる。
-4. コミット対象は `assets-src/icon/` の2ファイルと上記の生成物5ファイル。manifest・`index.html`・`vite.config.ts` は変更不要。
-5. 北の絵柄を使わなくなる場合は、`CREDITS.md` の「アプリアイコン(仮)に再配置」の追記を削除する。
+仮アイコン(C案)から最終アイコンへの差し替えは、この PR(#108)内で完了した。`assets-src/icon/` の2ファイルを置き換え、`npm run icons:gen` で `public/icons/` の4PNG と `public/favicon.svg` を再生成した。CREDITS.md の C案(Pei.svg)追記は削除した。
 
 ### 5.3 A案「三つの点」(見送り)
 
@@ -209,8 +203,8 @@ manifest と `meta theme-color` は 06号の色トークン義務の対象外(�
 | `scripts/gen-theme-tokens.ts` | `SEED` を `theme-seed.ts` から import・再 export(生成結果は不変) |
 | `scripts/theme-colors.ts`(名前は製造で可) | 新規(tokens.css の読み取り・プレースホルダ解決) |
 | `scripts/gen-icons.ts` | 新規 |
-| `assets-src/icon/icon.svg`・`icon-maskable.svg` | 新規(仮=C案) |
-| `CREDITS.md` | 牌画像素材の「加工内容」に、Pei.svg をアプリアイコン(仮)に縮小・再配置した旨を追記 |
+| `assets-src/icon/icon.svg`・`icon-maskable.svg` | 新規(最終アイコン、オーナー制作) |
+| `CREDITS.md` | 変更なし(C案採用時の Pei.svg 追記は不要。最終アイコンは第三者素材を含まない) |
 | `public/icons/*.png`・`public/favicon.svg` | 新規(生成物) |
 | `package.json` | `icons:gen`・`check:icons`、devDependency `@resvg/resvg-js` 2.6.2 |
 | `tsconfig.node.json` | `files` に `./scripts/gen-icons.ts`・`./scripts/theme-seed.ts`・`./scripts/theme-colors.ts` を追加 |
@@ -257,8 +251,8 @@ manifest と `meta theme-color` は 06号の色トークン義務の対象外(�
 - **G1-AC13** `docs/license-policy.md` に `@resvg/resvg-js` の名前・バージョン 2.6.2・ライセンス MPL-2.0・devDependency で配布物に含まれない旨が書かれている。`package.json` の版指定がキャレットなしの `2.6.2`。
 - **G1-AC14** ホームディレクトリ名・絶対パスが変更ファイルに無い。`git status --porcelain` で未コミットの差分が無いことを確かめたうえで、`git diff main --name-only` の各ファイル(PNG を除く)に `grep -nE '/Users/|/home/'` を実行し、本設計書のこの行(検索パターン自体)を除いて0件。ヒットは目視で確認する。
 
-- **G1-AC15** `CREDITS.md` の牌画像素材(FluffyStuff / riichi-mahjong-tiles、CC0 1.0)の「加工内容」に、`Regular/Pei.svg`(既存収録分を SVGO 最適化したもの)をアプリアイコン(仮)用に縮小・再配置した旨が追記されている。`assets-src/icon/icon.svg` と `icon-maskable.svg` に北の絵柄の出典コメントがある。
-- **G1-AC16** (PR記載事項)PR本文に「仮アイコン。最終デザイン(点棒の逆三角形+3)は UI監修中にこの PR 内で差し替え」と明記されている(差し替え後は仮アイコンの記述を削除し、最終アイコンの権利・出典に更新する)。
+- **G1-AC15** `CREDITS.md` に C案由来の `Pei.svg` 再配置の追記が無い(最終アイコンは北の絵柄を使わない)。`assets-src/icon/icon.svg` と `icon-maskable.svg` に「オーナー制作」の出典コメントがある。
+- **G1-AC16** (PR記載事項)PR本文に、最終アイコン(オーナー制作、プロジェクトの MIT ライセンス)の権利・出典が記載されている。
 
 ### 8.2 実機確認(検収では未確認。6件)
 
@@ -284,7 +278,7 @@ G2(#109)は PR #115 でマージ済み。本Issueのマージ・デプロイ後�
 | Q5 | 支給素材の形式 | SVG |
 | Q6 | devDependency のライセンス記録 | `docs/license-policy.md` に記録。`CREDITS.md` には書かない(配布物に含まれないため) |
 | Q7 | モックの扱い | コミットしない |
-| — | アイコン意匠 | 製造段階は仮で C案「北牌」(設計承認時)。最終デザインは「点棒を逆三角形に組み数字の3を併記」で、UI監修中にこの PR 内で差し替え。A案は見送り、B案は不採用 |
+| — | アイコン意匠 | 最終デザイン「点棒を逆三角形に組み数字の3を併記」(オーナー制作・支給)を採用。C案「北牌」は採用せず、A案は見送り、B案は不採用 |
 | — | ステータスバー色 | シード色で固定。`meta theme-color` は1本、manifest `theme_color` も同値 |
 
 ### 9.2 設計承認時の確認事項
@@ -295,5 +289,5 @@ G2(#109)は PR #115 でマージ済み。本Issueのマージ・デプロイ後�
 
 - G2(#109、PR #115 でマージ済み。公開URL https://bluekurage119.github.io/mj-3player-calc/): manifest の `start_url`・`scope` と SW の scope は `base`(`/mj-3player-calc/`)に依存する。配信パスを変える場合は `base` と manifest を同時に変える。
 - G3(#110): 実機確認(§8.2)はリリース前の受け入れ確認に含める。初回JSの基準値は本Issueのマージ後の実測値に更新する(09号8)。
-- テーマの seed を変える場合は `scripts/theme-seed.ts` だけを変え、`npm run gen:theme` と `npm run icons:gen` を実行する(ステータスバー色・アイコン・tokens.css が追随する)。
+- テーマの seed を変える場合は `scripts/theme-seed.ts` だけを変え、`npm run gen:theme` を実行する(ステータスバー色・tokens.css が追随する)。アイコン原画は色を値で持つため追随しない。必要なら原画の色を手で更新して `npm run icons:gen` を実行する。
 - 新版通知UIは作らない決定(H1)。将来導入する場合は `registerType: 'prompt'` と `virtual:pwa-register/react` が必要になり、初回JSが増える。

@@ -12,7 +12,6 @@
 - 加工内容:
   - `Regular` ディレクトリから三人麻雀で使用する図柄 29 ファイルを選定して取り込み
   - SVGO (`svgo.tiles.config.mjs`) による最適化 (viewBox 保持)
-  - `Regular/Pei.svg` (既存収録分を SVGO 最適化したもの) をアプリアイコン(仮)用に縮小・再配置
 
 ## 牌の下地・裏 (livewing/mahjong-calc)
 
