@@ -11,5 +11,10 @@
     "noEmit": true,
     "noUncheckedSideEffectImports": true
   },
-  "files": ["./vite.config.ts", "./scripts/gen-theme-tokens.ts"]
+  "files": [
+    "./vite.config.ts",
+    "./scripts/gen-theme-tokens.ts",
+    "./scripts/theme-seed.ts",
+    "./scripts/theme-colors.ts"
+  ]
 }

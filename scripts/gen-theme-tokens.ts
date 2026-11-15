@@ -8,7 +8,9 @@ import {
   hexFromArgb
 } from '@material/material-color-utilities';
 
-export const SEED = '#1B5E20';
+import { SEED } from './theme-seed.ts';
+
+export { SEED };
 export const SCHEME_NAME = 'SchemeTonalSpot';
 export const CONTRAST_LEVEL = 0;
 export const SPEC_VERSION = '2021';
