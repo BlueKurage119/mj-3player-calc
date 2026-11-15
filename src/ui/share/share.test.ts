@@ -465,19 +465,19 @@ describe('SNS共有画像データ・レイアウト・ユーティリティ (H2
 
   it('H2-AC14: readLightColors は :root かつ --md-sys-color-surface を持つライト規則を読み、無ければ getComputedStyle にフォールバックする', () => {
     const lightMap: Record<string, string> = {
-      '--md-sys-color-surface': '#f7fbf1',
-      '--md-sys-color-on-surface': '#191d17',
-      '--md-sys-color-on-surface-variant': '#424940',
-      '--md-sys-color-surface-container-highest': '#e0e4db',
-      '--md-sys-color-primary': '#3c6939',
-      '--md-sys-color-on-primary': '#ffffff',
-      '--md-sys-color-tertiary': '#38656a',
-      '--md-sys-color-on-tertiary': '#ffffff',
-      '--md-sys-color-error': '#ba1a1a'
+      '--md-sys-color-surface': 'rgb(247, 251, 241)',
+      '--md-sys-color-on-surface': 'rgb(25, 29, 23)',
+      '--md-sys-color-on-surface-variant': 'rgb(66, 73, 64)',
+      '--md-sys-color-surface-container-highest': 'rgb(224, 228, 219)',
+      '--md-sys-color-primary': 'rgb(60, 105, 57)',
+      '--md-sys-color-on-primary': 'rgb(255, 255, 255)',
+      '--md-sys-color-tertiary': 'rgb(56, 101, 106)',
+      '--md-sys-color-on-tertiary': 'rgb(255, 255, 255)',
+      '--md-sys-color-error': 'rgb(186, 26, 26)'
     };
     const darkMap: Record<string, string> = {
-      '--md-sys-color-surface': '#10140f',
-      '--md-sys-color-on-surface': '#e0e4db'
+      '--md-sys-color-surface': 'rgb(16, 20, 15)',
+      '--md-sys-color-on-surface': 'rgb(224, 228, 219)'
     };
 
     const sheets = [
@@ -510,15 +510,15 @@ describe('SNS共有画像データ・レイアウト・ユーティリティ (H2
     ];
 
     expect(readLightColors(sheets)).toEqual({
-      surface: '#f7fbf1',
-      onSurface: '#191d17',
-      onSurfaceVariant: '#424940',
-      surfaceContainerHighest: '#e0e4db',
-      primary: '#3c6939',
-      onPrimary: '#ffffff',
-      tertiary: '#38656a',
-      onTertiary: '#ffffff',
-      error: '#ba1a1a'
+      surface: 'rgb(247, 251, 241)',
+      onSurface: 'rgb(25, 29, 23)',
+      onSurfaceVariant: 'rgb(66, 73, 64)',
+      surfaceContainerHighest: 'rgb(224, 228, 219)',
+      primary: 'rgb(60, 105, 57)',
+      onPrimary: 'rgb(255, 255, 255)',
+      tertiary: 'rgb(56, 101, 106)',
+      onTertiary: 'rgb(255, 255, 255)',
+      error: 'rgb(186, 26, 26)'
     });
 
     // フォールバック経路 (SecurityError のシートをスキップして getComputedStyle を呼ぶ)
@@ -533,7 +533,7 @@ describe('SNS共有画像データ・レイアウト・ユーティリティ (H2
         }
       }
     ];
-    expect(readLightColors(throwingSheets).surface).toBe('#f7fbf1');
+    expect(readLightColors(throwingSheets).surface).toBe('rgb(247, 251, 241)');
   });
 
   it('H2-AC14: detectShareSupport は canShare と ClipboardItem の有無を同期判定する', () => {
