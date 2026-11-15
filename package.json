@@ -15,6 +15,8 @@
     "preview": "vite preview",
     "gen:theme": "vite-node --options.deps.inline=@material/material-color-utilities scripts/gen-theme-tokens.ts",
     "check:theme": "npm run gen:theme -- --check",
+    "icons:gen": "vite-node scripts/gen-icons.ts",
+    "check:icons": "npm run icons:gen -- --check",
     "tiles:optimize": "sh scripts/optimize-tiles.sh",
     "typecheck": "tsc -b",
     "lint": "biome lint",
@@ -32,6 +34,7 @@
   "devDependencies": {
     "@biomejs/biome": "1.9.4",
     "@material/material-color-utilities": "0.4.0",
+    "@resvg/resvg-js": "2.6.2",
     "@tsconfig/strictest": "^2.0.5",
     "@types/node": "^22.13.4",
     "@types/react": "^19.0.10",
