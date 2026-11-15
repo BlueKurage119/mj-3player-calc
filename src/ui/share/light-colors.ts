@@ -14,6 +14,10 @@ const COLOR_TOKENS: Record<keyof ShareColors, string> = {
   onSurface: '--md-sys-color-on-surface',
   onSurfaceVariant: '--md-sys-color-on-surface-variant',
   surfaceContainerHighest: '--md-sys-color-surface-container-highest',
+  primaryContainer: '--md-sys-color-primary-container',
+  onPrimaryContainer: '--md-sys-color-on-primary-container',
+  tertiaryContainer: '--md-sys-color-tertiary-container',
+  onTertiaryContainer: '--md-sys-color-on-tertiary-container',
   primary: '--md-sys-color-primary',
   onPrimary: '--md-sys-color-on-primary',
   tertiary: '--md-sys-color-tertiary',
@@ -29,6 +33,10 @@ function readFromStyle(getValue: (name: string) => string): ShareColors {
     surfaceContainerHighest: getValue(
       COLOR_TOKENS.surfaceContainerHighest
     ).trim(),
+    primaryContainer: getValue(COLOR_TOKENS.primaryContainer).trim(),
+    onPrimaryContainer: getValue(COLOR_TOKENS.onPrimaryContainer).trim(),
+    tertiaryContainer: getValue(COLOR_TOKENS.tertiaryContainer).trim(),
+    onTertiaryContainer: getValue(COLOR_TOKENS.onTertiaryContainer).trim(),
     primary: getValue(COLOR_TOKENS.primary).trim(),
     onPrimary: getValue(COLOR_TOKENS.onPrimary).trim(),
     tertiary: getValue(COLOR_TOKENS.tertiary).trim(),

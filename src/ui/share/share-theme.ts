@@ -7,6 +7,8 @@ import type { ShareColors } from './share-data';
 
 export type ShareColorRole = keyof ShareColors;
 
+export const DORA_SLOT_COUNT = 5;
+
 export interface ShareTheme {
   width: number;
   height: number;
@@ -17,22 +19,30 @@ export interface ShareTheme {
   fontFamily: string;
   fontWeightRegular: string;
   fontWeightBold: string;
+  fontWeightRegularNum: number;
+  fontWeightBoldNum: number;
   ellipsis: string;
   tileSvgWidth: number;
   tileSvgHeight: number;
   tileAspectHeightOverWidth: number;
   tileFaceScale: number;
+  measure: {
+    fullWidthRatio: number;
+    halfWidthRatio: number;
+    asciiMaxCode: number;
+  };
   header: {
     fontSize: number;
     lineHeight: number;
   };
   dora: {
+    slotCount: number;
     fontSize: number;
     tileWidth: number;
+    tileWidthCompact: number;
     tileGap: number;
     labelGap: number;
     groupGap: number;
-    labelCharWidthRatio: number;
     doraLabel: string;
     uradoraLabel: string;
     nukiPrefix: string;
@@ -40,10 +50,15 @@ export interface ShareTheme {
   hand: {
     maxTileWidth: number;
     groupGapRatio: number;
-    badgeDiameter: number;
+    badgePadX: number;
+    badgePadBottom: number;
+    badgeLabelBand: number;
+    badgeLeftNeighborGap: number;
+    badgeCornerRadius: number;
     badgeFontSize: number;
-    badgeOverlapTop: number;
-    badgeInsetRight: number;
+    badgeOpacity: number;
+    minGapFromDora: number;
+    maxHeaderOverlapRatio: number;
     badgeRonLabel: string;
     badgeTsumoLabel: string;
   };
@@ -58,7 +73,11 @@ export interface ShareTheme {
   };
   score: {
     rankFontSize: number;
-    rankLineHeight: number;
+    rankMinFontSize: number;
+    rankFontShrinkStep: number;
+    rankLineHeightRatio: number;
+    rankLineGap: number;
+    declarationGapEm: number;
     rankGap: number;
     pointsFontSize: number;
     pointsLineHeight: number;
@@ -89,6 +108,7 @@ export interface ShareTheme {
     label: ShareColorRole;
     yaku: ShareColorRole;
     rank: ShareColorRole;
+    declaration: ShareColorRole;
     points: ShareColorRole;
     limitName: ShareColorRole;
     footerBg: ShareColorRole;
@@ -114,22 +134,30 @@ export const SHARE_THEME_V1: ShareTheme = {
     'system-ui, -apple-system, "Hiragino Sans", "Noto Sans JP", "Yu Gothic UI", sans-serif',
   fontWeightRegular: '400',
   fontWeightBold: '700',
+  fontWeightRegularNum: 400,
+  fontWeightBoldNum: 700,
   ellipsis: '…',
   tileSvgWidth: 300,
   tileSvgHeight: 400,
   tileAspectHeightOverWidth: 4 / 3,
   tileFaceScale: 0.9,
+  measure: {
+    fullWidthRatio: 1,
+    halfWidthRatio: 0.6,
+    asciiMaxCode: 127
+  },
   header: {
     fontSize: 36,
     lineHeight: 44
   },
   dora: {
+    slotCount: DORA_SLOT_COUNT,
     fontSize: 36,
     tileWidth: 40,
+    tileWidthCompact: 36,
     tileGap: 4,
-    labelGap: 12,
-    groupGap: 28,
-    labelCharWidthRatio: 1,
+    labelGap: 8,
+    groupGap: 32,
     doraLabel: 'ドラ',
     uradoraLabel: '裏ドラ',
     nukiPrefix: '北×'
@@ -137,10 +165,15 @@ export const SHARE_THEME_V1: ShareTheme = {
   hand: {
     maxTileWidth: 64,
     groupGapRatio: 0.3,
-    badgeDiameter: 72,
-    badgeFontSize: 24,
-    badgeOverlapTop: 80,
-    badgeInsetRight: 0,
+    badgePadX: 12,
+    badgePadBottom: 12,
+    badgeLabelBand: 48,
+    badgeLeftNeighborGap: 8,
+    badgeCornerRadius: 16,
+    badgeFontSize: 32,
+    badgeOpacity: 1,
+    minGapFromDora: 16,
+    maxHeaderOverlapRatio: 0.1,
     badgeRonLabel: 'ロン',
     badgeTsumoLabel: 'ツモ'
   },
@@ -154,14 +187,18 @@ export const SHARE_THEME_V1: ShareTheme = {
     colGap: 24
   },
   score: {
-    rankFontSize: 36,
-    rankLineHeight: 44,
-    rankGap: 12,
+    rankFontSize: 72,
+    rankMinFontSize: 48,
+    rankFontShrinkStep: 4,
+    rankLineHeightRatio: 1,
+    rankLineGap: 16,
+    declarationGapEm: 0.8,
+    rankGap: 32,
     pointsFontSize: 120,
-    pointsLineHeight: 132,
+    pointsLineHeight: 120,
     limitFontSize: 96,
     pointsGap: 24,
-    bottomPadding: 36
+    bottomPadding: 32
   },
   footer: {
     top: 1150,
@@ -185,7 +222,8 @@ export const SHARE_THEME_V1: ShareTheme = {
     header: 'onSurface',
     label: 'onSurfaceVariant',
     yaku: 'onSurface',
-    rank: 'onSurfaceVariant',
+    rank: 'onSurface',
+    declaration: 'onSurfaceVariant',
     points: 'onSurface',
     limitName: 'error',
     footerBg: 'surfaceContainerHighest',
@@ -194,8 +232,8 @@ export const SHARE_THEME_V1: ShareTheme = {
     qrBg: 'surface',
     qrFg: 'onSurface',
     byBadge: {
-      ron: { bg: 'primary', fg: 'onPrimary' },
-      tsumo: { bg: 'tertiary', fg: 'onTertiary' }
+      ron: { bg: 'primaryContainer', fg: 'onPrimaryContainer' },
+      tsumo: { bg: 'tertiaryContainer', fg: 'onTertiaryContainer' }
     }
   }
 };
