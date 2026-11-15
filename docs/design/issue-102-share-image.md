@@ -160,7 +160,8 @@ export interface ShareData {
   yaku: { label: string; han: string }[];
   rankText: string | null;       // 真の役満(yakumanPoint > 0)のときだけ null(3.4.1)
   limitName: string | null;
-  totalText: string;             // 大きな数字。`${formatNumber(payment.total)}点`(本場・供託を含まない。ロン・ツモ共通。例「1,500点」)
+  totalDigits: string;           // 大きな数字。`formatNumber(payment.total)`(本場・供託を含まない。ロン・ツモ共通。例「1,500」)
+  totalUnit: '点';                // 数字より小さいサイズで描く(3.4.6.1)
   declarationText: string | null; // ツモの申告。`formatPoints(payment)`(例「500・1,000」「1,000オール」。区切りは実物の `TSUMO_SEPARATOR` = 「・」)。ロンは null
   situation: string;             // ヘッダー文字行(3.4.1)
   appName: string;
@@ -214,7 +215,7 @@ export interface ShareInput {
 | 4 | ツモ/ロンの印 | **和了牌の背面に敷く**印(土台。文字「ツモ」/「ロン」)。和了牌は印の手前に全面描画し、牌より大きい印がはみ出して和了牌だと分かる。大きく・薄く(3.4.5)。色の系統は E2 確定事項21 に合わせ、淡い Container 系: ロン=`primaryContainer` 地・`onPrimaryContainer` 文字、ツモ=`tertiaryContainer` 地・`onTertiaryContainer` 文字【設計案・UI 監修で調整可】 | 同左(新色なし) |
 | 5 | 役一覧 | **3.4.8【確定】**: 通常は 2 列×最大 6 行のチップ+飜数の塗りバッジ(縦読み)、真の役満は 1 列×最大 5 行の大きめチップ(バッジなし) | 3.4.8 |
 | 6 | 符・飜と申告の行 | 左に `rankText`(大きく。初期 72px)、同じ行の右に `declarationText`(ツモのみ。ロンは右側を空ける)。寸法・縮小は 3.4.6。`rankText` は `HoraItem.tsx` と同じ判定: `score.yakumanPoint === 0` のとき `` `${displayFu !== null ? `${displayFu}符 ` : ''}${score.han}飜` ``、真の役満(`yakumanPoint > 0`。core の `hora-score.ts` で han 0・fu null)のときだけ出さない。**数え役満(yakumanPoint 0・13 飜以上)は「◯符 N飜」を出す**(E2・デザイン案と同じ。既定)。真の役満では `rankText` が無いので、ツモは申告だけを左寄せで出し、ロンはこの行を出さずに詰める | 符・飜 → `onSurface`、申告 → `onSurfaceVariant` |
-| 7 | 点数 | `totalText`(合計。ラベルなしの「N点」。最大の要素)。左寄せ | `onSurface`・太字 |
+| 7 | 点数 | `totalDigits`+`totalUnit`(合計。ラベルなしの「N点」。数字が最大の要素、「点」は小さく。3.4.6.1)。左寄せ | `onSurface`・太字 |
 | 8 | 点数の格 | `limitName`(満貫等。無ければ出さない)。点数と同じ行の右端に大きく(変更なし) | `error`(E2 と同じ) |
 | 9 | 下部の帯 | y=1150〜1350 の全幅帯。左にアプリ名(大)とその下に URL の文字、右下に QR(168×168) | 帯 → `surfaceContainerHighest`、文字 → `onSurface`/`onSurfaceVariant` |
 
@@ -239,7 +240,7 @@ export interface ShareInput {
 
 #### 3.4.3 v1 で整える見た目の土台(4 点)【設計案・UI 監修で調整可】
 
-1. 文字の階層: 点数(合計)120px 太字、点数の格 96px 太字、符・飜と申告 72px(3.4.6)、役名・飜 40px、ヘッダー・ドラ欄 36px、帯のアプリ名 56px 太字・URL 28px。
+1. 文字の階層: 点数(合計)の数字 120px 太字・単位「点」64px 太字(`score.pointsUnitFontSize`。ベースラインを数字に揃える)、点数の格 96px 太字(収まらなければ縮小。下記)、符・飜 72px・申告 44px(3.4.6)、役名・飜 40px、ヘッダー・ドラ欄 36px、帯のアプリ名 56px 太字・URL 28px。
 2. 揃え: 役名は左余白、飜は 1 本の右揃え線(x=720)。点数と格のベースラインを揃える。
 3. 余白: 要素間 32、役一覧の行高 = min(64, 利用可能高さ / 役数)、最低フォント 30px。
 4. 帯の区切り: 帯は `surfaceContainerHighest`、本体は `surface`。線は使わない。
@@ -276,12 +277,18 @@ export interface ShareInput {
 
 #### 3.4.6 符・飜と申告の行の寸法と縮小【設計案・UI 監修で調整可】
 
-- 利用幅 952(= 1080 − 64×2)。初期フォント 72px。`rankText` を左、`declarationText` をその右へ間隔 0.8em を空けて置く(右寄せではなく左から続ける)。
-- 概算幅(全角相当で見積もり): 符・飜「110符 13飜」約 4.7em、申告「4,000・8,000」「16,000オール」約 5.8〜6.3em、間隔 0.8em。合計約 11.8em。72px で約 850px(収まる)、80px で約 944px(余裕がほぼ無い)ため初期値を 72px とした。
-- 縮小: `layoutShareImage` の引数 `measureTextWidth: (text: string, fontPx: number, weight: number) => number` で幅を求め、符・飜と申告を**同じフォントで一体に**縮める。72px から 4px 刻みで下げ、最小 48px。48px でも 952 を超える場合は申告を次の行に送る(同じ 48px、左寄せ)。
-- 役満(`rankText === null`): ツモは申告だけ 72px で出す。ロンは行ごと省き、下の点数行を詰める。
+- 利用幅 952(= 1080 − 64×2)。符・飜は `score.rankFontSize = 72`、ツモ申告は**独立した小さいサイズ** `score.declarationFontSize = 44`(UI 監修の指示「申告を小さく」)。`rankText` を左、`declarationText` をその右へ間隔 `score.declarationGap = 32` で置き、**ベースラインを揃える**。
+- 概算幅: 符・飜「110符 13飜」約 4.7em×72 ≈ 340、申告「16,000オール」約 6.3em×44 ≈ 280、間隔 32 → 約 650(余裕あり)。
+- 縮小: `layoutShareImage` の引数 `measureTextWidth: (text: string, fontPx: number, weight: number) => number` で幅を求める。申告は 44px 固定。合計が 952 を超える場合は**符・飜だけ**を 72px から 4px 刻みで最小 48px まで縮め、なお超える場合は申告を次の行に送る(44px、左寄せ)。現行の文言では発生しない見込み。
+- 役満(`rankText === null`): ツモは申告だけ 44px で行の左に出す。ロンは行ごと省き、下の点数行を詰める。
 - 計測関数: 描画時は `ctx.measureText(text).width`(`ctx.font` を設定して)を渡す。省略時は `share-theme.ts` の係数(全角 1.0em・半角数字と記号 0.6em)による算術見積もりを使う(jsdom で動く。単体テストはこちらか、テスト用の固定幅関数を渡す)。
-- `ShareLayout` に持たせる: `rank: { x, y, fontPx } | null`、`declaration: { x, y, fontPx } | null`(2 行時は `y` が 1 行目 + 行高)、`rankBlockHeight`(1 行/2 行/省略で変わる)、`yakuTop`・`yakuBottom`(役一覧の可用範囲。`yakuBottom` = 符飜ブロック上端 − 要素間。符飜ブロックが 2 行になると上へずれ、役一覧の可用高さが縮む。符飜ブロックと点数行は帯の上から下詰めで配置)。
+- `ShareLayout` に持たせる: `rank: { x, y, fontPx } | null`、`declaration: { x, y, fontPx } | null`(`fontPx` は常に `declarationFontSize`。2 行時は `y` が 1 行目 + 行高)、`total: { x, y, digitsFontPx, unitFontPx }`、`limit: { x, y, fontPx } | null`、`rankBlockHeight`(1 行/2 行/省略で変わる)、`yakuTop`・`yakuBottom`(役一覧の可用範囲。`yakuBottom` = 符飜ブロック上端 − 要素間。符飜ブロックが 2 行になると上へずれ、役一覧の可用高さが縮む。符飜ブロックと点数行は帯の上から下詰めで配置)。
+
+#### 3.4.6.1 合計と点数の格の行
+
+- 合計は数字部分(例「96,000」)を 120px、単位「点」を `score.pointsUnitFontSize = 64` で、数字の直後に同じベースラインで描く(`totalText` は数字と単位を分けて持つ: `totalDigits`・`totalUnit = '点'`)。
+- 限度名は右端 x=1016 に右揃え。初期 96px、`limitFontPx = min(96, (952 − 合計の幅 − 24) / 文字数相当幅)`(モックの規則)。最小 56px。
+- 概算(数字 0.6em): 最長級の「240,000」= 7 字×72 ≈ 504、「点」64 → 合計幅約 568。限度名「五倍役満」4 字なら (952−568−24)/4 = 90px に縮む。「数え役満」も同程度で、最小 56px を下回らない。
 
 #### 3.4.8 見出し・ドラ欄・役明細【確定。寸法は UI 監修で調整可】
 
@@ -305,7 +312,7 @@ export interface ShareInput {
 
 #### 3.4.7 定数の置き場
 
-3.4.3〜3.4.6 で導入した数値(文字サイズ、余白、はみ出し量 padX・下・上帯、間隔 0.3W・0.8em、72・48・4px 刻み、不透明度、計測の係数、牌幅上限 64・表示牌 40、QR 寸法 等)と色の役割割り当ては、すべて `share-theme.ts` の `SHARE_THEME_V1` に持たせる。`share-layout.ts`・`render-share-image.ts`・`share-data.ts` に残してよい数値は、H2-AC22 が許容する 0・1・2(半分・両側の計算)と配列添字だけ。
+3.4.3〜3.4.6.1 で導入した数値(`score.rankFontSize`・`score.declarationFontSize`・`score.declarationGap`・`score.pointsUnitFontSize`・限度名の初期/最小を含む。文字サイズ、余白、はみ出し量 padX・下・上帯、間隔 0.3W・0.8em、72・48・4px 刻み、不透明度、計測の係数、牌幅上限 64・表示牌 40、QR 寸法 等)と色の役割割り当ては、すべて `share-theme.ts` の `SHARE_THEME_V1` に持たせる。`share-layout.ts`・`render-share-image.ts`・`share-data.ts` に残してよい数値は、H2-AC22 が許容する 0・1・2(半分・両側の計算)と配列添字だけ。
 
 #### 3.4.4 v2 の再スキンに備えた構造(確定設計)
 
@@ -371,14 +378,14 @@ Q7(押下時に初めて読み込む)のため、事前生成はしない。各�
 | H2-AC4 | H2-AC3 の状態で各ボタンとトグルの `getBoundingClientRect()` を取得 | 各ボタン 48×48 以上。隣接要素(トグル・ボタン同士)の矩形が重ならず、間隔 8px 以上。利用幅の実測値を PR に記録 |
 | H2-AC5 | 点差トグルを押す。`npm test` を実行 | 改修前と同じ行数・文言の点差一覧が行の下に出る。`format.test.ts` の E2-PD1、`HoraDetail.test.tsx` の E2-18・E2-21 が改名・削除なしで通る |
 | H2-AC6 | 役なしになる形を入力 | 役なしカードに共有・保存・コピーのボタンが無い |
-| H2-AC7 | Chrome デスクトップで、立直なし・ドラ 1 枚・抜き北 1・14 枚の和了形を入力し、ロンとツモのカードでそれぞれ「画像を保存」 | 2 つの PNG がそれぞれ 1080×1350。上から 見出し(左に「<場風>場・<自風>家」の文字のみ、右に本場・供託・北のピル。「N本場」「供託N」の文字が無い)・ドラ欄(ドラ 1 枚表向き+裏 4 枚、裏ドラ 5 枚とも裏向き)・牌列・役明細(2 列のチップ、飜数は塗りバッジ、左列を上から縦読み)・符飜・点数と格・下部の帯 の順。和了牌の背面に敷かれた印(和了牌は全面が見え、上に「ロン」/「ツモ」の文字)がロン=primaryContainer 地、ツモ=tertiaryContainer 地。大きな数字はラベルなしの「N点」で `payment.total` と一致(例: 子の 30符1飜ロンなら「1,000点」、ツモなら「1,100点」ではなく合計の値。画面の和了カードの合計と照合)し、画像中で最大の文字。ツモ画像では符・飜の右に申告(画面の見出しと同じ書式。例「300・500」)が同じ行にあり、ロン画像では符・飜の右が空いている。ルール名・卓の名称・支払い内訳(本場込み)・親/子の文字が無い。本場 1 を入れても大きな数字が変わらない |
+| H2-AC7 | Chrome デスクトップで、立直なし・ドラ 1 枚・抜き北 1・14 枚の和了形を入力し、ロンとツモのカードでそれぞれ「画像を保存」 | 2 つの PNG がそれぞれ 1080×1350。上から 見出し(左に「<場風>場・<自風>家」の文字のみ、右に本場・供託・北のピル。「N本場」「供託N」の文字が無い)・ドラ欄(ドラ 1 枚表向き+裏 4 枚、裏ドラ 5 枚とも裏向き)・牌列・役明細(2 列のチップ、飜数は塗りバッジ、左列を上から縦読み)・符飜・点数と格・下部の帯 の順。和了牌の背面に敷かれた印(和了牌は全面が見え、上に「ロン」/「ツモ」の文字)がロン=primaryContainer 地、ツモ=tertiaryContainer 地。大きな数字はラベルなしの「N点」(単位「点」は数字より小さく、ベースラインが揃う)で `payment.total` と一致(例: 子の 30符1飜ロンなら「1,000点」、ツモなら「1,100点」ではなく合計の値。画面の和了カードの合計と照合)し、画像中で最大の文字。ツモ画像では符・飜の右に、符・飜より小さい文字で申告(画面の見出しと同じ書式。例「300・500」)が同じ行にあり、ロン画像では符・飜の右が空いている。ルール名・卓の名称・支払い内訳(本場込み)・親/子の文字が無い。本場 1 を入れても大きな数字が変わらない |
 | H2-AC8 | H2-AC7 の手で立直をかけ裏ドラ表示牌を 1 枚入力して保存。立直を外して(裏ドラ表示牌は残したまま)保存。抜き北 0 で保存。ルールの北を役牌にして保存 | 1 つ目は裏ドラが 1 枚表向き+4 枚裏向き。2 つ目は裏ドラ 5 枚とも裏向き(3.4.2(a)。確定)。3 つ目は「北×0」が出る。4 つ目は北の表示が無い。いずれもドラ・裏ドラが各 5 枚 |
 | H2-AC9 | 14 枚の和了形と、13 枚の双碰待ち(例: `11m22p` を含み和了牌 `1m`)でそれぞれ保存し、要約カードと見比べる | 並びが「門前部分 → 副露 → 和了牌」。14 枚では要約カードと同じ牌・同じ順。13 枚では門前部分が入力 13 枚すべて(`1m` が 2 枚残る)で、末尾に和了牌 `1m`。下線・枠が無い(和了牌は印の土台で区別)。ドラ・裏ドラ欄は各 5 枚。単体テスト H2-AC9-a/b がある |
 | H2-AC10 | 暗槓 1・ポン 1 を含む 14 枚相当の和了形、13 枚の聴牌入力(和了牌を末尾に足す)、立直・ドラ 5 枚・裏ドラ 5 枚・北×4 の形で、ロン・ツモそれぞれ保存 | 副露が要約カードと同じ牌・順で描かれ、牌姿が 1 行に収まる。全画像で、印が和了牌の背面にあり和了牌の牌面が全面見える(印が牌面に被っていない)。印と「ツモ」「ロン」の文字が、和了牌以外の牌・ドラ/裏ドラの牌・「北×N」の文字・右余白(x>1016。牌列は x=64 起点で右端 ≤ 1004)・役一覧に重ならず、ヘッダー文字行と重なる場合も文字が読める(交差面積 10% 以下)。、文字が牌に隠れていない。単体テストで、(1) `layoutShareImage` の印・文字の矩形と各要素の矩形の非交差、文字の矩形と和了牌の矩形の非交差、(2) `renderShareImage` をモック canvas で実行し、印の塗り命令が和了牌の `drawImage` より先に呼ばれること(描画順)を確認している |
-| H2-AC11 | 真の役満(例: 大三元)と、数え役満(13 飜以上の通常役。例: 立直・門前清自摸和・混一色・対々和・三暗刻・ドラで 13 飜以上になる手)でそれぞれ保存 | 真の役満: 符・飜の文字が無い。ツモは申告だけが行の左に出て、ロンは符・飜の行が無く点数行が詰まる。数え役満: 画面の和了カードと同じ「◯符 N飜」が出て、ツモではその右に申告が同じ行(または 3.4.6 の縮小で 48px 以上の 1 行、収まらなければ次の行)にある。いずれも格が error 色で点数行の右端 |
+| H2-AC11 | 真の役満(例: 大三元)と、数え役満(13 飜以上の通常役。例: 立直・門前清自摸和・混一色・対々和・三暗刻・ドラで 13 飜以上になる手)でそれぞれ保存 | 真の役満: 符・飜の文字が無い。ツモは申告だけが行の左に出て、ロンは符・飜の行が無く点数行が詰まる。数え役満: 画面の和了カードと同じ「◯符 N飜」が出て、ツモではその右に小さい申告が同じ行にある(3.4.6)。格が長くても合計と重ならず 56px 以上。いずれも格が error 色で点数行の右端 |
 | H2-AC12 | ダークテーマで H2-AC7 の手を保存し、ライトでの画像と並べる | 配色が同じ |
 | H2-AC13 | `share-config.ts` を変更せずにビルドし、和了カードから画像を保存 | `grep -rn "SHARE_URL" src/ui/share/share-config.ts` で値が `https://bluekurage119.github.io/mj-3player-calc/`。帯に URL 文字 `bluekurage119.github.io/mj-3player-calc` が 1 行で出る。画像を画像編集ソフトで開き、QR 領域が x=848〜1016・y=1166〜1334 の白地(`surface`)で、黒いモジュールの外側に 4 モジュール分以上の白地があること、URL 文字の右端が x=824 以下であることを確認。さらに PNG を等倍で画面表示し、iOS 標準カメラと Android 標準カメラ(どちらか片方でも可)で読むと `https://bluekurage119.github.io/mj-3player-calc/` が表示される。`grep -rn "SHARE_URL =" src` が 1 件。URL 未設定・無効値時の保険動作(QR・URL 文字を描かない、投稿文が本文のみ)は単体テストで確認する(H2-AC14) |
-| H2-AC14 | 単体テストを確認 | 少なくとも: `buildShareData`(H2-AC9-a/b、赤5、ドラ・裏ドラが常に長さ 5(未入力は back)、立直なしで裏ドラ入力ありでも 5 枚とも back、立直ありで入力済みが表向き、抜き北が有効かつ 0 枚で `nuki === 0`、抜き北無効で `nuki === null`、ドラ 0 枚で `dora` が back 5 枚、場況、真の役満で `rankText` null、数え役満で `rankText` が「◯符 N飜」、`totalText` が `payment.total` の「N点」(本場・供託を含まない)、ロンで `declarationText` null・ツモで `formatPoints(payment)`)、`qrMatrix`(`encode` に `border: 0` を渡す)、`shareUrlLabel`(確定 URL → `bluekurage119.github.io/mj-3player-calc`)、URL が null・空・`https://` 以外で `urlLabel`/QR が無く投稿文が本文のみ、確定 URL で投稿文が `"三麻点数計算機\nhttps://bluekurage119.github.io/mj-3player-calc/"`、`layoutShareImage`(役 15 行でもフッターと重ならない、副露 4 組でも牌が余白内、印・文字の矩形が和了牌以外の牌・ドラ/裏ドラの牌・北の文字・役一覧・右余白と交差せず、ヘッダー文字矩形との交差面積が 10% 以下、文字が和了牌と交差しない(14 枚・13 枚・副露 4 組・ドラ等各 4 枚の各入力、ツモ・ロン)。`renderShareImage`(モック canvas)で印の描画が和了牌の `drawImage` より前、計測関数を差し替えて(例: 1 文字 = fontPx の固定幅関数)、符・飜+申告が 72px で 952 を超える入力で 4px 刻みに一体縮小され `rank.fontPx === declaration.fontPx ≥ 48`、48px でも超える入力で `declaration.y > rank.y` かつ `yakuBottom` が 1 行時より小さい、計測関数省略時も例外なく座標が返る、役満ロンで符・飜の行が無い)、`ensureSvgSize`、`readLightColors`、`detectShareSupport`(canShare 無し・偽・真、ClipboardItem 無し)、`ShareControls`(`context.share` 未指定で出ない、非対応のボタンが出ない、コピー押下で `ClipboardItem` と `clipboard.write` が `await` 前に同期に呼ばれる、共有の `NotAllowedError` 後の再押下で `share` が同期に呼ばれる) |
+| H2-AC14 | 単体テストを確認 | 少なくとも: `buildShareData`(H2-AC9-a/b、赤5、ドラ・裏ドラが常に長さ 5(未入力は back)、立直なしで裏ドラ入力ありでも 5 枚とも back、立直ありで入力済みが表向き、抜き北が有効かつ 0 枚で `nuki === 0`、抜き北無効で `nuki === null`、ドラ 0 枚で `dora` が back 5 枚、場況、真の役満で `rankText` null、数え役満で `rankText` が「◯符 N飜」、`totalDigits` が `payment.total` の 3 桁区切り、`totalUnit` が「点」(本場・供託を含まない)、ロンで `declarationText` null・ツモで `formatPoints(payment)`)、`qrMatrix`(`encode` に `border: 0` を渡す)、`shareUrlLabel`(確定 URL → `bluekurage119.github.io/mj-3player-calc`)、URL が null・空・`https://` 以外で `urlLabel`/QR が無く投稿文が本文のみ、確定 URL で投稿文が `"三麻点数計算機\nhttps://bluekurage119.github.io/mj-3player-calc/"`、`layoutShareImage`(役 15 行でもフッターと重ならない、副露 4 組でも牌が余白内、印・文字の矩形が和了牌以外の牌・ドラ/裏ドラの牌・北の文字・役一覧・右余白と交差せず、ヘッダー文字矩形との交差面積が 10% 以下、文字が和了牌と交差しない(14 枚・13 枚・副露 4 組・ドラ等各 4 枚の各入力、ツモ・ロン)。`renderShareImage`(モック canvas)で印の描画が和了牌の `drawImage` より前、計測関数を差し替えて(例: 1 文字 = fontPx の固定幅関数)、`declaration.fontPx` が常に `declarationFontSize`(符・飜の縮小に連動しない)、符・飜+申告が 952 を超える入力で `rank.fontPx` だけが 4px 刻みで 48 以上に縮む、48px でも超える入力で `declaration.y > rank.y` かつ `yakuBottom` が 1 行時より小さい、`total.unitFontPx === pointsUnitFontSize < digitsFontPx` で単位と数字の y が等しい、合計「240,000点」と格「五倍役満」で格の `fontPx` が 56 以上 96 以下かつ合計と格の矩形が交差しない、計測関数省略時も例外なく座標が返る、役満ロンで符・飜の行が無い)、`ensureSvgSize`、`readLightColors`、`detectShareSupport`(canShare 無し・偽・真、ClipboardItem 無し)、`ShareControls`(`context.share` 未指定で出ない、非対応のボタンが出ない、コピー押下で `ClipboardItem` と `clipboard.write` が `await` 前に同期に呼ばれる、共有の `NotAllowedError` 後の再押下で `share` が同期に呼ばれる) |
 | H2-AC15 | Firefox デスクトップのプレビューで和了カードを表示 | 共有ボタンが無い。保存で PNG が保存される。コピーは Firefox 127+ なら出て貼り付けできる |
 | H2-AC16 | Android Chrome または iOS Safari の実機で共有・コピー | 共有シートが画像付きで開き(再押下を求められた場合は 2 回目で開く)、牌が欠けていない。コピーした画像を他アプリに貼り付けられる。実機が無い環境は PR に「実挙動未確認」と環境名を書く |
 | H2-AC17 | `git diff main -- CREDITS.md src/ui/icons/symbol-paths.ts` アイコン 3 個の追加(計 16 個)と、CREDITS の「16 アイコン分」への更新 |
