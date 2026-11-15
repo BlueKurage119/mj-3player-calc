@@ -8,6 +8,7 @@ import { FuBreakdown } from './FuBreakdown';
 import { PointDiff } from './PointDiff';
 import type { ResultContext } from './HoraDetail';
 import {
+  calcDisplayFu,
   formatBasePointText,
   limitName,
   nextTierText,
@@ -15,7 +16,6 @@ import {
   yakuHanText,
   yakuLabel
 } from './format';
-import { sumRawFu } from './fu-rows';
 import { nextTier } from './next-tier';
 
 export interface HoraItemProps {
@@ -29,13 +29,7 @@ export function HoraItem({ hora, context }: HoraItemProps): React.JSX.Element {
   const byLabel = hora.by === 'ron' ? 'ロン' : 'ツモ';
   // 符の概念がない国士無双・十三不塔以外は、役満でも符を出す(UI 監修)
   const showFuBreakdown = hora.type === 'mentsu' || hora.type === 'chitoitsu';
-  const displayFu: number | null =
-    score.fu ??
-    (hora.type === 'chitoitsu'
-      ? 25
-      : hora.type === 'mentsu'
-        ? Math.ceil(sumRawFu(hora.fu) / 10) * 10
-        : null);
+  const displayFu = calcDisplayFu(hora);
 
   if (noYaku) {
     return (
@@ -151,7 +145,7 @@ export function HoraItem({ hora, context }: HoraItemProps): React.JSX.Element {
       <Divider />
 
       {/* 点差(折りたたみ。UI 監修) */}
-      <PointDiff payment={score.payment} />
+      <PointDiff payment={score.payment} hora={hora} context={context} />
     </article>
   );
 }

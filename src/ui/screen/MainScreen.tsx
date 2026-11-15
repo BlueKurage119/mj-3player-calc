@@ -81,7 +81,8 @@ const SUMMARY_COVER_STATUS_PX = 36;
 const SUMMARY_COVER_DORA_PX = 68;
 
 export function MainScreen(): React.JSX.Element {
-  const { rule, table, input, inputFocus, sheetMode } = useAppState();
+  const { rule, table, input, inputFocus, sheetMode, handOptions } =
+    useAppState();
   const dispatch = useAppDispatch();
   const resultState = useResult();
   const dispatchTimestampRef = useRef<number | null>(null);
@@ -234,7 +235,20 @@ export function MainScreen(): React.JSX.Element {
           ref={resultPanelRef}
           resultState={resultState}
           dispatchTimestampRef={dispatchTimestampRef}
-          context={{ table, rule }}
+          context={{
+            table,
+            rule,
+            share: {
+              hand: input.hand,
+              melds: input.melds,
+              dora: input.dora,
+              uradora: input.uradora,
+              nuki: input.nuki,
+              riichi: handOptions.riichi,
+              red: rule.red,
+              nukiEnabled: isNukiEnabled(rule)
+            }
+          }}
           tileActions={tileActions}
         />
         <div className="main-screen__bottom-spacer" aria-hidden="true" />

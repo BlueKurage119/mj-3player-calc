@@ -30,7 +30,7 @@
 - URL: https://github.com/google/material-design-icons
 - ライセンス: Apache License 2.0 (全文は `LICENSES/Apache-2.0.txt` を参照。上流に NOTICE ファイルはない)
 - 使用内容:
-  - Outlined の 24px SVG から 10 アイコン分の path を `src/ui/icons/symbol-paths.ts` に定数として書き写して使用 (無改変)
+  - Outlined の 24px SVG から 16 アイコン分の path を `src/ui/icons/symbol-paths.ts` に定数として書き写して使用 (無改変)
 
 ## `@material/web`
 

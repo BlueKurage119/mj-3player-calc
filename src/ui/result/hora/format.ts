@@ -2,6 +2,7 @@
 import type { Fu } from '../../../core/fu';
 import type { HoraScore } from '../../../core/hora-score';
 import type { Payment } from '../../../core/payment';
+import type { ScoredHora } from '../../../core/result';
 import type { Table } from '../../../core/table';
 import type { TileCountsIndex } from '../../../core/tile';
 import type { NormalYaku, Yakuman } from '../../../core/yaku';
@@ -189,6 +190,20 @@ export const formatFuSummary = (
     return `符 ${rawFu} → ${ceilFu}`;
   }
   return `符 ${rawFu}`;
+};
+
+/** 画面・共有画像で表示する符を算出する (国士無双・十三不塔など符なしは null) */
+export const calcDisplayFu = (hora: ScoredHora): number | null => {
+  if (hora.score.fu !== null) return hora.score.fu;
+  if (hora.type === 'chitoitsu') return 25;
+  if (hora.type === 'mentsu') {
+    const raw = hora.fu.reduce(
+      (acc, f) => acc + f.fu + (f.type === 'waiting' ? f.block.fu : 0),
+      0
+    );
+    return Math.ceil(raw / 10) * 10;
+  }
+  return null;
 };
 
 /** 点差(和了で相手との点差が縮まる額)の1行 */
