@@ -18,6 +18,7 @@
 | FluffyStuff/riichi-mahjong-tiles（牌画像） | **CC0（パブリックドメイン）** | 上流の `LICENSE.md` | 使用可。mahjong-calc の README には「CC BY」とあるが、上流は現在 CC0。クレジットは礼儀として残す |
 | google/material-design-icons（Material Symbols） | **Apache-2.0** | 上流の `LICENSE`（著作権者欄は雛形のまま。NOTICE は無し） | `src/ui/icons/` でインライン SVG として使用可。権利表示はコード先頭コメント・`CREDITS.md`・`LICENSES/Apache-2.0.txt` の3か所に置く |
 | material-components/material-web（`@material/web` 2.5.0） | **Apache-2.0**（`Copyright 2018-2023 Google, Inc.`） | 上流の `LICENSE`（NOTICE は無し） | 本番依存として配布物に含まれる。`CREDITS.md` と `LICENSES/Apache-2.0.txt` に表示する |
+| `@resvg/resvg-js`（2.6.2） | **MPL-2.0** | `package.json`・npm registry | devDependency（アイコン PNG 生成用）。配布物に含まれない |
 
 ### mj-mighty-calc について
 riichi 系ライブラリを import しているのは次のファイルです: `App.tsx`, `ui/LuckSheet.tsx`, `ui/TileImage.tsx`, `core/{almighty,tiles,analysis,yakuNames,backend}.ts`。
