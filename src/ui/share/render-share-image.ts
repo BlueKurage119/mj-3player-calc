@@ -106,6 +106,25 @@ function drawTileGroup(
   }
 }
 
+function fillRoundedRect(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  radius: number
+): void {
+  const r = Math.min(radius, width / 2, height / 2);
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + width, y, x + width, y + height, r);
+  ctx.arcTo(x + width, y + height, x, y + height, r);
+  ctx.arcTo(x, y + height, x, y, r);
+  ctx.arcTo(x, y, x + width, y, r);
+  ctx.closePath();
+  ctx.fill();
+}
+
 /** ShareLayout をオフスクリーン canvas へ描画し PNG Blob を返す */
 export async function renderShareImage(
   layout: ShareLayout,
@@ -174,21 +193,36 @@ export async function renderShareImage(
   }
   drawTileGroup(ctx, layout.doraTiles, loadedImages, theme);
 
-  // 4. 牌列
+  // 4. ツモ/ロンの印の背面台 (牌列より先に描き、和了牌の全面を見せる)
+  if (layout.byBadge.opacity < 1) {
+    ctx.save();
+    ctx.globalAlpha = layout.byBadge.opacity;
+    ctx.fillStyle = colors[layout.byBadge.bgColorRole];
+    fillRoundedRect(
+      ctx,
+      layout.byBadge.x,
+      layout.byBadge.y,
+      layout.byBadge.width,
+      layout.byBadge.height,
+      layout.byBadge.cornerRadius
+    );
+    ctx.restore();
+  } else {
+    ctx.fillStyle = colors[layout.byBadge.bgColorRole];
+    fillRoundedRect(
+      ctx,
+      layout.byBadge.x,
+      layout.byBadge.y,
+      layout.byBadge.width,
+      layout.byBadge.height,
+      layout.byBadge.cornerRadius
+    );
+  }
+
+  // 5. 牌列 (和了牌を含む全牌)
   drawTileGroup(ctx, layout.handTiles, loadedImages, theme);
 
-  // 5. ツモ/ロンの円形印
-  ctx.beginPath();
-  ctx.arc(
-    layout.byBadge.cx,
-    layout.byBadge.cy,
-    layout.byBadge.radius,
-    0,
-    Math.PI * 2
-  );
-  ctx.fillStyle = colors[layout.byBadge.bgColorRole];
-  ctx.fill();
-
+  // 6. ツモ/ロンの印の文字 (文字帯にあり牌と重ならない)
   ctx.fillStyle = colors[layout.byBadge.fgColorRole];
   ctx.font = formatFont(
     theme.fontWeightBold,
@@ -197,9 +231,13 @@ export async function renderShareImage(
   );
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText(layout.byBadge.label, layout.byBadge.cx, layout.byBadge.cy);
+  ctx.fillText(
+    layout.byBadge.label,
+    layout.byBadge.labelX,
+    layout.byBadge.labelY
+  );
 
-  // 6. 役一覧
+  // 7. 役一覧
   ctx.textBaseline = 'middle';
   for (const row of layout.yakuRows) {
     ctx.fillStyle = colors[row.colorRole];
@@ -214,13 +252,13 @@ export async function renderShareImage(
     ctx.fillText(row.han, row.hanRightX, row.y);
   }
 
-  // 7. 符・飜
+  // 8. 符・飜と申告
   ctx.textBaseline = 'alphabetic';
   if (layout.rank !== null) {
     ctx.fillStyle = colors[layout.rank.colorRole];
     ctx.font = formatFont(
       theme.fontWeightRegular,
-      layout.rank.fontSize,
+      layout.rank.fontPx,
       theme.fontFamily
     );
     ctx.textAlign = 'left';
@@ -231,8 +269,23 @@ export async function renderShareImage(
       layout.rank.maxWidth
     );
   }
+  if (layout.declaration !== null) {
+    ctx.fillStyle = colors[layout.declaration.colorRole];
+    ctx.font = formatFont(
+      theme.fontWeightRegular,
+      layout.declaration.fontPx,
+      theme.fontFamily
+    );
+    ctx.textAlign = 'left';
+    ctx.fillText(
+      layout.declaration.text,
+      layout.declaration.x,
+      layout.declaration.y,
+      layout.declaration.maxWidth
+    );
+  }
 
-  // 8. 点数と格 (同一ベースライン)
+  // 9. 点数と格 (同一ベースライン)
   let pointsFontSize = layout.score.pointsFontSize;
   let limitFontSize = layout.score.limitFontSize;
   if (layout.score.limitName !== null) {
@@ -241,7 +294,7 @@ export async function renderShareImage(
       pointsFontSize,
       theme.fontFamily
     );
-    const pointsWidth = ctx.measureText(layout.score.pointsText).width;
+    const pointsWidth = ctx.measureText(layout.score.totalText).width;
     ctx.font = formatFont(
       theme.fontWeightBold,
       limitFontSize,
@@ -259,7 +312,7 @@ export async function renderShareImage(
   ctx.fillStyle = colors[layout.score.pointsColorRole];
   ctx.font = formatFont(theme.fontWeightBold, pointsFontSize, theme.fontFamily);
   ctx.textAlign = 'left';
-  ctx.fillText(layout.score.pointsText, layout.score.x, layout.score.baselineY);
+  ctx.fillText(layout.score.totalText, layout.score.x, layout.score.baselineY);
 
   if (layout.score.limitName !== null) {
     ctx.fillStyle = colors[layout.score.limitColorRole];
@@ -276,7 +329,7 @@ export async function renderShareImage(
     );
   }
 
-  // 9. フッター帯・文字・QR
+  // 10. フッター帯・文字・QR
   ctx.fillStyle = colors[layout.footer.band.colorRole];
   ctx.fillRect(
     layout.footer.band.x,
