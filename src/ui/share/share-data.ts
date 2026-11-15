@@ -1,5 +1,4 @@
 import type { ScoredHora } from '../../core/result';
-import type { Wind } from '../../core/table';
 import type { Tile, TileOrBack } from '../../core/tile';
 import { formatNumber, formatPoints } from '../result/hora-summary';
 import type { ResultContext, ShareInput } from '../result/hora/HoraDetail';
@@ -10,7 +9,7 @@ import {
   yakuLabel
 } from '../result/hora/format';
 import { meldTiles } from '../screen/MeldArea';
-import { maxHandLength, splitWinningTile } from '../state';
+import { formatWinds, maxHandLength, splitWinningTile } from '../state';
 import {
   APP_NAME,
   SHARE_URL,
@@ -27,6 +26,9 @@ export interface ShareData {
   dora: TileOrBack[];
   uradora: TileOrBack[];
   nuki: number | null;
+  continueCount: number;
+  deposit: number;
+  isYakuman: boolean;
   yaku: { label: string; han: string }[];
   rankText: string | null;
   limitName: string | null;
@@ -40,9 +42,12 @@ export interface ShareData {
 
 export interface ShareColors {
   surface: string;
+  surfaceContainer: string;
   onSurface: string;
   onSurfaceVariant: string;
   surfaceContainerHighest: string;
+  outlineVariant: string;
+  onSecondaryContainer: string;
   primaryContainer: string;
   onPrimaryContainer: string;
   tertiaryContainer: string;
@@ -53,12 +58,6 @@ export interface ShareColors {
   onTertiary: string;
   error: string;
 }
-
-const WIND_KANJI: Record<Wind, string> = {
-  east: '東',
-  south: '南',
-  west: '西'
-};
 
 function padDoraSlots(tiles: readonly Tile[], count: number): TileOrBack[] {
   return Array.from({ length: count }, (_, i) => tiles[i] ?? { type: 'back' });
@@ -79,18 +78,16 @@ export function buildShareData(
 
   const displayFu = calcDisplayFu(hora);
   const { score } = hora;
-  const rankText =
-    score.yakumanPoint === 0
-      ? `${displayFu !== null ? `${displayFu}符 ` : ''}${score.han}飜`
-      : null;
+  const isYakuman = score.yakumanPoint > 0;
+  const rankText = !isYakuman
+    ? `${displayFu !== null ? `${displayFu}符 ` : ''}${score.han}飜`
+    : null;
 
   const dora = padDoraSlots(share.dora, DORA_SLOT_COUNT);
   const uradora =
     share.riichi !== 'none'
       ? padDoraSlots(share.uradora, DORA_SLOT_COUNT)
       : padDoraSlots([], DORA_SLOT_COUNT);
-
-  const situation = `${WIND_KANJI[table.round]}場 ${table.continue}本場 供託${table.deposit} ${WIND_KANJI[table.seat]}家`;
 
   return {
     by: hora.by,
@@ -100,6 +97,9 @@ export function buildShareData(
     dora,
     uradora,
     nuki: share.nukiEnabled ? share.nuki : null,
+    continueCount: table.continue,
+    deposit: table.deposit,
+    isYakuman,
     yaku: hora.yaku.map(y => ({
       label: yakuLabel(y.name),
       han: yakuHanText(y)
@@ -108,7 +108,7 @@ export function buildShareData(
     limitName: limitName(score),
     totalText: `${formatNumber(score.payment.total)}点`,
     declarationText: hora.by === 'tsumo' ? formatPoints(score.payment) : null,
-    situation,
+    situation: formatWinds(table),
     appName: APP_NAME,
     url: resolveShareUrl(shareUrl),
     urlLabel: shareUrlLabel(shareUrl)

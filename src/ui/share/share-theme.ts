@@ -1,3 +1,4 @@
+import { CUSTOM_DEPOSIT_STICK, CUSTOM_HONBA_STICK } from '../icons';
 import {
   SHARE_IMAGE_HEIGHT,
   SHARE_IMAGE_MIME,
@@ -18,8 +19,10 @@ export interface ShareTheme {
   sectionGap: number;
   fontFamily: string;
   fontWeightRegular: string;
+  fontWeightSemibold: string;
   fontWeightBold: string;
   fontWeightRegularNum: number;
+  fontWeightSemiboldNum: number;
   fontWeightBoldNum: number;
   ellipsis: string;
   tileSvgWidth: number;
@@ -33,19 +36,42 @@ export interface ShareTheme {
   };
   header: {
     fontSize: number;
-    lineHeight: number;
+    baselineOffset: number;
+    height: number;
+    pillHeight: number;
+    pillCornerRadius: number;
+    pillPadX: number;
+    pillTextOnlyPadX: number;
+    pillIconSize: number;
+    pillIconGap: number;
+    pillFontSize: number;
+    pillGap: number;
+    pillBgOpacity: number;
+    nukiPrefix: string;
+    iconViewBoxSize: number;
+    iconViewBoxMinY: number;
+    honbaIconPath: string;
+    depositIconPath: string;
   };
   dora: {
+    gapFromHeader: number;
     slotCount: number;
-    fontSize: number;
+    labelFontSize: number;
+    labelPillHeight: number;
+    labelPillCornerRadius: number;
+    labelPillPadX: number;
+    labelBgOpacity: number;
+    labelGap: number;
+    groupGap: number;
     tileWidth: number;
     tileWidthCompact: number;
     tileGap: number;
-    labelGap: number;
-    groupGap: number;
+    chipPadX: number;
+    chipPadY: number;
+    chipCornerRadius: number;
+    chipBorderWidth: number;
     doraLabel: string;
     uradoraLabel: string;
-    nukiPrefix: string;
   };
   hand: {
     maxTileWidth: number;
@@ -63,13 +89,34 @@ export interface ShareTheme {
     badgeTsumoLabel: string;
   };
   yaku: {
-    fontSize: number;
-    minFontSize: number;
-    maxRowHeight: number;
-    fontRatio: number;
-    hanRightX: number;
-    hanReservedWidth: number;
-    colGap: number;
+    top: number;
+    minGapFromBadge: number;
+    gapToScore: number;
+    normalMaxRows: number;
+    normalMaxCount: number;
+    normalChipWidth: number;
+    normalChipHeight: number;
+    normalChipCornerRadius: number;
+    normalColGap: number;
+    normalRowGap: number;
+    normalFontSize: number;
+    normalMinFontSize: number;
+    normalChipPadLeft: number;
+    normalChipPadRight: number;
+    normalHanGap: number;
+    hanBadgeHeight: number;
+    hanBadgeCornerRadius: number;
+    hanBadgeFontSize: number;
+    hanBadgePadX: number;
+    yakumanMaxCount: number;
+    yakumanChipWidth: number;
+    yakumanChipHeight: number;
+    yakumanChipCornerRadius: number;
+    yakumanRowGap: number;
+    yakumanFontSize: number;
+    yakumanMinFontSize: number;
+    yakumanChipPadX: number;
+    fontShrinkStep: number;
   };
   score: {
     rankFontSize: number;
@@ -80,7 +127,7 @@ export interface ShareTheme {
     declarationGapEm: number;
     rankGap: number;
     pointsFontSize: number;
-    pointsLineHeight: number;
+    pointsAscentHeight: number;
     limitFontSize: number;
     pointsGap: number;
     bottomPadding: number;
@@ -105,8 +152,16 @@ export interface ShareTheme {
   colors: {
     background: ShareColorRole;
     header: ShareColorRole;
-    label: ShareColorRole;
-    yaku: ShareColorRole;
+    headerPillBg: ShareColorRole;
+    headerPillFg: ShareColorRole;
+    doraLabelBg: ShareColorRole;
+    doraLabelFg: ShareColorRole;
+    doraChipBg: ShareColorRole;
+    doraChipBorder: ShareColorRole;
+    yakuChipBg: ShareColorRole;
+    yakuLabel: ShareColorRole;
+    yakuHanBg: ShareColorRole;
+    yakuHanFg: ShareColorRole;
     rank: ShareColorRole;
     declaration: ShareColorRole;
     points: ShareColorRole;
@@ -133,8 +188,10 @@ export const SHARE_THEME_V1: ShareTheme = {
   fontFamily:
     'system-ui, -apple-system, "Hiragino Sans", "Noto Sans JP", "Yu Gothic UI", sans-serif',
   fontWeightRegular: '400',
+  fontWeightSemibold: '600',
   fontWeightBold: '700',
   fontWeightRegularNum: 400,
+  fontWeightSemiboldNum: 600,
   fontWeightBoldNum: 700,
   ellipsis: '…',
   tileSvgWidth: 300,
@@ -147,29 +204,52 @@ export const SHARE_THEME_V1: ShareTheme = {
     asciiMaxCode: 127
   },
   header: {
-    fontSize: 36,
-    lineHeight: 44
+    fontSize: 52,
+    baselineOffset: 56,
+    height: 72,
+    pillHeight: 72,
+    pillCornerRadius: 36,
+    pillPadX: 20,
+    pillTextOnlyPadX: 24,
+    pillIconSize: 64,
+    pillIconGap: 8,
+    pillFontSize: 44,
+    pillGap: 16,
+    pillBgOpacity: 0.16,
+    nukiPrefix: '北 ',
+    iconViewBoxSize: 960,
+    iconViewBoxMinY: -960,
+    honbaIconPath: CUSTOM_HONBA_STICK,
+    depositIconPath: CUSTOM_DEPOSIT_STICK
   },
   dora: {
+    gapFromHeader: 30,
     slotCount: DORA_SLOT_COUNT,
-    fontSize: 36,
-    tileWidth: 40,
-    tileWidthCompact: 36,
-    tileGap: 4,
+    labelFontSize: 30,
+    labelPillHeight: 52,
+    labelPillCornerRadius: 26,
+    labelPillPadX: 17,
+    labelBgOpacity: 0.16,
     labelGap: 8,
-    groupGap: 32,
+    groupGap: 20,
+    tileWidth: 44,
+    tileWidthCompact: 36,
+    tileGap: 0,
+    chipPadX: 10,
+    chipPadY: 8,
+    chipCornerRadius: 14,
+    chipBorderWidth: 2,
     doraLabel: 'ドラ',
-    uradoraLabel: '裏ドラ',
-    nukiPrefix: '北×'
+    uradoraLabel: '裏ドラ'
   },
   hand: {
     maxTileWidth: 64,
     groupGapRatio: 0.3,
-    badgePadX: 12,
+    badgePadX: 14,
     badgePadBottom: 12,
-    badgeLabelBand: 48,
+    badgeLabelBand: 52,
     badgeLeftNeighborGap: 8,
-    badgeCornerRadius: 16,
+    badgeCornerRadius: 20,
     badgeFontSize: 32,
     badgeOpacity: 1,
     minGapFromDora: 16,
@@ -178,13 +258,34 @@ export const SHARE_THEME_V1: ShareTheme = {
     badgeTsumoLabel: 'ツモ'
   },
   yaku: {
-    fontSize: 40,
-    minFontSize: 30,
-    maxRowHeight: 64,
-    fontRatio: 0.8,
-    hanRightX: 720,
-    hanReservedWidth: 160,
-    colGap: 24
+    top: 408,
+    minGapFromBadge: 16,
+    gapToScore: 16,
+    normalMaxRows: 6,
+    normalMaxCount: 12,
+    normalChipWidth: 468,
+    normalChipHeight: 64,
+    normalChipCornerRadius: 16,
+    normalColGap: 16,
+    normalRowGap: 12,
+    normalFontSize: 34,
+    normalMinFontSize: 26,
+    normalChipPadLeft: 20,
+    normalChipPadRight: 12,
+    normalHanGap: 16,
+    hanBadgeHeight: 44,
+    hanBadgeCornerRadius: 22,
+    hanBadgeFontSize: 30,
+    hanBadgePadX: 22,
+    yakumanMaxCount: 5,
+    yakumanChipWidth: 952,
+    yakumanChipHeight: 76,
+    yakumanChipCornerRadius: 20,
+    yakumanRowGap: 12,
+    yakumanFontSize: 44,
+    yakumanMinFontSize: 32,
+    yakumanChipPadX: 24,
+    fontShrinkStep: 1
   },
   score: {
     rankFontSize: 72,
@@ -195,10 +296,10 @@ export const SHARE_THEME_V1: ShareTheme = {
     declarationGapEm: 0.8,
     rankGap: 32,
     pointsFontSize: 120,
-    pointsLineHeight: 120,
+    pointsAscentHeight: 96,
     limitFontSize: 96,
     pointsGap: 24,
-    bottomPadding: 32
+    bottomPadding: 82
   },
   footer: {
     top: 1150,
@@ -220,8 +321,16 @@ export const SHARE_THEME_V1: ShareTheme = {
   colors: {
     background: 'surface',
     header: 'onSurface',
-    label: 'onSurfaceVariant',
-    yaku: 'onSurface',
+    headerPillBg: 'onSecondaryContainer',
+    headerPillFg: 'onSecondaryContainer',
+    doraLabelBg: 'onSecondaryContainer',
+    doraLabelFg: 'onSecondaryContainer',
+    doraChipBg: 'surfaceContainer',
+    doraChipBorder: 'outlineVariant',
+    yakuChipBg: 'surfaceContainer',
+    yakuLabel: 'onSurface',
+    yakuHanBg: 'primary',
+    yakuHanFg: 'onPrimary',
     rank: 'onSurface',
     declaration: 'onSurfaceVariant',
     points: 'onSurface',

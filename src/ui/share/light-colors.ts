@@ -11,9 +11,12 @@ export interface StyleSheetLike {
 
 const COLOR_TOKENS: Record<keyof ShareColors, string> = {
   surface: '--md-sys-color-surface',
+  surfaceContainer: '--md-sys-color-surface-container',
   onSurface: '--md-sys-color-on-surface',
   onSurfaceVariant: '--md-sys-color-on-surface-variant',
   surfaceContainerHighest: '--md-sys-color-surface-container-highest',
+  outlineVariant: '--md-sys-color-outline-variant',
+  onSecondaryContainer: '--md-sys-color-on-secondary-container',
   primaryContainer: '--md-sys-color-primary-container',
   onPrimaryContainer: '--md-sys-color-on-primary-container',
   tertiaryContainer: '--md-sys-color-tertiary-container',
@@ -28,11 +31,14 @@ const COLOR_TOKENS: Record<keyof ShareColors, string> = {
 function readFromStyle(getValue: (name: string) => string): ShareColors {
   return {
     surface: getValue(COLOR_TOKENS.surface).trim(),
+    surfaceContainer: getValue(COLOR_TOKENS.surfaceContainer).trim(),
     onSurface: getValue(COLOR_TOKENS.onSurface).trim(),
     onSurfaceVariant: getValue(COLOR_TOKENS.onSurfaceVariant).trim(),
     surfaceContainerHighest: getValue(
       COLOR_TOKENS.surfaceContainerHighest
     ).trim(),
+    outlineVariant: getValue(COLOR_TOKENS.outlineVariant).trim(),
+    onSecondaryContainer: getValue(COLOR_TOKENS.onSecondaryContainer).trim(),
     primaryContainer: getValue(COLOR_TOKENS.primaryContainer).trim(),
     onPrimaryContainer: getValue(COLOR_TOKENS.onPrimaryContainer).trim(),
     tertiaryContainer: getValue(COLOR_TOKENS.tertiaryContainer).trim(),
