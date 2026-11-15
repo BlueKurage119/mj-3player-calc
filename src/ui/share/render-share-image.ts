@@ -106,7 +106,7 @@ function drawTileGroup(
   }
 }
 
-function fillRoundedRect(
+function traceRoundedRect(
   ctx: CanvasRenderingContext2D,
   x: number,
   y: number,
@@ -122,7 +122,50 @@ function fillRoundedRect(
   ctx.arcTo(x, y + height, x, y, r);
   ctx.arcTo(x, y, x + width, y, r);
   ctx.closePath();
+}
+
+function fillRoundedRectWithOpacity(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  radius: number,
+  color: string,
+  opacity: number
+): void {
+  if (opacity < 1) {
+    ctx.save();
+    ctx.globalAlpha = opacity;
+    ctx.fillStyle = color;
+    traceRoundedRect(ctx, x, y, width, height, radius);
+    ctx.fill();
+    ctx.restore();
+    return;
+  }
+  ctx.fillStyle = color;
+  traceRoundedRect(ctx, x, y, width, height, radius);
   ctx.fill();
+}
+
+function drawSvgPathIcon(
+  ctx: CanvasRenderingContext2D,
+  pathData: string,
+  x: number,
+  y: number,
+  size: number,
+  viewBoxSize: number,
+  viewBoxMinY: number,
+  color: string
+): void {
+  ctx.save();
+  ctx.fillStyle = color;
+  ctx.translate(x, y);
+  const scale = size / viewBoxSize;
+  ctx.scale(scale, scale);
+  ctx.translate(0, -viewBoxMinY);
+  ctx.fill(new Path2D(pathData));
+  ctx.restore();
 }
 
 /** ShareLayout をオフスクリーン canvas へ描画し PNG Blob を返す */
@@ -160,69 +203,116 @@ export async function renderShareImage(
     throw new Error('2D コンテキストを取得できませんでした');
   }
 
-  // 1. 背景
+  // 背景
   ctx.fillStyle = colors[layout.backgroundColorRole];
   ctx.fillRect(0, 0, layout.width, layout.height);
 
-  // 2. ヘッダー文字行
+  // 見出し: 左に場風・自風、右に本場・供託・北ピル
   ctx.fillStyle = colors[layout.header.colorRole];
   ctx.font = formatFont(
-    theme.fontWeightRegular,
+    theme.fontWeightBold,
     layout.header.fontSize,
     theme.fontFamily
   );
   ctx.textAlign = 'left';
-  ctx.textBaseline = 'top';
+  ctx.textBaseline = 'alphabetic';
   ctx.fillText(
     layout.header.text,
     layout.header.x,
-    layout.header.y,
+    layout.header.baselineY,
     layout.header.maxWidth
   );
 
-  // 3. ドラ・裏ドラ・抜き北
-  ctx.textBaseline = 'middle';
+  for (const pill of layout.headerPills) {
+    fillRoundedRectWithOpacity(
+      ctx,
+      pill.x,
+      pill.y,
+      pill.width,
+      pill.height,
+      pill.cornerRadius,
+      colors[pill.bgColorRole],
+      pill.bgOpacity
+    );
+    if (pill.iconPath !== null) {
+      drawSvgPathIcon(
+        ctx,
+        pill.iconPath,
+        pill.iconX,
+        pill.iconY,
+        pill.iconSize,
+        theme.header.iconViewBoxSize,
+        theme.header.iconViewBoxMinY,
+        colors[pill.fgColorRole]
+      );
+    }
+    ctx.fillStyle = colors[pill.fgColorRole];
+    ctx.font = formatFont(
+      theme.fontWeightSemibold,
+      pill.fontSize,
+      theme.fontFamily
+    );
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(pill.text, pill.textX, pill.textY);
+  }
+
+  // ドラ・裏ドラ欄 (ラベルピル + 牌チップ)
   for (const label of layout.doraLabels) {
-    ctx.fillStyle = colors[label.colorRole];
+    fillRoundedRectWithOpacity(
+      ctx,
+      label.x,
+      label.y,
+      label.width,
+      label.height,
+      label.cornerRadius,
+      colors[label.bgColorRole],
+      label.bgOpacity
+    );
+    ctx.fillStyle = colors[label.fgColorRole];
     ctx.font = formatFont(
       theme.fontWeightRegular,
       label.fontSize,
       theme.fontFamily
     );
-    ctx.fillText(label.text, label.x, label.y, label.maxWidth);
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(label.text, label.textX, label.textY, label.maxWidth);
+  }
+
+  for (const chip of layout.doraChips) {
+    traceRoundedRect(
+      ctx,
+      chip.x,
+      chip.y,
+      chip.width,
+      chip.height,
+      chip.cornerRadius
+    );
+    ctx.fillStyle = colors[chip.bgColorRole];
+    ctx.fill();
+    ctx.strokeStyle = colors[chip.borderColorRole];
+    ctx.lineWidth = chip.borderWidth;
+    ctx.stroke();
   }
   drawTileGroup(ctx, layout.doraTiles, loadedImages, theme);
 
-  // 4. ツモ/ロンの印の背面台 (牌列より先に描き、和了牌の全面を見せる)
-  if (layout.byBadge.opacity < 1) {
-    ctx.save();
-    ctx.globalAlpha = layout.byBadge.opacity;
-    ctx.fillStyle = colors[layout.byBadge.bgColorRole];
-    fillRoundedRect(
-      ctx,
-      layout.byBadge.x,
-      layout.byBadge.y,
-      layout.byBadge.width,
-      layout.byBadge.height,
-      layout.byBadge.cornerRadius
-    );
-    ctx.restore();
-  } else {
-    ctx.fillStyle = colors[layout.byBadge.bgColorRole];
-    fillRoundedRect(
-      ctx,
-      layout.byBadge.x,
-      layout.byBadge.y,
-      layout.byBadge.width,
-      layout.byBadge.height,
-      layout.byBadge.cornerRadius
-    );
-  }
+  // ツモ/ロンの印の背面台 (牌列より先に描き、和了牌の全面を見せる)
+  fillRoundedRectWithOpacity(
+    ctx,
+    layout.byBadge.x,
+    layout.byBadge.y,
+    layout.byBadge.width,
+    layout.byBadge.height,
+    layout.byBadge.cornerRadius,
+    colors[layout.byBadge.bgColorRole],
+    layout.byBadge.opacity
+  );
 
-  // 5. 牌列 (和了牌を含む全牌)
+  // 牌列 (和了牌を含む全牌)
   drawTileGroup(ctx, layout.handTiles, loadedImages, theme);
 
-  // 6. ツモ/ロンの印の文字 (文字帯にあり牌と重ならない)
+  // ツモ/ロンの印の文字 (文字帯にあり牌と重ならない)
   ctx.fillStyle = colors[layout.byBadge.fgColorRole];
   ctx.font = formatFont(
     theme.fontWeightBold,
@@ -237,22 +327,55 @@ export async function renderShareImage(
     layout.byBadge.labelY
   );
 
-  // 7. 役一覧
-  ctx.textBaseline = 'middle';
-  for (const row of layout.yakuRows) {
-    ctx.fillStyle = colors[row.colorRole];
+  // 役明細チップ
+  for (const chip of layout.yakuChips) {
+    ctx.fillStyle = colors[chip.bgColorRole];
+    traceRoundedRect(
+      ctx,
+      chip.x,
+      chip.y,
+      chip.width,
+      chip.height,
+      chip.cornerRadius
+    );
+    ctx.fill();
+
+    ctx.fillStyle = colors[chip.labelColorRole];
     ctx.font = formatFont(
       theme.fontWeightRegular,
-      row.fontSize,
+      chip.labelFontSize,
       theme.fontFamily
     );
     ctx.textAlign = 'left';
-    ctx.fillText(row.label, row.labelX, row.y, row.labelMaxWidth);
-    ctx.textAlign = 'right';
-    ctx.fillText(row.han, row.hanRightX, row.y);
+    ctx.textBaseline = 'middle';
+    ctx.fillText(chip.label, chip.labelX, chip.labelY, chip.labelMaxWidth);
+
+    if (chip.hanBadge !== null) {
+      const badge = chip.hanBadge;
+      ctx.fillStyle = colors[badge.bgColorRole];
+      traceRoundedRect(
+        ctx,
+        badge.x,
+        badge.y,
+        badge.width,
+        badge.height,
+        badge.cornerRadius
+      );
+      ctx.fill();
+
+      ctx.fillStyle = colors[badge.fgColorRole];
+      ctx.font = formatFont(
+        theme.fontWeightBold,
+        badge.fontSize,
+        theme.fontFamily
+      );
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(badge.text, badge.textX, badge.textY);
+    }
   }
 
-  // 8. 符・飜と申告
+  // 符・飜と申告
   ctx.textBaseline = 'alphabetic';
   if (layout.rank !== null) {
     ctx.fillStyle = colors[layout.rank.colorRole];
@@ -285,7 +408,7 @@ export async function renderShareImage(
     );
   }
 
-  // 9. 点数と格 (同一ベースライン)
+  // 点数と格 (同一ベースライン)
   let pointsFontSize = layout.score.pointsFontSize;
   let limitFontSize = layout.score.limitFontSize;
   if (layout.score.limitName !== null) {
@@ -329,7 +452,7 @@ export async function renderShareImage(
     );
   }
 
-  // 10. フッター帯・文字・QR
+  // フッター帯・文字・QR
   ctx.fillStyle = colors[layout.footer.band.colorRole];
   ctx.fillRect(
     layout.footer.band.x,

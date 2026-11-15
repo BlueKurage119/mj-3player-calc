@@ -25,6 +25,61 @@ export interface PlacedText {
   colorRole: ShareColorRole;
 }
 
+export interface HeaderTextLayout {
+  text: string;
+  x: number;
+  baselineY: number;
+  fontSize: number;
+  maxWidth: number;
+  colorRole: ShareColorRole;
+}
+
+export interface HeaderPillLayout {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  cornerRadius: number;
+  bgColorRole: ShareColorRole;
+  bgOpacity: number;
+  fgColorRole: ShareColorRole;
+  iconPath: string | null;
+  iconX: number;
+  iconY: number;
+  iconSize: number;
+  text: string;
+  textX: number;
+  textY: number;
+  fontSize: number;
+}
+
+export interface DoraLabelPillLayout {
+  text: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  cornerRadius: number;
+  bgColorRole: ShareColorRole;
+  bgOpacity: number;
+  fgColorRole: ShareColorRole;
+  textX: number;
+  textY: number;
+  fontSize: number;
+  maxWidth: number;
+}
+
+export interface DoraChipLayout {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  cornerRadius: number;
+  borderWidth: number;
+  bgColorRole: ShareColorRole;
+  borderColorRole: ShareColorRole;
+}
+
 export interface RankTextLayout {
   text: string;
   x: number;
@@ -34,15 +89,34 @@ export interface RankTextLayout {
   colorRole: ShareColorRole;
 }
 
-export interface YakuLayoutRow {
-  label: string;
-  han: string;
-  labelX: number;
-  labelMaxWidth: number;
-  hanRightX: number;
+export interface YakuBadgeLayout {
+  text: string;
+  x: number;
   y: number;
+  width: number;
+  height: number;
+  cornerRadius: number;
+  textX: number;
+  textY: number;
   fontSize: number;
-  colorRole: ShareColorRole;
+  bgColorRole: ShareColorRole;
+  fgColorRole: ShareColorRole;
+}
+
+export interface YakuChipLayout {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  cornerRadius: number;
+  bgColorRole: ShareColorRole;
+  label: string;
+  labelX: number;
+  labelY: number;
+  labelFontSize: number;
+  labelMaxWidth: number;
+  labelColorRole: ShareColorRole;
+  hanBadge: YakuBadgeLayout | null;
 }
 
 export interface ByBadgeLayout {
@@ -77,14 +151,17 @@ export interface ShareLayout {
   width: number;
   height: number;
   backgroundColorRole: ShareColorRole;
-  header: PlacedText;
-  doraLabels: PlacedText[];
+  header: HeaderTextLayout;
+  headerPills: HeaderPillLayout[];
+  doraLabels: DoraLabelPillLayout[];
+  doraChips: DoraChipLayout[];
   doraTiles: PlacedTile[];
   handTiles: PlacedTile[];
   byBadge: ByBadgeLayout;
   yakuTop: number;
   yakuBottom: number;
-  yakuRows: YakuLayoutRow[];
+  yakuMode: 'normal' | 'yakuman';
+  yakuChips: YakuChipLayout[];
   rank: RankTextLayout | null;
   declaration: RankTextLayout | null;
   rankBlockHeight: number;
@@ -174,6 +251,40 @@ function fitSingleLineFontPx(
   return fontPx;
 }
 
+function fitTextWithEllipsis(
+  text: string,
+  maxWidth: number,
+  startFontSize: number,
+  minFontSize: number,
+  step: number,
+  weight: number,
+  ellipsis: string,
+  measure: MeasureTextWidth
+): { text: string; fontSize: number } {
+  let size = startFontSize;
+  while (size > minFontSize) {
+    if (measure(text, size, weight) <= maxWidth) {
+      return { text, fontSize: size };
+    }
+    size -= step;
+  }
+  const clampedSize = Math.max(minFontSize, size);
+  if (measure(text, clampedSize, weight) <= maxWidth) {
+    return { text, fontSize: clampedSize };
+  }
+  let end = text.length;
+  while (
+    end > 0 &&
+    measure(`${text.slice(0, end)}${ellipsis}`, clampedSize, weight) > maxWidth
+  ) {
+    end -= 1;
+  }
+  return {
+    text: `${text.slice(0, end)}${ellipsis}`,
+    fontSize: clampedSize
+  };
+}
+
 /** ShareData と ShareTheme からキャンバス上の座標を算出する純関数 */
 export function layoutShareImage(
   data: ShareData,
@@ -183,61 +294,128 @@ export function layoutShareImage(
   const measure = measureTextWidth ?? createDefaultMeasurer(theme);
   const contentWidth = theme.width - theme.paddingX * 2;
   const contentRight = theme.width - theme.paddingX;
-  let y = theme.paddingTop;
 
-  const header: PlacedText = {
+  // 1. 見出し: 右端から 北(有効時) -> 供託 -> 本場 の順にピルを配置
+  const pillSpecs: { iconPath: string | null; text: string }[] = [];
+  if (data.nuki !== null) {
+    pillSpecs.push({
+      iconPath: null,
+      text: `${theme.header.nukiPrefix}${data.nuki}`
+    });
+  }
+  pillSpecs.push({
+    iconPath: theme.header.depositIconPath,
+    text: String(data.deposit)
+  });
+  pillSpecs.push({
+    iconPath: theme.header.honbaIconPath,
+    text: String(data.continueCount)
+  });
+
+  const headerPillsFromRight: HeaderPillLayout[] = [];
+  let pillRightX = contentRight;
+  for (const spec of pillSpecs) {
+    const textW = measure(
+      spec.text,
+      theme.header.pillFontSize,
+      theme.fontWeightSemiboldNum
+    );
+    const hasIcon = spec.iconPath !== null;
+    const padX = hasIcon
+      ? theme.header.pillPadX
+      : theme.header.pillTextOnlyPadX;
+    const width =
+      padX * 2 +
+      (hasIcon ? theme.header.pillIconSize + theme.header.pillIconGap : 0) +
+      textW;
+    const pillX = pillRightX - width;
+    const pillY = theme.paddingTop;
+    const iconX = pillX + padX;
+    const iconY =
+      pillY + (theme.header.pillHeight - theme.header.pillIconSize) / 2;
+    const textX = hasIcon
+      ? iconX + theme.header.pillIconSize + theme.header.pillIconGap
+      : pillX + padX;
+    const textY = pillY + theme.header.pillHeight / 2;
+
+    headerPillsFromRight.push({
+      x: pillX,
+      y: pillY,
+      width,
+      height: theme.header.pillHeight,
+      cornerRadius: theme.header.pillCornerRadius,
+      bgColorRole: theme.colors.headerPillBg,
+      bgOpacity: theme.header.pillBgOpacity,
+      fgColorRole: theme.colors.headerPillFg,
+      iconPath: spec.iconPath,
+      iconX,
+      iconY,
+      iconSize: theme.header.pillIconSize,
+      text: spec.text,
+      textX,
+      textY,
+      fontSize: theme.header.pillFontSize
+    });
+    pillRightX = pillX - theme.header.pillGap;
+  }
+  const headerPills = headerPillsFromRight.reverse();
+  const leftmostPillX = headerPills[0]?.x ?? contentRight;
+  const headerMaxWidth = Math.max(
+    0,
+    leftmostPillX - theme.header.pillGap - theme.paddingX
+  );
+
+  const header: HeaderTextLayout = {
     text: data.situation,
     x: theme.paddingX,
-    y,
+    baselineY: theme.paddingTop + theme.header.baselineOffset,
     fontSize: theme.header.fontSize,
-    maxWidth: contentWidth,
+    maxWidth: headerMaxWidth,
     colorRole: theme.colors.header
   };
   const headerRect: Rect = {
     x: header.x,
-    y: header.y,
+    y: theme.paddingTop,
     width: Math.min(
-      contentWidth,
-      measure(data.situation, theme.header.fontSize, theme.fontWeightRegularNum)
+      header.maxWidth,
+      measure(data.situation, theme.header.fontSize, theme.fontWeightBoldNum)
     ),
-    height: theme.header.lineHeight
+    height: theme.header.height
   };
-  y += theme.header.lineHeight + theme.sectionGap;
+  const headerBottom = theme.paddingTop + theme.header.height;
 
-  // ドラ・裏ドラ・抜き北行の幅を測り、利用幅を超えるならコンパクト幅へ縮める
-  const doraLabelW = measure(
+  // 2. ドラ・裏ドラ欄: ラベルピル + 牌5枚のチップ
+  const doraTop = headerBottom + theme.dora.gapFromHeader;
+  const doraLabelTextW = measure(
     theme.dora.doraLabel,
-    theme.dora.fontSize,
+    theme.dora.labelFontSize,
     theme.fontWeightRegularNum
   );
-  const uradoraLabelW = measure(
+  const uradoraLabelTextW = measure(
     theme.dora.uradoraLabel,
-    theme.dora.fontSize,
+    theme.dora.labelFontSize,
     theme.fontWeightRegularNum
   );
-  const nukiText =
-    data.nuki !== null ? `${theme.dora.nukiPrefix}${data.nuki}` : null;
-  const nukiLabelW =
-    nukiText !== null
-      ? measure(nukiText, theme.dora.fontSize, theme.fontWeightRegularNum)
-      : 0;
+  const doraPillW = doraLabelTextW + theme.dora.labelPillPadX * 2;
+  const uradoraPillW = uradoraLabelTextW + theme.dora.labelPillPadX * 2;
 
   const tileRowSpan = (count: number, tileW: number): number =>
     count > 0 ? count * tileW + (count - 1) * theme.dora.tileGap : 0;
 
   const estimateDoraWidth = (tileW: number): number => {
-    const doraSpan =
-      doraLabelW +
-      (data.dora.length > 0
-        ? theme.dora.labelGap + tileRowSpan(data.dora.length, tileW)
-        : 0);
-    const uraSpan =
-      uradoraLabelW +
-      (data.uradora.length > 0
-        ? theme.dora.labelGap + tileRowSpan(data.uradora.length, tileW)
-        : 0);
-    const nukiSpan = nukiText !== null ? theme.dora.groupGap + nukiLabelW : 0;
-    return doraSpan + theme.dora.groupGap + uraSpan + nukiSpan;
+    const doraChipW =
+      theme.dora.chipPadX * 2 + tileRowSpan(data.dora.length, tileW);
+    const uraChipW =
+      theme.dora.chipPadX * 2 + tileRowSpan(data.uradora.length, tileW);
+    return (
+      doraPillW +
+      theme.dora.labelGap +
+      doraChipW +
+      theme.dora.groupGap +
+      uradoraPillW +
+      theme.dora.labelGap +
+      uraChipW
+    );
   };
 
   const doraTileWidth =
@@ -245,58 +423,82 @@ export function layoutShareImage(
       ? theme.dora.tileWidthCompact
       : theme.dora.tileWidth;
   const doraTileHeight = doraTileWidth * theme.tileAspectHeightOverWidth;
-  const doraRowHeight = Math.max(theme.dora.fontSize, doraTileHeight);
-  const doraCenterY = y + doraRowHeight / 2;
-  const doraTileY = doraCenterY - doraTileHeight / 2;
+  const doraChipHeight = Math.ceil(doraTileHeight) + theme.dora.chipPadY * 2;
+  const doraLabelPillY =
+    doraTop + (doraChipHeight - theme.dora.labelPillHeight) / 2;
+  const doraTileY = doraTop + (doraChipHeight - doraTileHeight) / 2;
 
-  const doraLabels: PlacedText[] = [];
+  const doraLabels: DoraLabelPillLayout[] = [];
+  const doraChips: DoraChipLayout[] = [];
   const doraTiles: PlacedTile[] = [];
   let dx = theme.paddingX;
 
   const appendDoraGroup = (
     label: string,
-    labelWidth: number,
+    labelTextW: number,
+    pillWidth: number,
     tiles: TileOrBack[]
   ) => {
     doraLabels.push({
       text: label,
       x: dx,
-      y: doraCenterY,
-      fontSize: theme.dora.fontSize,
-      maxWidth: labelWidth,
-      colorRole: theme.colors.label
+      y: doraLabelPillY,
+      width: pillWidth,
+      height: theme.dora.labelPillHeight,
+      cornerRadius: theme.dora.labelPillCornerRadius,
+      bgColorRole: theme.colors.doraLabelBg,
+      bgOpacity: theme.dora.labelBgOpacity,
+      fgColorRole: theme.colors.doraLabelFg,
+      textX: dx + pillWidth / 2,
+      textY: doraLabelPillY + theme.dora.labelPillHeight / 2,
+      fontSize: theme.dora.labelFontSize,
+      maxWidth: labelTextW
     });
-    dx += labelWidth;
-    if (tiles.length > 0) {
-      dx += theme.dora.labelGap;
-      for (let i = 0; i < tiles.length; i++) {
-        const tile = tiles[i];
-        if (!tile) continue;
-        doraTiles.push({
-          tile,
-          x: dx,
-          y: doraTileY,
-          width: doraTileWidth,
-          height: doraTileHeight
-        });
-        dx += doraTileWidth;
-        if (i < tiles.length - 1) {
-          dx += theme.dora.tileGap;
-        }
+    dx += pillWidth + theme.dora.labelGap;
+
+    const chipWidth =
+      theme.dora.chipPadX * 2 + tileRowSpan(tiles.length, doraTileWidth);
+    doraChips.push({
+      x: dx,
+      y: doraTop,
+      width: chipWidth,
+      height: doraChipHeight,
+      cornerRadius: theme.dora.chipCornerRadius,
+      borderWidth: theme.dora.chipBorderWidth,
+      bgColorRole: theme.colors.doraChipBg,
+      borderColorRole: theme.colors.doraChipBorder
+    });
+
+    let tx = dx + theme.dora.chipPadX;
+    for (let i = 0; i < tiles.length; i++) {
+      const tile = tiles[i];
+      if (!tile) continue;
+      doraTiles.push({
+        tile,
+        x: tx,
+        y: doraTileY,
+        width: doraTileWidth,
+        height: doraTileHeight
+      });
+      tx += doraTileWidth;
+      if (i < tiles.length - 1) {
+        tx += theme.dora.tileGap;
       }
     }
-    dx += theme.dora.groupGap;
+    dx += chipWidth + theme.dora.groupGap;
   };
 
-  appendDoraGroup(theme.dora.doraLabel, doraLabelW, data.dora);
-  appendDoraGroup(theme.dora.uradoraLabel, uradoraLabelW, data.uradora);
-  if (nukiText !== null) {
-    appendDoraGroup(nukiText, nukiLabelW, []);
-  }
+  appendDoraGroup(theme.dora.doraLabel, doraLabelTextW, doraPillW, data.dora);
+  appendDoraGroup(
+    theme.dora.uradoraLabel,
+    uradoraLabelTextW,
+    uradoraPillW,
+    data.uradora
+  );
 
-  const doraRowBottom = y + doraRowHeight;
+  const doraRowBottom = doraTop + doraChipHeight;
 
-  // 牌列 (左基準 x = paddingX。右端に badgePadX を残して和了牌背面の印を収める)
+  // 3. 牌列 (左基準 x = paddingX。右端に badgePadX を残して和了牌背面の印を収める)
   const meldTileCount = data.meldTiles.reduce((sum, m) => sum + m.length, 0);
   const totalTileCount = data.bodyTiles.length + meldTileCount + 1;
   const totalGapCount =
@@ -340,7 +542,7 @@ export function layoutShareImage(
   const horaTileX = hx;
   pushTilesX([data.horaTile]);
 
-  // 印(背面台 + 上部文字帯)の縦位置をドラ欄・ヘッダーとの非交差条件から決定する
+  // 印(背面台 + 上部文字帯)の縦位置をドラ欄・見出しピル・ヘッダー文字との非交差条件から決定する
   const badgeLabel =
     data.by === 'ron' ? theme.hand.badgeRonLabel : theme.hand.badgeTsumoLabel;
   const badgeLabelW = measure(
@@ -371,21 +573,28 @@ export function layoutShareImage(
   });
 
   const protectedRects: Rect[] = [
-    ...doraTiles.map(t => ({
-      x: t.x,
-      y: t.y,
-      width: t.width,
-      height: t.height
+    ...headerPills.map(p => ({
+      x: p.x,
+      y: p.y,
+      width: p.width,
+      height: p.height
+    })),
+    ...doraChips.map(c => ({
+      x: c.x,
+      y: c.y,
+      width: c.width,
+      height: c.height
     })),
     ...doraLabels.map(l => ({
       x: l.x,
-      y: l.y - l.fontSize / 2,
-      width: l.maxWidth,
-      height: l.fontSize
+      y: l.y,
+      width: l.width,
+      height: l.height
     }))
   ];
 
-  let handY = doraRowBottom + theme.hand.minGapFromDora;
+  let handY =
+    doraRowBottom + theme.hand.minGapFromDora + theme.hand.badgeLabelBand;
   for (const rect of protectedRects) {
     if (
       rectsOverlap(badgeRectAt(handY), rect) ||
@@ -456,9 +665,9 @@ export function layoutShareImage(
     fgColorRole: badgeColors.fg
   };
 
-  // フッター帯の上から点数行・符飜と申告行を下詰めで配置する
+  // 4. フッター帯の上から点数行・符飜と申告行を下詰めで配置する
   const pointsBaselineY = theme.footer.top - theme.score.bottomPadding;
-  const pointsTopY = pointsBaselineY - theme.score.pointsLineHeight;
+  const pointsTopY = pointsBaselineY - theme.score.pointsAscentHeight;
 
   let rank: RankTextLayout | null = null;
   let declaration: RankTextLayout | null = null;
@@ -570,36 +779,128 @@ export function layoutShareImage(
     };
   }
 
-  const yakuTop =
-    handY + tileHeight + theme.hand.badgePadBottom + theme.sectionGap;
-  const yakuBottom = scoreBlockTop - theme.sectionGap;
-  const availableYakuHeight = Math.max(0, yakuBottom - yakuTop);
-  const yakuCount = data.yaku.length;
-  const rowHeight =
-    yakuCount > 0
-      ? Math.min(theme.yaku.maxRowHeight, availableYakuHeight / yakuCount)
-      : 0;
-  const yakuFontSize = Math.max(
-    theme.yaku.minFontSize,
-    Math.min(theme.yaku.fontSize, Math.floor(rowHeight * theme.yaku.fontRatio))
+  // 5. 役明細: 通常(数え役満含む)は 2列×最大6行 縦読み、真の役満は 1列×最大5行
+  const badgeBottom = finalBadgeRect.y + finalBadgeRect.height;
+  const yakuTop = Math.max(
+    theme.yaku.top,
+    badgeBottom + theme.yaku.minGapFromBadge
   );
-  const yakuLabelMaxWidth =
-    theme.yaku.hanRightX -
-    theme.paddingX -
-    theme.yaku.hanReservedWidth -
-    theme.yaku.colGap;
+  const yakuBottom = scoreBlockTop - theme.yaku.gapToScore;
 
-  const yakuRows: YakuLayoutRow[] = data.yaku.map((item, idx) => ({
-    label: item.label,
-    han: item.han,
-    labelX: theme.paddingX,
-    labelMaxWidth: yakuLabelMaxWidth,
-    hanRightX: theme.yaku.hanRightX,
-    y: yakuTop + rowHeight * idx + rowHeight / 2,
-    fontSize: yakuFontSize,
-    colorRole: theme.colors.yaku
-  }));
+  const yakuMode: 'normal' | 'yakuman' = data.isYakuman ? 'yakuman' : 'normal';
+  const yakuChips: YakuChipLayout[] = [];
 
+  if (data.isYakuman) {
+    const items = data.yaku.slice(0, theme.yaku.yakumanMaxCount);
+    const labelMaxWidth =
+      theme.yaku.yakumanChipWidth - theme.yaku.yakumanChipPadX * 2;
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      if (!item) continue;
+      const chipX = theme.paddingX;
+      const chipY =
+        yakuTop + i * (theme.yaku.yakumanChipHeight + theme.yaku.yakumanRowGap);
+      const fitted = fitTextWithEllipsis(
+        item.label,
+        labelMaxWidth,
+        theme.yaku.yakumanFontSize,
+        theme.yaku.yakumanMinFontSize,
+        theme.yaku.fontShrinkStep,
+        theme.fontWeightRegularNum,
+        theme.ellipsis,
+        measure
+      );
+      yakuChips.push({
+        x: chipX,
+        y: chipY,
+        width: theme.yaku.yakumanChipWidth,
+        height: theme.yaku.yakumanChipHeight,
+        cornerRadius: theme.yaku.yakumanChipCornerRadius,
+        bgColorRole: theme.colors.yakuChipBg,
+        label: fitted.text,
+        labelX: chipX + theme.yaku.yakumanChipPadX,
+        labelY: chipY + theme.yaku.yakumanChipHeight / 2,
+        labelFontSize: fitted.fontSize,
+        labelMaxWidth,
+        labelColorRole: theme.colors.yakuLabel,
+        hanBadge: null
+      });
+    }
+  } else {
+    const items = data.yaku.slice(0, theme.yaku.normalMaxCount);
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      if (!item) continue;
+      const col = Math.floor(i / theme.yaku.normalMaxRows);
+      const row = i % theme.yaku.normalMaxRows;
+      const chipX =
+        theme.paddingX +
+        col * (theme.yaku.normalChipWidth + theme.yaku.normalColGap);
+      const chipY =
+        yakuTop + row * (theme.yaku.normalChipHeight + theme.yaku.normalRowGap);
+
+      const hanW = measure(
+        item.han,
+        theme.yaku.hanBadgeFontSize,
+        theme.fontWeightBoldNum
+      );
+      const badgeW = hanW + theme.yaku.hanBadgePadX * 2;
+      const badgeH = theme.yaku.hanBadgeHeight;
+      const hanBadgeX =
+        chipX +
+        theme.yaku.normalChipWidth -
+        theme.yaku.normalChipPadRight -
+        badgeW;
+      const hanBadgeY = chipY + (theme.yaku.normalChipHeight - badgeH) / 2;
+
+      const labelX = chipX + theme.yaku.normalChipPadLeft;
+      const labelY = chipY + theme.yaku.normalChipHeight / 2;
+      const labelMaxWidth = Math.max(
+        0,
+        hanBadgeX - theme.yaku.normalHanGap - labelX
+      );
+      const fitted = fitTextWithEllipsis(
+        item.label,
+        labelMaxWidth,
+        theme.yaku.normalFontSize,
+        theme.yaku.normalMinFontSize,
+        theme.yaku.fontShrinkStep,
+        theme.fontWeightRegularNum,
+        theme.ellipsis,
+        measure
+      );
+
+      yakuChips.push({
+        x: chipX,
+        y: chipY,
+        width: theme.yaku.normalChipWidth,
+        height: theme.yaku.normalChipHeight,
+        cornerRadius: theme.yaku.normalChipCornerRadius,
+        bgColorRole: theme.colors.yakuChipBg,
+        label: fitted.text,
+        labelX,
+        labelY,
+        labelFontSize: fitted.fontSize,
+        labelMaxWidth,
+        labelColorRole: theme.colors.yakuLabel,
+        hanBadge: {
+          text: item.han,
+          x: hanBadgeX,
+          y: hanBadgeY,
+          width: badgeW,
+          height: badgeH,
+          cornerRadius: theme.yaku.hanBadgeCornerRadius,
+          textX: hanBadgeX + badgeW / 2,
+          textY: chipY + theme.yaku.normalChipHeight / 2,
+          fontSize: theme.yaku.hanBadgeFontSize,
+          bgColorRole: theme.colors.yakuHanBg,
+          fgColorRole: theme.colors.yakuHanFg
+        }
+      });
+    }
+  }
+
+  // 6. フッター
   const qrX = contentRight - theme.footer.qrSize;
   const qrY = theme.footer.top + theme.footer.qrTopOffset;
   const footerTextMaxWidth = qrX - theme.footer.textQrGap - theme.paddingX;
@@ -612,13 +913,16 @@ export function layoutShareImage(
     height: theme.height,
     backgroundColorRole: theme.colors.background,
     header,
+    headerPills,
     doraLabels,
+    doraChips,
     doraTiles,
     handTiles,
     byBadge,
     yakuTop,
     yakuBottom,
-    yakuRows,
+    yakuMode,
+    yakuChips,
     rank,
     declaration,
     rankBlockHeight,
