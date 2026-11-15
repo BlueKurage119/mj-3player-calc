@@ -124,11 +124,14 @@ export interface ShareTheme {
     rankFontShrinkStep: number;
     rankLineHeightRatio: number;
     rankLineGap: number;
-    declarationGapEm: number;
+    declarationFontSize: number;
+    declarationGap: number;
     rankGap: number;
     pointsFontSize: number;
+    pointsUnitFontSize: number;
     pointsAscentHeight: number;
     limitFontSize: number;
+    limitMinFontSize: number;
     pointsGap: number;
     bottomPadding: number;
   };
@@ -293,11 +296,14 @@ export const SHARE_THEME_V1: ShareTheme = {
     rankFontShrinkStep: 4,
     rankLineHeightRatio: 1,
     rankLineGap: 16,
-    declarationGapEm: 0.8,
+    declarationFontSize: 44,
+    declarationGap: 32,
     rankGap: 32,
     pointsFontSize: 120,
+    pointsUnitFontSize: 64,
     pointsAscentHeight: 96,
     limitFontSize: 96,
+    limitMinFontSize: 56,
     pointsGap: 24,
     bottomPadding: 82
   },

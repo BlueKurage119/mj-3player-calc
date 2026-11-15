@@ -32,7 +32,8 @@ export interface ShareData {
   yaku: { label: string; han: string }[];
   rankText: string | null;
   limitName: string | null;
-  totalText: string;
+  totalDigits: string;
+  totalUnit: '点';
   declarationText: string | null;
   situation: string;
   appName: string;
@@ -106,7 +107,8 @@ export function buildShareData(
     })),
     rankText,
     limitName: limitName(score),
-    totalText: `${formatNumber(score.payment.total)}点`,
+    totalDigits: formatNumber(score.payment.total),
+    totalUnit: '点',
     declarationText: hora.by === 'tsumo' ? formatPoints(score.payment) : null,
     situation: formatWinds(table),
     appName: APP_NAME,

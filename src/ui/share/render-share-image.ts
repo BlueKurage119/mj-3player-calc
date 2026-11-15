@@ -408,48 +408,31 @@ export async function renderShareImage(
     );
   }
 
-  // 点数と格 (同一ベースライン)
-  let pointsFontSize = layout.score.pointsFontSize;
-  let limitFontSize = layout.score.limitFontSize;
-  if (layout.score.limitName !== null) {
-    ctx.font = formatFont(
-      theme.fontWeightBold,
-      pointsFontSize,
-      theme.fontFamily
-    );
-    const pointsWidth = ctx.measureText(layout.score.totalText).width;
-    ctx.font = formatFont(
-      theme.fontWeightBold,
-      limitFontSize,
-      theme.fontFamily
-    );
-    const limitWidth = ctx.measureText(layout.score.limitName).width;
-    const needed = pointsWidth + layout.score.pointsGap + limitWidth;
-    if (needed > layout.score.maxWidth) {
-      const ratio = layout.score.maxWidth / needed;
-      pointsFontSize = Math.floor(pointsFontSize * ratio);
-      limitFontSize = Math.floor(limitFontSize * ratio);
-    }
-  }
-
-  ctx.fillStyle = colors[layout.score.pointsColorRole];
-  ctx.font = formatFont(theme.fontWeightBold, pointsFontSize, theme.fontFamily);
+  // 点数(数字と小さい「点」)と格 (同一ベースライン)
+  ctx.fillStyle = colors[layout.total.digitsColorRole];
   ctx.textAlign = 'left';
-  ctx.fillText(layout.score.totalText, layout.score.x, layout.score.baselineY);
+  ctx.font = formatFont(
+    theme.fontWeightBold,
+    layout.total.digitsFontPx,
+    theme.fontFamily
+  );
+  ctx.fillText(layout.total.digitsText, layout.total.x, layout.total.y);
+  ctx.font = formatFont(
+    theme.fontWeightBold,
+    layout.total.unitFontPx,
+    theme.fontFamily
+  );
+  ctx.fillText(layout.total.unitText, layout.total.unitX, layout.total.y);
 
-  if (layout.score.limitName !== null) {
-    ctx.fillStyle = colors[layout.score.limitColorRole];
+  if (layout.limit !== null) {
+    ctx.fillStyle = colors[layout.limit.colorRole];
     ctx.font = formatFont(
       theme.fontWeightBold,
-      limitFontSize,
+      layout.limit.fontPx,
       theme.fontFamily
     );
     ctx.textAlign = 'right';
-    ctx.fillText(
-      layout.score.limitName,
-      layout.score.rightX,
-      layout.score.baselineY
-    );
+    ctx.fillText(layout.limit.text, layout.limit.x, layout.limit.y);
   }
 
   // フッター帯・文字・QR

@@ -231,7 +231,8 @@ describe('SNS共有画像データ・レイアウト・ユーティリティ (H2
     expect(nonRiichiData.deposit).toBe(2);
     expect(nonRiichiData.isYakuman).toBe(false);
     // ロン: 70符3飜(満貫)のため totalText は payment.total の「8,000点」(本場・供託を含まない)、declarationText は null
-    expect(nonRiichiData.totalText).toBe('8,000点');
+    expect(nonRiichiData.totalDigits).toBe('8,000');
+    expect(nonRiichiData.totalUnit).toBe('点');
     expect(nonRiichiData.declarationText).toBeNull();
     // 暗槓は両端が裏向き
     expect(nonRiichiData.meldTiles).toEqual([
@@ -282,7 +283,8 @@ describe('SNS共有画像データ・レイアウト・ユーティリティ (H2
       BACK_TILE
     ]);
     // ツモ: 門前ツモ+赤2+ドラ1で4飜60符(満貫)のため totalText は「6,000点」(本場・供託を含まない)、declarationText は「2,000・4,000」
-    expect(riichiTsumoData.totalText).toBe('6,000点');
+    expect(riichiTsumoData.totalDigits).toBe('6,000');
+    expect(riichiTsumoData.totalUnit).toBe('点');
     expect(riichiTsumoData.declarationText).toBe('2,000・4,000');
 
     // 立直でも uradora が空配列なら 5枚とも back
@@ -343,7 +345,8 @@ describe('SNS共有画像データ・レイアウト・ユーティリティ (H2
       makeShareContext(hand, { table: dealerTable })
     );
     // 親の平和ツモ(20符2飜) = 700オール = 合計 1,400点 (3本場・供託2は含まない)
-    expect(data.totalText).toBe('1,400点');
+    expect(data.totalDigits).toBe('1,400');
+    expect(data.totalUnit).toBe('点');
     expect(data.declarationText).toBe('700オール');
   });
 
@@ -382,7 +385,8 @@ describe('SNS共有画像データ・レイアウト・ユーティリティ (H2
     expect(ykData.rankText).toBeNull();
     expect(ykData.limitName).toBe('役満');
     expect(ykData.declarationText).toBeNull();
-    expect(ykData.totalText).toBe('32,000点');
+    expect(ykData.totalDigits).toBe('32,000');
+    expect(ykData.totalUnit).toBe('点');
 
     // 数え役満 (13飜以上、yakumanPoint === 0)
     const kazoeHand: Tile[] = [
@@ -602,7 +606,8 @@ describe('SNS共有画像データ・レイアウト・ユーティリティ (H2
       yaku: [{ label: '立直', han: '1飜' }],
       rankText: '30符 1飜',
       limitName: null,
-      totalText: '1,100点',
+      totalDigits: '1,100',
+      totalUnit: '点',
       declarationText: '300・500',
       situation: '南場・南家',
       appName: APP_NAME,
@@ -614,9 +619,9 @@ describe('SNS共有画像データ・レイアウト・ユーティリティ (H2
     const defaultLayout = layoutShareImage(base, SHARE_THEME_V1);
     expect(defaultLayout.rank?.fontPx).toBe(72);
     expect(defaultLayout.rank?.y).toBe(940);
-    expect(defaultLayout.declaration?.fontPx).toBe(72);
+    expect(defaultLayout.declaration?.fontPx).toBe(44);
     expect(defaultLayout.declaration?.y).toBe(940);
-    expect(defaultLayout.score.baselineY).toBe(1068);
+    expect(defaultLayout.total.y).toBe(1068);
     expect(defaultLayout.yakuBottom).toBe(852);
     expect(defaultLayout.rankBlockHeight).toBe(72);
 
@@ -625,8 +630,8 @@ describe('SNS共有画像データ・レイアウト・ユーティリティ (H2
       text.length * fontPx;
     const shrinkCase: ShareData = {
       ...base,
-      rankText: '30符 3飜', // 6文字
-      declarationText: '1,000・2,000' // 11文字 -> 6 + 0.8 + 11 = 17.8em
+      rankText: '110符 13飜', // 8文字
+      declarationText: '1,000・2,000' // 11文字×44px=484。8f+32+484<=952 を満たす最大の4px刻みは 52
     };
     const shrunkLayout = layoutShareImage(
       shrinkCase,
@@ -634,7 +639,7 @@ describe('SNS共有画像データ・レイアウト・ユーティリティ (H2
       fixedMeasurer
     );
     expect(shrunkLayout.rank?.fontPx).toBe(52);
-    expect(shrunkLayout.declaration?.fontPx).toBe(52);
+    expect(shrunkLayout.declaration?.fontPx).toBe(44);
     expect(shrunkLayout.rank?.fontPx).toBeGreaterThanOrEqual(48);
     expect(shrunkLayout.declaration?.y).toBe(shrunkLayout.rank?.y);
     expect(shrunkLayout.declaration?.x).toBeGreaterThan(
@@ -645,7 +650,7 @@ describe('SNS共有画像データ・レイアウト・ユーティリティ (H2
     const wrapCase: ShareData = {
       ...base,
       rankText: '110符 13飜', // 7文字
-      declarationText: '12,000・24,000' // 13文字 -> 7 + 0.8 + 13 = 20.8em -> 48 * 20.8 = 998.4 > 952
+      declarationText: 'あ'.repeat(15) // 15文字×44=660。48pxでも 336+32+660=1028 > 952
     };
     const wrappedLayout = layoutShareImage(
       wrapCase,
@@ -653,7 +658,7 @@ describe('SNS共有画像データ・レイアウト・ユーティリティ (H2
       fixedMeasurer
     );
     expect(wrappedLayout.rank?.fontPx).toBe(48);
-    expect(wrappedLayout.declaration?.fontPx).toBe(48);
+    expect(wrappedLayout.declaration?.fontPx).toBe(44);
     expect(wrappedLayout.declaration?.x).toBe(64);
     expect(wrappedLayout.declaration?.y ?? 0).toBeGreaterThan(
       wrappedLayout.rank?.y ?? 0
@@ -669,7 +674,8 @@ describe('SNS共有画像データ・レイアウト・ユーティリティ (H2
       rankText: null,
       declarationText: null,
       limitName: '役満',
-      totalText: '32,000点'
+      totalDigits: '32,000',
+      totalUnit: '点'
     };
     const ykRonLayout = layoutShareImage(yakumanRon, SHARE_THEME_V1);
     expect(ykRonLayout.rank).toBeNull();
@@ -685,12 +691,13 @@ describe('SNS共有画像データ・レイアウト・ユーティリティ (H2
       rankText: null,
       declarationText: '8,000・16,000',
       limitName: '役満',
-      totalText: '24,000点'
+      totalDigits: '24,000',
+      totalUnit: '点'
     };
     const ykTsumoLayout = layoutShareImage(yakumanTsumo, SHARE_THEME_V1);
     expect(ykTsumoLayout.rank).toBeNull();
     expect(ykTsumoLayout.declaration?.x).toBe(64);
-    expect(ykTsumoLayout.declaration?.fontPx).toBe(72);
+    expect(ykTsumoLayout.declaration?.fontPx).toBe(44);
 
     // 6. ドラ行が 952 を超える計測幅のとき、ドラ牌幅が 36 に縮む
     const wideDoraMeasurer = (text: string, fontPx: number) =>
@@ -1076,7 +1083,8 @@ describe('SNS共有画像データ・レイアウト・ユーティリティ (H2
     expect(texts).toContain('ツモ');
     expect(texts).toContain(data.rankText);
     expect(texts).toContain(data.declarationText);
-    expect(texts).toContain(data.totalText);
+    expect(texts).toContain(data.totalDigits);
+    expect(texts).toContain(data.totalUnit);
     expect(texts).toContain('三麻点数計算機');
     expect(texts).toContain('bluekurage119.github.io/mj-3player-calc');
     expect(texts).not.toContain('北×1');
@@ -1321,7 +1329,7 @@ describe('H2-AC23: 役明細(2列×6行チップ・最長役名・真の役満1�
       hanBadge: null
     });
     expect(layout.yakuChips[0]?.labelFontSize).toBe(44);
-    expect(layout.score.limitName).toBe('二倍役満');
+    expect(layout.limit?.text).toBe('二倍役満');
     expect(layout.rank).toBeNull();
   });
 
@@ -1369,9 +1377,7 @@ describe('H2-AC23: 役明細(2列×6行チップ・最長役名・真の役満1�
         expect(chip.height).toBe(76);
         expect(chip.hanBadge).toBeNull();
       }
-      expect(layout.score.limitName).toBe(
-        multipleYakuman ? '二倍役満' : '役満'
-      );
+      expect(layout.limit?.text).toBe(multipleYakuman ? '二倍役満' : '役満');
     }
   });
 
@@ -1412,7 +1418,7 @@ describe('H2-AC23: 役明細(2列×6行チップ・最長役名・真の役満1�
     const layout = layoutShareImage(data, SHARE_THEME_V1);
 
     expect(layout.yakuMode).toBe('normal');
-    expect(layout.score.limitName).toBe('数え役満');
+    expect(layout.limit?.text).toBe('数え役満');
     expect(layout.rank).not.toBeNull();
     expect(layout.yakuChips.length).toBeGreaterThan(0);
     for (const chip of layout.yakuChips) {
@@ -1443,7 +1449,8 @@ describe('H2-AC23: 役明細(2列×6行チップ・最長役名・真の役満1�
       ],
       rankText: null,
       limitName: '八倍役満',
-      totalText: '256,000点',
+      totalDigits: '256,000',
+      totalUnit: '点',
       declarationText: null,
       situation: '東場・東家',
       appName: APP_NAME,
@@ -1473,5 +1480,100 @@ describe('H2-AC23: 役明細(2列×6行チップ・最長役名・真の役満1�
     );
     expect(layout6.yakuChips).toHaveLength(5);
     expect(layout6.yakuChips[4]?.label).toBe('四槓子');
+  });
+});
+
+describe('H2-AC14: 申告の独立サイズ・合計の「点」・限度名の縮小(3.4.6・3.4.6.1)', () => {
+  const fixed = (text: string, fontPx: number) => text.length * fontPx;
+  const base: ShareData = {
+    by: 'tsumo',
+    bodyTiles: Array.from({ length: 13 }, () => ({ type: 'p', n: 1 })),
+    meldTiles: [],
+    horaTile: { type: 'p', n: 1 },
+    dora: Array.from({ length: 5 }, () => BACK_TILE),
+    uradora: Array.from({ length: 5 }, () => BACK_TILE),
+    nuki: 0,
+    continueCount: 0,
+    deposit: 0,
+    isYakuman: false,
+    yaku: [{ label: '立直', han: '1飜' }],
+    rankText: '30符 1飜',
+    limitName: null,
+    totalDigits: '1,100',
+    totalUnit: '点',
+    declarationText: '300・500',
+    situation: '南場・南家',
+    appName: APP_NAME,
+    url: SHARE_URL,
+    urlLabel: 'bluekurage119.github.io/mj-3player-calc'
+  };
+
+  it('H2-AC14: 申告のフォントサイズは符・飜の縮小に連動せず常に declarationFontSize、ベースラインは符・飜と同じ', () => {
+    const sizes = [
+      { rank: '30符 1飜', decl: '300・500' },
+      { rank: '110符 13飜', decl: '1,000・2,000' },
+      { rank: '110符 13飜', decl: 'あ'.repeat(15) }
+    ].map(c => {
+      const l = layoutShareImage(
+        { ...base, rankText: c.rank, declarationText: c.decl },
+        SHARE_THEME_V1,
+        fixed
+      );
+      return l;
+    });
+    expect(sizes.map(l => l.declaration?.fontPx)).toEqual([44, 44, 44]);
+    expect(sizes.map(l => l.rank?.fontPx)).toEqual([72, 52, 48]);
+    expect(sizes[0]?.declaration?.y).toBe(sizes[0]?.rank?.y);
+    expect(sizes[1]?.declaration?.y).toBe(sizes[1]?.rank?.y);
+    // 間隔は declarationGap(32)
+    const first = sizes[0];
+    expect(first?.declaration?.x).toBe(64 + 6 * 72 + 32);
+    // 収まらなければ申告が次行
+    expect(sizes[2]?.declaration?.y ?? 0).toBeGreaterThan(
+      sizes[2]?.rank?.y ?? 0
+    );
+  });
+
+  it('H2-AC14: 「点」は数字より小さいサイズで同じベースライン、数字の直後に置く', () => {
+    const layout = layoutShareImage(base, SHARE_THEME_V1, fixed);
+    expect(layout.total.digitsFontPx).toBe(120);
+    expect(layout.total.unitFontPx).toBe(64);
+    expect(layout.total.unitFontPx).toBeLessThan(layout.total.digitsFontPx);
+    expect(layout.total.unitX).toBe(64 + 5 * 120);
+    expect(layout.total.y).toBe(1068);
+  });
+
+  it('H2-AC14: 合計 240,000点 と 五倍役満 で限度名は 56〜96px、合計と交差しない。長すぎれば最小56px', () => {
+    const layout = layoutShareImage(
+      {
+        ...base,
+        by: 'ron',
+        declarationText: null,
+        isYakuman: true,
+        rankText: null,
+        limitName: '五倍役満',
+        totalDigits: '240,000'
+      },
+      SHARE_THEME_V1
+    );
+    const limit = layout.limit;
+    expect(limit).not.toBeNull();
+    const fontPx = limit?.fontPx ?? 0;
+    expect(fontPx).toBeGreaterThanOrEqual(56);
+    expect(fontPx).toBeLessThanOrEqual(96);
+    const totalRight = layout.total.unitX + layout.total.unitFontPx;
+    const limitLeft = (limit?.x ?? 0) - 4 * fontPx;
+    expect(limitLeft).toBeGreaterThanOrEqual(totalRight + 24);
+    expect(limit?.x).toBe(1016);
+
+    const tiny = layoutShareImage(
+      { ...base, limitName: '八倍役満八倍役満', totalDigits: '256,000' },
+      SHARE_THEME_V1,
+      fixed
+    );
+    expect(tiny.limit?.fontPx).toBe(56);
+
+    const none = layoutShareImage(base, SHARE_THEME_V1, fixed);
+    expect(none.limit).toBeNull();
   });
 });

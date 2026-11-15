@@ -80,6 +80,25 @@ export interface DoraChipLayout {
   borderColorRole: ShareColorRole;
 }
 
+export interface TotalLayout {
+  digitsText: string;
+  unitText: string;
+  x: number;
+  y: number;
+  digitsFontPx: number;
+  unitFontPx: number;
+  unitX: number;
+  digitsColorRole: ShareColorRole;
+}
+
+export interface LimitLayout {
+  text: string;
+  x: number;
+  y: number;
+  fontPx: number;
+  colorRole: ShareColorRole;
+}
+
 export interface RankTextLayout {
   text: string;
   x: number;
@@ -165,19 +184,8 @@ export interface ShareLayout {
   rank: RankTextLayout | null;
   declaration: RankTextLayout | null;
   rankBlockHeight: number;
-  score: {
-    totalText: string;
-    pointsFontSize: number;
-    limitName: string | null;
-    limitFontSize: number;
-    x: number;
-    rightX: number;
-    baselineY: number;
-    maxWidth: number;
-    pointsGap: number;
-    pointsColorRole: ShareColorRole;
-    limitColorRole: ShareColorRole;
-  };
+  total: TotalLayout;
+  limit: LimitLayout | null;
   footer: {
     band: {
       x: number;
@@ -674,17 +682,23 @@ export function layoutShareImage(
   let rankBlockHeight = 0;
   let scoreBlockTop = pointsTopY;
 
+  const declFontPx = theme.score.declarationFontSize;
+  const declLineHeight = Math.ceil(
+    declFontPx * theme.score.rankLineHeightRatio
+  );
+
   if (data.rankText !== null && data.declarationText !== null) {
+    const declW = measure(
+      data.declarationText,
+      declFontPx,
+      theme.fontWeightRegularNum
+    );
     let fontPx = theme.score.rankFontSize;
     let fitsSingleLine = false;
     let rankW = 0;
-    let gapPx = 0;
-    let declW = 0;
     while (true) {
       rankW = measure(data.rankText, fontPx, theme.fontWeightRegularNum);
-      gapPx = fontPx * theme.score.declarationGapEm;
-      declW = measure(data.declarationText, fontPx, theme.fontWeightRegularNum);
-      if (rankW + gapPx + declW <= contentWidth) {
+      if (rankW + theme.score.declarationGap + declW <= contentWidth) {
         fitsSingleLine = true;
         break;
       }
@@ -710,19 +724,20 @@ export function layoutShareImage(
         maxWidth: rankW,
         colorRole: theme.colors.rank
       };
+      const declX = theme.paddingX + rankW + theme.score.declarationGap;
       declaration = {
         text: data.declarationText,
-        x: theme.paddingX + rankW + gapPx,
+        x: declX,
         y: baselineY,
-        fontPx,
-        maxWidth: contentWidth - rankW - gapPx,
+        fontPx: declFontPx,
+        maxWidth: theme.width - theme.paddingX - declX,
         colorRole: theme.colors.declaration
       };
     } else {
-      rankBlockHeight = lineHeight * 2 + theme.score.rankLineGap;
+      rankBlockHeight = lineHeight + theme.score.rankLineGap + declLineHeight;
       const declBaselineY = pointsTopY - theme.score.rankGap;
       const rankBaselineY =
-        declBaselineY - lineHeight - theme.score.rankLineGap;
+        declBaselineY - declLineHeight - theme.score.rankLineGap;
       scoreBlockTop = declBaselineY - rankBlockHeight;
       rank = {
         text: data.rankText,
@@ -736,7 +751,7 @@ export function layoutShareImage(
         text: data.declarationText,
         x: theme.paddingX,
         y: declBaselineY,
-        fontPx,
+        fontPx: declFontPx,
         maxWidth: contentWidth,
         colorRole: theme.colors.declaration
       };
@@ -760,22 +775,62 @@ export function layoutShareImage(
       colorRole: theme.colors.rank
     };
   } else if (data.declarationText !== null) {
-    const fontPx = fitSingleLineFontPx(
-      data.declarationText,
-      contentWidth,
-      theme,
-      measure
-    );
-    rankBlockHeight = Math.ceil(fontPx * theme.score.rankLineHeightRatio);
+    rankBlockHeight = declLineHeight;
     const baselineY = pointsTopY - theme.score.rankGap;
     scoreBlockTop = baselineY - rankBlockHeight;
     declaration = {
       text: data.declarationText,
       x: theme.paddingX,
       y: baselineY,
-      fontPx,
+      fontPx: declFontPx,
       maxWidth: contentWidth,
       colorRole: theme.colors.declaration
+    };
+  }
+
+  // 点数行: 数字と小さい「点」を同じベースラインで並べ、限度名は残り幅で縮める
+  const digitsW = measure(
+    data.totalDigits,
+    theme.score.pointsFontSize,
+    theme.fontWeightBoldNum
+  );
+  const unitW = measure(
+    data.totalUnit,
+    theme.score.pointsUnitFontSize,
+    theme.fontWeightBoldNum
+  );
+  const totalWidth = digitsW + unitW;
+  const total: TotalLayout = {
+    digitsText: data.totalDigits,
+    unitText: data.totalUnit,
+    x: theme.paddingX,
+    y: pointsBaselineY,
+    digitsFontPx: theme.score.pointsFontSize,
+    unitFontPx: theme.score.pointsUnitFontSize,
+    unitX: theme.paddingX + digitsW,
+    digitsColorRole: theme.colors.points
+  };
+  let limit: LimitLayout | null = null;
+  if (data.limitName !== null) {
+    const limitW = measure(
+      data.limitName,
+      theme.score.limitFontSize,
+      theme.fontWeightBoldNum
+    );
+    const avail = contentWidth - totalWidth - theme.score.pointsGap;
+    const fitted = Math.floor(
+      (avail * theme.score.limitFontSize) / Math.max(limitW, Number.EPSILON)
+    );
+    const limitFontPx = Math.max(
+      theme.score.limitMinFontSize,
+      Math.min(theme.score.limitFontSize, fitted)
+    );
+    limit = {
+      text: data.limitName,
+      x: contentRight,
+      y: pointsBaselineY,
+      fontPx: limitFontPx,
+      colorRole: theme.colors.limitName
     };
   }
 
@@ -926,19 +981,8 @@ export function layoutShareImage(
     rank,
     declaration,
     rankBlockHeight,
-    score: {
-      totalText: data.totalText,
-      pointsFontSize: theme.score.pointsFontSize,
-      limitName: data.limitName,
-      limitFontSize: theme.score.limitFontSize,
-      x: theme.paddingX,
-      rightX: contentRight,
-      baselineY: pointsBaselineY,
-      maxWidth: contentWidth,
-      pointsGap: theme.score.pointsGap,
-      pointsColorRole: theme.colors.points,
-      limitColorRole: theme.colors.limitName
-    },
+    total,
+    limit,
     footer: {
       band: {
         x: 0,
