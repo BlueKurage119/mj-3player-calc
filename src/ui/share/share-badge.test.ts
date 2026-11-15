@@ -42,12 +42,15 @@ function data(
     dora: pad5(visibleDoraCount),
     uradora: pad5(visibleDoraCount),
     nuki: 4,
+    continueCount: 1,
+    deposit: 0,
+    isYakuman: false,
     yaku: [{ label: '立直', han: '1飜' }],
     rankText: '30符 1飜',
     limitName: null,
     totalText: by === 'ron' ? '1,000点' : '1,100点',
     declarationText: by === 'tsumo' ? '300・500' : null,
-    situation: '南場 1本場 供託0 南家',
+    situation: '南場・南家',
     appName: '三麻点数計算機',
     url: null,
     urlLabel: null
@@ -68,8 +71,9 @@ describe('H2-AC10: ロン/ツモの印の配置・非交差・背面土台仕様
       const l = layoutShareImage(d, SHARE_THEME_V1);
       const b = l.byBadge;
 
-      // 牌列は x=64 起点の左基準
+      // 牌列は x=64 起点・y=293 の左基準
       expect(l.handTiles[0]?.x).toBe(64);
+      expect(l.handTiles[0]?.y).toBe(293);
 
       const badgeBox: Box = {
         x0: b.x,
@@ -101,8 +105,8 @@ describe('H2-AC10: ロン/ツモの印の配置・非交差・背面土台仕様
       expect(badgeBox.x1).toBeGreaterThanOrEqual(horaBox.x1);
       expect(badgeBox.y0).toBeLessThanOrEqual(horaBox.y0);
       expect(badgeBox.y1).toBeGreaterThanOrEqual(horaBox.y1);
-      expect(horaBox.x1).toBeLessThanOrEqual(1004);
-      expect(badgeBox.x1).toBeLessThanOrEqual(1016);
+      expect(horaBox.x1).toBeLessThanOrEqual(1002 + 1e-6);
+      expect(badgeBox.x1).toBeLessThanOrEqual(1016 + 1e-6);
 
       // 2. 和了牌以外の牌とは印も文字も交差しない
       for (const p of l.handTiles.slice(0, -1)) {
@@ -118,7 +122,7 @@ describe('H2-AC10: ロン/ツモの印の配置・非交差・背面土台仕様
       // 文字は和了牌とも交差しない
       expect(overlaps(labelBox, horaBox)).toBe(false);
 
-      // 3. ドラ・裏ドラの牌矩形と「北×N」の文字矩形に交差しない
+      // 3. ドラ・裏ドラのチップ・ラベルピル・牌、見出しピル(北含む)と交差しない
       for (const p of l.doraTiles) {
         const pBox: Box = {
           x0: p.x,
@@ -129,17 +133,35 @@ describe('H2-AC10: ロン/ツモの印の配置・非交差・背面土台仕様
         expect(overlaps(badgeBox, pBox)).toBe(false);
         expect(overlaps(labelBox, pBox)).toBe(false);
       }
-      const nukiLabel = l.doraLabels.find(lbl => lbl.text.startsWith('北×'));
-      expect(nukiLabel).toBeDefined();
-      if (nukiLabel) {
-        const nukiBox: Box = {
-          x0: nukiLabel.x,
-          x1: nukiLabel.x + nukiLabel.maxWidth,
-          y0: nukiLabel.y - nukiLabel.fontSize / 2,
-          y1: nukiLabel.y + nukiLabel.fontSize / 2
+      for (const chip of l.doraChips) {
+        const cBox: Box = {
+          x0: chip.x,
+          x1: chip.x + chip.width,
+          y0: chip.y,
+          y1: chip.y + chip.height
         };
-        expect(overlaps(badgeBox, nukiBox)).toBe(false);
-        expect(overlaps(labelBox, nukiBox)).toBe(false);
+        expect(overlaps(badgeBox, cBox)).toBe(false);
+        expect(overlaps(labelBox, cBox)).toBe(false);
+      }
+      for (const lbl of l.doraLabels) {
+        const lBox: Box = {
+          x0: lbl.x,
+          x1: lbl.x + lbl.width,
+          y0: lbl.y,
+          y1: lbl.y + lbl.height
+        };
+        expect(overlaps(badgeBox, lBox)).toBe(false);
+        expect(overlaps(labelBox, lBox)).toBe(false);
+      }
+      for (const pill of l.headerPills) {
+        const pillBox: Box = {
+          x0: pill.x,
+          x1: pill.x + pill.width,
+          y0: pill.y,
+          y1: pill.y + pill.height
+        };
+        expect(overlaps(badgeBox, pillBox)).toBe(false);
+        expect(overlaps(labelBox, pillBox)).toBe(false);
       }
 
       // 4. ヘッダー文字矩形との交差面積は 10% 以下
@@ -147,8 +169,8 @@ describe('H2-AC10: ロン/ツモの印の配置・非交差・背面土台仕様
       const headerBox: Box = {
         x0: l.header.x,
         x1: l.header.x + Math.min(l.header.maxWidth, headerWidth),
-        y0: l.header.y,
-        y1: l.header.y + SHARE_THEME_V1.header.lineHeight
+        y0: SHARE_THEME_V1.paddingTop,
+        y1: SHARE_THEME_V1.paddingTop + SHARE_THEME_V1.header.height
       };
       const headerArea =
         (headerBox.x1 - headerBox.x0) * (headerBox.y1 - headerBox.y0);
@@ -169,6 +191,7 @@ describe('H2-AC10: ロン/ツモの印の配置・非交差・背面土台仕様
     const ronLayout = layoutShareImage(data(13, [], 'ron', 1), SHARE_THEME_V1);
     expect(ronLayout.byBadge.bgColorRole).toBe('primaryContainer');
     expect(ronLayout.byBadge.fgColorRole).toBe('onPrimaryContainer');
+    expect(ronLayout.byBadge.cornerRadius).toBe(20);
 
     const tsumoLayout = layoutShareImage(
       data(13, [], 'tsumo', 1),
@@ -178,7 +201,7 @@ describe('H2-AC10: ロン/ツモの印の配置・非交差・背面土台仕様
     expect(tsumoLayout.byBadge.fgColorRole).toBe('onTertiaryContainer');
   });
 
-  it('H2-AC10: 短い牌列でドラ・北と重なる位置になっても牌列を押し下げて非交差を守る', () => {
+  it('H2-AC10: 短い牌列でドラと重なる位置になっても牌列を押し下げて非交差を守る', () => {
     const shortData = data(1, [], 'ron', 5);
     const l = layoutShareImage(shortData, SHARE_THEME_V1);
     const b = l.byBadge;
@@ -197,5 +220,15 @@ describe('H2-AC10: ロン/ツモの印の配置・非交差・背面土台仕様
       };
       expect(overlaps(badgeBox, pBox)).toBe(false);
     }
+    for (const c of l.doraChips) {
+      const cBox: Box = {
+        x0: c.x,
+        x1: c.x + c.width,
+        y0: c.y,
+        y1: c.y + c.height
+      };
+      expect(overlaps(badgeBox, cBox)).toBe(false);
+    }
+    expect(badgeBox.y1).toBeLessThanOrEqual(l.yakuTop);
   });
 });

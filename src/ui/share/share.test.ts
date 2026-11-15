@@ -5,6 +5,7 @@ import { generateResult } from '../../core/result';
 import { DEFAULT_RULE, type Rule } from '../../core/rule';
 import type { Table } from '../../core/table';
 import type { Tile } from '../../core/tile';
+import { CUSTOM_DEPOSIT_STICK, CUSTOM_HONBA_STICK } from '../icons';
 import type { ResultContext, ShareInput } from '../result/hora/HoraDetail';
 import { readLightColors } from './light-colors';
 import { qrMatrix } from './qr';
@@ -225,7 +226,10 @@ describe('SNS共有画像データ・レイアウト・ユーティリティ (H2
       BACK_TILE
     ]);
     expect(nonRiichiData.nuki).toBe(0);
-    expect(nonRiichiData.situation).toBe('南場 1本場 供託2 南家');
+    expect(nonRiichiData.situation).toBe('南場・南家');
+    expect(nonRiichiData.continueCount).toBe(1);
+    expect(nonRiichiData.deposit).toBe(2);
+    expect(nonRiichiData.isYakuman).toBe(false);
     // ロン: 70符3飜(満貫)のため totalText は payment.total の「8,000点」(本場・供託を含まない)、declarationText は null
     expect(nonRiichiData.totalText).toBe('8,000点');
     expect(nonRiichiData.declarationText).toBeNull();
@@ -374,6 +378,7 @@ describe('SNS共有画像データ・レイアウト・ユーティリティ (H2
     if (!ykRon) return;
 
     const ykData = buildShareData(ykRon, makeShareContext(yakumanHand));
+    expect(ykData.isYakuman).toBe(true);
     expect(ykData.rankText).toBeNull();
     expect(ykData.limitName).toBe('役満');
     expect(ykData.declarationText).toBeNull();
@@ -420,6 +425,7 @@ describe('SNS共有画像データ・レイアウト・ユーティリティ (H2
         riichi: 'riichi'
       })
     );
+    expect(kzData.isYakuman).toBe(false);
     expect(kzData.limitName).toBe('数え役満');
     expect(kzData.rankText).toBe(
       `${kzTsumo.score.fu}符 ${kzTsumo.score.han}飜`
@@ -456,7 +462,7 @@ describe('SNS共有画像データ・レイアウト・ユーティリティ (H2
     );
   });
 
-  it('H2-AC14: layoutShareImage - 役15行でもフッターと重ならず、副露4組でも左基準で余白内、ドラ常に10枚、URL無効時はnull', () => {
+  it('H2-AC14: layoutShareImage - 見出しピル・ドラチップ・役13個以上の安全策(先頭12個のみ)・副露4組でも左基準で余白内・URL無効時はnull', () => {
     const hand: Tile[] = [
       { type: 'p', n: 1 },
       { type: 'p', n: 1 }
@@ -482,6 +488,7 @@ describe('SNS共有画像データ・レイアウト・ユーティリティ (H2
     const baseData = buildShareData(ron, makeShareContext(hand, { melds }));
     const manyYakuData: ShareData = {
       ...baseData,
+      isYakuman: false,
       yaku: Array.from({ length: 15 }, (_, i) => ({
         label: `テスト役${i + 1}`,
         han: '1飜'
@@ -491,32 +498,70 @@ describe('SNS共有画像データ・レイアウト・ユーティリティ (H2
     const layout = layoutShareImage(manyYakuData, SHARE_THEME_V1);
     expect(layout.width).toBe(1080);
     expect(layout.height).toBe(1350);
-    expect(layout.yakuRows).toHaveLength(15);
-    // ドラ・裏ドラは常に5枚ずつ = 計10枚
-    expect(layout.doraTiles).toHaveLength(10);
-    expect(layout.doraLabels.map(l => l.text)).toEqual([
-      'ドラ',
-      '裏ドラ',
-      '北×0'
-    ]);
+    expect(layout.yakuMode).toBe('normal');
+    // 13個以上は先頭12個のみ描き例外にしない
+    expect(layout.yakuChips).toHaveLength(12);
+    expect(layout.yakuChips[0]?.label).toBe('テスト役1');
+    expect(layout.yakuChips[11]?.label).toBe('テスト役12');
 
-    const lastYaku = layout.yakuRows[14];
+    // 見出し: 左は「南場・南家」、右から 北 -> 供託 -> 本場 の順で右端1016
+    expect(layout.header.text).toBe('南場・南家');
+    expect(layout.header.baselineY).toBe(104);
+    expect(layout.headerPills.map(p => p.text)).toEqual(['1', '0', '北 0']);
+    expect(layout.headerPills[0]?.iconPath).toBe(CUSTOM_HONBA_STICK);
+    expect(layout.headerPills[1]?.iconPath).toBe(CUSTOM_DEPOSIT_STICK);
+    expect(layout.headerPills[2]?.iconPath).toBeNull();
+    const lastPill = layout.headerPills[2];
+    expect(lastPill ? lastPill.x + lastPill.width : 0).toBe(1016);
+    expect(lastPill?.height).toBe(72);
+    expect(lastPill?.cornerRadius).toBe(36);
+    expect(lastPill?.bgOpacity).toBe(0.16);
+    expect(
+      (layout.headerPills[1]?.x ?? 0) -
+        ((layout.headerPills[0]?.x ?? 0) + (layout.headerPills[0]?.width ?? 0))
+    ).toBe(16);
+
+    // 抜き北無効なら北ピルを出さず、右端は供託ピル
+    const noNukiLayout = layoutShareImage(
+      { ...baseData, nuki: null },
+      SHARE_THEME_V1
+    );
+    expect(noNukiLayout.headerPills.map(p => p.text)).toEqual(['1', '0']);
+    const noNukiLast = noNukiLayout.headerPills[1];
+    expect(noNukiLast ? noNukiLast.x + noNukiLast.width : 0).toBe(1016);
+
+    // ドラ・裏ドラは常に5枚ずつ = 計10枚、チップは 240x75、ラベルピルは「ドラ」「裏ドラ」
+    expect(layout.doraTiles).toHaveLength(10);
+    expect(layout.doraTiles[0]?.width).toBe(44);
+    expect(layout.doraLabels.map(l => l.text)).toEqual(['ドラ', '裏ドラ']);
+    expect(layout.doraLabels[0]?.height).toBe(52);
+    expect(layout.doraChips).toHaveLength(2);
+    expect(layout.doraChips[0]).toMatchObject({
+      y: 150,
+      width: 240,
+      height: 75,
+      cornerRadius: 14,
+      borderWidth: 2
+    });
+
+    const lastYaku = layout.yakuChips[11];
     expect(lastYaku).toBeDefined();
     if (lastYaku) {
-      expect(lastYaku.fontSize).toBeGreaterThanOrEqual(30);
-      expect(lastYaku.y + lastYaku.fontSize / 2).toBeLessThan(
-        layout.footer.band.y
-      );
+      expect(lastYaku.y + lastYaku.height).toBe(852);
+      expect(lastYaku.y + lastYaku.height).toBeLessThan(layout.footer.band.y);
     }
 
-    // 副露4組(槓4つ=16枚+雀頭2枚=18枚)が x=64 起点ですべて左右余白内(右端 <= 1004)
+    // 副露4組(槓4つ=16枚+雀頭2枚=18枚)が x=64 起点・y=293 ですべて左右余白内(右端 <= 1002)
     expect(layout.handTiles).toHaveLength(18);
     expect(layout.handTiles[0]?.x).toBe(64);
+    expect(layout.handTiles[0]?.y).toBe(293);
     for (const tile of layout.handTiles) {
       expect(tile.x).toBeGreaterThanOrEqual(64);
-      expect(tile.x + tile.width).toBeLessThanOrEqual(1004);
+      expect(tile.x + tile.width).toBeLessThanOrEqual(1002 + 1e-6);
     }
-    expect(layout.byBadge.x + layout.byBadge.width).toBeLessThanOrEqual(1016);
+    expect(layout.byBadge.x + layout.byBadge.width).toBeLessThanOrEqual(
+      1016 + 1e-6
+    );
 
     // QR 領域と URL
     expect(layout.footer.qr).toMatchObject({
@@ -551,12 +596,15 @@ describe('SNS共有画像データ・レイアウト・ユーティリティ (H2
       dora: Array.from({ length: 5 }, () => BACK_TILE),
       uradora: Array.from({ length: 5 }, () => BACK_TILE),
       nuki: 0,
+      continueCount: 0,
+      deposit: 0,
+      isYakuman: false,
       yaku: [{ label: '立直', han: '1飜' }],
       rankText: '30符 1飜',
       limitName: null,
       totalText: '1,100点',
       declarationText: '300・500',
-      situation: '南場 0本場 供託0 南家',
+      situation: '南場・南家',
       appName: APP_NAME,
       url: SHARE_URL,
       urlLabel: 'bluekurage119.github.io/mj-3player-calc'
@@ -565,14 +613,14 @@ describe('SNS共有画像データ・レイアウト・ユーティリティ (H2
     // 1. 計測関数省略時も例外なく座標が返り、72px で 1 行に収まる
     const defaultLayout = layoutShareImage(base, SHARE_THEME_V1);
     expect(defaultLayout.rank?.fontPx).toBe(72);
+    expect(defaultLayout.rank?.y).toBe(940);
     expect(defaultLayout.declaration?.fontPx).toBe(72);
-    expect(defaultLayout.declaration?.y).toBe(defaultLayout.rank?.y);
+    expect(defaultLayout.declaration?.y).toBe(940);
+    expect(defaultLayout.score.baselineY).toBe(1068);
+    expect(defaultLayout.yakuBottom).toBe(852);
     expect(defaultLayout.rankBlockHeight).toBe(72);
 
-    // 2. 1文字 = fontPx の固定幅計測関数で、72px で 952 を超え 64px で収まる入力を検証
-    // 「110符 13飜」(7文字) + 「4,000・8,000」(11文字) + 間隔 0.8em = 18.8 * fontPx
-    // 72 * 18.8 = 1353.6 > 952, 52 * 18.8 = 977.6 > 952, 48 * 18.8 = 902.4 <= 952
-    // もう少し長い/短いケースで途中縮小 (例: 合計 14.8em: 「30符 3飜」(6) + 「1,000・2,000」(11) -> 17.8em -> 52pxで 925.6 <= 952)
+    // 2. 1文字 = fontPx の固定幅計測関数で、72px で 952 を超え 52px で収まる入力を検証
     const fixedMeasurer = (text: string, fontPx: number) =>
       text.length * fontPx;
     const shrinkCase: ShareData = {
@@ -580,7 +628,6 @@ describe('SNS共有画像データ・レイアウト・ユーティリティ (H2
       rankText: '30符 3飜', // 6文字
       declarationText: '1,000・2,000' // 11文字 -> 6 + 0.8 + 11 = 17.8em
     };
-    // 56px: 56 * 17.8 = 996.8 > 952, 52px: 52 * 17.8 = 925.6 <= 952
     const shrunkLayout = layoutShareImage(
       shrinkCase,
       SHARE_THEME_V1,
@@ -618,6 +665,7 @@ describe('SNS共有画像データ・レイアウト・ユーティリティ (H2
     const yakumanRon: ShareData = {
       ...base,
       by: 'ron',
+      isYakuman: true,
       rankText: null,
       declarationText: null,
       limitName: '役満',
@@ -633,6 +681,7 @@ describe('SNS共有画像データ・レイアウト・ユーティリティ (H2
     const yakumanTsumo: ShareData = {
       ...base,
       by: 'tsumo',
+      isYakuman: true,
       rankText: null,
       declarationText: '8,000・16,000',
       limitName: '役満',
@@ -645,8 +694,8 @@ describe('SNS共有画像データ・レイアウト・ユーティリティ (H2
 
     // 6. ドラ行が 952 を超える計測幅のとき、ドラ牌幅が 36 に縮む
     const wideDoraMeasurer = (text: string, fontPx: number) =>
-      text === 'ドラ' || text === '裏ドラ' || text.startsWith('北×')
-        ? text.length * fontPx * 2.5
+      text === 'ドラ' || text === '裏ドラ'
+        ? text.length * fontPx * 4
         : text.length * fontPx * 0.5;
     const compactDoraLayout = layoutShareImage(
       base,
@@ -677,9 +726,12 @@ describe('SNS共有画像データ・レイアウト・ユーティリティ (H2
   it('H2-AC14: readLightColors は Container 系4色を含む全ライト規則を読み、無ければ getComputedStyle にフォールバックする', () => {
     const lightMap: Record<string, string> = {
       '--md-sys-color-surface': 'rgb(247, 251, 241)',
+      '--md-sys-color-surface-container': 'rgb(236, 239, 230)',
       '--md-sys-color-on-surface': 'rgb(25, 29, 23)',
       '--md-sys-color-on-surface-variant': 'rgb(66, 73, 64)',
       '--md-sys-color-surface-container-highest': 'rgb(224, 228, 219)',
+      '--md-sys-color-outline-variant': 'rgb(194, 201, 189)',
+      '--md-sys-color-on-secondary-container': 'rgb(59, 75, 56)',
       '--md-sys-color-primary-container': 'rgb(188, 240, 180)',
       '--md-sys-color-on-primary-container': 'rgb(36, 80, 35)',
       '--md-sys-color-tertiary-container': 'rgb(188, 235, 240)',
@@ -726,9 +778,12 @@ describe('SNS共有画像データ・レイアウト・ユーティリティ (H2
 
     expect(readLightColors(sheets)).toEqual({
       surface: 'rgb(247, 251, 241)',
+      surfaceContainer: 'rgb(236, 239, 230)',
       onSurface: 'rgb(25, 29, 23)',
       onSurfaceVariant: 'rgb(66, 73, 64)',
       surfaceContainerHighest: 'rgb(224, 228, 219)',
+      outlineVariant: 'rgb(194, 201, 189)',
+      onSecondaryContainer: 'rgb(59, 75, 56)',
       primaryContainer: 'rgb(188, 240, 180)',
       onPrimaryContainer: 'rgb(36, 80, 35)',
       tertiaryContainer: 'rgb(188, 235, 240)',
@@ -822,6 +877,7 @@ describe('SNS共有画像データ・レイアウト・ユーティリティ (H2
       style: string;
       x?: number;
       text?: string;
+      alpha?: number;
     }[] = [];
     const fillRectCalls: {
       x: number;
@@ -836,16 +892,38 @@ describe('SNS共有画像データ・レイアウト・ユーティリティ (H2
       y: number;
       style: string;
     }[] = [];
+    const strokeCalls: { style: string; lineWidth: number }[] = [];
+    const pathFillCalls: string[] = [];
     const drawImageCalls: unknown[] = [];
 
+    class MockPath2D {
+      d: string;
+      constructor(d: string) {
+        this.d = d;
+      }
+    }
+    vi.stubGlobal('Path2D', MockPath2D);
+
+    const alphaStack: number[] = [];
     const mockCtx = {
       fillStyle: '',
+      strokeStyle: '',
+      lineWidth: 1,
       font: '',
       textAlign: 'left',
       textBaseline: 'top',
       globalAlpha: 1,
-      save: vi.fn(),
-      restore: vi.fn(),
+      save: vi.fn(() => {
+        alphaStack.push(mockCtx.globalAlpha);
+      }),
+      restore: vi.fn(() => {
+        const prev = alphaStack.pop();
+        if (prev !== undefined) {
+          mockCtx.globalAlpha = prev;
+        }
+      }),
+      translate: vi.fn(),
+      scale: vi.fn(),
       fillRect(x: number, y: number, w: number, h: number) {
         events.push({ op: 'fillRect', style: this.fillStyle, x });
         fillRectCalls.push({ x, y, w, h, style: this.fillStyle });
@@ -861,8 +939,22 @@ describe('SNS共有画像データ・レイアウト・ユーティリティ (H2
       moveTo: vi.fn(),
       arcTo: vi.fn(),
       closePath: vi.fn(),
-      fill() {
-        events.push({ op: 'fill', style: this.fillStyle });
+      fill(path?: unknown) {
+        events.push({
+          op: 'fill',
+          style: this.fillStyle,
+          alpha: this.globalAlpha
+        });
+        if (path instanceof MockPath2D) {
+          pathFillCalls.push(path.d);
+        }
+      },
+      stroke() {
+        events.push({ op: 'stroke', style: this.strokeStyle });
+        strokeCalls.push({
+          style: this.strokeStyle,
+          lineWidth: this.lineWidth
+        });
       },
       drawImage(...args: unknown[]) {
         events.push({
@@ -908,9 +1000,12 @@ describe('SNS共有画像データ・レイアウト・ユーティリティ (H2
 
     const colors: ShareColors = {
       surface: 'rgb(247, 251, 241)',
+      surfaceContainer: 'rgb(236, 239, 230)',
       onSurface: 'rgb(25, 29, 23)',
       onSurfaceVariant: 'rgb(66, 73, 64)',
       surfaceContainerHighest: 'rgb(224, 228, 219)',
+      outlineVariant: 'rgb(194, 201, 189)',
+      onSecondaryContainer: 'rgb(59, 75, 56)',
       primaryContainer: 'rgb(188, 240, 180)',
       onPrimaryContainer: 'rgb(36, 80, 35)',
       tertiaryContainer: 'rgb(188, 235, 240)',
@@ -949,18 +1044,43 @@ describe('SNS共有画像データ・レイアウト・ユーティリティ (H2
     expect(horaDrawIndex).toBeGreaterThan(badgeFillIndex);
     expect(badgeTextIndex).toBeGreaterThan(horaDrawIndex);
 
+    // 見出しピル(点棒アイコン Path2D と 不透明度 0.16)・ドラチップ枠線(outlineVariant 2px)・役チップ塗りを検証
+    expect(pathFillCalls).toEqual([CUSTOM_HONBA_STICK, CUSTOM_DEPOSIT_STICK]);
+    expect(
+      events.some(
+        e =>
+          e.op === 'fill' &&
+          e.style === colors.onSecondaryContainer &&
+          e.alpha === 0.16
+      )
+    ).toBe(true);
+    expect(strokeCalls).toEqual([
+      { style: colors.outlineVariant, lineWidth: 2 },
+      { style: colors.outlineVariant, lineWidth: 2 }
+    ]);
+    expect(
+      events.some(e => e.op === 'fill' && e.style === colors.surfaceContainer)
+    ).toBe(true);
+    expect(
+      events.some(e => e.op === 'fill' && e.style === colors.primary)
+    ).toBe(true);
+
     // 意図的アサーション: drawされた全テキスト集合の中に各要素の完全一致文字列が含まれるかを検証
     const texts = fillTextCalls.map(c => c.text);
-    expect(texts).toContain('南場 1本場 供託0 南家');
+    expect(texts).toContain('南場・南家');
+    expect(texts).toContain('1');
+    expect(texts).toContain('0');
+    expect(texts).toContain('北 1');
     expect(texts).toContain('ドラ');
     expect(texts).toContain('裏ドラ');
-    expect(texts).toContain('北×1');
     expect(texts).toContain('ツモ');
     expect(texts).toContain(data.rankText);
     expect(texts).toContain(data.declarationText);
     expect(texts).toContain(data.totalText);
     expect(texts).toContain('三麻点数計算機');
     expect(texts).toContain('bluekurage119.github.io/mj-3player-calc');
+    expect(texts).not.toContain('北×1');
+    expect(texts).not.toContain('南場 1本場 供託0 南家');
 
     // QR 領域の白地とモジュール内側のクワイエットゾーン(4モジュール分以上)を検証
     const qrMatrixData = qrMatrix(SHARE_URL as string, 'M');
@@ -985,5 +1105,373 @@ describe('SNS共有画像データ・レイアウト・ユーティリティ (H2
     expect(minY - 1166).toBeGreaterThanOrEqual(modSize * 4);
     expect(1166 + 168 - maxY).toBeGreaterThanOrEqual(modSize * 4);
     expect(qrMatrixData.length).toBeGreaterThan(0);
+  });
+});
+
+describe('H2-AC23: 役明細(2列×6行チップ・最長役名・真の役満1列・複合役満・数え役満)', () => {
+  it('H2-AC23-1: 役が12個の通常手は2列×6行の縦読みでチップ(468×64)と飜数塗りバッジを配置する', () => {
+    // 立直・一発・門前清自摸和・平和・断么九・二盃口・清一色・海底撈月・ドラ・裏ドラ・赤ドラ・抜きドラ (12個)
+    const hand: Tile[] = [
+      { type: 'p', n: 2 },
+      { type: 'p', n: 2 },
+      { type: 'p', n: 3 },
+      { type: 'p', n: 3 },
+      { type: 'p', n: 4 },
+      { type: 'p', n: 4 },
+      { type: 'p', n: 5, red: true },
+      { type: 'p', n: 6 },
+      { type: 'p', n: 7 },
+      { type: 'p', n: 6 },
+      { type: 'p', n: 7 },
+      { type: 'p', n: 8 },
+      { type: 'p', n: 8 },
+      { type: 'p', n: 5, red: false }
+    ];
+    const options: HandOptions = {
+      ...defaultOptions,
+      riichi: 'riichi',
+      ippatsu: true,
+      haitei: true
+    };
+    const dora: Tile[] = [{ type: 'p', n: 1 }];
+    const uradora: Tile[] = [{ type: 'p', n: 7 }];
+    const res = generateResult(
+      defaultTable,
+      { hand, melds: [], dora, uradora, nuki: 1 },
+      options,
+      DEFAULT_RULE
+    );
+    expect(res?.type).toBe('hora-shanten');
+    if (res?.type !== 'hora-shanten' || res.info.type !== 'hora') return;
+    const tsumo = res.info.hora.find(h => h.by === 'tsumo');
+    expect(tsumo).toBeDefined();
+    if (!tsumo) return;
+    expect(tsumo.yaku).toHaveLength(12);
+
+    const data = buildShareData(
+      tsumo,
+      makeShareContext(hand, {
+        dora,
+        uradora,
+        nuki: 1,
+        riichi: 'riichi'
+      })
+    );
+    const layout = layoutShareImage(data, SHARE_THEME_V1);
+    expect(layout.yakuMode).toBe('normal');
+    expect(layout.yakuTop).toBe(408);
+    expect(layout.yakuBottom).toBeGreaterThanOrEqual(852);
+    expect(layout.yakuChips).toHaveLength(12);
+
+    // 縦読み: 0..5 が左列(x=64)、6..11 が右列(x=548)
+    for (let i = 0; i < 6; i++) {
+      const leftChip = layout.yakuChips[i];
+      const rightChip = layout.yakuChips[i + 6];
+      expect(leftChip).toBeDefined();
+      expect(rightChip).toBeDefined();
+      if (!leftChip || !rightChip) continue;
+      expect(leftChip.x).toBe(64);
+      expect(rightChip.x).toBe(548);
+      expect(leftChip.y).toBe(rightChip.y);
+      expect(leftChip.y).toBe(408 + i * (64 + 12));
+      expect(leftChip.width).toBe(468);
+      expect(leftChip.height).toBe(64);
+      expect(leftChip.cornerRadius).toBe(16);
+      expect(leftChip.bgColorRole).toBe('surfaceContainer');
+      expect(leftChip.hanBadge).not.toBeNull();
+      expect(leftChip.hanBadge?.bgColorRole).toBe('primary');
+      expect(leftChip.hanBadge?.fgColorRole).toBe('onPrimary');
+      expect(rightChip.hanBadge).not.toBeNull();
+    }
+    const lastChip = layout.yakuChips[11];
+    expect(lastChip ? lastChip.y + lastChip.height : 0).toBe(852);
+  });
+
+  it('H2-AC23-2: オープンダブル立直・国士無双十三面待ち(各9文字)が計測関数差し替え時も最小26px以上で通常チップの役名領域に収まる', () => {
+    // 1. 実和了データでオープンダブル立直を含む手を検証
+    const hand: Tile[] = [
+      { type: 'p', n: 2 },
+      { type: 'p', n: 3 },
+      { type: 'p', n: 4 },
+      { type: 'p', n: 5, red: false },
+      { type: 'p', n: 6 },
+      { type: 'p', n: 7 },
+      { type: 's', n: 3 },
+      { type: 's', n: 4 },
+      { type: 's', n: 6 },
+      { type: 's', n: 7 },
+      { type: 'p', n: 9 },
+      { type: 'p', n: 9 },
+      { type: 's', n: 2 },
+      { type: 's', n: 8 }
+    ];
+    const openDoubleRule: Rule = { ...DEFAULT_RULE, openRiichi: true };
+    const res = generateResult(
+      defaultTable,
+      { hand, melds: [], dora: [], nuki: 0 },
+      { ...defaultOptions, riichi: 'open-double-riichi' },
+      openDoubleRule
+    );
+    expect(res?.type).toBe('hora-shanten');
+    if (res?.type !== 'hora-shanten' || res.info.type !== 'hora') return;
+    const ron = res.info.hora.find(h => h.by === 'ron');
+    expect(ron).toBeDefined();
+    if (!ron) return;
+
+    const realData = buildShareData(
+      ron,
+      makeShareContext(hand, {
+        rule: openDoubleRule,
+        riichi: 'open-double-riichi'
+      })
+    );
+    const realLayout = layoutShareImage(realData, SHARE_THEME_V1);
+    const openDoubleChip = realLayout.yakuChips.find(
+      c => c.label === 'オープンダブル立直'
+    );
+    expect(openDoubleChip).toBeDefined();
+    expect(openDoubleChip?.labelFontSize).toBeGreaterThanOrEqual(26);
+
+    // 2. measureTextWidth を差し替え (1文字=1.15*fontPx で 34px からは縮小されるが 26px 以上で省略されず収まる条件)
+    const tightMeasurer = (text: string, fontPx: number) =>
+      text.length * fontPx * 1.15;
+    const syntheticNormalData: ShareData = {
+      ...realData,
+      isYakuman: false,
+      yaku: [
+        { label: 'オープンダブル立直', han: '3飜' },
+        { label: '国士無双十三面待ち', han: '13飜' }
+      ]
+    };
+    const tightLayout = layoutShareImage(
+      syntheticNormalData,
+      SHARE_THEME_V1,
+      tightMeasurer
+    );
+    for (const chip of tightLayout.yakuChips) {
+      expect(chip.label.endsWith('…')).toBe(false);
+      expect(chip.labelFontSize).toBeGreaterThanOrEqual(26);
+      expect(chip.labelFontSize).toBeLessThanOrEqual(34);
+      expect(tightMeasurer(chip.label, chip.labelFontSize)).toBeLessThanOrEqual(
+        chip.labelMaxWidth
+      );
+      expect(tightMeasurer(chip.label, 26)).toBeLessThanOrEqual(
+        chip.labelMaxWidth
+      );
+    }
+
+    // 1文字=fontPx でさらに確認: 「オープンダブル立直」「国士無双十三面待ち」が最小26px以下で確実に収まる
+    const unitMeasurer = (text: string, fontPx: number) => text.length * fontPx;
+    const unitLayout = layoutShareImage(
+      syntheticNormalData,
+      SHARE_THEME_V1,
+      unitMeasurer
+    );
+    expect(unitLayout.yakuChips[0]?.label).toBe('オープンダブル立直');
+    expect(unitLayout.yakuChips[1]?.label).toBe('国士無双十三面待ち');
+    expect(unitMeasurer('オープンダブル立直', 26)).toBeLessThanOrEqual(
+      unitLayout.yakuChips[0]?.labelMaxWidth ?? 0
+    );
+    expect(unitMeasurer('国士無双十三面待ち', 26)).toBeLessThanOrEqual(
+      unitLayout.yakuChips[1]?.labelMaxWidth ?? 0
+    );
+  });
+
+  it('H2-AC23-3: 国士無双十三面待ち(真の役満単独)は1列チップ(952×76)・飜数バッジなし・格が点数行に出る', () => {
+    const hand: Tile[] = [
+      { type: 'm', n: 1 },
+      { type: 'm', n: 9 },
+      { type: 'p', n: 1 },
+      { type: 'p', n: 9 },
+      { type: 's', n: 1 },
+      { type: 's', n: 9 },
+      { type: 'z', n: 1 },
+      { type: 'z', n: 2 },
+      { type: 'z', n: 3 },
+      { type: 'z', n: 4 },
+      { type: 'z', n: 5 },
+      { type: 'z', n: 6 },
+      { type: 'z', n: 7 },
+      { type: 'm', n: 1 }
+    ];
+    const res = generateResult(
+      defaultTable,
+      { hand, melds: [], dora: [], nuki: 0 },
+      defaultOptions,
+      DEFAULT_RULE
+    );
+    expect(res?.type).toBe('hora-shanten');
+    if (res?.type !== 'hora-shanten' || res.info.type !== 'hora') return;
+    const ron = res.info.hora.find(h => h.by === 'ron');
+    expect(ron).toBeDefined();
+    if (!ron) return;
+
+    const data = buildShareData(ron, makeShareContext(hand));
+    const layout = layoutShareImage(data, SHARE_THEME_V1);
+
+    expect(layout.yakuMode).toBe('yakuman');
+    expect(layout.yakuChips).toHaveLength(1);
+    expect(layout.yakuChips[0]).toMatchObject({
+      x: 64,
+      y: 408,
+      width: 952,
+      height: 76,
+      cornerRadius: 20,
+      label: '国士無双十三面待ち',
+      hanBadge: null
+    });
+    expect(layout.yakuChips[0]?.labelFontSize).toBe(44);
+    expect(layout.score.limitName).toBe('二倍役満');
+    expect(layout.rank).toBeNull();
+  });
+
+  it('H2-AC23-4: 役満の複合(大三元+字一色)は複合あり・なしルールとも成立した役満すべてを1列チップ・バッジなしで表示する', () => {
+    // 大三元 + 字一色 (東ポン + 白×3, 發×3, 中×3, 南×2)
+    const hand: Tile[] = [
+      { type: 'z', n: 5 },
+      { type: 'z', n: 5 },
+      { type: 'z', n: 5 },
+      { type: 'z', n: 6 },
+      { type: 'z', n: 6 },
+      { type: 'z', n: 6 },
+      { type: 'z', n: 7 },
+      { type: 'z', n: 7 },
+      { type: 'z', n: 7 },
+      { type: 'z', n: 2 },
+      { type: 'z', n: 2 }
+    ];
+    const melds: Meld[] = [{ type: 'pon', tile: { type: 'z', n: 1 } }];
+
+    for (const multipleYakuman of [true, false]) {
+      const rule: Rule = { ...DEFAULT_RULE, multipleYakuman };
+      const res = generateResult(
+        defaultTable,
+        { hand, melds, dora: [], nuki: 0 },
+        defaultOptions,
+        rule
+      );
+      expect(res?.type).toBe('hora-shanten');
+      if (res?.type !== 'hora-shanten' || res.info.type !== 'hora') continue;
+      const ron = res.info.hora.find(h => h.by === 'ron');
+      expect(ron).toBeDefined();
+      if (!ron) continue;
+
+      const data = buildShareData(ron, makeShareContext(hand, { melds, rule }));
+      const layout = layoutShareImage(data, SHARE_THEME_V1);
+
+      expect(layout.yakuMode).toBe('yakuman');
+      expect(layout.yakuChips.map(c => c.label).sort()).toEqual([
+        '大三元',
+        '字一色'
+      ]);
+      for (const chip of layout.yakuChips) {
+        expect(chip.width).toBe(952);
+        expect(chip.height).toBe(76);
+        expect(chip.hanBadge).toBeNull();
+      }
+      expect(layout.score.limitName).toBe(
+        multipleYakuman ? '二倍役満' : '役満'
+      );
+    }
+  });
+
+  it('H2-AC23-5: 数え役満は2列レイアウト・飜数塗りバッジあり・符飜の行あり', () => {
+    const hand: Tile[] = [
+      { type: 'p', n: 1 },
+      { type: 'p', n: 2 },
+      { type: 'p', n: 3 },
+      { type: 'p', n: 4 },
+      { type: 'p', n: 5, red: false },
+      { type: 'p', n: 6 },
+      { type: 'p', n: 7 },
+      { type: 'p', n: 8 },
+      { type: 'p', n: 9 },
+      { type: 'p', n: 2 },
+      { type: 'p', n: 3 },
+      { type: 'p', n: 9 },
+      { type: 'p', n: 9 },
+      { type: 'p', n: 4 }
+    ];
+    const dora: Tile[] = [{ type: 'p', n: 3 }];
+    const res = generateResult(
+      defaultTable,
+      { hand, melds: [], dora, nuki: 0 },
+      { ...defaultOptions, riichi: 'riichi', ippatsu: true },
+      DEFAULT_RULE
+    );
+    expect(res?.type).toBe('hora-shanten');
+    if (res?.type !== 'hora-shanten' || res.info.type !== 'hora') return;
+    const tsumo = res.info.hora.find(h => h.by === 'tsumo');
+    expect(tsumo).toBeDefined();
+    if (!tsumo) return;
+
+    const data = buildShareData(
+      tsumo,
+      makeShareContext(hand, { dora, riichi: 'riichi' })
+    );
+    const layout = layoutShareImage(data, SHARE_THEME_V1);
+
+    expect(layout.yakuMode).toBe('normal');
+    expect(layout.score.limitName).toBe('数え役満');
+    expect(layout.rank).not.toBeNull();
+    expect(layout.yakuChips.length).toBeGreaterThan(0);
+    for (const chip of layout.yakuChips) {
+      expect(chip.width).toBe(468);
+      expect(chip.height).toBe(64);
+      expect(chip.hanBadge).not.toBeNull();
+    }
+  });
+
+  it('H2-AC23-6: 真の役満5行の1列レイアウトで下端が852以下、6個以上は安全策で先頭5個のみ描く', () => {
+    const baseYakuman: ShareData = {
+      by: 'ron',
+      bodyTiles: Array.from({ length: 13 }, () => ({ type: 'z', n: 1 })),
+      meldTiles: [],
+      horaTile: { type: 'z', n: 1 },
+      dora: Array.from({ length: 5 }, () => BACK_TILE),
+      uradora: Array.from({ length: 5 }, () => BACK_TILE),
+      nuki: 0,
+      continueCount: 0,
+      deposit: 0,
+      isYakuman: true,
+      yaku: [
+        { label: '天和', han: '役満' },
+        { label: '四暗刻単騎', han: '二倍役満' },
+        { label: '大四喜', han: '二倍役満' },
+        { label: '字一色', han: '役満' },
+        { label: '四槓子', han: '役満' }
+      ],
+      rankText: null,
+      limitName: '八倍役満',
+      totalText: '256,000点',
+      declarationText: null,
+      situation: '東場・東家',
+      appName: APP_NAME,
+      url: SHARE_URL,
+      urlLabel: 'bluekurage119.github.io/mj-3player-calc'
+    };
+
+    const layout5 = layoutShareImage(baseYakuman, SHARE_THEME_V1);
+    expect(layout5.yakuMode).toBe('yakuman');
+    expect(layout5.yakuChips).toHaveLength(5);
+    const fifthChip = layout5.yakuChips[4];
+    expect(fifthChip).toBeDefined();
+    if (fifthChip) {
+      expect(fifthChip.y + fifthChip.height).toBe(836);
+      expect(fifthChip.y + fifthChip.height).toBeLessThanOrEqual(852);
+      expect(fifthChip.y + fifthChip.height).toBeLessThanOrEqual(
+        layout5.yakuBottom
+      );
+    }
+
+    const layout6 = layoutShareImage(
+      {
+        ...baseYakuman,
+        yaku: [...baseYakuman.yaku, { label: '緑一色', han: '役満' }]
+      },
+      SHARE_THEME_V1
+    );
+    expect(layout6.yakuChips).toHaveLength(5);
+    expect(layout6.yakuChips[4]?.label).toBe('四槓子');
   });
 });
