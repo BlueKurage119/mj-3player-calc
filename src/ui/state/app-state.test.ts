@@ -2329,3 +2329,21 @@ describe('D5: 状況入力の reducer と結果連動 (C5〜C8, C13)', () => {
     });
   });
 });
+
+describe('H1: 点数計算表の画面遷移', () => {
+  it('H1-30: navigate で scoring-table に遷移し、main に戻れる', () => {
+    const initial = createInitialState(createDefaultRule());
+
+    const scoringTableState = appReducer(initial, {
+      type: 'navigate',
+      screen: 'scoring-table'
+    });
+    expect(scoringTableState.screen).toBe('scoring-table');
+
+    const backToMain = appReducer(scoringTableState, {
+      type: 'navigate',
+      screen: 'main'
+    });
+    expect(backToMain.screen).toBe('main');
+  });
+});
