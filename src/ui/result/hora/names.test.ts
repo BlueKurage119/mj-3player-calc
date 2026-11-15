@@ -31,7 +31,7 @@ describe('labels.ts (E2 名前と表のテスト)', () => {
   it('E2-3: 代表的な役名が正本の表記と一致する', () => {
     expect(YAKU_LABELS['ura-dora']).toBe('裏ドラ');
     expect(YAKU_LABELS['nuki-dora']).toBe('抜きドラ');
-    expect(YAKU_LABELS.north).toBe('北');
+    expect(YAKU_LABELS.north).toBe('役牌：北');
     expect(YAKU_LABELS.chankan).toBe('槍槓');
     expect(YAKU_LABELS.haitei).toBe('海底撈月');
     expect(YAKUMAN_LABELS['suanko-tanki']).toBe('四暗刻単騎');

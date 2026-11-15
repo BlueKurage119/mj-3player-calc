@@ -53,17 +53,17 @@ export const YAKU_LABELS: Record<NormalYaku['name'], string> = {
   iipeko: '一盃口', // L
   dora: 'ドラ', // L
   'ura-dora': '裏ドラ', // U・R・I96
-  'field-wind': '場風牌', // L
+  'field-wind': '役牌：場風牌', // L
   'red-dora': '赤ドラ', // R・L
-  'seat-wind': '自風牌', // L
+  'seat-wind': '役牌：自風牌', // L
   'nuki-dora': '抜きドラ', // U・R・I12
-  white: '白', // L
+  white: '役牌：白', // L
   'open-riichi': 'オープン立直', // I14
-  green: '發', // L
+  green: '役牌：發', // L
   'open-double-riichi': 'オープンダブル立直', // I14
-  red: '中', // L
+  red: '役牌：中', // L
   'tsubame-gaeshi': '燕返し', // R・I14
-  north: '北', // U(R の呼び名は「役牌：北」)
+  north: '役牌：北', // U(R の呼び名は「役牌：北」)
   'kan-furi': '槓振り', // R・I14
   rinshan: '嶺上開花', // L
   toiputao: '推不倒', // R・I14
@@ -138,7 +138,7 @@ export const FU_LABELS = {
   'round-wind-head': '場風牌雀頭', // L
   'seat-wind-head': '自風牌雀頭', // L
   'dragon-head': '三元牌雀頭', // L
-  'north-head': '北雀頭', // 案
+  'north-head': '役牌北雀頭', // 案
   'wind-head': '風牌雀頭', // 案
   ryammen: '両面待ち', // L
   kanchan: '嵌張待ち', // L
