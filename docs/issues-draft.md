@@ -1,10 +1,14 @@
 # Issue化ドラフト(Epic単位)
 
-更新日: 2026-11-15(Epic H 参照・共有を新設し H1・H2 を登録、G4 ヘルプ画面を追加、v1 の範囲を更新、H1 の本場・供託・点差を H1-1・H1-2 として v2 に切り出す)
+更新日: 2026-11-15(Epic H 参照・共有を新設し H1・H2 を登録、G4 ヘルプ画面を追加、v1 の範囲を更新、H1 の本場・供託・点差を H1-1・H1-2 として v2 に切り出す。v1 リリース前の照合で、G1〜G3・F3 と v2 の項目を起案し、D1-1・D4-1・D7 の追記と B3・D4・G1 の記述を実装に合わせる)
 
 [要件](requirements.md)を実装タスクに分けた下書き。Issue を登録したら、見出しを GitHub の Issue へのリンクにする。各 Epic は親 Issue とし、項目は着手時に Sub-Issue として登録する。マイルストーンは Epic ごとに設け(「Epic A: 計算コアの三麻化」など)、親 Issue とその Sub-Issue に付ける。識別番号(A1 など)は Issue 番号とは別で、どの Epic のどの項目かを示すために使う。各項目の未決事項は、着手前のヒアリングで決める。
 
-**Version 1 の範囲**: Epic A〜E・G・H(H1-1・H1-2 を除く)。Epic F はフェーズ1(F1・F1-1・F1-2)のみ v1 に含める(旧 F2 は F1 に統合)。
+**Version 1 の範囲**: Epic A〜E・G・H(H1-1・H1-2 を除く)。Epic F はフェーズ1(F1・F1-1・F1-2)のみ v1 に含める(旧 F2 は F1 に統合)。v1 に含めない起案済みの Issue: [#58](https://github.com/BlueKurage119/mj-3player-calc/issues/58)・[#85](https://github.com/BlueKurage119/mj-3player-calc/issues/85)・[#105](https://github.com/BlueKurage119/mj-3player-calc/issues/105)・[#106](https://github.com/BlueKurage119/mj-3player-calc/issues/106)(オーナー判断 2026-11-15)。[#92](https://github.com/BlueKurage119/mj-3player-calc/issues/92)は後回し。
+
+**v2 以降の項目**: F3、[牌画像のダークテーマ](https://github.com/BlueKurage119/mj-3player-calc/issues/112)、[利用者プリセットの名前付き保存](https://github.com/BlueKurage119/mj-3player-calc/issues/113)。
+
+**起案しない項目**(オーナー判断 2026-11-15): 立直なしのときの裏ドラ欄の無効表示(#96 の範囲外)、振聴の表示(F1 の範囲外)、ランダム入力での状況役と副露・抜き北の連動した正規化(#95 の範囲外)。
 
 ## Epic 0: 基盤(初回 push 前に main で実施。Issue 化しない)
 
@@ -41,7 +45,7 @@
 - **[B2. ルールの保存と版管理](https://github.com/BlueKurage119/mj-3player-calc/issues/30)**
   localStorage への版番号付きの保存。欠けた項目の所定値による補完、検査を通らない値は既定ルールに戻す。保存の実装がまだなく旧データが存在しないため、旧形式からの移行は扱わない。
 - **[B3. ルールプリセット](https://github.com/BlueKurage119/mj-3player-calc/issues/31)**
-  「雀魂段位戦」「一番街段位戦」の設定値を定数で持ち、現在のルールがどのプリセットに一致するか(一致しなければカスタム)を判定する。利用者が作ったプリセットの名前付き保存は後続の Epic で扱う。
+  「段位戦ルール」の設定値を定数で持ち(設計で1つに絞った。当初案は「雀魂段位戦」「一番街段位戦」の2つ)、現在のルールがどのプリセットに一致するか(一致しなければカスタム)を判定する。利用者が作ったプリセットの名前付き保存は v2 以降([#113](https://github.com/BlueKurage119/mj-3player-calc/issues/113))。
 - **[B4. 計算結果と支払いの接続](https://github.com/BlueKurage119/mj-3player-calc/issues/32)**
   `generateResult` から `calculatePayment` を呼び、ツモ損・本場・供託を含む支払額を返す。B1 で設定にした供託・本場の額を支払額に反映する。検査を通らないときの例外の返し方。B1・B2 に依存する。
 
@@ -58,16 +62,22 @@
 
 - **[D1. 画面の骨格](https://github.com/BlueKurage119/mj-3player-calc/issues/51)**
   入力と結果を1ページ(縦スクロール)に収める骨格。入力側の下に結果側を置き、入力側の上部が隠れるときは要約カードを上部に固定する。結果側はバナー程度の小カードから、スクロールで展開する(2状態の切り替え。中身は Epic E)。パレット・テンキー・状況役の入力は非モーダルの底部シートで行う(シートの機構を含む。中身は D2・D3・D5)。入力状態(`useReducer` + Context)と計算(`generateResult`)の呼び出し口。ヘッダーはタイトルと3点リーダーメニュー(設定・オールクリア。`md-menu` のラッパーを含む)。ステッパー部品(積み棒・供託・抜き北で共有)。手牌カードのバケツ(手牌クリア)。`?gallery=tiles`・`?gallery=md` の分岐は開発時限定にする。バンドル予算の維持(基準は [業務標準 09](rules/09-bundle-budget-protocol.md)。計算部の `lazy` 分離、実測)。要約カードで `Tile` を使うため、牌 SVG の出力・precache を D1 で確認する。
+- **[D1-1. 手牌カードの見た目と当たり判定の再設計](https://github.com/BlueKurage119/mj-3player-calc/issues/55)**
+  D1 の関連 Issue。手牌カードの見た目と、ゴミ箱のタップ領域の例外(要件 §4)。
 - **[D2. パレット入力](https://github.com/BlueKurage119/mj-3player-calc/issues/46)**
   底部シート内のパレット。三麻の牌だけを表示する。枚数の上限、赤牌。手牌の1行表示と並べ替え。シート内の AC(手牌クリア)と、牌を1枚ずつ消す手段。牌のタップでの削除は採用しない。
 - **[D3. テンキー入力](https://github.com/BlueKurage119/mj-3player-calc/issues/47)**
   底部シート内のテンキー。mj-mighty-calc の自作部分(`Tenkey.tsx` 等)を移植する。物理キーボード対応。AC・バックスペース。D2 と入力内容を共有する。
 - **[D4. 副露・抜き北・ドラ表示牌の入力](https://github.com/BlueKurage119/mj-3player-calc/issues/48)**
-  ドラ・裏ドラのカード(横並び2枚)、副露の追加ボタン、抜き北(D1 のステッパーを使う)。副露はポン・明槓・暗槓(加槓は明槓と同一扱い。チーは出さない)。抜き北は北が共通役牌のルールでは無効にする。裏ドラ表示牌も入力し、計算コアには表裏をまとめて `dora` で渡す。計算コアの `Chii` 型等の削除は含まない。
+  ドラ・裏ドラのカード(横並び2枚)、副露の追加ボタン、抜き北(D1 のステッパーを使う)。副露はポン・明槓・暗槓(加槓は明槓と同一扱い。チーは出さない)。抜き北は北が共通役牌のルールでは無効にする。裏ドラ表示牌も入力する(当初は表裏をまとめて `dora` で渡したが、#96 で `uradora` を分け、立直のときだけ数えるように改めた)。計算コアの `Chii` 型等の削除は含まない。
+- **[D4-1. スマート入力モード(仮称)](https://github.com/BlueKurage119/mj-3player-calc/issues/58)(v2)**
+  牌→種類の順に選び、手牌の対子・刻子を副露へ移す入力方式。v1 に含めない(オーナー判断 2026-11-15)。
 - **[D5. 状況の入力](https://github.com/BlueKurage119/mj-3player-calc/issues/49)**
   自風・場風(`ConnectedButtonGroup`)、積み棒・供託(D1 のステッパーを使う)、状況役のカードと底部シートの中身(立直などの偶然役)、要約カードの文言。ツモ／ロンは入力させない(結果側で並べて表示する)。ルールに応じた出し分け(オープン立直・燕返し・槓振り・一発なし)。抜き北へのロン・嶺上ツモの案内。
 - **[D6. ルール設定画面](https://github.com/BlueKurage119/mj-3player-calc/issues/50)**
   `RULE_ITEMS` から設定画面を組み立てる。入口は D1 のヘッダーの3点リーダーメニュー「設定」。プリセットの選択と一致表示(`RULE_PRESETS`・`findRulePreset`)、起動時の `loadRule` と変更時の `saveRule` の接続。テーマ切替 UI。未決: 項目の並び順・グループ・説明文、利用者プリセットの名前付き保存を含めるか。
+- **[D7. キーボードのUI監修漏れを是正する](https://github.com/BlueKurage119/mj-3player-calc/issues/73)**
+  D2〜D4 の UI 監修で漏れたキーボード操作の是正。
 
 ## [Epic E: 結果表示](https://github.com/BlueKurage119/mj-3player-calc/issues/6)
 
@@ -88,7 +98,7 @@
   F1 の関連 Issue。F1 のあと、または支障がなければ並行して実施する。結果欄の牌(何切るの打牌候補、有効牌、和了牌)のタップで、打牌・ツモを手牌に反映する。手牌の牌のタップで削除する。D1・D2 で確定していた「牌のタップでの削除は採用しない」を、オーナーの方針変更で改める(着手時に `docs/requirements.md` を改訂する)。
 - **[F1-2. ランダム入力(ランダム14枚・ランダム清一色)](https://github.com/BlueKurage119/mj-3player-calc/issues/95)**
   F1 の関連 Issue。三点リーダーのメニューに「ランダム14枚」「ランダム清一色」を設け、ドラを消去した門前14枚(暗槓なし)を入力する(livewing に合わせる)。清一色は筒子か索子をランダムに選ぶ。F2 は欠番、F3 は v2 実装機能で予約済みのため、F1-2 とする。
-- **F3. 聴牌確率・和了確率・期待値(v1 の後)**
+- **[F3. 聴牌確率・和了確率・期待値(v2)](https://github.com/BlueKurage119/mj-3player-calc/issues/111)**
   クリーンルームで独自実装し、Web Worker で計算する。公開されているアルゴリズム解説や論文を出典にする。
 
 ## [Epic H: 参照・共有](https://github.com/BlueKurage119/mj-3player-calc/issues/100)
@@ -106,11 +116,11 @@
 
 ## [Epic G: PWA・リリース](https://github.com/BlueKurage119/mj-3player-calc/issues/8)
 
-- **G1. オフライン対応とインストール**
-  WASM・牌画像のプリキャッシュ、更新の通知、アイコン・マニフェスト。
-- **G2. 配布**
-  GitHub Pages 等への自動デプロイ。未決: 配布先。
-- **G3. v1 リリース**
-  ライセンス表示画面、README、受け入れ確認。
+- **[G1. オフライン対応とインストール](https://github.com/BlueKurage119/mj-3player-calc/issues/108)**
+  WASM・牌画像のプリキャッシュ、アイコン・マニフェスト、更新の扱い。プリキャッシュと通知なしの自動更新は導入済み(Epic 0)。未決: 更新の通知の要否。
+- **[G2. GitHub Pages への配布](https://github.com/BlueKurage119/mj-3player-calc/issues/109)**
+  GitHub Pages への自動デプロイ(配布先はオーナー判断 2026-11-15)。サブパス配信に合わせた `base` の設定。
+- **[G3. v1 リリース](https://github.com/BlueKurage119/mj-3player-calc/issues/110)**
+  README、版番号、受け入れ確認。アプリ内のライセンス表示は [#69](https://github.com/BlueKurage119/mj-3player-calc/issues/69) で扱う(オーナー判断 2026-11-15)。
 - **G4. ヘルプ画面**
-  現行機能の分の最小版(ルール設定の `HelpTooltip` を補う。ツモ損方式・ローカル役・抜き北・結果の見方など、見ただけでは分からない点が中心)。Epic H の機能が固まってから着手する。入口は G3 のライセンス表示画面(#69)と統合する案がある。未決: 構成と入口、キーボード操作の説明の要否。
+  現行機能の分の最小版(ルール設定の `HelpTooltip` を補う。ツモ損方式・ローカル役・抜き北・結果の見方など、見ただけでは分からない点が中心)。H2(#102)の後に起案する(オーナー判断 2026-11-15)。入口は G3 のライセンス表示画面(#69)と統合する案がある。未決: 構成と入口、キーボード操作の説明の要否。
