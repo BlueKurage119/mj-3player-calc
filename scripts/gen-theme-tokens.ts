@@ -159,4 +159,8 @@ function run(): void {
   console.log(`Generated ${outputPath}`);
 }
 
-run();
+// Vitest からの SEED 再 export 検証時に副作用(ファイル書き込み)が走らないようにする
+const VITEST_ENV = 'VITEST';
+if (!process.env[VITEST_ENV]) {
+  run();
+}
