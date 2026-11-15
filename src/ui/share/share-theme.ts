@@ -139,7 +139,7 @@ export const SHARE_THEME_V1: ShareTheme = {
     groupGapRatio: 0.3,
     badgeDiameter: 72,
     badgeFontSize: 24,
-    badgeOverlapTop: 18,
+    badgeOverlapTop: 80,
     badgeInsetRight: 0,
     badgeRonLabel: 'ロン',
     badgeTsumoLabel: 'ツモ'
