@@ -4,6 +4,7 @@ import { VitePWA } from 'vite-plugin-pwa';
 import wasm from 'vite-plugin-wasm';
 
 export default {
+  base: '/mj-3player-calc/',
   plugins: [
     react(),
     wasm(),
