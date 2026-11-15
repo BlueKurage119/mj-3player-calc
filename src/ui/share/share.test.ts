@@ -16,7 +16,7 @@ import {
   buildShareText,
   shareUrlLabel
 } from './share-config';
-import { type ShareColors, buildShareData } from './share-data';
+import { type ShareColors, type ShareData, buildShareData } from './share-data';
 import { layoutShareImage } from './share-layout';
 import { SHARE_THEME_V1 } from './share-theme';
 import { detectShareSupport } from './support';
@@ -39,6 +39,8 @@ const defaultTable: Table = {
   continue: 1,
   deposit: 0
 };
+
+const BACK_TILE = { type: 'back' } as const;
 
 function makeShareContext(
   hand: Tile[],
@@ -154,7 +156,6 @@ describe('SNS共有画像データ・レイアウト・ユーティリティ (H2
     if (!m1Ron) return;
 
     const data = buildShareData(m1Ron, makeShareContext(hand));
-    // 13枚すべてが門前部分に残り、1m が2枚含まれる
     expect(data.bodyTiles).toHaveLength(13);
     expect(
       data.bodyTiles.filter(t => t.type === 'm' && t.n === 1)
@@ -162,7 +163,7 @@ describe('SNS共有画像データ・レイアウト・ユーティリティ (H2
     expect(data.horaTile).toEqual({ type: 'm', n: 1 });
   });
 
-  it('H2-AC14: buildShareData - 赤5・ドラ・裏ドラ・抜き北・場況・暗槓の扱いが仕様どおり', () => {
+  it('H2-AC14: buildShareData - ドラ・裏ドラは常に長さ5(未入力はback)、立直なしは裏ドラ入力ありでも5枚back、抜き北0/無効、赤5、場況、合計と申告', () => {
     const hand: Tile[] = [
       { type: 'p', n: 2 },
       { type: 'p', n: 3 },
@@ -192,10 +193,12 @@ describe('SNS共有画像データ・レイアウト・ユーティリティ (H2
     expect(res?.type).toBe('hora-shanten');
     if (res?.type !== 'hora-shanten' || res.info.type !== 'hora') return;
     const ron = res.info.hora.find(h => h.by === 'ron');
+    const tsumo = res.info.hora.find(h => h.by === 'tsumo');
     expect(ron).toBeDefined();
-    if (!ron) return;
+    expect(tsumo).toBeDefined();
+    if (!ron || !tsumo) return;
 
-    // 非立直 + 裏ドラ入力あり -> uradora は null、nuki 0 かつ有効 -> nuki === 0
+    // ドラ0枚 -> back 5枚、非立直+裏ドラ入力あり -> uradora は 5枚とも back、nuki 0 かつ有効 -> 0
     const nonRiichiData = buildShareData(
       ron,
       makeShareContext(hand, {
@@ -203,23 +206,34 @@ describe('SNS共有画像データ・レイアウト・ユーティリティ (H2
         dora: [],
         uradora: [{ type: 's', n: 1 }],
         nuki: 0,
-        riichi: 'none'
+        riichi: 'none',
+        table: { round: 'south', seat: 'south', continue: 1, deposit: 2 }
       })
     );
-    expect(nonRiichiData.dora).toEqual([]);
-    expect(nonRiichiData.uradora).toBeNull();
+    expect(nonRiichiData.dora).toEqual([
+      BACK_TILE,
+      BACK_TILE,
+      BACK_TILE,
+      BACK_TILE,
+      BACK_TILE
+    ]);
+    expect(nonRiichiData.uradora).toEqual([
+      BACK_TILE,
+      BACK_TILE,
+      BACK_TILE,
+      BACK_TILE,
+      BACK_TILE
+    ]);
     expect(nonRiichiData.nuki).toBe(0);
-    expect(nonRiichiData.situation).toBe('南場 1本場 供託0 南家');
+    expect(nonRiichiData.situation).toBe('南場 1本場 供託2 南家');
+    // ロン: 70符3飜(満貫)のため totalText は payment.total の「8,000点」(本場・供託を含まない)、declarationText は null
+    expect(nonRiichiData.totalText).toBe('8,000点');
+    expect(nonRiichiData.declarationText).toBeNull();
     // 暗槓は両端が裏向き
     expect(nonRiichiData.meldTiles).toEqual([
-      [
-        { type: 'back' },
-        { type: 'z', n: 1 },
-        { type: 'z', n: 1 },
-        { type: 'back' }
-      ]
+      [BACK_TILE, { type: 'z', n: 1 }, { type: 'z', n: 1 }, BACK_TILE]
     ]);
-    // 赤5が門前と和了牌に保持される
+    // 赤5が保持される
     expect(
       nonRiichiData.bodyTiles.some(
         t => t.type === 's' && t.n === 5 && t.red === true
@@ -231,22 +245,43 @@ describe('SNS共有画像データ・レイアウト・ユーティリティ (H2
       )
     ).toBe(true);
 
-    // 北役牌ルールでは nuki === null
+    // 北役牌ルールでは nuki === null、立直ありで裏ドラ1枚+ドラ2枚 -> 先頭が表で残りが back(計5枚)
     const northYakuhaiRule: Rule = { ...DEFAULT_RULE, north: 'yakuhai' };
-    const noNukiData = buildShareData(
-      ron,
+    const riichiTsumoData = buildShareData(
+      tsumo,
       makeShareContext(hand, {
         melds,
         rule: northYakuhaiRule,
         nuki: 2,
         riichi: 'riichi',
-        uradora: [{ type: 's', n: 1 }]
+        dora: [
+          { type: 'p', n: 1 },
+          { type: 's', n: 2 }
+        ],
+        uradora: [{ type: 's', n: 1 }],
+        table: { round: 'south', seat: 'south', continue: 2, deposit: 1 }
       })
     );
-    expect(noNukiData.nuki).toBeNull();
-    expect(noNukiData.uradora).toEqual([{ type: 's', n: 1 }]);
+    expect(riichiTsumoData.nuki).toBeNull();
+    expect(riichiTsumoData.dora).toEqual([
+      { type: 'p', n: 1 },
+      { type: 's', n: 2 },
+      BACK_TILE,
+      BACK_TILE,
+      BACK_TILE
+    ]);
+    expect(riichiTsumoData.uradora).toEqual([
+      { type: 's', n: 1 },
+      BACK_TILE,
+      BACK_TILE,
+      BACK_TILE,
+      BACK_TILE
+    ]);
+    // ツモ: 門前ツモ+赤2+ドラ1で4飜60符(満貫)のため totalText は「6,000点」(本場・供託を含まない)、declarationText は「2,000・4,000」
+    expect(riichiTsumoData.totalText).toBe('6,000点');
+    expect(riichiTsumoData.declarationText).toBe('2,000・4,000');
 
-    // 立直でも uradora が空配列なら null
+    // 立直でも uradora が空配列なら 5枚とも back
     const emptyUraData = buildShareData(
       ron,
       makeShareContext(hand, {
@@ -255,7 +290,57 @@ describe('SNS共有画像データ・レイアウト・ユーティリティ (H2
         uradora: []
       })
     );
-    expect(emptyUraData.uradora).toBeNull();
+    expect(emptyUraData.uradora).toEqual([
+      BACK_TILE,
+      BACK_TILE,
+      BACK_TILE,
+      BACK_TILE,
+      BACK_TILE
+    ]);
+  });
+
+  it('H2-AC14: buildShareData - 親ツモの declarationText は「◯オール」、totalText は合計点、本場抜き', () => {
+    const hand: Tile[] = [
+      { type: 'p', n: 2 },
+      { type: 'p', n: 3 },
+      { type: 'p', n: 4 },
+      { type: 'p', n: 5, red: false },
+      { type: 'p', n: 6 },
+      { type: 'p', n: 7 },
+      { type: 's', n: 3 },
+      { type: 's', n: 4 },
+      { type: 's', n: 6 },
+      { type: 's', n: 7 },
+      { type: 'p', n: 9 },
+      { type: 'p', n: 9 },
+      { type: 's', n: 2 },
+      { type: 's', n: 8 }
+    ];
+    const dealerTable: Table = {
+      round: 'east',
+      seat: 'east',
+      continue: 3,
+      deposit: 2
+    };
+    const res = generateResult(
+      dealerTable,
+      { hand, melds: [], dora: [], nuki: 0 },
+      defaultOptions,
+      DEFAULT_RULE
+    );
+    expect(res?.type).toBe('hora-shanten');
+    if (res?.type !== 'hora-shanten' || res.info.type !== 'hora') return;
+    const tsumo = res.info.hora.find(h => h.by === 'tsumo');
+    expect(tsumo).toBeDefined();
+    if (!tsumo) return;
+
+    const data = buildShareData(
+      tsumo,
+      makeShareContext(hand, { table: dealerTable })
+    );
+    // 親の平和ツモ(20符2飜) = 700オール = 合計 1,400点 (3本場・供託2は含まない)
+    expect(data.totalText).toBe('1,400点');
+    expect(data.declarationText).toBe('700オール');
   });
 
   it('H2-AC14: buildShareData - 真の役満は rankText が null、数え役満は「◯符 N飜」が出る', () => {
@@ -291,6 +376,8 @@ describe('SNS共有画像データ・レイアウト・ユーティリティ (H2
     const ykData = buildShareData(ykRon, makeShareContext(yakumanHand));
     expect(ykData.rankText).toBeNull();
     expect(ykData.limitName).toBe('役満');
+    expect(ykData.declarationText).toBeNull();
+    expect(ykData.totalText).toBe('32,000点');
 
     // 数え役満 (13飜以上、yakumanPoint === 0)
     const kazoeHand: Tile[] = [
@@ -337,6 +424,7 @@ describe('SNS共有画像データ・レイアウト・ユーティリティ (H2
     expect(kzData.rankText).toBe(
       `${kzTsumo.score.fu}符 ${kzTsumo.score.han}飜`
     );
+    expect(kzData.declarationText).not.toBeNull();
   });
 
   it('H2-AC14: shareUrlLabel・buildShareText・無効URL保険・ファイル名生成', () => {
@@ -368,7 +456,7 @@ describe('SNS共有画像データ・レイアウト・ユーティリティ (H2
     );
   });
 
-  it('H2-AC14: layoutShareImage - 役15行でもフッターと重ならず、副露4組でも牌が左右余白内、URL無効時はURLとQRがnull', () => {
+  it('H2-AC14: layoutShareImage - 役15行でもフッターと重ならず、副露4組でも左基準で余白内、ドラ常に10枚、URL無効時はnull', () => {
     const hand: Tile[] = [
       { type: 'p', n: 1 },
       { type: 'p', n: 1 }
@@ -392,7 +480,7 @@ describe('SNS共有画像データ・レイアウト・ユーティリティ (H2
     if (!ron) return;
 
     const baseData = buildShareData(ron, makeShareContext(hand, { melds }));
-    const manyYakuData = {
+    const manyYakuData: ShareData = {
       ...baseData,
       yaku: Array.from({ length: 15 }, (_, i) => ({
         label: `テスト役${i + 1}`,
@@ -404,6 +492,13 @@ describe('SNS共有画像データ・レイアウト・ユーティリティ (H2
     expect(layout.width).toBe(1080);
     expect(layout.height).toBe(1350);
     expect(layout.yakuRows).toHaveLength(15);
+    // ドラ・裏ドラは常に5枚ずつ = 計10枚
+    expect(layout.doraTiles).toHaveLength(10);
+    expect(layout.doraLabels.map(l => l.text)).toEqual([
+      'ドラ',
+      '裏ドラ',
+      '北×0'
+    ]);
 
     const lastYaku = layout.yakuRows[14];
     expect(lastYaku).toBeDefined();
@@ -414,12 +509,14 @@ describe('SNS共有画像データ・レイアウト・ユーティリティ (H2
       );
     }
 
-    // 副露4組(槓4つ=16枚+雀頭2枚=18枚)がすべて左右余白内
+    // 副露4組(槓4つ=16枚+雀頭2枚=18枚)が x=64 起点ですべて左右余白内(右端 <= 1004)
     expect(layout.handTiles).toHaveLength(18);
+    expect(layout.handTiles[0]?.x).toBe(64);
     for (const tile of layout.handTiles) {
       expect(tile.x).toBeGreaterThanOrEqual(64);
-      expect(tile.x + tile.width).toBeLessThanOrEqual(1016);
+      expect(tile.x + tile.width).toBeLessThanOrEqual(1004);
     }
+    expect(layout.byBadge.x + layout.byBadge.width).toBeLessThanOrEqual(1016);
 
     // QR 領域と URL
     expect(layout.footer.qr).toMatchObject({
@@ -445,6 +542,120 @@ describe('SNS共有画像データ・レイアウト・ユーティリティ (H2
     expect(noUrlLayout.footer.qr).toBeNull();
   });
 
+  it('H2-AC14: layoutShareImage - 計測関数差し替えによる符・飜+申告の一体縮小・次行送り・省略時動作・役満ロン行省略', () => {
+    const base: ShareData = {
+      by: 'tsumo',
+      bodyTiles: Array.from({ length: 13 }, () => ({ type: 'p', n: 1 })),
+      meldTiles: [],
+      horaTile: { type: 'p', n: 1 },
+      dora: Array.from({ length: 5 }, () => BACK_TILE),
+      uradora: Array.from({ length: 5 }, () => BACK_TILE),
+      nuki: 0,
+      yaku: [{ label: '立直', han: '1飜' }],
+      rankText: '30符 1飜',
+      limitName: null,
+      totalText: '1,100点',
+      declarationText: '300・500',
+      situation: '南場 0本場 供託0 南家',
+      appName: APP_NAME,
+      url: SHARE_URL,
+      urlLabel: 'bluekurage119.github.io/mj-3player-calc'
+    };
+
+    // 1. 計測関数省略時も例外なく座標が返り、72px で 1 行に収まる
+    const defaultLayout = layoutShareImage(base, SHARE_THEME_V1);
+    expect(defaultLayout.rank?.fontPx).toBe(72);
+    expect(defaultLayout.declaration?.fontPx).toBe(72);
+    expect(defaultLayout.declaration?.y).toBe(defaultLayout.rank?.y);
+    expect(defaultLayout.rankBlockHeight).toBe(72);
+
+    // 2. 1文字 = fontPx の固定幅計測関数で、72px で 952 を超え 64px で収まる入力を検証
+    // 「110符 13飜」(7文字) + 「4,000・8,000」(11文字) + 間隔 0.8em = 18.8 * fontPx
+    // 72 * 18.8 = 1353.6 > 952, 52 * 18.8 = 977.6 > 952, 48 * 18.8 = 902.4 <= 952
+    // もう少し長い/短いケースで途中縮小 (例: 合計 14.8em: 「30符 3飜」(6) + 「1,000・2,000」(11) -> 17.8em -> 52pxで 925.6 <= 952)
+    const fixedMeasurer = (text: string, fontPx: number) =>
+      text.length * fontPx;
+    const shrinkCase: ShareData = {
+      ...base,
+      rankText: '30符 3飜', // 6文字
+      declarationText: '1,000・2,000' // 11文字 -> 6 + 0.8 + 11 = 17.8em
+    };
+    // 56px: 56 * 17.8 = 996.8 > 952, 52px: 52 * 17.8 = 925.6 <= 952
+    const shrunkLayout = layoutShareImage(
+      shrinkCase,
+      SHARE_THEME_V1,
+      fixedMeasurer
+    );
+    expect(shrunkLayout.rank?.fontPx).toBe(52);
+    expect(shrunkLayout.declaration?.fontPx).toBe(52);
+    expect(shrunkLayout.rank?.fontPx).toBeGreaterThanOrEqual(48);
+    expect(shrunkLayout.declaration?.y).toBe(shrunkLayout.rank?.y);
+    expect(shrunkLayout.declaration?.x).toBeGreaterThan(
+      shrunkLayout.rank?.x ?? 0
+    );
+
+    // 3. 48px でも 952 を超える入力 -> 48px で次行送り (declaration.y > rank.y) かつ yakuBottom が 1 行時より小さい
+    const wrapCase: ShareData = {
+      ...base,
+      rankText: '110符 13飜', // 7文字
+      declarationText: '12,000・24,000' // 13文字 -> 7 + 0.8 + 13 = 20.8em -> 48 * 20.8 = 998.4 > 952
+    };
+    const wrappedLayout = layoutShareImage(
+      wrapCase,
+      SHARE_THEME_V1,
+      fixedMeasurer
+    );
+    expect(wrappedLayout.rank?.fontPx).toBe(48);
+    expect(wrappedLayout.declaration?.fontPx).toBe(48);
+    expect(wrappedLayout.declaration?.x).toBe(64);
+    expect(wrappedLayout.declaration?.y ?? 0).toBeGreaterThan(
+      wrappedLayout.rank?.y ?? 0
+    );
+    expect(wrappedLayout.yakuBottom).toBeLessThan(defaultLayout.yakuBottom);
+    expect(wrappedLayout.yakuBottom).toBeLessThan(shrunkLayout.yakuBottom);
+
+    // 4. 真の役満ロン: 符・飜の行が無く rankBlockHeight === 0 で点数行が詰まる
+    const yakumanRon: ShareData = {
+      ...base,
+      by: 'ron',
+      rankText: null,
+      declarationText: null,
+      limitName: '役満',
+      totalText: '32,000点'
+    };
+    const ykRonLayout = layoutShareImage(yakumanRon, SHARE_THEME_V1);
+    expect(ykRonLayout.rank).toBeNull();
+    expect(ykRonLayout.declaration).toBeNull();
+    expect(ykRonLayout.rankBlockHeight).toBe(0);
+    expect(ykRonLayout.yakuBottom).toBeGreaterThan(defaultLayout.yakuBottom);
+
+    // 5. 真の役満ツモ: rank は null、declaration だけ左寄せ 72px で出る
+    const yakumanTsumo: ShareData = {
+      ...base,
+      by: 'tsumo',
+      rankText: null,
+      declarationText: '8,000・16,000',
+      limitName: '役満',
+      totalText: '24,000点'
+    };
+    const ykTsumoLayout = layoutShareImage(yakumanTsumo, SHARE_THEME_V1);
+    expect(ykTsumoLayout.rank).toBeNull();
+    expect(ykTsumoLayout.declaration?.x).toBe(64);
+    expect(ykTsumoLayout.declaration?.fontPx).toBe(72);
+
+    // 6. ドラ行が 952 を超える計測幅のとき、ドラ牌幅が 36 に縮む
+    const wideDoraMeasurer = (text: string, fontPx: number) =>
+      text === 'ドラ' || text === '裏ドラ' || text.startsWith('北×')
+        ? text.length * fontPx * 2.5
+        : text.length * fontPx * 0.5;
+    const compactDoraLayout = layoutShareImage(
+      base,
+      SHARE_THEME_V1,
+      wideDoraMeasurer
+    );
+    expect(compactDoraLayout.doraTiles[0]?.width).toBe(36);
+  });
+
   it('H2-AC14: ensureSvgSize はルート <svg に width/height が無い場合だけ挿入する', () => {
     const frontSvg = readFileSync(
       new URL('../tile/base/Front.svg', import.meta.url),
@@ -463,12 +674,16 @@ describe('SNS共有画像データ・レイアウト・ユーティリティ (H2
     expect(ensureSvgSize(alreadySized, 300, 400)).toBe(alreadySized);
   });
 
-  it('H2-AC14: readLightColors は :root かつ --md-sys-color-surface を持つライト規則を読み、無ければ getComputedStyle にフォールバックする', () => {
+  it('H2-AC14: readLightColors は Container 系4色を含む全ライト規則を読み、無ければ getComputedStyle にフォールバックする', () => {
     const lightMap: Record<string, string> = {
       '--md-sys-color-surface': 'rgb(247, 251, 241)',
       '--md-sys-color-on-surface': 'rgb(25, 29, 23)',
       '--md-sys-color-on-surface-variant': 'rgb(66, 73, 64)',
       '--md-sys-color-surface-container-highest': 'rgb(224, 228, 219)',
+      '--md-sys-color-primary-container': 'rgb(188, 240, 180)',
+      '--md-sys-color-on-primary-container': 'rgb(36, 80, 35)',
+      '--md-sys-color-tertiary-container': 'rgb(188, 235, 240)',
+      '--md-sys-color-on-tertiary-container': 'rgb(30, 77, 82)',
       '--md-sys-color-primary': 'rgb(60, 105, 57)',
       '--md-sys-color-on-primary': 'rgb(255, 255, 255)',
       '--md-sys-color-tertiary': 'rgb(56, 101, 106)',
@@ -514,6 +729,10 @@ describe('SNS共有画像データ・レイアウト・ユーティリティ (H2
       onSurface: 'rgb(25, 29, 23)',
       onSurfaceVariant: 'rgb(66, 73, 64)',
       surfaceContainerHighest: 'rgb(224, 228, 219)',
+      primaryContainer: 'rgb(188, 240, 180)',
+      onPrimaryContainer: 'rgb(36, 80, 35)',
+      tertiaryContainer: 'rgb(188, 235, 240)',
+      onTertiaryContainer: 'rgb(30, 77, 82)',
       primary: 'rgb(60, 105, 57)',
       onPrimary: 'rgb(255, 255, 255)',
       tertiary: 'rgb(56, 101, 106)',
@@ -533,7 +752,9 @@ describe('SNS共有画像データ・レイアウト・ユーティリティ (H2
         }
       }
     ];
-    expect(readLightColors(throwingSheets).surface).toBe('rgb(247, 251, 241)');
+    expect(readLightColors(throwingSheets).primaryContainer).toBe(
+      'rgb(188, 240, 180)'
+    );
   });
 
   it('H2-AC14: detectShareSupport は canShare と ClipboardItem の有無を同期判定する', () => {
@@ -561,7 +782,7 @@ describe('SNS共有画像データ・レイアウト・ユーティリティ (H2
     expect(detectShareSupport()).toEqual({ share: true, copy: true });
   });
 
-  it('H2-AC14: renderShareImage はモック canvas へ 1080x1350 で描画し、QR は4モジュール以上のクワイエットゾーンを持つ', async () => {
+  it('H2-AC14, H2-AC10: renderShareImage は背景→印→牌列→印の文字の順で描画し、QR は4モジュール以上のクワイエットゾーンを持つ', async () => {
     const hand: Tile[] = [
       { type: 'p', n: 2 },
       { type: 'p', n: 3 },
@@ -586,16 +807,22 @@ describe('SNS共有画像データ・レイアウト・ユーティリティ (H2
     );
     expect(res?.type).toBe('hora-shanten');
     if (res?.type !== 'hora-shanten' || res.info.type !== 'hora') return;
-    const ron = res.info.hora.find(h => h.by === 'ron');
-    expect(ron).toBeDefined();
-    if (!ron) return;
+    const tsumo = res.info.hora.find(h => h.by === 'tsumo');
+    expect(tsumo).toBeDefined();
+    if (!tsumo) return;
 
     const data = buildShareData(
-      ron,
+      tsumo,
       makeShareContext(hand, { dora: [{ type: 'p', n: 1 }], nuki: 1 })
     );
     const layout = layoutShareImage(data, SHARE_THEME_V1);
 
+    const events: {
+      op: string;
+      style: string;
+      x?: number;
+      text?: string;
+    }[] = [];
     const fillRectCalls: {
       x: number;
       y: number;
@@ -616,19 +843,33 @@ describe('SNS共有画像データ・レイアウト・ユーティリティ (H2
       font: '',
       textAlign: 'left',
       textBaseline: 'top',
+      globalAlpha: 1,
+      save: vi.fn(),
+      restore: vi.fn(),
       fillRect(x: number, y: number, w: number, h: number) {
+        events.push({ op: 'fillRect', style: this.fillStyle, x });
         fillRectCalls.push({ x, y, w, h, style: this.fillStyle });
       },
       fillText(text: string, x: number, y: number) {
+        events.push({ op: 'fillText', style: this.fillStyle, text, x });
         fillTextCalls.push({ text, x, y, style: this.fillStyle });
       },
       measureText(text: string) {
         return { width: text.length * 14 };
       },
       beginPath: vi.fn(),
-      arc: vi.fn(),
-      fill: vi.fn(),
+      moveTo: vi.fn(),
+      arcTo: vi.fn(),
+      closePath: vi.fn(),
+      fill() {
+        events.push({ op: 'fill', style: this.fillStyle });
+      },
       drawImage(...args: unknown[]) {
+        events.push({
+          op: 'drawImage',
+          style: this.fillStyle,
+          x: args[1] as number
+        });
         drawImageCalls.push(args);
       }
     };
@@ -670,6 +911,10 @@ describe('SNS共有画像データ・レイアウト・ユーティリティ (H2
       onSurface: 'rgb(25, 29, 23)',
       onSurfaceVariant: 'rgb(66, 73, 64)',
       surfaceContainerHighest: 'rgb(224, 228, 219)',
+      primaryContainer: 'rgb(188, 240, 180)',
+      onPrimaryContainer: 'rgb(36, 80, 35)',
+      tertiaryContainer: 'rgb(188, 235, 240)',
+      onTertiaryContainer: 'rgb(30, 77, 82)',
       primary: 'rgb(60, 105, 57)',
       onPrimary: 'rgb(255, 255, 255)',
       tertiary: 'rgb(56, 101, 106)',
@@ -682,14 +927,38 @@ describe('SNS共有画像データ・レイアウト・ユーティリティ (H2
     expect(mockCanvas.width).toBe(1080);
     expect(mockCanvas.height).toBe(1350);
 
-    // ドラ1枚(base+face=2) + 手牌14枚(base+face=28) = 30回 drawImage
-    expect(drawImageCalls).toHaveLength(30);
-    // テキストに場況・ドラ・北・点数・アプリ名・URLが含まれる
+    // ドラ表1(2) + ドラ裏4(4) + 裏ドラ裏5(5) + 手牌14(28) = 39回 drawImage
+    expect(drawImageCalls).toHaveLength(39);
+
+    // 描画順検証: 背景 -> 印(fill tertiaryContainer) -> 和了牌の drawImage -> 印の文字(fillText 'ツモ')
+    const bgIndex = events.findIndex(
+      e => e.op === 'fillRect' && e.style === colors.surface
+    );
+    const badgeFillIndex = events.findIndex(
+      e => e.op === 'fill' && e.style === colors.tertiaryContainer
+    );
+    const horaTile = layout.handTiles[layout.handTiles.length - 1];
+    const horaDrawIndex = events.findIndex(
+      e => e.op === 'drawImage' && e.x === horaTile?.x
+    );
+    const badgeTextIndex = events.findIndex(
+      e => e.op === 'fillText' && e.text === 'ツモ'
+    );
+    expect(bgIndex).toBeGreaterThanOrEqual(0);
+    expect(badgeFillIndex).toBeGreaterThan(bgIndex);
+    expect(horaDrawIndex).toBeGreaterThan(badgeFillIndex);
+    expect(badgeTextIndex).toBeGreaterThan(horaDrawIndex);
+
+    // 意図的アサーション: drawされた全テキスト集合の中に各要素の完全一致文字列が含まれるかを検証
     const texts = fillTextCalls.map(c => c.text);
     expect(texts).toContain('南場 1本場 供託0 南家');
     expect(texts).toContain('ドラ');
+    expect(texts).toContain('裏ドラ');
     expect(texts).toContain('北×1');
-    expect(texts).toContain('ロン');
+    expect(texts).toContain('ツモ');
+    expect(texts).toContain(data.rankText);
+    expect(texts).toContain(data.declarationText);
+    expect(texts).toContain(data.totalText);
     expect(texts).toContain('三麻点数計算機');
     expect(texts).toContain('bluekurage119.github.io/mj-3player-calc');
 
