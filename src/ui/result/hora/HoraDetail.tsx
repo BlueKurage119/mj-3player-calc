@@ -1,14 +1,28 @@
 // 和了結果の本体部品
 import type React from 'react';
+import type { HandOptions, Meld } from '../../../core/input';
 import type { ScoredHora } from '../../../core/result';
 import type { Rule } from '../../../core/rule';
 import type { Table } from '../../../core/table';
+import type { Tile } from '../../../core/tile';
 import { HoraItem } from './HoraItem';
 import './hora.css';
+
+export interface ShareInput {
+  hand: Tile[];
+  melds: Meld[];
+  dora: Tile[];
+  uradora: Tile[];
+  nuki: number;
+  riichi: HandOptions['riichi'];
+  red: Rule['red'];
+  nukiEnabled: boolean;
+}
 
 export interface ResultContext {
   table: Table;
   rule: Pick<Rule, 'roundedMangan' | 'accumlatedYakuman'>;
+  share?: ShareInput | undefined;
 }
 
 export interface HoraDetailProps {
