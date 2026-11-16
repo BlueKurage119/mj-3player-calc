@@ -122,5 +122,5 @@
   GitHub Pages への自動デプロイ(配布先はオーナー判断 2026-11-15)。サブパス配信に合わせた `base` の設定。
 - **[G3. v1 リリース](https://github.com/BlueKurage119/mj-3player-calc/issues/110)**
   README、版番号、受け入れ確認。アプリ内のライセンス表示は [#69](https://github.com/BlueKurage119/mj-3player-calc/issues/69) で扱う(オーナー判断 2026-11-15)。
-- **G4. ヘルプ画面**
+- **[G4. ヘルプ画面](https://github.com/BlueKurage119/mj-3player-calc/issues/117)**
   現行機能の分の最小版(ルール設定の `HelpTooltip` を補う。ツモ損方式・ローカル役・抜き北・結果の見方など、見ただけでは分からない点が中心)。H2(#102)の後に起案する(オーナー判断 2026-11-15)。入口は G3 のライセンス表示画面(#69)と統合する案がある。未決: 構成と入口、キーボード操作の説明の要否。
