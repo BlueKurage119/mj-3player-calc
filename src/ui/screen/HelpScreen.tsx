@@ -313,6 +313,7 @@ export function HelpView({
         >
           ライセンス
         </Button>
+        <p className="help-screen__version">{`バージョン ${__APP_VERSION__}`}</p>
       </main>
     </div>
   );

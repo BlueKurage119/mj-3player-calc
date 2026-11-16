@@ -17,6 +17,9 @@ const tokensCssPath = path.resolve(
 const statusBarColors = readStatusBarColors(
   fs.readFileSync(tokensCssPath, 'utf-8')
 );
+const appVersion: string = JSON.parse(
+  fs.readFileSync(path.resolve(import.meta.dirname, 'package.json'), 'utf-8')
+).version;
 
 function injectThemeColorPlugin(colors: StatusBarColors): Plugin {
   return {
@@ -29,6 +32,9 @@ function injectThemeColorPlugin(colors: StatusBarColors): Plugin {
 
 export default {
   base: '/mj-3player-calc/',
+  define: {
+    __APP_VERSION__: JSON.stringify(appVersion)
+  },
   plugins: [
     react(),
     wasm(),

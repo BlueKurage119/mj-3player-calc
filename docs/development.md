@@ -1,0 +1,40 @@
+# 開発者向けガイド
+
+## 構成
+
+- `src/core/` — 計算コア（役判定・符・点数・向聴）。[livewing/mahjong-calc](https://github.com/livewing/mahjong-calc)（MIT）の `src/lib` から取り込み、三麻向けに改修します
+- `wasm/decomposer/` — 手牌分解器（Rust/WASM）。同じく mahjong-calc から取り込み
+- `src/ui/` — UI（Material Design 3 Expressive）
+
+## 開発
+
+初回は `npm run build:wasm` のあとに `npm install` を実行します(依存の `decomposer` が WASM のビルド成果物を参照するため)。
+
+| コマンド | 用途 | 備考 |
+| --- | --- | --- |
+| `npm run build:wasm` | 手牌分解器(WASM)のビルド | 初回と Rust 変更時。Rust と wasm-pack が必要 |
+| `npm install` | 依存パッケージの導入 | `build:wasm` の後に実行する |
+| `npm run dev` | 開発サーバーの起動 | |
+| `npm run build` | 型検査と本番ビルド | 成果物は `dist/` |
+| `npm run preview` | 本番ビルドのローカル確認 | 先に `npm run build` を実行する |
+| `npm test` | テスト(Vitest) | |
+| `npm run typecheck` | 型検査 | |
+| `npm run lint` | 静的検査(Biome) | |
+| `npm run format:check` | 整形差分のチェック(Biome) | `npm run format` で自動整形 |
+| `npm run gen:theme` / `npm run check:theme` | 色トークンの生成 / 生成物が最新かの検査 | |
+| `npm run icons:gen` / `npm run check:icons` | PWA アイコンの生成 / 生成物が最新かの検査 | |
+| `npm run tiles:optimize` | 牌画像の最適化 | |
+
+コミット前には `npm run lint`・`npm run typecheck`・`npm run format:check`・`npm test` を実行します。
+
+## 開発の進め方
+
+Issue 駆動で、ヒアリング→設計→製造→検収の順に進めます。詳細は [AGENTS.md](../AGENTS.md)・[docs/rules/](rules/README.md)、要件は [docs/requirements.md](requirements.md)、Issue 下書きは [docs/issues-draft.md](issues-draft.md) を参照してください。
+
+## デプロイ
+
+GitHub Actions の `Deploy` ワークフローを `main` ブランチで手動実行（`workflow_dispatch`）して GitHub Pages に公開します。初回設定（GitHub Pages の有効化）と実行手順の詳細は [issue-109-pages-deploy.md](design/issue-109-pages-deploy.md#7-オーナーが行う手順リポジトリ設定) を参照してください。
+
+## リリース
+
+PR マージおよびデプロイ・公開前チェックの後、オーナーが対象コミットに注釈付きタグを打って push し、監修済みリリースノートで GitHub Release を作成します。版上げと手順の詳細は [issue-110-v1-release.md](design/issue-110-v1-release.md#8-オーナー向け手順書タグgithub-release) を参照してください。

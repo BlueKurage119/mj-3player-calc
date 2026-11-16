@@ -1,31 +1,58 @@
-# mj-3player-calc
+# 三麻点数計算機 (mj-3player-calc)
 
-三人麻雀に特化したスマホ向けの点数計算機（PWA）です。
+三人麻雀に特化したスマホ向けの点数計算機（PWA）です。和了形・聴牌形では役と打点を、それ以外では向聴数と何切るを表示します。
 
-## 構成
+## 公開 URL
 
-- `src/core/` — 計算コア（役判定・符・点数・向聴）。[livewing/mahjong-calc](https://github.com/livewing/mahjong-calc)（MIT）の `src/lib` から取り込み、三麻向けに改修します
-- `wasm/decomposer/` — 手牌分解器（Rust/WASM）。同じく mahjong-calc から取り込み
-- `src/ui/` — UI（Material Design 3 Expressive）
+https://bluekurage119.github.io/mj-3player-calc/
 
-## 開発
+## スクリーンショット
 
-Rust と wasm-pack が必要です（WASM のビルド用）。
+<img src="docs/images/screenshot-hora.png" width="300" alt="和了形の役と点数の計算結果画面"> <img src="docs/images/screenshot-nanikiru.png" width="300" alt="2向聴の14枚の手牌で、打牌候補ごとの受け入れ牌と枚数を並べた何切る画面">
 
-```bash
-npm run build:wasm   # 初回と Rust 変更時
-npm install
-npm run dev
-npm test
-npm run lint && npm run typecheck && npm run format:check
-```
+画像はイメージです。
 
-## 開発の進め方
+## できること
 
-Issue 駆動で、ヒアリング→設計→製造→検収の順に進めます。詳細は [AGENTS.md](AGENTS.md)・[docs/rules/](docs/rules/README.md)、要件は [docs/requirements.md](docs/requirements.md)、Issue 下書きは [docs/issues-draft.md](docs/issues-draft.md) を参照してください。
+- 和了形の役・飜・符・点数（ロン・ツモ）の計算
+- 聴牌時の和了牌ごとの役と点数の表示
+- 向聴数・有効牌の表示と、何切る（切る牌ごとの向聴数と受け入れ）
+- 三人麻雀のルール設定（ツモ損方式、抜き北、ローカル役など）とプリセット
+- 設定に連動した点数計算表の表示
+- 和了結果の共有画像（共有・保存・コピー）
+- ホーム画面への追加とオフラインでの利用
+
+## 使い方
+
+手牌・ドラ・裏ドラ・副露の各カードをタップすると画面の下に入力パネルが開き、パレットまたはテンキーで牌を入力できます。入力した牌に応じて和了・聴牌・向聴・何切るの結果が自動で切り替わります。
+
+詳しくはアプリ右上のメニューの「ヘルプ」を参照してください。
+
+## ホーム画面への追加（インストール）
+
+### iOS / iPadOS（Safari）
+
+1. Safari で公開 URL を開きます。
+2. 画面下の「共有」ボタンをタップします。
+3. 「ホーム画面に追加」を選択して追加します。
+
+### Android（Chrome）
+
+1. Chrome で公開 URL を開きます。
+2. 右上のメニューボタンをタップします。
+3. 「アプリをインストール」（または「ホーム画面に追加」）を選択して追加します。
+
+## 対応環境
+
+- iOS / iPadOS の Safari、Android の Chrome（いずれも最新版を想定）
+- PC のブラウザでも動作しますが、スマートフォン向けの画面構成です。
 
 ## ライセンス
 
 [MIT](./LICENSE)。計算コアは livewing.net による mahjong-calc（MIT）に由来します。
 
-第三者素材の権利表示は [CREDITS.md](./CREDITS.md) と [LICENSES/](./LICENSES/) を参照してください。
+第三者素材の権利表示は [CREDITS.md](./CREDITS.md) と [LICENSES/](./LICENSES/) を参照してください。アプリ内の「ヘルプ → ライセンス」でも確認できます。
+
+## 開発者向け
+
+構成・ビルド手順・開発の進め方・デプロイ・リリース手順は [docs/development.md](docs/development.md) を参照してください。
