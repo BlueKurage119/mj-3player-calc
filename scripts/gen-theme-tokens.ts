@@ -8,7 +8,9 @@ import {
   hexFromArgb
 } from '@material/material-color-utilities';
 
-export const SEED = '#1B5E20';
+import { SEED } from './theme-seed.ts';
+
+export { SEED };
 export const SCHEME_NAME = 'SchemeTonalSpot';
 export const CONTRAST_LEVEL = 0;
 export const SPEC_VERSION = '2021';
@@ -157,4 +159,8 @@ function run(): void {
   console.log(`Generated ${outputPath}`);
 }
 
-run();
+// Vitest からの SEED 再 export 検証時に副作用(ファイル書き込み)が走らないようにする
+const VITEST_ENV = 'VITEST';
+if (!process.env[VITEST_ENV]) {
+  run();
+}
