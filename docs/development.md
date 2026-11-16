@@ -8,15 +8,24 @@
 
 ## 開発
 
-Rust と wasm-pack が必要です（WASM のビルド用）。
+初回は `npm run build:wasm` のあとに `npm install` を実行します(依存の `decomposer` が WASM のビルド成果物を参照するため)。
 
-```bash
-npm run build:wasm   # 初回と Rust 変更時
-npm install
-npm run dev
-npm test
-npm run lint && npm run typecheck && npm run format:check
-```
+| コマンド | 用途 | 備考 |
+| --- | --- | --- |
+| `npm run build:wasm` | 手牌分解器(WASM)のビルド | 初回と Rust 変更時。Rust と wasm-pack が必要 |
+| `npm install` | 依存パッケージの導入 | `build:wasm` の後に実行する |
+| `npm run dev` | 開発サーバーの起動 | |
+| `npm run build` | 型検査と本番ビルド | 成果物は `dist/` |
+| `npm run preview` | 本番ビルドのローカル確認 | 先に `npm run build` を実行する |
+| `npm test` | テスト(Vitest) | |
+| `npm run typecheck` | 型検査 | |
+| `npm run lint` | 静的検査(Biome) | |
+| `npm run format:check` | 整形差分のチェック(Biome) | `npm run format` で自動整形 |
+| `npm run gen:theme` / `npm run check:theme` | 色トークンの生成 / 生成物が最新かの検査 | |
+| `npm run icons:gen` / `npm run check:icons` | PWA アイコンの生成 / 生成物が最新かの検査 | |
+| `npm run tiles:optimize` | 牌画像の最適化 | |
+
+コミット前には `npm run lint`・`npm run typecheck`・`npm run format:check`・`npm test` を実行します。
 
 ## 開発の進め方
 
