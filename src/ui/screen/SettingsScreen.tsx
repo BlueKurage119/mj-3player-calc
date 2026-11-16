@@ -1,6 +1,6 @@
 import type React from 'react';
 import { SYMBOL_ARROW_BACK, SymbolIcon } from '../icons';
-import { Divider, IconButton } from '../md';
+import { Button, Divider, IconButton } from '../md';
 import { HelpTooltipScope, RuleSection, ThemeSection } from '../settings';
 import { useAppDispatch, useRuleLoadNotice } from '../state';
 import '../settings/settings.css';
@@ -37,6 +37,20 @@ export function SettingsScreen(): React.JSX.Element {
           <Divider />
           <RuleSection />
         </HelpTooltipScope>
+        <Divider />
+        <Button
+          variant="text"
+          className="settings-screen__license-link"
+          onClick={() =>
+            dispatch({
+              type: 'navigate',
+              screen: 'license',
+              returnTo: 'settings'
+            })
+          }
+        >
+          ライセンス
+        </Button>
       </main>
     </div>
   );

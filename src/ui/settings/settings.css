@@ -449,3 +449,8 @@
   color: var(--md-sys-color-on-surface-variant);
   margin: 0.125rem 0 0.25rem 0;
 }
+
+.settings-screen__license-link {
+  align-self: flex-start;
+  min-height: 3rem;
+}

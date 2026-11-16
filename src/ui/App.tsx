@@ -10,6 +10,7 @@ import { AppStateProvider, useAppState } from './state';
 
 const SettingsScreen = lazy(() => import('./screen/SettingsScreen'));
 const ScoringTableScreen = lazy(() => import('./screen/ScoringTableScreen'));
+const LicenseScreen = lazy(() => import('./screen/LicenseScreen'));
 
 let DevTileGallery: ComponentType | null = null;
 let DevMdGallery: ComponentType | null = null;
@@ -32,6 +33,13 @@ function AppContent(): React.JSX.Element {
     return (
       <Suspense fallback={null}>
         <ScoringTableScreen />
+      </Suspense>
+    );
+  }
+  if (screen === 'license') {
+    return (
+      <Suspense fallback={null}>
+        <LicenseScreen />
       </Suspense>
     );
   }
