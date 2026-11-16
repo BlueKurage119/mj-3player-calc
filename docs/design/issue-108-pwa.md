@@ -127,6 +127,7 @@ manifest: {
 - `theme-color` は `media` 付きで2本【確定】(H6)。値は tokens.css のライト・ダークの `--md-sys-color-surface` で、ビルド時に `transformIndexHtml` の小プラグインがプレースホルダ `%THEME_COLOR_LIGHT%`・`%THEME_COLOR_DARK%` を置換する(§4)。プレースホルダ名は製造で変えてよい。
 - `href` は Vite が `public/` 参照に `base` を付与するため `/favicon.svg` と書けば `/mj-3player-calc/favicon.svg` になる見込み。`base` 付きで直接書いてもよい。いずれも G1-AC6 で `dist/index.html` の最終値を確認する。
 - 既知の制約(許容済み): `media` の `prefers-color-scheme` はOSの設定を見るため、アプリ内でOSと逆のテーマを選んだ場合、ステータスバー色とアプリ画面の地色が食い違う。manifest の `theme_color` は1値しか持てないため、ダークのOS設定でも manifest 由来の色(ライト surface)になり得る。
+- 既知の制約(許容済み・UI監修で確認): Android(インストール済み PWA)で、ダーク設定のとき、最下部のナビゲーションバー領域は manifest の `theme_color`(固定値=ライトの surface)で決まり、白い帯として出る。ステータスバー(上)は `meta theme-color` でダークに追従する。manifest はライト・ダークの出し分けができないため、ユーザーが現状維持を選択した(2026-11-16 UI監修)。端末のバージョンで挙動が異なる可能性があり、断定はしない。
 
 ### 3.4 更新処理
 
