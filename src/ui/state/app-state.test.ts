@@ -2371,3 +2371,25 @@ describe('G3L: 第三者ライセンス画面の遷移', () => {
     expect(backWithoutReturnTo.returnScreen).toBe('settings');
   });
 });
+
+describe('G4: ヘルプ画面からのライセンス画面への遷移', () => {
+  it('G4-T6: ヘルプ画面から returnTo: help でライセンス画面へ遷移すると returnScreen が help になり、戻るでヘルプに戻る', () => {
+    const initial = createInitialState(createDefaultRule());
+    const onHelp = appReducer(initial, { type: 'navigate', screen: 'help' });
+    expect(onHelp.screen).toBe('help');
+
+    const toLicense = appReducer(onHelp, {
+      type: 'navigate',
+      screen: 'license',
+      returnTo: 'help'
+    });
+    expect(toLicense.screen).toBe('license');
+    expect(toLicense.returnScreen).toBe('help');
+
+    const back = appReducer(toLicense, {
+      type: 'navigate',
+      screen: toLicense.returnScreen
+    });
+    expect(back.screen).toBe('help');
+  });
+});
