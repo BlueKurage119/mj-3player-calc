@@ -7,6 +7,7 @@ import { type AppAction, useAppDispatch } from '../state';
 export type HeaderMenuItemId =
   | 'settings'
   | 'scoring-table'
+  | 'help'
   | 'random14'
   | 'chinitsu'
   | 'clear-all';
@@ -18,6 +19,7 @@ export type HeaderMenuEntry =
 const HEADER_MENU_ENTRIES: readonly HeaderMenuEntry[] = [
   { type: 'item', id: 'settings', label: '設定' },
   { type: 'item', id: 'scoring-table', label: '点数計算表' },
+  { type: 'item', id: 'help', label: 'ヘルプ' },
   { type: 'divider' },
   { type: 'item', id: 'random14', label: 'ランダム14枚' },
   { type: 'item', id: 'chinitsu', label: 'ランダム清一色' },
@@ -28,6 +30,7 @@ const HEADER_MENU_ENTRIES: readonly HeaderMenuEntry[] = [
 const HEADER_MENU_ACTIONS: Record<HeaderMenuItemId, AppAction> = {
   settings: { type: 'navigate', screen: 'settings' },
   'scoring-table': { type: 'navigate', screen: 'scoring-table' },
+  help: { type: 'navigate', screen: 'help' },
   random14: { type: 'set-random-hand', kind: 'random14' },
   chinitsu: { type: 'set-random-hand', kind: 'chinitsu' },
   'clear-all': { type: 'clear-all' }

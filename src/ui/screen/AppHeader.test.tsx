@@ -49,6 +49,11 @@ describe('F1-2: ヘッダーメニュー (ランダム14枚・ランダム清一
         className: 'app-header__menu-item',
         innerHtml: '<div slot="headline">点数計算表</div>'
       },
+      {
+        kind: 'item',
+        className: 'app-header__menu-item',
+        innerHtml: '<div slot="headline">ヘルプ</div>'
+      },
       { kind: 'divider' },
       {
         kind: 'item',
@@ -69,10 +74,11 @@ describe('F1-2: ヘッダーメニュー (ランダム14枚・ランダム清一
     ]);
   });
 
-  it('F1-2-13: getHeaderMenuEntries が設定・点数計算表・Divider・ランダム2項目・Divider・オールクリアを返す', () => {
+  it('F1-2-13: getHeaderMenuEntries が設定・点数計算表・ヘルプ・Divider・ランダム2項目・Divider・オールクリアを返す', () => {
     expect(getHeaderMenuEntries()).toEqual([
       { type: 'item', id: 'settings', label: '設定' },
       { type: 'item', id: 'scoring-table', label: '点数計算表' },
+      { type: 'item', id: 'help', label: 'ヘルプ' },
       { type: 'divider' },
       { type: 'item', id: 'random14', label: 'ランダム14枚' },
       { type: 'item', id: 'chinitsu', label: 'ランダム清一色' },
@@ -123,5 +129,39 @@ describe('F1-2: ヘッダーメニュー (ランダム14枚・ランダム清一
       type: 'navigate',
       screen: 'scoring-table'
     });
+  });
+});
+
+describe('G4: ヘッダーメニュー (ヘルプ)', () => {
+  it('G4-T1: getHeaderMenuEntries が設計書 3.4 の並び(divider を含む)と完全一致する', () => {
+    expect(getHeaderMenuEntries()).toEqual([
+      { type: 'item', id: 'settings', label: '設定' },
+      { type: 'item', id: 'scoring-table', label: '点数計算表' },
+      { type: 'item', id: 'help', label: 'ヘルプ' },
+      { type: 'divider' },
+      { type: 'item', id: 'random14', label: 'ランダム14枚' },
+      { type: 'item', id: 'chinitsu', label: 'ランダム清一色' },
+      { type: 'divider' },
+      { type: 'item', id: 'clear-all', label: 'オールクリア' }
+    ]);
+  });
+
+  it('G4-T2: selectHeaderMenuItem で help を選ぶとメニューを閉じて help 画面へ遷移する action を dispatch する', () => {
+    const callOrder: string[] = [];
+    const closeMenu = vi.fn(() => {
+      callOrder.push('close');
+    });
+    const dispatch = vi.fn<(action: AppAction) => void>(() => {
+      callOrder.push('dispatch');
+    });
+
+    selectHeaderMenuItem('help', closeMenu, dispatch);
+    expect(closeMenu).toHaveBeenCalledTimes(1);
+    expect(dispatch).toHaveBeenCalledTimes(1);
+    expect(dispatch).toHaveBeenCalledWith({
+      type: 'navigate',
+      screen: 'help'
+    });
+    expect(callOrder).toEqual(['close', 'dispatch']);
   });
 });
