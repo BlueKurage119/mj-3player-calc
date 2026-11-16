@@ -29,7 +29,7 @@ import {
   normalizeHandOptions
 } from './situation-rules';
 
-export type Screen = 'main' | 'settings' | 'scoring-table';
+export type Screen = 'main' | 'settings' | 'scoring-table' | 'license';
 export type SheetMode = 'palette' | 'tenkey';
 export type TenkeySuit = 'm' | 'p' | 's' | 'z';
 export type MeldKind = 'pon' | 'minkan' | 'ankan';
@@ -43,6 +43,7 @@ export type SheetTarget =
 export type AppInput = Input & { uradora: Tile[] };
 export interface AppState {
   screen: Screen;
+  returnScreen: Screen; // ライセンス画面の「戻る」の行き先。初期値 'main'
   rule: Rule;
   table: Table;
   input: AppInput;
@@ -52,7 +53,7 @@ export interface AppState {
   tenkeyBuffer: string; // '0'〜'9' のみ。既定 ''
 }
 export type AppAction =
-  | { type: 'navigate'; screen: Screen }
+  | { type: 'navigate'; screen: Screen; returnTo?: Screen | undefined }
   | { type: 'open-sheet'; target: SheetTarget }
   | { type: 'close-sheet' }
   | { type: 'set-wind'; field: 'round' | 'seat'; wind: Wind }
@@ -109,6 +110,7 @@ export const isNukiEnabled = (rule: Rule): boolean => rule.north !== 'yakuhai';
 
 export const createInitialState = (rule: Rule): AppState => ({
   screen: 'main',
+  returnScreen: 'main',
   rule,
   table: {
     round: 'east',
@@ -165,7 +167,13 @@ export const appReducer = (state: AppState, action: AppAction): AppState => {
   switch (action.type) {
     case 'navigate':
       if (state.screen === action.screen) return state;
-      return { ...state, screen: action.screen };
+      return {
+        ...state,
+        screen: action.screen,
+        ...(action.returnTo !== undefined
+          ? { returnScreen: action.returnTo }
+          : {})
+      };
 
     case 'open-sheet': {
       let currentMelds = state.input.melds;

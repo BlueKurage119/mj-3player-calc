@@ -160,6 +160,7 @@ describe('D1: 状態管理と reducer (条件6〜9)', () => {
     const customRule = { ...createDefaultRule(), kuitan: false };
     const populated: AppState = {
       screen: 'main',
+      returnScreen: 'main',
       rule: customRule,
       table: {
         round: 'south',
@@ -253,6 +254,7 @@ describe('D1: 状態管理と reducer (条件6〜9)', () => {
 
     expect(initial).toEqual({
       screen: 'main',
+      returnScreen: 'main',
       rule,
       table: {
         round: 'east',
@@ -2345,5 +2347,27 @@ describe('H1: 点数計算表の画面遷移', () => {
       screen: 'main'
     });
     expect(backToMain.screen).toBe('main');
+  });
+});
+
+describe('G3L: 第三者ライセンス画面の遷移', () => {
+  it('G3L-T5: createInitialState の returnScreen は main で、navigate の returnTo で更新され、省略時は変わらない', () => {
+    const initial = createInitialState(createDefaultRule());
+    expect(initial.returnScreen).toBe('main');
+
+    const toLicense = appReducer(initial, {
+      type: 'navigate',
+      screen: 'license',
+      returnTo: 'settings'
+    });
+    expect(toLicense.screen).toBe('license');
+    expect(toLicense.returnScreen).toBe('settings');
+
+    const backWithoutReturnTo = appReducer(toLicense, {
+      type: 'navigate',
+      screen: toLicense.returnScreen
+    });
+    expect(backWithoutReturnTo.screen).toBe('settings');
+    expect(backWithoutReturnTo.returnScreen).toBe('settings');
   });
 });
