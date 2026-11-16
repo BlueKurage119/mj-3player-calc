@@ -1,5 +1,6 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
+import pkg from '../../../package.json';
 import { RULE_ITEMS, type RuleItem } from '../../core/rule-items';
 import { TSUMO_LOSS_DESCRIPTIONS } from '../settings/rule-help';
 import { HelpView } from './HelpScreen';
@@ -65,5 +66,28 @@ describe('G4: ヘルプ画面 (HelpView)', () => {
       // 理由: 設計書 3.6 G4-T5 の定めにより、HTML 全体との完全一致は脆いため、ツモ損の3方式の説明がそのまま含まれることを部分一致で検証する
       expect(html.includes(description)).toBe(true);
     }
+  });
+});
+
+describe('G3: バージョン表示 (G3-T1〜T3)', () => {
+  it('G3-T1: renderHelpHtml() が「バージョン 1.0.0」を含む', () => {
+    const html = renderHelpHtml();
+    const match = html.match(/<p class="help-screen__version">([^<]+)<\/p>/);
+    expect(match?.[1]).toBe('バージョン 1.0.0');
+  });
+
+  it('G3-T2: 表示の版番号が package.json の version と一致する', () => {
+    const html = renderHelpHtml();
+    const match = html.match(/<p class="help-screen__version">([^<]+)<\/p>/);
+    expect(match?.[1]).toBe(`バージョン ${pkg.version}`);
+  });
+
+  it('G3-T3: バージョンの出現位置がライセンスボタンより後ろである', () => {
+    const html = renderHelpHtml();
+    const licenseIndex = html.indexOf('ライセンス');
+    const versionIndex = html.indexOf('バージョン');
+
+    expect(licenseIndex).toBeGreaterThan(-1);
+    expect(versionIndex).toBeGreaterThan(licenseIndex);
   });
 });
