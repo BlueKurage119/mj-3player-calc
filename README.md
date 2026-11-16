@@ -8,7 +8,7 @@ https://bluekurage119.github.io/mj-3player-calc/
 
 ## スクリーンショット
 
-<img src="docs/images/screenshot-hora.png" width="300" alt="和了形の役と点数の計算結果画面"> <img src="docs/images/screenshot-nanikiru.png" width="300" alt="何切るの向聴数と受け入れ一覧の計算結果画面">
+<img src="docs/images/screenshot-hora.png" width="300" alt="和了形の役と点数の計算結果画面"> <img src="docs/images/screenshot-nanikiru.png" width="300" alt="2向聴の14枚の手牌で、打牌候補ごとの受け入れ牌と枚数を並べた何切る画面">
 
 画像はイメージです。
 
