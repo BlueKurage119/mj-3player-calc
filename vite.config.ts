@@ -4,30 +4,25 @@ import react from '@vitejs/plugin-react-swc';
 import type { Plugin, UserConfig } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
 import wasm from 'vite-plugin-wasm';
-import { readTokenValues } from './scripts/theme-colors.ts';
-import { SEED } from './scripts/theme-seed.ts';
-
-if (!/^#[0-9A-Fa-f]{6}$/.test(SEED)) {
-  throw new Error(`SEED の形式が不正です: ${SEED}`);
-}
+import {
+  type StatusBarColors,
+  injectStatusBarColors,
+  readStatusBarColors
+} from './scripts/theme-colors.ts';
 
 const tokensCssPath = path.resolve(
   import.meta.dirname,
   'src/ui/theme/tokens.css'
 );
-const tokensCss = fs.readFileSync(tokensCssPath, 'utf-8');
-const SURFACE_ROLE = 'surface';
-const lightTokens = readTokenValues(tokensCss, 'light', [SURFACE_ROLE]);
-const lightSurface = lightTokens[SURFACE_ROLE];
-if (!lightSurface) {
-  throw new Error('ライトテーマの --md-sys-color-surface が取得できません。');
-}
+const statusBarColors = readStatusBarColors(
+  fs.readFileSync(tokensCssPath, 'utf-8')
+);
 
-function injectThemeColorPlugin(themeColor: string): Plugin {
+function injectThemeColorPlugin(colors: StatusBarColors): Plugin {
   return {
     name: 'inject-theme-color',
     transformIndexHtml(html) {
-      return html.replaceAll('%THEME_COLOR%', themeColor);
+      return injectStatusBarColors(html, colors);
     }
   };
 }
@@ -37,7 +32,7 @@ export default {
   plugins: [
     react(),
     wasm(),
-    injectThemeColorPlugin(SEED),
+    injectThemeColorPlugin(statusBarColors),
     VitePWA({
       registerType: 'autoUpdate',
       injectRegister: 'script',
@@ -50,8 +45,8 @@ export default {
         start_url: '/mj-3player-calc/',
         scope: '/mj-3player-calc/',
         display: 'standalone',
-        theme_color: SEED,
-        background_color: lightSurface,
+        theme_color: statusBarColors.light,
+        background_color: statusBarColors.light,
         icons: [
           {
             src: 'icons/icon-192.png',

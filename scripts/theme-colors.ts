@@ -70,3 +70,32 @@ export function resolveColorPlaceholders(
     return value;
   });
 }
+
+export interface StatusBarColors {
+  light: string;
+  dark: string;
+}
+
+/**
+ * ステータスバー色(ライト・ダークの surface)を tokens.css から取得する。
+ * 取得できない場合は例外を投げる。
+ */
+export function readStatusBarColors(cssText: string): StatusBarColors {
+  const role = 'surface';
+  const light = readTokenValues(cssText, 'light', [role])[role];
+  const dark = readTokenValues(cssText, 'dark', [role])[role];
+  if (!light || !dark) {
+    throw new Error('--md-sys-color-surface が取得できません。');
+  }
+  return { light, dark };
+}
+
+/** index.html のテーマ色プレースホルダを置換する。 */
+export function injectStatusBarColors(
+  html: string,
+  colors: StatusBarColors
+): string {
+  return html
+    .replaceAll('%THEME_COLOR_LIGHT%', colors.light)
+    .replaceAll('%THEME_COLOR_DARK%', colors.dark);
+}

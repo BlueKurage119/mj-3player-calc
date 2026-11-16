@@ -3,6 +3,7 @@
 - 対象Issue: #108(Epic G #8 の Sub-Issue)
 - 基準: `main` e93d239(2026-11-16 時点)
 - 状態: 設計承認済み。ユーザー判断事項はすべて【確定】(§9)
+- 変更履歴: ステータスバー色を「シード色固定」から、ユーザーが当初案2(ライト・ダークの surface 追従)に戻した(2026-11-16、設計変更の承認は省略と明言)
 
 ## 1. 参照資料と設計判断の根拠
 
@@ -15,7 +16,7 @@
 | H3 | `display=standalone`、`start_url`・`scope`=`/mj-3player-calc/`、`lang=ja`、`name`=「三麻点数計算機」、`short_name`=「三麻計算機」、`orientation` は固定しない、`base` は変更しない、`description`・`apple-touch-icon`・`theme-color` を `index.html` に追加 | §3.1・§3.3 |
 | H4 | 実機でしか確認できない項目は受け入れ条件で区別 | §8.2 |
 | H5 | (ユーザー回答・設計承認時)アイコンは、点棒を逆三角形に組み数字の3を併記した最終デザイン(オーナー制作・支給SVG)を採用する。仮のC案「北牌」は採用せず、A案も見送り | §3.2・§5 |
-| H6 | (ユーザー回答)ステータスバー色はシード色で固定。`meta theme-color` は `media` で出し分けず1つの固定値、manifest の `theme_color` も同値。シード定義を単一の正本とし手書きHEXの二重管理を避ける | §3.3・§4 |
+| H6 | (ユーザー回答・案2に変更)ステータスバー色はOSのライト・ダークに追従。`meta theme-color` を2本(`media="(prefers-color-scheme: light)"`=ライトの surface、`media="(prefers-color-scheme: dark)"`=ダークの surface)、manifest の `theme_color` は固定値でライトの surface(`background_color` と同値)。値は tokens.css から取得し手書きHEXを避ける | §3.3・§4 |
 | H7 | (ユーザー回答)§9 の Q1〜Q7 の回答 | §9 |
 
 ### 1.2 参照した資料
@@ -57,7 +58,7 @@ manifest: {
   start_url: '/mj-3player-calc/',
   scope: '/mj-3player-calc/',
   display: 'standalone',
-  theme_color: SEED,                 // §4。シード色
+  theme_color: lightSurface,         // §4。tokens.css ライトの --md-sys-color-surface
   background_color: lightSurface,    // §4。tokens.css ライトの --md-sys-color-surface
   icons: [
     { src: 'icons/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
@@ -117,14 +118,15 @@ manifest: {
 
 ```html
 <meta name="description" content="<§3.1 と同文>" />
-<meta name="theme-color" content="%THEME_COLOR%" />
+<meta name="theme-color" media="(prefers-color-scheme: light)" content="%THEME_COLOR_LIGHT%" />
+<meta name="theme-color" media="(prefers-color-scheme: dark)" content="%THEME_COLOR_DARK%" />
 <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon-180.png" />
 ```
 
-- `theme-color` は `media` で出し分けず1本【確定】(H6)。値はシード色で、ビルド時に `transformIndexHtml` の小プラグインがプレースホルダ `%THEME_COLOR%` を置換する(§4)。プレースホルダ名は製造で変えてよい。
+- `theme-color` は `media` 付きで2本【確定】(H6)。値は tokens.css のライト・ダークの `--md-sys-color-surface` で、ビルド時に `transformIndexHtml` の小プラグインがプレースホルダ `%THEME_COLOR_LIGHT%`・`%THEME_COLOR_DARK%` を置換する(§4)。プレースホルダ名は製造で変えてよい。
 - `href` は Vite が `public/` 参照に `base` を付与するため `/favicon.svg` と書けば `/mj-3player-calc/favicon.svg` になる見込み。`base` 付きで直接書いてもよい。いずれも G1-AC6 で `dist/index.html` の最終値を確認する。
-- 旧論点 Q2(アプリ内テーマ設定と `media` 出し分けの食い違い)は、固定値にしたため解消した。ステータスバーはライト・ダークどちらのテーマでもシード色(濃緑)になる。
+- 既知の制約(許容済み): `media` の `prefers-color-scheme` はOSの設定を見るため、アプリ内でOSと逆のテーマを選んだ場合、ステータスバー色とアプリ画面の地色が食い違う。manifest の `theme_color` は1値しか持てないため、ダークのOS設定でも manifest 由来の色(ライト surface)になり得る。
 
 ### 3.4 更新処理
 
@@ -146,24 +148,22 @@ manifest と `meta theme-color` は 06号の色トークン義務の対象外(�
 
 | 値 | 正本 | 取得方法 |
 | --- | --- | --- |
-| シード色(`theme_color`・`meta theme-color`) | `SEED` 定数 | 下記 |
-| `background_color` | `src/ui/theme/tokens.css` `:root` の `--md-sys-color-surface` | §3.2 の `readTokenValues` を `vite.config.ts` から呼ぶ |
+| `meta theme-color`(ライト)・manifest `theme_color`・`background_color` | `src/ui/theme/tokens.css` `:root` の `--md-sys-color-surface` | §3.2 の `readTokenValues` を `vite.config.ts` から呼ぶ |
+| `meta theme-color`(ダーク) | `src/ui/theme/tokens.css` `:root[data-theme="dark"]` の `--md-sys-color-surface` | 同関数(`block: 'dark'`) |
 | アイコン原画の色 | `src/ui/theme/tokens.css` `:root` の各トークン | `gen-icons.ts` が同関数で解決 |
 
-シード色の取り込み:
+取得の方針:
 
-- `SEED` を依存のない小モジュール `scripts/theme-seed.ts`(`export const SEED = '#1B5E20';` のみ)へ移し、これを単一の正本とする。`scripts/gen-theme-tokens.ts` はここから import する(`export { SEED }` で再 export し、既存の参照を壊さない)。`vite.config.ts` も同モジュールから import する。
-- 移す理由: `vite.config.ts` から `gen-theme-tokens.ts` を直接 import すると、`@material/material-color-utilities` の読み込み(`gen:theme` が inline 指定を要しているもの)が設定ファイルの読み込み時に発生し、失敗するおそれがある。依存のない定数モジュールならこの問題が起きない。**実挙動未確認**(製造で `npm run build` が通ることで確認)。
-- `gen-theme-tokens.ts` の生成結果(`tokens.css`)は変わらない。`npm run check:theme` が成功し続けることを受け入れ条件にする(G1-AC1)。
-- `tsconfig.node.json` の `files` に `./scripts/theme-seed.ts` を追加する(`vite.config.ts` から辿られるため型検査には入るが、明示する)。
-- 失敗時: `SEED` が `/^#[0-9A-Fa-f]{6}$/` に一致しない、tokens.css が読めない、`--md-sys-color-surface` が見つからない場合は `vite.config.ts` 内で例外を投げ、ビルドを失敗させる。
+- `scripts/theme-seed.ts` は `gen-theme-tokens.ts` の生成用シード定義としてのみ残す(本節の色取得には使わない。`vite.config.ts` は import しない)。`gen-theme-tokens.ts` の生成結果(`tokens.css`)は変わらず、`npm run check:theme` が成功し続けることを受け入れ条件にする(G1-AC1)。
+- 失敗時: tokens.css が読めない、ライト・ダークいずれかのブロックに `--md-sys-color-surface` が見つからない場合は `vite.config.ts` 内で例外を投げ、ビルドを失敗させる。
 
 ### 4.3 使う値
 
 | 用途 | 値の正本 | 現在値(参考。手書きしない) |
 | --- | --- | --- |
-| `meta theme-color`(1本) | `SEED` | #1B5E20 |
-| manifest `theme_color` | `SEED` | #1B5E20 |
+| `meta theme-color`(`prefers-color-scheme: light`) | tokens.css ライトの `--md-sys-color-surface` | #f7fbf1 |
+| `meta theme-color`(`prefers-color-scheme: dark`) | tokens.css ダークの `--md-sys-color-surface` | (tokens.css のダーク値) |
+| manifest `theme_color`(固定値) | tokens.css ライトの `--md-sys-color-surface` | #f7fbf1 |
 | manifest `background_color`(スプラッシュの地色) | tokens.css ライトの `--md-sys-color-surface`【確定】 | #f7fbf1 |
 
 `background_color` の得失: アプリ画面の地色と同じなので、ライト端末ではスプラッシュから画面へ色が途切れない。一方、manifest は1値しか持てないため、ダーク端末ではスプラッシュが一瞬明るく見える。
@@ -199,7 +199,7 @@ manifest と `meta theme-color` は 06号の色トークン義務の対象外(�
 | --- | --- |
 | `vite.config.ts` | `manifest` 追加、§4 の色取得、`transformIndexHtml` プラグイン、`injectRegister: 'script'`。`base`・`workbox` は変更しない |
 | `index.html` | §3.3 の要素を追加 |
-| `scripts/theme-seed.ts` | 新規(`SEED` の正本) |
+| `scripts/theme-seed.ts` | 新規(`SEED` の正本。`gen-theme-tokens.ts` 用で、色取得には使わない) |
 | `scripts/gen-theme-tokens.ts` | `SEED` を `theme-seed.ts` から import・再 export(生成結果は不変) |
 | `scripts/theme-colors.ts`(名前は製造で可) | 新規(tokens.css の読み取り・プレースホルダ解決) |
 | `scripts/gen-icons.ts` | 新規 |
@@ -226,6 +226,8 @@ manifest と `meta theme-color` は 06号の色トークン義務の対象外(�
 | G1-T5 | `apple-touch-icon-180.png` の IHDR カラータイプが 2(RGB、アルファなし)。他3ファイルは 2 または 6 |
 | G1-T6 | `public/favicon.svg` が、`assets-src/icon/icon.svg` のプレースホルダを解決した内容と一致する |
 | G1-T7 | プレースホルダ解決関数が tokens.css のライト値に置換し、未知の役割名で例外を投げ、プレースホルダの無いSVGはそのまま返す |
+| G1-T9 | `index.html` の `meta theme-color` がちょうど2本で、`media` がライト・ダークの `prefers-color-scheme`、HEX の手書きが無い |
+| G1-T10 | `readStatusBarColors`(tokens.css 実物)の light・dark が tokens.css のライト・ダークの `--md-sys-color-surface` と一致し、プレースホルダ置換後の `index.html` の2本の値がそれと一致して `%…%` が残らない。manifest `theme_color`(=light)は G1-AC4 で dist 実物を検査 |
 | G1-T8 | `SEED`(`scripts/theme-seed.ts`)が `#` + 16進6桁で、`gen-theme-tokens.ts` が再 export する `SEED` と同一 |
 
 - `check:icons`(再生成してバイト比較)は Vitest・CI では回さず、ローカルの受け入れ条件(G1-AC2)に固定する。理由: resvg の出力は同一環境では決定的だが、macOS と Linux(CI)の間で PNG のバイトが一致するかは未検証であり、CI で偽の失敗を出すおそれがあるため。CI では環境に依存しない構造の検査(G1-T3〜T6)だけを行う。
@@ -239,9 +241,9 @@ manifest と `meta theme-color` は 06号の色トークン義務の対象外(�
 - **G1-AC1** `npm run lint`・`npm run typecheck`・`npm run format:check`・`npm test`・`npm run check:theme` がすべて成功する。あわせて `npx tsc -p tsconfig.node.json --listFilesOnly | grep -E 'gen-icons.ts|theme-seed.ts'` が2件出る。
 - **G1-AC2** `npm run icons:gen` を実行しても `git status --porcelain` に差分が出ない。`npm run check:icons` が終了コード0。ローカル(macOS)でのみ実行し、CIでは回さない(§7)。
 - **G1-AC3** `dist/manifest.webmanifest` を `node -e` 等でJSONとして読み、次がすべて一致: `name`=「三麻点数計算機」、`short_name`=「三麻計算機」、`description`=§3.1 の文言、`lang`=`ja`、`display`=`standalone`、`start_url`=`scope`=`/mj-3player-calc/`、`orientation` キーが無い、`icons` に 192(any)・512(any)・512(maskable)の3件。
-- **G1-AC4** manifest の `theme_color` が `scripts/theme-seed.ts` の `SEED` と一致し(大文字小文字は区別しない)、`background_color` が `src/ui/theme/tokens.css` の `:root` の `--md-sys-color-surface` と一致する。
+- **G1-AC4** manifest の `theme_color` と `background_color` がどちらも `src/ui/theme/tokens.css` の `:root`(ライト)の `--md-sys-color-surface` と一致する(大文字小文字は区別しない)。
 - **G1-AC5** `grep -nE '#[0-9a-fA-F]{3,8}\b' vite.config.ts index.html` が0件(HEXの手書きが無い)。
-- **G1-AC6** `dist/index.html` に次がある: `meta name="description"`(manifest と同文)、`meta name="theme-color"` がちょうど1件で `media` 属性が無く、値が `SEED` と一致、`link rel="apple-touch-icon" href="/mj-3player-calc/icons/apple-touch-icon-180.png"`、`link rel="icon" href="/mj-3player-calc/favicon.svg" type="image/svg+xml"`、`link rel="manifest" href="/mj-3player-calc/manifest.webmanifest"`、`script id="vite-plugin-pwa:register-sw"`。プレースホルダ(`%…%`)が残っていない。
+- **G1-AC6** `dist/index.html` に次がある: `meta name="description"`(manifest と同文)、`meta name="theme-color"` がちょうど2件で、`media="(prefers-color-scheme: light)"` の値が tokens.css ライトの `--md-sys-color-surface`、`media="(prefers-color-scheme: dark)"` の値が tokens.css ダークの `--md-sys-color-surface` と一致、`link rel="apple-touch-icon" href="/mj-3player-calc/icons/apple-touch-icon-180.png"`、`link rel="icon" href="/mj-3player-calc/favicon.svg" type="image/svg+xml"`、`link rel="manifest" href="/mj-3player-calc/manifest.webmanifest"`、`script id="vite-plugin-pwa:register-sw"`。プレースホルダ(`%…%`)が残っていない。
 - **G1-AC7** `dist/registerSW.js` が `register('/mj-3player-calc/sw.js', { scope: '/mj-3player-calc/' })` を含む。
 - **G1-AC8** `dist/sw.js` の precache に、`assets/decomposer_bg-*.wasm` 1件、牌SVG 30件(`grep -oE 'url:"assets/[^"]+\.svg"' dist/sw.js | wc -l` が `ls dist/assets/*.svg | wc -l` と一致)、`favicon.svg`、`icons/icon-192.png`・`icons/icon-512.png`・`icons/icon-maskable-512.png`・`icons/apple-touch-icon-180.png`、`manifest.webmanifest`、`index.html` が載っている。ビルドログの `precache N entries` を記録する。
 - **G1-AC9** `sips -g pixelWidth -g pixelHeight -g hasAlpha public/icons/*.png` で、寸法がファイル名どおり、`apple-touch-icon-180.png` の `hasAlpha` が `no`。
@@ -262,7 +264,7 @@ G2(#109)は PR #115 でマージ済み。本Issueのマージ・デプロイ後�
 - iOS Safari の「ホーム画面に追加」で 180px アイコンが表示され、黒背景にならない。standalone で起動する。
 - 機内モードでの起動・計算。
 - 新版デプロイ後、次回起動(または再読み込み)で新版に切り替わる(通知なし)。
-- ステータスバーが、アプリのテーマ(ライト・ダーク)によらずシード色になる。
+- ステータスバーが、OSのライト・ダーク切替に追従する(ライト=ライトの surface、ダーク=ダークの surface)。アプリ内でOSと逆のテーマを選ぶと食い違うのは既知の制約(§3.3)。
 - 横向き表示の状態(対策はしないが、記録として)。
 
 ## 9. ユーザー判断事項
@@ -272,14 +274,14 @@ G2(#109)は PR #115 でマージ済み。本Issueのマージ・デプロイ後�
 | Q | 論点 | 確定内容 |
 | --- | --- | --- |
 | Q1 | 色の規約解釈と方式 | manifest・meta は06号の対象外(解釈B)。ただし手書きHEXの二重管理を避け、正本から取得する(§4)。アイコン原画は(b)トークン名プレースホルダを `gen-icons.ts` が tokens.css から解決(§3.2) |
-| Q2 | アプリ内テーマとの食い違い | ステータスバー色をシード色固定にしたため論点自体が解消(§3.3) |
+| Q2 | アプリ内テーマとの食い違い | 案2に戻したため、OSと逆のテーマを選んだ場合の食い違いは既知の制約として許容(§3.3) |
 | Q3 | 横向き | 何もしない(§3.5) |
 | Q4 | description 文言 | 「三人麻雀の点数計算機。和了形・聴牌形の役と打点、向聴数と何切るを表示する」 |
 | Q5 | 支給素材の形式 | SVG |
 | Q6 | devDependency のライセンス記録 | `docs/license-policy.md` に記録。`CREDITS.md` には書かない(配布物に含まれないため) |
 | Q7 | モックの扱い | コミットしない |
 | — | アイコン意匠 | 最終デザイン「点棒を逆三角形に組み数字の3を併記」(オーナー制作・支給)を採用。C案「北牌」は採用せず、A案は見送り、B案は不採用 |
-| — | ステータスバー色 | シード色で固定。`meta theme-color` は1本、manifest `theme_color` も同値 |
+| — | ステータスバー色 | 案2。`meta theme-color` は `media` 付き2本(ライト・ダークの surface)、manifest `theme_color` はライト surface の固定値 |
 
 ### 9.2 設計承認時の確認事項
 
@@ -289,5 +291,5 @@ G2(#109)は PR #115 でマージ済み。本Issueのマージ・デプロイ後�
 
 - G2(#109、PR #115 でマージ済み。公開URL https://bluekurage119.github.io/mj-3player-calc/): manifest の `start_url`・`scope` と SW の scope は `base`(`/mj-3player-calc/`)に依存する。配信パスを変える場合は `base` と manifest を同時に変える。
 - G3(#110): 実機確認(§8.2)はリリース前の受け入れ確認に含める。初回JSの基準値は本Issueのマージ後の実測値に更新する(09号8)。
-- テーマの seed を変える場合は `scripts/theme-seed.ts` だけを変え、`npm run gen:theme` を実行する(ステータスバー色・tokens.css が追随する)。アイコン原画は色を値で持つため追随しない。必要なら原画の色を手で更新して `npm run icons:gen` を実行する。
+- テーマの seed を変える場合は `scripts/theme-seed.ts` だけを変え、`npm run gen:theme` を実行する(tokens.css とステータスバー色が追随する)。アイコン原画は色を値で持つため追随しない。必要なら原画の色を手で更新して `npm run icons:gen` を実行する。
 - 新版通知UIは作らない決定(H1)。将来導入する場合は `registerType: 'prompt'` と `virtual:pwa-register/react` が必要になり、初回JSが増える。

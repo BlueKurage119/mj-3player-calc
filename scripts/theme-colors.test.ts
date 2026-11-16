@@ -7,12 +7,17 @@ import { describe, expect, it, vi } from 'vitest';
 vi.mock('@material/material-color-utilities', () => ({}));
 
 import { SEED as REEXPORTED_SEED } from './gen-theme-tokens.ts';
-import { readTokenValues, resolveColorPlaceholders } from './theme-colors.ts';
+import {
+  injectStatusBarColors,
+  readStatusBarColors,
+  readTokenValues,
+  resolveColorPlaceholders
+} from './theme-colors.ts';
 import { SEED } from './theme-seed.ts';
 
 const TOKENS_CSS_PATH = path.resolve(__dirname, '../src/ui/theme/tokens.css');
 
-describe('テーマ色取得・プレースホルダ解決 (G1-T1, G1-T2, G1-T7, G1-T8)', () => {
+describe('テーマ色取得・プレースホルダ解決 (G1-T1, G1-T2, G1-T7〜T10)', () => {
   it('G1-T1: readTokenValues が tokens.css 実物からライトの4トークンを取得できる', () => {
     const tokensCss = fs.readFileSync(TOKENS_CSS_PATH, 'utf-8');
     const tokens = readTokenValues(tokensCss, 'light', [
@@ -77,5 +82,39 @@ describe('テーマ色取得・プレースホルダ解決 (G1-T1, G1-T2, G1-T7,
     expect(SEED).toMatch(/^#[0-9A-Fa-f]{6}$/);
     expect(SEED).toBe('#1B5E20');
     expect(REEXPORTED_SEED).toBe(SEED);
+  });
+
+  it('G1-T9: index.html の meta theme-color がちょうど2本で、media がライト・ダークである', () => {
+    const html = fs.readFileSync(
+      path.resolve(__dirname, '../index.html'),
+      'utf-8'
+    );
+    const metas = html.match(/<meta\s[^>]*name="theme-color"[^>]*>/g) ?? [];
+    expect(metas).toHaveLength(2);
+    expect(metas[0]).toContain('media="(prefers-color-scheme: light)"');
+    expect(metas[1]).toContain('media="(prefers-color-scheme: dark)"');
+    expect(html).not.toMatch(/#[0-9a-fA-F]{3,8}\b/);
+  });
+
+  it('G1-T10: ステータスバー色が tokens.css のライト・ダーク surface と一致し、置換後の index.html に反映される', () => {
+    const tokensCss = fs.readFileSync(TOKENS_CSS_PATH, 'utf-8');
+    const light = readTokenValues(tokensCss, 'light').surface;
+    const dark = readTokenValues(tokensCss, 'dark').surface;
+    const colors = readStatusBarColors(tokensCss);
+    expect(colors).toEqual({ light, dark });
+    expect(light).not.toBe(dark);
+
+    const html = injectStatusBarColors(
+      fs.readFileSync(path.resolve(__dirname, '../index.html'), 'utf-8'),
+      colors
+    );
+    expect(html).toContain(
+      `media="(prefers-color-scheme: light)"\n      content="${light}"`
+    );
+    expect(html).toContain(
+      `media="(prefers-color-scheme: dark)"\n      content="${dark}"`
+    );
+    expect(html).not.toMatch(/%[A-Z_]+%/);
+    expect(() => readStatusBarColors(':root { --x: 1; }')).toThrow();
   });
 });
