@@ -79,12 +79,12 @@
 
 ### 4.2 フェーズごとの役割定義
 
-| 役割 | Claude の担当 | Claude 推奨モデル | Codex 推奨モデル | 役割と成果物 |
+| 役割 | Claude の担当 | Claude 推奨モデル | AGY(Gemini) 推奨モデル | Copilot・Codex 推奨モデル | 役割と成果物 |
 | --- | --- | --- | --- | --- |
-| ヒアリング | 統括（メインセッション） | — | — | **実装方針を左右する未確定事項をユーザーに選択肢とメリット・デメリット等を整理した形で提示する。** 確定した判断を Issue 番号と共に次の担当へ渡す。 |
-| 設計 | `mj3calc-designer` | Opus | Sol以上 | **対象の `docs/design/issue-N-<slug>.md` 1本だけを新規作成または改訂する。**コード、設定、ブランチ、コミットは変更しない。 |
-| 製造 | `mj3calc-builder`・`agy-delegate`スキル | Sonnet・Gemini Flash | Terra・Gemini Flash | **指定済みブランチ上で実装・テスト・コミットまで行う。**push と PR 作成はしない。 |
-| 検収 | `mj3calc-inspector` | Opus（2回目はSonnet） | Sol（2回目はTerra） | 設計書の受け入れ条件を項目ごとに実行して検証する。コードは修正しない。**全項目が通過した場合のみ PR を作成し、マージはしない。** |
+| ヒアリング | 統括（メインセッション） | — | — | — | **実装方針を左右する未確定事項をユーザーに選択肢とメリット・デメリット等を整理した形で提示する。** 確定した判断を Issue 番号と共に次の担当へ渡す。 |
+| 設計 | `mj3calc-designer` | Opus | Argon | Sol以上 | **対象の `docs/design/issue-N-<slug>.md` 1本だけを新規作成または改訂する。**コード、設定、ブランチ、コミットは変更しない。 |
+| 製造 | `mj3calc-builder`・`/agy-delegate` | Sonnet | Hydrogen | Terra | **指定済みブランチ上で実装・テスト・コミットまで行う。**push と PR 作成はしない。 |
+| 検収 | `mj3calc-inspector` | Opus（2回目はSonnet） | Argon | Sol（2回目はTerra） | 設計書の受け入れ条件を項目ごとに実行して検証する。コードは修正しない。**全項目が通過した場合のみ PR を作成し、マージはしない。** |
 
 フェーズ運用の必須事項(承認ゲート・devサーバー禁止事項・ブランチ/コミット/PR/署名)は [docs/rules/01-dev-workflow-protocol.md](docs/rules/01-dev-workflow-protocol.md)を参照のこと。
 
@@ -135,3 +135,4 @@ npm test               # Vitest
 - [docs/design/](docs/design/) — 各IssueのIssue単位設計書
 - [docs/rules/](docs/rules/) — 必ず通る手順と合否条件(業務標準)。一覧は[docs/rules/README.md](docs/rules/README.md)
 - [docs/rules/advisory/](docs/rules/advisory/) — 手順を実行するための知識・ノウハウ・過去事例(指導文書)。一覧は[docs/rules/advisory/README.md](docs/rules/advisory/README.md)
+- [.claude/agents/](.claude/agents/) - サブエージェントの役割定義
