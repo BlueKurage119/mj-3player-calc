@@ -7,7 +7,12 @@ products: [Claude, Codex]
 
 # 検収フェーズ業務標準
 
-対象: 検収担当。ノウハウ・背景は[docs/rules/advisory/](advisory/README.md)(特に[G-05-test-effectiveness-verification.md](advisory/G-05-test-effectiveness-verification.md)・[C-01-browser-pane-visibility-limit.md](advisory/C-01-browser-pane-visibility-limit.md)・[C-02-ui-verification-backorder.md](advisory/C-02-ui-verification-backorder.md))を参照。上から順に進める構成にしてある。設計起因の不合格の典型と切り分けは[G-10-design-consistency-pitfalls.md](advisory/G-10-design-consistency-pitfalls.md)、APIが応答しない・データが出ないときの確認は[G-02-dev-server-etiquette.md](advisory/G-02-dev-server-etiquette.md)を参照。
+- 対象: 検収担当
+- 参照すべき関連指導文書:
+  - ノウハウ・背景: [docs/rules/advisory/](advisory/README.md)
+    (特に[G-05-test-effectiveness-verification.md](advisory/G-05-test-effectiveness-verification.md)・[C-01-browser-pane-visibility-limit.md](advisory/C-01-browser-pane-visibility-limit.md)・[C-02-ui-verification-backorder.md](advisory/C-02-ui-verification-backorder.md))を参照。上から順に進める構成にしてある。
+  - 設計起因の不合格の典型と切り分け: [G-10-design-consistency-pitfalls.md](advisory/G-10-design-consistency-pitfalls.md)
+  - APIが応答しない・データが出ないときの確認: [G-02-dev-server-etiquette.md](advisory/G-02-dev-server-etiquette.md)
 
 ## 1. 着手確認(必須)
 
@@ -18,6 +23,7 @@ products: [Claude, Codex]
 
 - 設計書の「受け入れ条件」全項目を、確認方法(自動テスト/コマンド/ブラウザ/目視)に対応づける。
 - 製造担当の報告(スクリーンショット等)を再利用できる項目と、新たに実行する項目を決める。CI・既存自動テストで担保される項目は、実行結果の有無・成否のみ確認し重ねて詳細を読み込まない。
+- 機械的な実測やコード実行、ブラウザの操作などの判断を要しない作業は、積極的に軽量〜中堅モデルを使用したサブエージェントに委任し、検収担当は判断や検証計画の策定に集中すること。
 
 ## 3. 検証実施(必須)
 
@@ -31,9 +37,9 @@ products: [Claude, Codex]
 
 - 受け入れ条件の**未達**と、**契約範囲外の発見**を分けて扱う。範囲外の発見で合否を覆さない。
 - 発見は必ず次の3分類のいずれかに仕分けて報告する(判断に迷ったら「Issue化して後回し」):
-  - 今すぐ直す(通常運用で踏む/次の予定作業で確実に踏む/実在する欠陥かつ修正が数行)
-  - Issue化して後回し(将来のコードが誤用したときだけ踏む)
-  - 報告不要(到達経路が無い)
+  - **1類**: 今すぐ直す(通常運用で踏む/次の予定作業で確実に踏む/実在する欠陥かつ修正が数行)
+  - **2類**: Issue化して後回し(将来のコードが誤用したときだけ踏む)
+  - **3類**: 報告不要(到達経路が無い)
 - 未達がある場合、自分で修正しない。再現手順と原因の見立て(製造起因か設計起因か。設計起因の典型例は[G-10](advisory/G-10-design-consistency-pitfalls.md))を報告する。
 
 ## 5. 判定(必須)
@@ -49,7 +55,7 @@ products: [Claude, Codex]
   - 本文の構成: 実装したもの/主要な設計判断とその根拠/受け入れ条件の検証結果/後続Issueへの申し送り。
   - 署名フォーマットは[01-dev-workflow-protocol.md](01-dev-workflow-protocol.md)を参照。
   - **マージはしない**(ユーザーが判断する)。
-- 既にPRが存在する場合(差し戻し後の再検収等)は、`git push`で更新しPRにコメントで追加分を投稿する。新規PRは作らない。
+- 既にPRが存在する場合(差し戻し後の再検収等)は、`git push`で更新し、既存のPRに前項の内容を含むコメントを投稿する（これを「PR相当コメント」という）。新規PRは作らない。
 
 ## 7. 終了確認(必須)
 
@@ -60,6 +66,7 @@ products: [Claude, Codex]
 ## 収束の判断
 
 統括担当から「完了と見なしてよいか」を問われたら、次を根拠に判断する。
+差し戻しが製造完了（UI監修完了）から数えて3回を超えたら、オーナーによる裁定とする。
 
 - 受け入れ条件の契約が満たされているか(未検証がないか)
 - 発見が収束しているか(直近ラウンドで新規の作り込みミスがゼロなら打ち切りどき)
