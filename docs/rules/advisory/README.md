@@ -33,7 +33,7 @@ AGENTS.md（権限と責任: 絶対禁止事項、役割と担当の対応表）
 - [G-07-shared-mutable-state-fixes.md](G-07-shared-mutable-state-fixes.md) — 共有可変状態の修正が半分で終わりやすい理由と対処(製造・検収)
 - [G-08-ui-measurement-pitfalls.md](G-08-ui-measurement-pitfalls.md) — UI寸法計測の罠(カード・結果パネル系レイアウトを触るとき)
 - [G-09-bundle-budget-underestimate.md](G-09-bundle-budget-underestimate.md) — バンドルサイズの見積り不足と目安(設計)
-- [G-10-design-consistency-pitfalls.md](G-10-design-consistency-pitfalls.md) — 設計書の内部矛盾・未実測の値・共用部品の強制挙動・操作部品の応答条件(ヒアリング・設計・検収)
+- [G-10-design-consistency-pitfalls.md](G-10-design-consistency-pitfalls.md) — 設計書の内部矛盾・未実測の値・共用部品の強制挙動・操作部品の応答条件・外部事実の確認(ヒアリング・設計・検収)
 - [G-11-prod-build-css-drop.md](G-11-prod-build-css-drop.md) — 本番ビルドでだけCSSが落ちる罠(sideEffectsとバレル内CSS import)と、本番ビルドでの確認手順(設計・製造・検収)
 - [C-01-browser-pane-visibility-limit.md](C-01-browser-pane-visibility-limit.md) — Claude Codeのブラウザペイン固有の制約(検収、ブラウザでのUI確認を行うとき)
 - [C-02-ui-verification-backorder.md](C-02-ui-verification-backorder.md) — 機械で検証できないUI項目の逆発注の実務(検収)
