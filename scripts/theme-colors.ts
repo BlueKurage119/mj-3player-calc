@@ -77,15 +77,17 @@ export interface StatusBarColors {
 }
 
 /**
- * ステータスバー色(ライト・ダークの surface)を tokens.css から取得する。
+ * ステータスバー色(既定: surface)を tokens.css から取得する。
  * 取得できない場合は例外を投げる。
  */
-export function readStatusBarColors(cssText: string): StatusBarColors {
-  const role = 'surface';
+export function readStatusBarColors(
+  cssText: string,
+  role = 'surface'
+): StatusBarColors {
   const light = readTokenValues(cssText, 'light', [role])[role];
   const dark = readTokenValues(cssText, 'dark', [role])[role];
   if (!light || !dark) {
-    throw new Error('--md-sys-color-surface が取得できません。');
+    throw new Error(`--md-sys-color-${role} が取得できません。`);
   }
   return { light, dark };
 }
