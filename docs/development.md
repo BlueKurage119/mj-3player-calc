@@ -33,7 +33,15 @@ Issue 駆動で、ヒアリング→設計→製造→検収の順に進めま�
 
 ## デプロイ
 
+### 本番環境 (GitHub Pages)
+
 GitHub Actions の `Deploy` ワークフローを `main` ブランチで手動実行（`workflow_dispatch`）して GitHub Pages に公開します。初回設定（GitHub Pages の有効化）と実行手順の詳細は [issue-109-pages-deploy.md](design/issue-109-pages-deploy.md#7-オーナーが行う手順リポジトリ設定) を参照してください。
+
+### プレビュー環境 (Cloud Run)
+
+検証・実機デバッグ用のプレビュー環境は、GitHub Actions の `Preview Deploy (Cloud Run)` ワークフロー（`.github/workflows/preview-cloud-run.yml`）によって `main` への `push` 時および `workflow_dispatch`（任意ブランチ指定可）時に Google Cloud Run（`asia-northeast1`）へビルド・デプロイされます。プレビュー環境ではベースパスが `/` となり、検索避け設定・共有 URL の差し替え・ヘッダーのプレビュー識別色および「プレビュー」ピルバッジが有効になります。
+
+GCP 側の初期構築（Workload Identity Federation・サービスアカウント・初回サービス作成・GitHub Secrets/Variables 登録）と運用手順の詳細は [issue-123-cloud-run-preview.md](design/issue-123-cloud-run-preview.md#9-オーナー向け-gcp-設定運用手順書) を参照してください。
 
 ## リリース
 

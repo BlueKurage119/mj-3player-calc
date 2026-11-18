@@ -1,9 +1,12 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import {
+  DynamicScheme,
   Hct,
   MaterialDynamicColors,
   SchemeTonalSpot,
+  TonalPalette,
+  Variant,
   argbFromHex,
   hexFromArgb
 } from '@material/material-color-utilities';
@@ -70,12 +73,47 @@ export const COLOR_ROLES = [
 
 export type ColorRole = (typeof COLOR_ROLES)[number];
 
+const QUATERNARY_ROLES = [
+  { role: 'quaternary', source: 'tertiary' },
+  { role: 'onQuaternary', source: 'onTertiary' },
+  { role: 'quaternaryContainer', source: 'tertiaryContainer' },
+  { role: 'onQuaternaryContainer', source: 'onTertiaryContainer' }
+] as const;
+
+const QUATERNARY_HUE_OFFSET = -60;
+const QUATERNARY_CHROMA = 24.0;
+
 function camelToKebab(str: string): string {
   return str.replace(/[A-Z]/g, match => `-${match.toLowerCase()}`);
 }
 
+function appendColorRoleLines(
+  lines: string[],
+  scheme: DynamicScheme,
+  quaternaryScheme: DynamicScheme
+): void {
+  for (const role of COLOR_ROLES) {
+    const dynamicColor = MaterialDynamicColors[role];
+    const argb = dynamicColor.getArgb(scheme);
+    const hex = hexFromArgb(argb).toLowerCase();
+    const varName = `--md-sys-color-${camelToKebab(role)}`;
+    lines.push(`  ${varName}: ${hex};`);
+
+    if (role === 'onTertiaryContainer') {
+      for (const entry of QUATERNARY_ROLES) {
+        const quaternaryColor = MaterialDynamicColors[entry.source];
+        const quaternaryArgb = quaternaryColor.getArgb(quaternaryScheme);
+        const quaternaryHex = hexFromArgb(quaternaryArgb).toLowerCase();
+        const quaternaryVarName = `--md-sys-color-${camelToKebab(entry.role)}`;
+        lines.push(`  ${quaternaryVarName}: ${quaternaryHex};`);
+      }
+    }
+  }
+}
+
 export function generateTokensCss(): string {
   const hct = Hct.fromInt(argbFromHex(SEED));
+  const quaternaryHue = (hct.hue + QUATERNARY_HUE_OFFSET + 360) % 360;
   const lightScheme = new SchemeTonalSpot(
     hct,
     false,
@@ -88,6 +126,28 @@ export function generateTokensCss(): string {
     CONTRAST_LEVEL,
     SPEC_VERSION
   );
+  const quaternaryLightScheme = new DynamicScheme({
+    sourceColorHct: hct,
+    variant: Variant.TONAL_SPOT,
+    contrastLevel: CONTRAST_LEVEL,
+    isDark: false,
+    specVersion: SPEC_VERSION,
+    tertiaryPalette: TonalPalette.fromHueAndChroma(
+      quaternaryHue,
+      QUATERNARY_CHROMA
+    )
+  });
+  const quaternaryDarkScheme = new DynamicScheme({
+    sourceColorHct: hct,
+    variant: Variant.TONAL_SPOT,
+    contrastLevel: CONTRAST_LEVEL,
+    isDark: true,
+    specVersion: SPEC_VERSION,
+    tertiaryPalette: TonalPalette.fromHueAndChroma(
+      quaternaryHue,
+      QUATERNARY_CHROMA
+    )
+  });
 
   const lines: string[] = [
     '/* 生成物。編集禁止。scripts/gen-theme-tokens.ts で再生成する(npm run gen:theme) */',
@@ -96,26 +156,14 @@ export function generateTokensCss(): string {
     '  color-scheme: light;'
   ];
 
-  for (const role of COLOR_ROLES) {
-    const dynamicColor = MaterialDynamicColors[role];
-    const argb = dynamicColor.getArgb(lightScheme);
-    const hex = hexFromArgb(argb).toLowerCase();
-    const varName = `--md-sys-color-${camelToKebab(role)}`;
-    lines.push(`  ${varName}: ${hex};`);
-  }
+  appendColorRoleLines(lines, lightScheme, quaternaryLightScheme);
 
   lines.push('}');
   lines.push('');
   lines.push(':root[data-theme="dark"] {');
   lines.push('  color-scheme: dark;');
 
-  for (const role of COLOR_ROLES) {
-    const dynamicColor = MaterialDynamicColors[role];
-    const argb = dynamicColor.getArgb(darkScheme);
-    const hex = hexFromArgb(argb).toLowerCase();
-    const varName = `--md-sys-color-${camelToKebab(role)}`;
-    lines.push(`  ${varName}: ${hex};`);
-  }
+  appendColorRoleLines(lines, darkScheme, quaternaryDarkScheme);
 
   lines.push('}');
   lines.push(''); // 末尾改行

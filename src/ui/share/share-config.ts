@@ -1,5 +1,7 @@
+const DEFAULT_SHARE_URL = 'https://bluekurage119.github.io/mj-3player-calc/';
+
 export const SHARE_URL: string | null =
-  'https://bluekurage119.github.io/mj-3player-calc/';
+  typeof __SHARE_URL__ !== 'undefined' ? __SHARE_URL__ : DEFAULT_SHARE_URL;
 
 export const APP_NAME = '三麻点数計算機';
 

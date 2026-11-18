@@ -49,6 +49,27 @@ body {
   letter-spacing: var(--md-sys-typescale-title-large-tracking);
 }
 
+:root[data-app-env="preview"] .app-header {
+  border-top: 0.25rem solid
+    var(--preview-os-quaternary, var(--md-sys-color-quaternary));
+  color: var(--md-sys-color-quaternary);
+}
+
+.app-header__preview-badge {
+  margin-inline-end: auto;
+  padding: 0.125rem 0.625rem;
+  border-radius: var(--md-sys-shape-corner-full);
+  background-color: var(--md-sys-color-quaternary);
+  color: var(--md-sys-color-on-quaternary);
+  font-family: var(--md-sys-typescale-label-small-font);
+  font-size: var(--md-sys-typescale-label-small-size);
+  line-height: var(--md-sys-typescale-label-small-line-height);
+  font-weight: var(--md-sys-typescale-label-small-weight);
+  letter-spacing: var(--md-sys-typescale-label-small-tracking);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
 .app-header__actions {
   position: relative;
   display: inline-flex;

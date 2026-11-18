@@ -118,3 +118,21 @@ describe('テーマ色取得・プレースホルダ解決 (G1-T1, G1-T2, G1-T7�
     expect(() => readStatusBarColors(':root { --x: 1; }')).toThrow();
   });
 });
+
+describe('ステータスバー色のロール指定 (CR-T4)', () => {
+  it('CR-T4: readStatusBarColors がロール指定(quaternary-container / tertiary-container)で値を返し、存在しないロール名で例外を投げる', () => {
+    const tokensCss = fs.readFileSync(TOKENS_CSS_PATH, 'utf-8');
+
+    expect(readStatusBarColors(tokensCss, 'quaternary-container')).toEqual({
+      light: '#fddfa6',
+      dark: '#574419'
+    });
+    expect(readStatusBarColors(tokensCss, 'tertiary-container')).toEqual({
+      light: '#bcebf0',
+      dark: '#1e4d52'
+    });
+    expect(() => readStatusBarColors(tokensCss, 'no-such-role')).toThrow(
+      /--md-sys-color-no-such-role/
+    );
+  });
+});

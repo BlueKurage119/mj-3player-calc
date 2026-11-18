@@ -28,17 +28,29 @@ export type ThemeMediaQuery = Pick<
 
 export type ThemeRoot = Pick<HTMLElement, 'dataset'>;
 
+function resolveThemeTarget(root?: ThemeRoot): ThemeRoot | undefined {
+  return (
+    root ??
+    (typeof document !== 'undefined' && document.documentElement
+      ? (document.documentElement as unknown as ThemeRoot)
+      : undefined)
+  );
+}
+
 export function applyResolvedTheme(
   theme: ResolvedTheme,
   root?: ThemeRoot
 ): void {
-  const target =
-    root ??
-    (typeof document !== 'undefined' && document.documentElement
-      ? (document.documentElement as unknown as ThemeRoot)
-      : undefined);
+  const target = resolveThemeTarget(root);
   if (target?.dataset) {
     target.dataset.theme = theme;
+  }
+}
+
+export function applyOsTheme(osTheme: ResolvedTheme, root?: ThemeRoot): void {
+  const target = resolveThemeTarget(root);
+  if (target?.dataset) {
+    target.dataset.osTheme = osTheme;
   }
 }
 
@@ -86,6 +98,7 @@ export function createThemeController(
   let resolved: ResolvedTheme = resolveTheme(preference, systemDark);
 
   applyResolvedTheme(resolved, root);
+  applyOsTheme(systemDark ? 'dark' : 'light', root);
 
   const listeners = new Set<(resolved: ResolvedTheme) => void>();
 
@@ -93,6 +106,7 @@ export function createThemeController(
     e: MediaQueryListEvent | { matches: boolean }
   ): void => {
     systemDark = e.matches;
+    applyOsTheme(systemDark ? 'dark' : 'light', root);
     if (preference === 'auto') {
       const nextResolved = resolveTheme('auto', systemDark);
       if (nextResolved !== resolved) {
@@ -129,6 +143,7 @@ export function createThemeController(
       if (mediaQuery) {
         systemDark = mediaQuery.matches;
       }
+      applyOsTheme(systemDark ? 'dark' : 'light', root);
       const nextResolved = resolveTheme(newPref, systemDark);
       const changed = nextResolved !== resolved;
       resolved = nextResolved;
