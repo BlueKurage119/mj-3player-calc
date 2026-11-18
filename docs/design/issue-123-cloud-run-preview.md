@@ -14,8 +14,8 @@
 
 - GitHub Actions ワークフロー（`.github/workflows/preview-cloud-run.yml`）の新設
 - Cloud Run 用コンテナ構成（`deploy/cloud-run/Dockerfile`・`deploy/cloud-run/nginx.conf`・`deploy/cloud-run/robots.txt`・`.dockerignore`）
-- クォータリーカラー（山吹色系、4 ロール）の `scripts/gen-theme-tokens.ts` への追加と `npm run gen:theme` による `src/ui/theme/tokens.css` 再生成、`src/ui/theme/tokens.test.ts` の更新
-- ビルドターゲット（GitHub Pages 本番 / Cloud Run プレビュー）に応じたベースパス・PWA 設定・共有 URL / QR コード・プレビュー識別 UI（全 5 画面のヘッダー色、メイン画面の「プレビュー」ピルバッジ、ステータスバー `meta theme-color`）および UI 監修比較用メカニズム（クォータリー色 / ターシャリー色切替）の実装とテスト
+- クォータリーカラー（山吹色系、4 ロール）の `scripts/gen-theme-tokens.ts` への追加と `npm run gen:theme` による `src/ui/theme/tokens.css` 再生成、`src/ui/theme/tokens.test.ts` の更新、および `docs/rules/06-ui-md3-protocol.md`（§テーマ 1・2）の改訂
+- ビルドターゲット（GitHub Pages 本番 / Cloud Run プレビュー）に応じたベースパス・PWA 設定・共有 URL / QR コード・プレビュー識別 UI（全 5 画面のヘッダー上部ライン・ヘッダー文字色、メイン画面の「プレビュー」ピルバッジ、ステータスバー `meta theme-color`）・`<html data-os-theme>` の OS テーマ常時追随（`src/ui/theme/apply-theme.ts`）の実装とテスト
 - `docs/development.md` へのプレビューデプロイ案内追記
 - オーナー向け GCP 設定・運用手順書（§9）
 
@@ -37,9 +37,9 @@
 | H4 | **ベースパス**: Cloud Run 用ビルドではルート `/` ベースにする（本番 GitHub Pages の `/mj-3player-calc/` は維持）。`VitePWA` の `start_url`・`scope` もベースパスに合わせる | §3.1・§3.2 |
 | H5 | **リージョン・クリーンアップ**: 東京リージョン（`asia-northeast1`）。不要イメージ・リビジョンの自動削除（Artifact Registry Cleanup Policy 等の必須化）は当面不要で手動削除とする（手順書に手動確認・削除の案内を記載） | §5.2・§9.6 |
 | H6 | **認証方式・GCP 環境・検収範囲**: GitHub Actions からの認証は Workload Identity Federation（OIDC、SA 鍵 JSON 不使用）。対象 GCP プロジェクトは `skygcp`（プロジェクト番号: `106538176815`、実測確認済み）。GCP 構築および GitHub Secrets/Variables 登録は別モデルコードレビュー完了後にオーナーが実施するため、検収では実デプロイを行わずローカル検証とする | §5・§8・§9 |
-| Q1-a | **ヘッダー識別表現**: 全 5 画面のヘッダー背景色を変更し、メイン画面（`AppHeader`）のタイトル横に「プレビュー」ピルバッジを表示する | §3.5 |
-| Q1-b | **識別色（クォータリーカラー追加と比較）**: シード `#1B5E20` の HCT 色相を赤側に 60° 下げ・クロマ `24.0` とした山吹色系をクォータリーカラー（4 ロール）として `scripts/gen-theme-tokens.ts` に追加し `tokens.css` へ生成する。既定はクォータリー色（`quaternary-container` / `on-quaternary-container`、バッジは `quaternary` / `on-quaternary`）としつつ、製造後の UI 監修やモックで既存ターシャリー色（水色系）とも容易に比較できる切替機構を備える（初回 JS・本番ビルドへ影響させない） | §3.4・§3.5 |
-| Q1-c | **メタデータ連動**: ステータスバー（`meta name="theme-color"` のライト/ダーク）のみ識別色に連動させる。`<title>`・`manifest.name`・`manifest.short_name`・`manifest.theme_color` は本番のまま維持する | §3.1・§3.5 |
+| Q1-a | **ヘッダー識別表現（UI 監修確定）**: 全 5 画面のヘッダー背景は通常の `surface` を維持したまま、ヘッダー上端に `0.25rem` のアクセントライン（OS テーマ追随の `--preview-os-quaternary`）とヘッダー文字色（`quaternary`）を適用し、メイン画面（`AppHeader`）のタイトル横に「プレビュー」ピルバッジを表示する | §3.5 |
+| Q1-b | **識別色（クォータリーカラー確定）**: シード `#1B5E20` の HCT 色相を赤側に 60° 下げ・クロマ `24.0` とした山吹色系をクォータリーカラー（4 ロール）として `scripts/gen-theme-tokens.ts` に追加し `tokens.css` へ生成する。UI 監修の結果、山吹色（`quaternary`: ライト `#715b2e` / ダーク `#dfc38c`、バッジ文字 `on-quaternary`）で確定したため比較用切替機構は削除する | §3.4・§3.5 |
+| Q1-c | **メタデータ・OS テーマ連動**: ステータスバー（`meta name="theme-color"` のライト/ダーク）のみ識別色 `quaternary`（`#715b2e` / `#dfc38c`）に連動させ、ヘッダー上部ラインを `<html data-os-theme>` 経由で OS テーマに追随させてステータスバーと一体化する。`<title>`・`manifest.name`・`manifest.short_name`・`manifest.theme_color` は本番のまま維持する | §3.1・§3.5 |
 | Q2 | **共有用 URL・QR コード**: 確定 URL は `https://mj-3player-calc-106538176815.asia-northeast1.run.app/`（`-preview` なし）。QR コードと共有テキスト内の URL のみこのベース URL に差し替える（`CLOUDRUN_SHARE_URL` での上書き余地は維持） | §3.3・§5.2 |
 | Q3 | **サービス名・リポジトリ・ガード不要**: Cloud Run サービス名既定値は `mj-3player-calc`、Artifact Registry リポジトリ既定値は既存共用の `cloud-run-source-deploy`。`CLOUDRUN_PREVIEW_ENABLED` のようなガード条件は設けず、最初から `push`（`main`）および `workflow_dispatch` で実行する | §5.2・§5.3・§9 |
 
@@ -54,7 +54,7 @@
 | クォータリー色 HEX 実測（`vite-node`） | `#1B5E20` の `seedHct.hue` は `145.5162316490231`、`(seedHct.hue - 60 + 360) % 360` は `85.5162316490231`、`chroma = 24.0`。`DynamicScheme(Variant.TONAL_SPOT, contrastLevel: 0, specVersion: '2021', tertiaryPalette)` での実測値（§3.4 詳述）: ライト `quaternary=#715b2e`, `onQuaternary=#ffffff`, `quaternaryContainer=#fddfa6`, `onQuaternaryContainer=#574419` / ダーク `quaternary=#dfc38c`, `onQuaternary=#3f2e04`, `quaternaryContainer=#574419`, `onQuaternaryContainer=#fddfa6` | 山吹色系の明瞭なアクセント色が得られ、ライト・ダーク双方で十分なコントラストが確保される |
 | `src/ui/share/share-config.ts` | `export const SHARE_URL: string | null = 'https://bluekurage119.github.io/mj-3player-calc/';` | `define` による `__SHARE_URL__` 置換とフォールバック定数で切り替え可能。`npm test` 時は本番値が使われ既存テストと両立する |
 | `share-layout.ts` / `share-theme.ts` / `uqr` | フッターの URL 最大幅 `760px`、`qrSize: 168`、`qrQuietZone: 4`、`qrMinModulePx: 3`。`node -e` で確定 URL `https://mj-3player-calc-106538176815.asia-northeast1.run.app/`（61 文字）を実測したところ、ECC `M` で `size: 33`・`modulePx: 4`（本番 URL と同じサイズ・モジュール幅）になる | 確定 URL でも既存の QR 描画仕様・フッターレイアウトに完全に収まる |
-| ヘッダー構成（全 5 画面） | `MainScreen` は `AppHeader`（`<header className="app-header"><div className="app-header__inner"><h1 ...>` + `<div className="app-header__actions">` で `justify-content: space-between`）、他 4 画面は `<header className="app-header">` を描画し、全 5 画面が `src/ui/screen/main-screen.css` を import。`AppHeader.test.tsx`（`F1-2-12`）は `<md-menu>` 内部のみを検証 | `:root[data-app-env="preview"] .app-header` で全 5 画面の色を一括変更し、`AppHeader` に `margin-inline-end: auto` 付きの「プレビュー」ピルバッジを置けば本番 DOM・`F1-2-12`・`space-between` 配置のすべてと両立する |
+| ヘッダー構成（全 5 画面） | `MainScreen` は `AppHeader`（`<header className="app-header"><div className="app-header__inner"><h1 ...>` + `<div className="app-header__actions">` で `justify-content: space-between`）、他 4 画面は `<header className="app-header">` を描画し、全 5 画面が `src/ui/screen/main-screen.css` を import。`AppHeader.test.tsx`（`F1-2-12`）は `<md-menu>` 内部のみを検証 | `:root[data-app-env="preview"] .app-header` で全 5 画面のヘッダー上部ライン・文字色を一括変更し、`AppHeader` に `margin-inline-end: auto` 付きの「プレビュー」ピルバッジを置けば本番 DOM・`F1-2-12`・`space-between` 配置のすべてと両立する |
 | `public/` と `sw.js` | `public/` 配下はすべて `dist/` にコピーされ precache 対象になる | `robots.txt` は `public/` に置かず `deploy/cloud-run/robots.txt` としてコンテナ側のみに配置する |
 | 初回 JS 実測（09 号） | `main` `62db1bb` で `npm run build` を実行し、`dist/assets/index-Cpk8wRUr.js`（`modulepreload` なし）を `gzip -9 -c` で実測したところ **128,880 B**（生サイズ 478,339 B、09 号記載の v1.0.0 値 128,883 B と 3 B 差） | 設計基準値 128,880 B に対し、本番ビルドの増分は +0 B に抑える |
 | 認証・リポジトリ | `git remote -v` は `BlueKurage119/mj-3player-calc`。ローカルに `docker`・`ruby`・`node`・`npm` が存在 | WIF の `attribute-condition` で `BlueKurage119/mj-3player-calc` に限定する |
@@ -79,7 +79,6 @@
 | --- | --- | --- | --- |
 | `VITE_APP_ENV` | `'production'` | `'preview'` | ビルド種別の切り替え。`'preview'` のとき `base: '/'`、識別ヘッダー・バッジ・`meta theme-color` 連動を有効化 |
 | `VITE_SHARE_URL` | `'https://bluekurage119.github.io/mj-3player-calc/'` | `'https://mj-3player-calc-106538176815.asia-northeast1.run.app/'` | `SHARE_URL` に注入する公開 URL |
-| `VITE_PREVIEW_COLOR` | `'quaternary'` | `'quaternary'` または `'tertiary'` | UI 監修比較用の識別色切替（`VITE_APP_ENV=preview` 時のみ参照。既定は山吹色系 `quaternary`、比較用として水色系 `tertiary` を選択可能） |
 
 #### 具体的な型・シグネチャ（`scripts/build-config.ts` 新規作成）
 
@@ -87,18 +86,13 @@
 
 ```ts
 export type AppBuildEnv = 'production' | 'preview';
-export type PreviewColorTone = 'quaternary' | 'tertiary';
-export type StatusBarColorRole =
-  | 'surface'
-  | 'quaternary-container'
-  | 'tertiary-container';
+export type StatusBarColorRole = 'surface' | 'quaternary';
 
 export interface ResolvedBuildConfig {
   appEnv: AppBuildEnv;
   isPreview: boolean;
   base: '/' | '/mj-3player-calc/';
   shareUrl: string;
-  previewColor: PreviewColorTone;
   statusBarColorRole: StatusBarColorRole;
 }
 
@@ -114,8 +108,7 @@ export function resolveBuildConfig(
 
 - `resolveBuildConfig(process.env)` の仕様:
   - `VITE_APP_ENV`: 未設定・空文字・`'production'` → `appEnv = 'production'`, `isPreview = false`, `base = '/mj-3player-calc/'`。`'preview'` → `appEnv = 'preview'`, `isPreview = true`, `base = '/'`。それ以外の値なら例外を投げる。
-  - `VITE_PREVIEW_COLOR`: 未設定・空文字・`'quaternary'` → `previewColor = 'quaternary'`。`'tertiary'` → `previewColor = 'tertiary'`。それ以外の値なら例外を投げる。
-  - `statusBarColorRole`: `isPreview` が `false` なら `'surface'`、`true` なら `previewColor === 'tertiary' ? 'tertiary-container' : 'quaternary-container'`（Q1-c: ステータスバーのみ識別色に連動）。
+  - `statusBarColorRole`: `isPreview` が `false` なら `'surface'`、`true` なら `'quaternary'`（Q1-c: ステータスバーのみ識別色に連動し、ヘッダー上部ラインと同色の `#715b2e` / `#dfc38c` とする）。
   - `shareUrl`: `env['VITE_SHARE_URL']` に非空文字列があればその値（`https://` で始まらない場合は例外を投げる）、未設定時は `PRODUCTION_SHARE_URL`（ワークフローおよびローカルのプレビュービルド確認時は `VITE_SHARE_URL` を明示指定する）。
   - `<title>`・`manifest.name`・`manifest.short_name`・`manifest.theme_color`（ライト `surface`）・`manifest.background_color`（ライト `surface`）は、Q1-c に従い本番・プレビューとも現行のまま変更しない。
 
@@ -202,10 +195,10 @@ export const SHARE_URL: string | null =
 
 | トークン名 | ライト（`:root`） | ダーク（`:root[data-theme="dark"]`） | 用途 |
 | --- | --- | --- | --- |
-| `--md-sys-color-quaternary` | `#715b2e` | `#dfc38c` | ピルバッジ背景 |
+| `--md-sys-color-quaternary` | `#715b2e` | `#dfc38c` | ステータスバー・ヘッダー上部ライン・ヘッダー文字・ピルバッジ背景 |
 | `--md-sys-color-on-quaternary` | `#ffffff` | `#3f2e04` | ピルバッジ文字 |
-| `--md-sys-color-quaternary-container` | `#fddfa6` | `#574419` | ヘッダー背景・ステータスバー |
-| `--md-sys-color-on-quaternary-container` | `#574419` | `#fddfa6` | ヘッダー文字 |
+| `--md-sys-color-quaternary-container` | `#fddfa6` | `#574419` | クォータリー系の汎用コンテナ色（4 ロール標準生成） |
+| `--md-sys-color-on-quaternary-container` | `#574419` | `#fddfa6` | クォータリー系の汎用コンテナ文字色（4 ロール標準生成） |
 
 #### `src/ui/theme/tokens.test.ts` の更新
 
@@ -214,9 +207,9 @@ export const SHARE_URL: string | null =
 - `C1-K01`（セレクタは `:root` と `:root[data-theme="dark"]` の 2 つのみ）を維持し、セレクタを増やさないこと。
 - `npm run gen:theme` で `src/ui/theme/tokens.css` を再生成してコミットし、`npm run check:theme` が成功することを確認する。
 
-### 3.5 ヘッダー識別 UI・比較切替・ステータスバー連動（Q1-a / Q1-b / Q1-c 確定）
+### 3.5 ヘッダー識別 UI・OS テーマ連動・ステータスバー連動（Q1-a / Q1-b / Q1-c 確定）
 
-1. **`index.html` 変換とステータスバー連動（`vite.config.ts` / `scripts/theme-colors.ts`）**:
+1. **`index.html` 変換とステータスバー・OS テーマ連動（`vite.config.ts` / `scripts/theme-colors.ts` / `src/ui/theme/apply-theme.ts`）**:
    - `scripts/theme-colors.ts` の `readStatusBarColors` にデフォルト引数 `role = 'surface'` を追加する（Biome recommended の `style/noInferrableTypes` に準拠するため `: string` 型注釈は省略する）:
      ```ts
      export function readStatusBarColors(
@@ -225,8 +218,11 @@ export const SHARE_URL: string | null =
      ): StatusBarColors
      ```
      - 現行 `scripts/theme-colors.ts:83-91` では取得失敗時のエラーメッセージが `'--md-sys-color-surface が取得できません。'` 固定になっているため、`` `--md-sys-color-${role} が取得できません。` `` へ更新する（`tokens.css` のライト/ダーク双方から指定ロールを取得し、`surface` 取得の既存テストとは完全後方互換）。
-   - `vite.config.ts` の `injectThemeColorPlugin` は `readStatusBarColors(tokensCss, buildConfig.statusBarColorRole)` の結果を `<meta name="theme-color">` の `%THEME_COLOR_LIGHT%`・`%THEME_COLOR_DARK%` に注入する（本番は `surface`、プレビューは既定 `quaternary-container`、比較時 `tertiary-container`）。
-   - `buildConfig.isPreview` が `true` のときのみ、`transformIndexHtml` で `<html lang="ja">` を `<html lang="ja" data-app-env="preview" data-preview-color="${buildConfig.previewColor}">` に置換する（置換対象が存在しない場合は例外を投げる）。`<title>` は変更しない（Q1-c）。
+   - `vite.config.ts` の `injectThemeColorPlugin` は `readStatusBarColors(tokensCss, buildConfig.statusBarColorRole)` の結果を `<meta name="theme-color">` の `%THEME_COLOR_LIGHT%`・`%THEME_COLOR_DARK%` に注入する（本番は `surface`、プレビューは `quaternary`）。
+   - `buildConfig.isPreview` が `true` のときのみ、`transformIndexHtml` で以下を実施する（対象タグが存在しない場合は例外を投げる）。`<title>` は変更しない（Q1-c）。
+     - `<html lang="ja">` を `<html lang="ja" data-app-env="preview">` に置換する。
+     - `</head>` 直前に `<style>:root{--preview-os-quaternary:${colors.light}}:root[data-os-theme="dark"]{--preview-os-quaternary:${colors.dark}}</style>` を注入する（`colors` は `readStatusBarColors(tokensCss, 'quaternary')` の実値であり、ソースへの HEX 直書きは行わない）。
+   - `src/ui/theme/apply-theme.ts` に `applyOsTheme(osTheme: ResolvedTheme, root?: ThemeRoot)` を追加し、初期化時・`onMediaChange` 時・`setPreference` 時のいずれも、アプリの `preference` が `'light'` / `'dark'` 固定か否かにかかわらず `<html data-os-theme>` を OS の `prefers-color-scheme` へ常時追随させる（06 号 §テーマ 2 に準拠し、CSS で `prefers-color-scheme` を直接使わない）。これにより、アプリ内テーマ設定を固定していてもブラウザのステータスバー色（OS 依存）とヘッダー上端ライン色が常に一致する。
 
 2. **ヘッダー識別色と「プレビュー」ピルバッジ（`src/ui/screen/main-screen.css`・`AppHeader.tsx`）**:
    - `AppHeader.tsx`:
@@ -235,18 +231,14 @@ export const SHARE_URL: string | null =
      ```
      `<h1>` の直後に `{IS_PREVIEW && <span className="app-header__preview-badge">プレビュー</span>}` を配置する（本番ビルドでは `IS_PREVIEW` が `false` となり DCE で完全に消滅するため、本番初回 JS 増分 +0 B・本番 DOM 変化なし）。
    - `main-screen.css`:
-     - 全 5 画面（`MainScreen`・`SettingsScreen`・`HelpScreen`・`LicenseScreen`・`ScoringTableScreen`）が `<header className="app-header">` と `main-screen.css` を共有しているため、以下の CSS だけで全 5 画面のヘッダー背景・文字色が切り替わり、本番ビルドには影響しない。
+     - 全 5 画面（`MainScreen`・`SettingsScreen`・`HelpScreen`・`LicenseScreen`・`ScoringTableScreen`）が `<header className="app-header">` と `main-screen.css` を共有しているため、以下の CSS だけで全 5 画面のヘッダー上端に `0.25rem` のアクセントライン（OS テーマ追随）と文字色（アプリテーマ追随）が適用され、ヘッダー背景は通常の `surface` を維持する。本番ビルドには影響しない。
      - `.app-header__inner` は `justify-content: space-between` のため、`.app-header__preview-badge` に `margin-inline-end: auto;` を指定し、タイトルのすぐ右にバッジを寄せて右端のメニューボタンとの間に自動余白を確保する。
-     - 06 号準拠のため HEX・`ms`・`cubic-bezier` は一切使用せず、すべて MD3 トークンのみで記述する。
+     - 06 号準拠のため HEX・`ms`・`cubic-bezier` は一切使用せず、`prefers-color-scheme` も使わない。
      ```css
      :root[data-app-env="preview"] .app-header {
-       background-color: var(--md-sys-color-quaternary-container);
-       color: var(--md-sys-color-on-quaternary-container);
-     }
-
-     :root[data-app-env="preview"][data-preview-color="tertiary"] .app-header {
-       background-color: var(--md-sys-color-tertiary-container);
-       color: var(--md-sys-color-on-tertiary-container);
+       border-top: 0.25rem solid
+         var(--preview-os-quaternary, var(--md-sys-color-quaternary));
+       color: var(--md-sys-color-quaternary);
      }
 
      .app-header__preview-badge {
@@ -263,16 +255,7 @@ export const SHARE_URL: string | null =
        white-space: nowrap;
        flex-shrink: 0;
      }
-
-     :root[data-app-env="preview"][data-preview-color="tertiary"]
-       .app-header__preview-badge {
-       background-color: var(--md-sys-color-tertiary);
-       color: var(--md-sys-color-on-tertiary);
-     }
      ```
-   - **UI 監修時の色比較方法**: 製造後・監修時に以下 2 パターンでビルド・プレビューして山吹色（`quaternary`）と水色（`tertiary`）を比較できる（本番ビルド・初回 JS への影響ゼロ）:
-     - 山吹色（既定）: `VITE_APP_ENV=preview npm run build && npx vite preview`
-     - 水色（比較）: `VITE_APP_ENV=preview VITE_PREVIEW_COLOR=tertiary npm run build && npx vite preview`
 
 ## 4. コンテナ構成（Docker / nginx）
 
@@ -549,15 +532,16 @@ jobs:
 | 変更内容 | 本番ビルド増分（既定） | プレビュービルド増分（参考） | 根拠 |
 | --- | --- | --- | --- |
 | `scripts/build-config.ts`・`vite.config.ts`・`scripts/gen-theme-tokens.ts`・`scripts/theme-colors.ts` | +0 B | +0 B | ビルド・生成時のみ実行され JS バンドルに含まれない |
-| `src/ui/share/share-config.ts`（`__SHARE_URL__` 置換） | +0 B（見込み） | 約 +0〜+25 B | `define` によるビルド時文字列置換（本番は同一文字列、プレビューは URL 長差のみ。`typeof __SHARE_URL__` 三項演算子の DCE は**実挙動未確認**であり製造時に CR-AC4 で実測して確認する） |
+| `src/ui/theme/apply-theme.ts`（`applyOsTheme` による `<html data-os-theme>` 常時追随） | 約 +40〜+80 B | 約 +40〜+80 B | `applyOsTheme`・`resolveThemeTarget` の追加により本番・プレビュー双方の初回 JS に含まれる |
+| `src/ui/share/share-config.ts`（`__SHARE_URL__` 置換） | +0 B（見込み） | 約 +0〜+25 B | `define` によるビルド時文字列置換（本番は同一文字列、プレビューは URL 長差のみ。遅延チャンク側） |
 | `src/ui/theme/tokens.css`・`src/ui/screen/main-screen.css` | +0 B | +0 B | CSS ファイル側の増分のみ（初回 JS に含まれない） |
-| `src/ui/screen/AppHeader.tsx`（`IS_PREVIEW` による「プレビュー」ピルバッジ） | +0 B（見込み） | 約 +80〜+150 B | `__IS_PREVIEW__` が `false` の本番ビルドでは Rollup の DCE により JSX 分岐が除去される見込み（**実挙動未確認**であり、製造時に CR-AC3 / CR-AC4 で JS 内文字列除去と実サイズを実測確認する） |
-| **合計増分** | **+0 B** | **+80 B 〜 +175 B** | — |
+| `src/ui/screen/AppHeader.tsx`（`IS_PREVIEW` による「プレビュー」ピルバッジ） | +0 B（見込み） | 約 +80〜+150 B | `__IS_PREVIEW__` が `false` の本番ビルドでは Rollup の DCE により JSX 分岐が除去される（`base: '/'` によるパス短縮がチャンクサイズに影響する場合がある） |
+| **合計増分** | **+40 B 〜 +80 B** | **+120 B 〜 +255 B** | — |
 
 ### 6.3 目標値
 
-- **本番ビルド（デフォルト）の目標値**: **128,880 B**（基準値 128,880 B + 積算増分 +0 B）
-- （参考）プレビュービルドの目安: 約 128,960 B 〜 129,055 B
+- **本番ビルド（デフォルト）の目標値**: **128,920 B 〜 128,960 B**（基準値 128,880 B + 積算増分 +40〜+80 B）
+- （参考）プレビュービルドの目安: 約 128,860 B 〜 129,135 B（`base: '/'` によるマニフェスト文字列短縮との相殺あり）
 - 09 号の規定により、目標値の超過を理由に検収を不合格にはしない（意図しない取り込みがないか調査したうえで実測値を記録・報告する）。
 
 ## 7. 変更対象ファイル一覧とテスト計画
@@ -566,20 +550,23 @@ jobs:
 
 | ファイル | 種別 | 内容 |
 | --- | --- | --- |
+| `docs/rules/06-ui-md3-protocol.md` | 変更 | `## テーマ(C1 で確定)` の 1 項（クォータリーカラー 4 ロール生成）および 2 項（`<html data-os-theme>` の `apply-theme.ts` 集約）を追記 |
 | `scripts/gen-theme-tokens.ts` | 変更 | クォータリーカラー（4 ロール、hue-60・chroma 24）生成処理を追加（モジュールトップレベルで色APIを評価しない） |
 | `src/ui/theme/tokens.css` | 変更 | `npm run gen:theme` による再生成物（49 → 53 ロール） |
 | `src/ui/theme/tokens.test.ts` | 変更 | `EXPECTED_COLOR_ROLES`（53 役割）および個数アサーション更新 |
-| `scripts/build-config.ts` | 新規 | 環境変数から本番/プレビュー設定（`base`, `shareUrl`, `previewColor`, `statusBarColorRole`）を解決する純関数 |
+| `src/ui/theme/apply-theme.ts` | 変更 | `applyOsTheme` を追加し、初期化・`onMediaChange`・`setPreference` で `<html data-os-theme>` を常時 OS テーマへ追随させる |
+| `src/ui/theme/apply-theme.test.ts` | 変更 | `CR-T6`（`data-os-theme` の OS 常時追随）を追加 |
+| `scripts/build-config.ts` | 新規 | 環境変数から本番/プレビュー設定（`base`, `shareUrl`, `statusBarColorRole`）を解決する純関数 |
 | `scripts/build-config.test.ts` | 新規 | `resolveBuildConfig` の単体テスト（※既存の `scripts/theme-colors.test.ts` と同様に `tsconfig.node.json` / `tsconfig.app.json` の対象外であり、Vitest 実行対象） |
 | `scripts/theme-colors.ts` | 変更 | `readStatusBarColors(cssText, role = 'surface')` にロール指定引数と動的エラーメッセージを実装 |
 | `scripts/theme-colors.test.ts` | 変更 | `role` 指定（`quaternary-container`・`tertiary-container`）および未知ロール時の例外テストを追加 |
 | `tsconfig.node.json` | 変更 | `files` に `./scripts/build-config.ts` を追加 |
-| `vite.config.ts` | 変更 | `resolveBuildConfig(process.env)` を呼び、`base`・`define`・`transformIndexHtml`・`VitePWA`（`start_url`/`scope`/`navigateFallbackDenylist`）を切り替え |
+| `vite.config.ts` | 変更 | `resolveBuildConfig(process.env)` を呼び、`base`・`define`・`transformIndexHtml`（`data-app-env="preview"` 付与と `--preview-os-quaternary` `<style>` 注入）・`VitePWA`（`start_url`/`scope`/`navigateFallbackDenylist`）を切り替え |
 | `src/build-env.d.ts` | 新規 | `__IS_PREVIEW__`・`__SHARE_URL__` の型宣言 |
 | `src/ui/share/share-config.ts` | 変更 | `SHARE_URL` を `__SHARE_URL__` 経由で注入（未定義時は本番 URL フォールバック） |
 | `src/ui/screen/AppHeader.tsx` | 変更 | `__IS_PREVIEW__` 時にタイトル横へ「プレビュー」ピルバッジを描画 |
 | `src/ui/screen/AppHeader.test.tsx` | 変更 | 非プレビュー既定時のテストおよびバッジ有無の確認テスト |
-| `src/ui/screen/main-screen.css` | 変更 | `:root[data-app-env="preview"] .app-header`・`.app-header__preview-badge`・`[data-preview-color="tertiary"]` 比較用スタイルを MD3 トークンのみで追加 |
+| `src/ui/screen/main-screen.css` | 変更 | `:root[data-app-env="preview"] .app-header`（上部 `0.25rem` ライン・文字色）および `.app-header__preview-badge` スタイルを MD3 トークンのみで追加 |
 | `deploy/cloud-run/Dockerfile` | 新規 | `nginx/nginx-unprivileged:1.28-alpine` ベースの配信用コンテナ定義 |
 | `deploy/cloud-run/nginx.conf` | 新規 | ポート 8080、`X-Robots-Tag`、MIME、キャッシュ制御、SPA フォールバック設定 |
 | `deploy/cloud-run/robots.txt` | 新規 | `User-agent: *` / `Disallow: /` |
@@ -597,10 +584,11 @@ jobs:
 | ID | 対象 | 検証内容 |
 | --- | --- | --- |
 | `CR-T1` | `scripts/build-config.test.ts` | 未指定・`VITE_APP_ENV=production` のとき `isPreview: false`, `base: '/mj-3player-calc/'`, `shareUrl: 'https://bluekurage119.github.io/mj-3player-calc/'`, `statusBarColorRole: 'surface'` を返す |
-| `CR-T2` | `scripts/build-config.test.ts` | `VITE_APP_ENV=preview` かつ `VITE_SHARE_URL='https://mj-3player-calc-106538176815.asia-northeast1.run.app/'` のとき `isPreview: true`, `base: '/'`, 指定した `shareUrl`, `previewColor: 'quaternary'`, `statusBarColorRole: 'quaternary-container'` を返す。`VITE_PREVIEW_COLOR=tertiary` のとき `statusBarColorRole: 'tertiary-container'` を返す |
-| `CR-T3` | `scripts/build-config.test.ts` | 未知の `VITE_APP_ENV`・未知の `VITE_PREVIEW_COLOR`・`https://` で始まらない `VITE_SHARE_URL` を渡したときに例外を投げる |
+| `CR-T2` | `scripts/build-config.test.ts` | `VITE_APP_ENV=preview` かつ `VITE_SHARE_URL='https://mj-3player-calc-106538176815.asia-northeast1.run.app/'` のとき `isPreview: true`, `base: '/'`, 指定した `shareUrl`, `statusBarColorRole: 'quaternary'` を返す |
+| `CR-T3` | `scripts/build-config.test.ts` | 未知の `VITE_APP_ENV`・`https://` で始まらない `VITE_SHARE_URL` を渡したときに例外を投げる |
 | `CR-T4` | `scripts/theme-colors.test.ts` | `readStatusBarColors(tokensCss, 'quaternary-container')` および `'tertiary-container'` が `tokens.css` のライト/ダーク双方の値と一致し、存在しないロール名で例外（`readTokenValues` の `requiredRoles` 検査に由来）を投げる |
 | `CR-T5` | `src/ui/screen/AppHeader.test.tsx` | 通常のテスト環境（非プレビュー）で `AppHeader` をレンダリングしたとき、`.app-header__preview-badge`（「プレビュー」）が含まれない |
+| `CR-T6` | `src/ui/theme/apply-theme.test.ts` | OS の `prefers-color-scheme` がアプリ設定（`'light'` / `'dark'` 固定を含む）と異なっていても `<html data-os-theme>` が常に OS 設定に追随する |
 
 ## 8. 受け入れ条件チェックリスト（検収担当向け）
 
@@ -613,14 +601,14 @@ jobs:
   - `git status --porcelain` が空（未コミット変更なし）であること。
   - `git diff origin/main...HEAD | grep -nE '/(Users|home)/'` でホームディレクトリ名が変更ファイルに含まれないこと。
 - **CR-AC2（静的検査・単体テスト・テーマ生成一致）**:
-  - `npm run lint`・`npm run typecheck`・`npm run format:check`・`npm test`・`npm run check:theme`・`npm run check:icons` がすべて終了コード 0 で成功すること（`CR-T1`〜`CR-T5`、`C1-K01`〜`C1-K05`、`D5-C17`、`H2-AC14`、`F1-2-12` がすべてパス）。
+  - `npm run lint`・`npm run typecheck`・`npm run format:check`・`npm test`・`npm run check:theme`・`npm run check:icons` がすべて終了コード 0 で成功すること（`CR-T1`〜`CR-T6`、`C1-K01`〜`C1-K05`、`D5-C17`、`H2-AC14`、`F1-2-12` がすべてパス）。
   - `src/ui/theme/tokens.css` のライト/ダーク両ブロックに `--md-sys-color-quaternary`・`on-quaternary`・`quaternary-container`・`on-quaternary-container` の 4 ロールが存在し、§3.4 の実測値と一致すること。
 
 ### 8.2 本番ビルド（デフォルト）の回帰確認と初回 JS 計測
 
 - **CR-AC3（本番ビルドの成果物回帰）**:
   - 環境変数なしで `npm run build:wasm`（未ビルド時）→ `npm run build` を実行する。
-  - `dist/index.html` の `src`/`href` がすべて `/mj-3player-calc/` で始まり、`data-app-env="preview"` が含まれず、`<title>三麻点数計算機</title>` であり、`meta name="theme-color"` が `tokens.css` ライト/ダークの `--md-sys-color-surface` 値（`#f7fbf1` / `#10140f`）であること。
+  - `dist/index.html` の `src`/`href` がすべて `/mj-3player-calc/` で始まり、`data-app-env="preview"` および `--preview-os-quaternary` が含まれず、`<title>三麻点数計算機</title>` であり、`meta name="theme-color"` が `tokens.css` ライト/ダークの `--md-sys-color-surface` 値（`#f7fbf1` / `#10140f`）であること。
   - `dist/manifest.webmanifest` が `name: "三麻点数計算機"`, `short_name: "三麻計算機"`, `start_url: "/mj-3player-calc/"`, `scope: "/mj-3player-calc/"`, `theme_color`=`#f7fbf1` であること。
   - `dist/registerSW.js` が `register('/mj-3player-calc/sw.js', { scope: '/mj-3player-calc/' })` を含むこと。
   - `test ! -e dist/robots.txt` が真（`dist/robots.txt` が存在しないこと）。
@@ -628,7 +616,7 @@ jobs:
   - `grep -l "app-header__preview-badge" dist/assets/*.js` および `grep -l "プレビュー" dist/assets/*.js` の出力がどちらも空であること（DCE により本番 JS チャンクにバッジ JSX・文言が残っていないこと。CSS 側のセレクタ定義が残ることは許容する）。
 - **CR-AC4（09 号 初回 JS 計測）**:
   - CR-AC3 の `dist/index.html` から `<script type="module" src>` / `<link rel="modulepreload" href>` が指す JS ファイルを `gzip -9 -c <file> | wc -c` で計測する。
-  - 基準値 **128,880 B**（09 号記載 v1.0.0 値 **128,883 B**）、実測値、増分、積算増分（+0 B）との差を PR 本文に記録すること（目標値超過でも不合格にしない）。
+  - 基準値 **128,880 B**（09 号記載 v1.0.0 値 **128,883 B**）、実測値、増分、積算増分（+40〜+80 B）との差を PR 本文に記録すること（目標値超過でも不合格にしない）。
 
 ### 8.3 プレビュービルド成果物の確認
 
@@ -639,15 +627,15 @@ jobs:
     ```
   - `dist/index.html` について:
     - `src`/`href` がすべて `/` で始まり（`/assets/...`, `/favicon.svg`, `/manifest.webmanifest`, `/registerSW.js`）、`/mj-3player-calc/` を含まないこと（`grep -n "/mj-3player-calc/" dist/index.html` が空）。
-    - `<html lang="ja" data-app-env="preview" data-preview-color="quaternary">` が付与されていること。
+    - `<html lang="ja" data-app-env="preview">` が付与されていること。
     - `<title>三麻点数計算機</title>` が本番のまま維持されていること（Q1-c）。
-    - `meta name="theme-color"` のライト値が `#fddfa6`（`quaternary-container`）、ダーク値が `#574419`（`quaternary-container`）であること。
+    - `meta name="theme-color"` のライト値が `#715b2e`（`quaternary`）、ダーク値が `#dfc38c`（`quaternary`）であること。
+    - `</head>` 直前に `<style>:root{--preview-os-quaternary:#715b2e}:root[data-os-theme="dark"]{--preview-os-quaternary:#dfc38c}</style>` が注入されていること。
   - `dist/manifest.webmanifest` の `name`=`"三麻点数計算機"`・`short_name`=`"三麻計算機"`・`theme_color`=`"#f7fbf1"` が本番のまま維持され、`start_url` と `scope` のみが `"/"` になっていること（Q1-c・H4）。
   - `dist/registerSW.js` が `register('/sw.js', { scope: '/' })` を含むこと。
   - `dist/sw.js` について、`grep -E 'denylist:\[[^]]*robots' dist/sw.js` が一致し（Workbox 生成コード上で `/robots.txt` 除外設定が出力されていること）、かつ `grep -c 'decomposer_bg-.*\.wasm' dist/sw.js` が `1` 以上であること（WASM と牌 SVG 等が precache されていること）。
   - `grep -rl "mj-3player-calc-106538176815.asia-northeast1.run.app" dist/assets/*.js` で共有モジュールチャンクにプレビュー URL が埋め込まれていること。
   - プレビュービルドの初回 JS サイズ（`gzip -9`）も参考値として計測し PR 本文に記録すること。
-  - （色比較切替確認）`VITE_APP_ENV=preview VITE_PREVIEW_COLOR=tertiary npm run build` でもビルドが成功し、`dist/index.html` に `data-preview-color="tertiary"` および `tertiary-container` の `theme-color`（`#bcebf0` / `#1e4d52`）が出力されることを確認する。確認後、CR-AC5 本体のビルド（`quaternary`・`VITE_SHARE_URL` 指定）を再実行して `dist/` を戻すこと。
 
 ### 8.4 ローカル Docker コンテナでの起動・HTTP 応答・UI 確認
 
@@ -671,7 +659,7 @@ jobs:
   - ブラウザで `http://localhost:18080/` を幅 375px で開き、以下を確認する:
     - コンソールエラーおよび Network の 404 が 0 件。
     - メイン画面で `document.documentElement.scrollWidth <= document.documentElement.clientWidth` が `true`。
-    - `.app-header` の `getComputedStyle(el).backgroundColor` および `color` が `tokens.css` の `quaternary-container` / `on-quaternary-container` 計算値と一致すること（ライトテーマ時: 背景 `#fddfa6`=`rgb(253, 223, 166)`、文字 `#574419`=`rgb(87, 68, 25)`。ダークテーマ時は背景 `rgb(87, 68, 25)`、文字 `rgb(253, 223, 166)`）。
+    - `.app-header` の `getComputedStyle(el).backgroundColor` が通常の `surface`（ライト時 `#f7fbf1`=`rgb(247, 251, 241)`、ダーク時 `#10140f`=`rgb(16, 20, 15)`）を維持し、`borderTopColor` が OS テーマに応じた `quaternary`（OS ライト時 `#715b2e`=`rgb(113, 91, 46)`、OS ダーク時 `#dfc38c`=`rgb(223, 195, 140)`、`borderTopWidth`=`4px`）、文字 `color` がアプリテーマに応じた `quaternary`（アプリライト時 `rgb(113, 91, 46)`、アプリダーク時 `rgb(223, 195, 140)`）と一致すること。またアプリテーマを OS と逆へ切り替えても `data-os-theme` および `borderTopColor` は OS テーマに追随すること。
     - `.app-header__preview-badge`（「プレビュー」）がタイトル横に折り返し・はみ出しなく表示され、背景・文字色が `quaternary` / `on-quaternary` 計算値と一致すること（ライトテーマ時: 背景 `#715b2e`=`rgb(113, 91, 46)`、文字 `#ffffff`=`rgb(255, 255, 255)`。ダークテーマ時は背景 `rgb(223, 195, 140)`、文字 `rgb(63, 46, 4)`）。
     - 牌を入力して向聴数または和了結果が表示されること（WASM 動作）。
     - 設定・点数計算表・ヘルプ・ライセンスの各画面へ遷移し、すべての画面でヘッダー識別色が反映され、かつ幅 375px で `scrollWidth <= clientWidth` が `true` であること。
@@ -873,8 +861,6 @@ gcloud run revisions list --service="${SERVICE_NAME}" --region="${REGION}"
 
 ## 10. 後続 Issue への引き継ぎ事項
 
-- **UI 監修後のカラー最終選定**: 製造後、オーナーが山吹色（`quaternary`）と水色（`tertiary`）を比較監修した結果、もし水色へ確定する場合は `scripts/build-config.ts` の既定値（または `main-screen.css` の比較用セレクタ整理）を後続の軽微修正として反映する（`quaternary` の 4 ロール自体は今後他用途でも使うため `tokens.css` に残す）。
-- **`06-ui-md3-protocol.md` §テーマ 1 への追記要否**: クォータリーカラー追加仕様（`seedHct.hue - 60`, chroma `24.0`, 4 ロール）を `docs/rules/06-ui-md3-protocol.md` の「テーマ(C1 で確定)」第 1 項に追記するか否かについて、次回または監修終了時にオーナー判断を確認すること。
 - **初回実デプロイ結果の反映**: オーナーによる §9 の設定・初回動作確認後、実デプロイ時の挙動や組織ポリシー等に応じた調整が必要になった場合は別 Issue で対応する。
 - **`vitest.config.ts` 分離時の注意**: 現在 `vite.config.ts` を Vitest も共有しているため、`__APP_VERSION__`・`__IS_PREVIEW__`・`__SHARE_URL__` の `define` がテストでも有効になっている。将来 `vitest.config.ts` を分離する場合は、これら `define`（または `typeof` フォールバック維持）を引き継ぐこと。
 - **プレビュー機能の拡張余地**: Artifact Registry の古いイメージ自動削除（Cleanup Policy）や PR ごとのリビジョンタグ分離が必要になった場合は別 Issue で拡張する。
