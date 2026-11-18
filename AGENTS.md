@@ -79,13 +79,14 @@
 
 ### 4.2 フェーズごとの役割定義
 
-| 役割 | Claude の担当 | Claude 推奨モデル | AGY(Gemini) 推奨モデル | Copilot・Codex 推奨モデル | 役割と成果物 |
+| 役割 | Claude の担当 | Claude 指定モデル | Gemini 指定モデル | GPT 指定モデル | 役割と成果物 |
 | --- | --- | --- | --- | --- |
 | ヒアリング | 統括（メインセッション） | — | — | — | **実装方針を左右する未確定事項をユーザーに選択肢とメリット・デメリット等を整理した形で提示する。** 確定した判断を Issue 番号と共に次の担当へ渡す。 |
 | 設計 | `mj3calc-designer` | Opus | Argon | Sol以上 | **対象の `docs/design/issue-N-<slug>.md` 1本だけを新規作成または改訂する。**コード、設定、ブランチ、コミットは変更しない。 |
 | 製造 | `mj3calc-builder`・`/agy-delegate` | Sonnet | Hydrogen | Terra | **指定済みブランチ上で実装・テスト・コミットまで行う。**push と PR 作成はしない。 |
-| 検収 | `mj3calc-inspector` | Opus（2回目はSonnet） | Argon | Sol（2回目はTerra） | 設計書の受け入れ条件を項目ごとに実行して検証する。コードは修正しない。**全項目が通過した場合のみ PR を作成し、マージはしない。** |
+| 検収 | `mj3calc-inspector` | Opus（2回目はSonnet） | Argon（2回目はHydrogen） | Sol（2回目はTerra） | 設計書の受け入れ条件を項目ごとに実行して検証する。コードは修正しない。**全項目が通過した場合のみ PR を作成し、マージはしない。** |
 
+各フェーズでは、決められたモデルを使用すること。指定外モデル（AntigravityでのClaude系モデルを含む）を使用したい場合は、提案の上、オーナーの承認を得ること。
 フェーズ運用の必須事項(承認ゲート・devサーバー禁止事項・ブランチ/コミット/PR/署名)は [docs/rules/01-dev-workflow-protocol.md](docs/rules/01-dev-workflow-protocol.md)を参照のこと。
 
 ### 4.3 業務標準・指導文書
