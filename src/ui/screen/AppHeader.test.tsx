@@ -165,3 +165,17 @@ describe('G4: ヘッダーメニュー (ヘルプ)', () => {
     expect(callOrder).toEqual(['close', 'dispatch']);
   });
 });
+
+describe('プレビュー識別バッジ (CR-T5)', () => {
+  it('CR-T5: 通常のテスト環境(非プレビュー)で AppHeader をレンダリングしたとき、プレビューバッジが含まれない', () => {
+    const html = renderToStaticMarkup(
+      <AppStateProvider>
+        <AppHeader />
+      </AppStateProvider>
+    );
+
+    // レンダリング結果の HTML 全体に対象クラスと文言が含まれないことを検証するため、否定の部分一致を使用する
+    expect(html).not.toContain('app-header__preview-badge');
+    expect(html).not.toContain('プレビュー');
+  });
+});

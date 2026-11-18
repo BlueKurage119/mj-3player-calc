@@ -5,40 +5,64 @@ import type { Plugin, UserConfig } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
 import wasm from 'vite-plugin-wasm';
 import {
+  type ResolvedBuildConfig,
+  resolveBuildConfig
+} from './scripts/build-config.ts';
+import {
   type StatusBarColors,
   injectStatusBarColors,
   readStatusBarColors
 } from './scripts/theme-colors.ts';
 
+const buildConfig = resolveBuildConfig(process.env);
 const tokensCssPath = path.resolve(
   import.meta.dirname,
   'src/ui/theme/tokens.css'
 );
+const tokensCss = fs.readFileSync(tokensCssPath, 'utf-8');
 const statusBarColors = readStatusBarColors(
-  fs.readFileSync(tokensCssPath, 'utf-8')
+  tokensCss,
+  buildConfig.statusBarColorRole
 );
+const manifestThemeColor = readStatusBarColors(tokensCss, 'surface').light;
 const appVersion: string = JSON.parse(
   fs.readFileSync(path.resolve(import.meta.dirname, 'package.json'), 'utf-8')
 ).version;
 
-function injectThemeColorPlugin(colors: StatusBarColors): Plugin {
+function injectThemeColorPlugin(
+  colors: StatusBarColors,
+  config: ResolvedBuildConfig
+): Plugin {
   return {
     name: 'inject-theme-color',
     transformIndexHtml(html) {
-      return injectStatusBarColors(html, colors);
+      let transformed = injectStatusBarColors(html, colors);
+      if (config.isPreview) {
+        const htmlTag = '<html lang="ja">';
+        if (!transformed.includes(htmlTag)) {
+          throw new Error('index.html に <html lang="ja"> が見つかりません。');
+        }
+        transformed = transformed.replace(
+          htmlTag,
+          `<html lang="ja" data-app-env="preview" data-preview-color="${config.previewColor}">`
+        );
+      }
+      return transformed;
     }
   };
 }
 
 export default {
-  base: '/mj-3player-calc/',
+  base: buildConfig.base,
   define: {
-    __APP_VERSION__: JSON.stringify(appVersion)
+    __APP_VERSION__: JSON.stringify(appVersion),
+    __IS_PREVIEW__: JSON.stringify(buildConfig.isPreview),
+    __SHARE_URL__: JSON.stringify(buildConfig.shareUrl)
   },
   plugins: [
     react(),
     wasm(),
-    injectThemeColorPlugin(statusBarColors),
+    injectThemeColorPlugin(statusBarColors, buildConfig),
     VitePWA({
       registerType: 'autoUpdate',
       injectRegister: 'script',
@@ -48,11 +72,11 @@ export default {
         description:
           '三人麻雀の点数計算機。和了形・聴牌形の役と打点、向聴数と何切るを表示する',
         lang: 'ja',
-        start_url: '/mj-3player-calc/',
-        scope: '/mj-3player-calc/',
+        start_url: buildConfig.base,
+        scope: buildConfig.base,
         display: 'standalone',
-        theme_color: statusBarColors.light,
-        background_color: statusBarColors.light,
+        theme_color: manifestThemeColor,
+        background_color: manifestThemeColor,
         icons: [
           {
             src: 'icons/icon-192.png',
@@ -78,7 +102,10 @@ export default {
         skipWaiting: true,
         clientsClaim: true,
         cleanupOutdatedCaches: true,
-        globPatterns: ['**/*.{js,css,html,wasm,svg,png}']
+        globPatterns: ['**/*.{js,css,html,wasm,svg,png}'],
+        ...(buildConfig.isPreview
+          ? { navigateFallbackDenylist: [/^\/robots\.txt$/] }
+          : {})
       }
     })
   ],

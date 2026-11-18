@@ -51,6 +51,8 @@ export function selectHeaderMenuItem(
   dispatch(HEADER_MENU_ACTIONS[id]);
 }
 
+const IS_PREVIEW = typeof __IS_PREVIEW__ !== 'undefined' && __IS_PREVIEW__;
+
 export interface AppHeaderProps {
   headerRef?: React.Ref<HTMLElement>;
 }
@@ -65,6 +67,9 @@ export function AppHeader({ headerRef }: AppHeaderProps): React.JSX.Element {
     <header ref={headerRef} className="app-header">
       <div className="app-header__inner">
         <h1 className="app-header__title">三麻点数計算機</h1>
+        {IS_PREVIEW && (
+          <span className="app-header__preview-badge">プレビュー</span>
+        )}
         <div className="app-header__actions">
           <IconButton
             ref={menuAnchorRef}
