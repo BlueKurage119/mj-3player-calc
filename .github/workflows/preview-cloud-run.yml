@@ -1,0 +1,122 @@
+name: Preview Deploy (Cloud Run)
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: preview-cloud-run
+  cancel-in-progress: false
+
+env:
+  GCP_PROJECT_ID: skygcp
+  GCP_PROJECT_NUMBER: '106538176815'
+  GCP_REGION: asia-northeast1
+  CLOUDRUN_SERVICE_DEFAULT: mj-3player-calc
+  GAR_REPOSITORY_DEFAULT: cloud-run-source-deploy
+  CLOUDRUN_RUNTIME_SA_DEFAULT: mj3calc-runtime@skygcp.iam.gserviceaccount.com
+
+jobs:
+  deploy:
+    name: ビルドと Cloud Run デプロイ
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Rust ツールチェーン(wasm32)
+        run: rustup target add wasm32-unknown-unknown
+
+      - name: wasm-pack のインストール
+        uses: taiki-e/install-action@v2
+        with:
+          tool: wasm-pack
+
+      - name: 手牌分解器(WASM)のビルド
+        run: npm run build:wasm
+
+      - name: npm ci
+        run: npm ci
+
+      - name: プレビュー設定の解決
+        id: config
+        env:
+          VAR_SERVICE: ${{ vars.CLOUDRUN_SERVICE }}
+          VAR_REPO: ${{ vars.GAR_REPOSITORY }}
+          VAR_RUNTIME_SA: ${{ vars.CLOUDRUN_RUNTIME_SA }}
+          VAR_SHARE_URL: ${{ vars.CLOUDRUN_SHARE_URL }}
+        run: |
+          SERVICE="${VAR_SERVICE:-$CLOUDRUN_SERVICE_DEFAULT}"
+          REPO="${VAR_REPO:-$GAR_REPOSITORY_DEFAULT}"
+          RUNTIME_SA="${VAR_RUNTIME_SA:-$CLOUDRUN_RUNTIME_SA_DEFAULT}"
+          SHARE_URL="${VAR_SHARE_URL:-https://${SERVICE}-${GCP_PROJECT_NUMBER}.${GCP_REGION}.run.app/}"
+          IMAGE="${GCP_REGION}-docker.pkg.dev/${GCP_PROJECT_ID}/${REPO}/${SERVICE}:${GITHUB_SHA}"
+          echo "service=${SERVICE}" >> "$GITHUB_OUTPUT"
+          echo "runtime_sa=${RUNTIME_SA}" >> "$GITHUB_OUTPUT"
+          echo "image=${IMAGE}" >> "$GITHUB_OUTPUT"
+          echo "share_url=${SHARE_URL}" >> "$GITHUB_OUTPUT"
+
+      - name: プレビュー用本番ビルド
+        env:
+          VITE_APP_ENV: preview
+          VITE_SHARE_URL: ${{ steps.config.outputs.share_url }}
+        run: npm run build
+
+      - name: Google Cloud 認証 (Workload Identity Federation)
+        uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - name: Google Cloud SDK のセットアップ
+        uses: google-github-actions/setup-gcloud@v3
+
+      - name: Artifact Registry 用 Docker 認証設定
+        run: gcloud auth configure-docker "${GCP_REGION}-docker.pkg.dev" --quiet
+
+      - name: コンテナイメージのビルドとプッシュ
+        env:
+          IMAGE: ${{ steps.config.outputs.image }}
+        run: |
+          docker build -f deploy/cloud-run/Dockerfile -t "${IMAGE}" .
+          docker push "${IMAGE}"
+
+      - name: Cloud Run へデプロイ
+        env:
+          SERVICE: ${{ steps.config.outputs.service }}
+          IMAGE: ${{ steps.config.outputs.image }}
+          RUNTIME_SA: ${{ steps.config.outputs.runtime_sa }}
+          SHARE_URL: ${{ steps.config.outputs.share_url }}
+        run: |
+          gcloud run deploy "${SERVICE}" \
+            --project "${GCP_PROJECT_ID}" \
+            --region "${GCP_REGION}" \
+            --image "${IMAGE}" \
+            --service-account "${RUNTIME_SA}" \
+            --min 0 \
+            --max 1 \
+            --max-instances 1 \
+            --concurrency 80 \
+            --cpu 1 \
+            --memory 256Mi \
+            --timeout 60s \
+            --cpu-throttling \
+            --quiet
+          DEPLOYED_URL="$(gcloud run services describe "${SERVICE}" --project "${GCP_PROJECT_ID}" --region "${GCP_REGION}" --format='value(status.url)')"
+          echo "Cloud Run URL: ${DEPLOYED_URL}"
+          echo "埋め込み済み SHARE_URL: ${SHARE_URL}"
