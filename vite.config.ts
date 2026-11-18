@@ -44,7 +44,16 @@ function injectThemeColorPlugin(
         }
         transformed = transformed.replace(
           htmlTag,
-          `<html lang="ja" data-app-env="preview" data-preview-color="${config.previewColor}">`
+          '<html lang="ja" data-app-env="preview">'
+        );
+
+        const headCloseTag = '</head>';
+        if (!transformed.includes(headCloseTag)) {
+          throw new Error('index.html に </head> が見つかりません。');
+        }
+        transformed = transformed.replace(
+          headCloseTag,
+          `  <style>:root{--preview-os-quaternary:${colors.light}}:root[data-os-theme="dark"]{--preview-os-quaternary:${colors.dark}}</style>\n  </head>`
         );
       }
       return transformed;

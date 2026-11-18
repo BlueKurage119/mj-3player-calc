@@ -1,16 +1,11 @@
 export type AppBuildEnv = 'production' | 'preview';
-export type PreviewColorTone = 'quaternary' | 'tertiary';
-export type StatusBarColorRole =
-  | 'surface'
-  | 'quaternary-container'
-  | 'tertiary-container';
+export type StatusBarColorRole = 'surface' | 'quaternary';
 
 export interface ResolvedBuildConfig {
   appEnv: AppBuildEnv;
   isPreview: boolean;
   base: '/' | '/mj-3player-calc/';
   shareUrl: string;
-  previewColor: PreviewColorTone;
   statusBarColorRole: StatusBarColorRole;
 }
 
@@ -29,16 +24,6 @@ function resolveAppEnv(rawValue: string | undefined): AppBuildEnv {
   throw new Error(`未知の VITE_APP_ENV です: ${rawValue}`);
 }
 
-function resolvePreviewColor(rawValue: string | undefined): PreviewColorTone {
-  if (!rawValue || rawValue === 'quaternary') {
-    return 'quaternary';
-  }
-  if (rawValue === 'tertiary') {
-    return 'tertiary';
-  }
-  throw new Error(`未知の VITE_PREVIEW_COLOR です: ${rawValue}`);
-}
-
 function resolveShareUrl(rawValue: string | undefined): string {
   if (!rawValue) {
     return PRODUCTION_SHARE_URL;
@@ -52,7 +37,6 @@ function resolveShareUrl(rawValue: string | undefined): string {
 }
 
 const ENV_APP_ENV = 'VITE_APP_ENV';
-const ENV_PREVIEW_COLOR = 'VITE_PREVIEW_COLOR';
 const ENV_SHARE_URL = 'VITE_SHARE_URL';
 
 /**
@@ -63,21 +47,17 @@ export function resolveBuildConfig(
 ): ResolvedBuildConfig {
   const appEnv = resolveAppEnv(env[ENV_APP_ENV]);
   const isPreview = appEnv === 'preview';
-  const previewColor = resolvePreviewColor(env[ENV_PREVIEW_COLOR]);
   const base = isPreview ? PREVIEW_BASE : PRODUCTION_BASE;
   const shareUrl = resolveShareUrl(env[ENV_SHARE_URL]);
-  const statusBarColorRole: StatusBarColorRole = !isPreview
-    ? 'surface'
-    : previewColor === 'tertiary'
-      ? 'tertiary-container'
-      : 'quaternary-container';
+  const statusBarColorRole: StatusBarColorRole = isPreview
+    ? 'quaternary'
+    : 'surface';
 
   return {
     appEnv,
     isPreview,
     base,
     shareUrl,
-    previewColor,
     statusBarColorRole
   };
 }

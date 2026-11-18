@@ -50,13 +50,9 @@ body {
 }
 
 :root[data-app-env="preview"] .app-header {
-  background-color: var(--md-sys-color-quaternary-container);
-  color: var(--md-sys-color-on-quaternary-container);
-}
-
-:root[data-app-env="preview"][data-preview-color="tertiary"] .app-header {
-  background-color: var(--md-sys-color-tertiary-container);
-  color: var(--md-sys-color-on-tertiary-container);
+  border-top: 0.25rem solid
+    var(--preview-os-quaternary, var(--md-sys-color-quaternary));
+  color: var(--md-sys-color-quaternary);
 }
 
 .app-header__preview-badge {
@@ -72,12 +68,6 @@ body {
   letter-spacing: var(--md-sys-typescale-label-small-tracking);
   white-space: nowrap;
   flex-shrink: 0;
-}
-
-:root[data-app-env="preview"][data-preview-color="tertiary"]
-  .app-header__preview-badge {
-  background-color: var(--md-sys-color-tertiary);
-  color: var(--md-sys-color-on-tertiary);
 }
 
 .app-header__actions {

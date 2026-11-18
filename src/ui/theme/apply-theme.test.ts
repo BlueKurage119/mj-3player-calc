@@ -44,7 +44,9 @@ class MockMediaQuery implements ThemeMediaQuery {
   }
 }
 
-function createMockRoot(): ThemeRoot & { dataset: { theme?: string } } {
+function createMockRoot(): ThemeRoot & {
+  dataset: { theme?: string; osTheme?: string };
+} {
   return { dataset: {} };
 }
 
@@ -265,5 +267,47 @@ describe('テーマの適用 (C1-A01〜A08)', () => {
       version: 1,
       settings: { theme: 'light' }
     });
+  });
+});
+
+describe('OS テーマ属性の追随 (CR-T6)', () => {
+  it('CR-T6: OS の prefers-color-scheme がアプリ設定と異なっていても data-os-theme が常に OS 設定に追随する', () => {
+    const root = createMockRoot();
+    const mockMql = new MockMediaQuery(true);
+    const { storage } = createMockStorage();
+
+    const controller = createThemeController({
+      storage,
+      matchMedia: () => mockMql,
+      root
+    });
+
+    expect(root.dataset.theme).toBe('dark');
+    expect(root.dataset.osTheme).toBe('dark');
+
+    controller.setPreference('light');
+    expect(root.dataset.theme).toBe('light');
+    expect(root.dataset.osTheme).toBe('dark');
+
+    mockMql.setMatches(false);
+    expect(root.dataset.theme).toBe('light');
+    expect(root.dataset.osTheme).toBe('light');
+
+    mockMql.setMatches(true);
+    expect(root.dataset.theme).toBe('light');
+    expect(root.dataset.osTheme).toBe('dark');
+
+    controller.setPreference('dark');
+    expect(root.dataset.theme).toBe('dark');
+    expect(root.dataset.osTheme).toBe('dark');
+
+    mockMql.setMatches(false);
+    expect(root.dataset.theme).toBe('dark');
+    expect(root.dataset.osTheme).toBe('light');
+
+    // イベント発火なしの matches 変化でも setPreference 時に同期する
+    mockMql.matches = true;
+    controller.setPreference('dark');
+    expect(root.dataset.osTheme).toBe('dark');
   });
 });
