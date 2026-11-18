@@ -1,5 +1,5 @@
-# 非特権 nginx 公式イメージ（nginxinc/nginx-unprivileged は移行済みのため nginx 名前空間を使用）
-FROM nginx/nginx-unprivileged:1.28-alpine
+# 非特権 nginx 公式イメージ（nginx 名前空間。1.28-alpine タグは存在しないため stable-alpine を使用）
+FROM nginx/nginx-unprivileged:stable-alpine
 
 COPY deploy/cloud-run/nginx.conf /etc/nginx/conf.d/default.conf
 COPY dist /usr/share/nginx/html

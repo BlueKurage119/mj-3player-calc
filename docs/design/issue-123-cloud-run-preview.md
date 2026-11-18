@@ -59,7 +59,7 @@
 | 初回 JS 実測（09 号） | `main` `62db1bb` で `npm run build` を実行し、`dist/assets/index-Cpk8wRUr.js`（`modulepreload` なし）を `gzip -9 -c` で実測したところ **128,880 B**（生サイズ 478,339 B、09 号記載の v1.0.0 値 128,883 B と 3 B 差） | 設計基準値 128,880 B に対し、本番ビルドの増分は +0 B に抑える |
 | 認証・リポジトリ | `git remote -v` は `BlueKurage119/mj-3player-calc`。ローカルに `docker`・`ruby`・`node`・`npm` が存在 | WIF の `attribute-condition` で `BlueKurage119/mj-3player-calc` に限定する |
 | `skygcp` 実環境・過去案件（`my-kansen-tid`・`saitama-super-tid`） | `gcloud run services list` で既存 4 サービス（`my-kansen-tid`・`saitama-super-tid`・`mj-3players-pushfold-quiz`・`bus-departure-board`）すべてが `https://<service>-106538176815.asia-northeast1.run.app` の確定 URL 形式で稼働中。`asia-northeast1` に既存 Artifact Registry リポジトリ `cloud-run-source-deploy`（DOCKER、約 184.39 MB）が存在し、`my-kansen-tid`・`saitama-super-tid` の両方が共用。既存 WIF Pool `github`（`my-kansen-tid` 用）と `saitama-github`（`saitama-super-tid` 用）が存在し、過去案件方針として「既存サービス・既存 WIF provider の条件・IAM は変更しない」「通常 CI にプロジェクト全体の管理権限を付与しない」を採用。両案件とも CI は `google-github-actions/auth` + `setup-gcloud` + `gcloud auth configure-docker` + `docker build/push` + `gcloud run deploy`（`--allow-unauthenticated` なし、既存サービスの IAM ポリシー保持）を使用し、サービス単位の `roles/run.developer`・対象 AR の `roles/artifactregistry.writer`・ランタイム SA への `roles/iam.serviceAccountUser` のみを付与している | 確定 URL 形式の実環境動作を確認。既存 `cloud-run-source-deploy` を共用し、既存 WIF Pool や既存サービスには触れず専用 WIF Pool（`mj3calc-github`）・専用ランタイム SA（`mj3calc-runtime`）・専用デプロイ SA（`mj3calc-deployer`）を新設する。オーナーが初回サービスを `--allow-unauthenticated` で先行作成し、CI には最小権限のみ付与して `setup-gcloud` + `gcloud run deploy` 方式に揃える |
-| Actions・Docker タグ確認 | Web 検索により `google-github-actions/auth@v3`、`google-github-actions/setup-gcloud@v3`、`nginx/nginx-unprivileged:1.28-alpine`（`nginxinc/` から `nginx/` 名前空間へ移行済み）がいずれも GitHub 公式リポジトリ・公開レジストリに存在することを確認済み | §4・§5 で上記バージョンを指定する（ただし GitHub Actions 上での実実行は「実挙動未確認」） |
+| Actions・Docker タグ確認 | Web 検索により `google-github-actions/auth@v3`、`google-github-actions/setup-gcloud@v3`、`nginx/nginx-unprivileged:stable-alpine`（`nginx/` 名前空間。`1.28-alpine` タグは存在せず、検収で判明したため `stable-alpine` へ訂正）がいずれも GitHub 公式リポジトリ・公開レジストリに存在することを確認済み | §4・§5 で上記バージョンを指定する（ただし GitHub Actions 上での実実行は「実挙動未確認」） |
 
 ### 2.3 参照した業務標準・設計書
 
@@ -261,15 +261,15 @@ export const SHARE_URL: string | null =
 
 ### 4.1 コンテナビルド方式
 
-GitHub Actions ランナー（またはローカル環境）で先に `npm run build:wasm` とプレビュー用 `npm run build` を実行して `dist/` を生成し、`Dockerfile` は軽量ベースイメージ `nginx/nginx-unprivileged:1.28-alpine` へ `dist/` と設定ファイルをコピーするのみとする。これにより `ci.yml`・`deploy.yml` と同一の Node / Rust ツールチェーンを使え、イメージビルドも数秒で完了する。
+GitHub Actions ランナー（またはローカル環境）で先に `npm run build:wasm` とプレビュー用 `npm run build` を実行して `dist/` を生成し、`Dockerfile` は軽量ベースイメージ `nginx/nginx-unprivileged:stable-alpine` へ `dist/` と設定ファイルをコピーするのみとする。これにより `ci.yml`・`deploy.yml` と同一の Node / Rust ツールチェーンを使え、イメージビルドも数秒で完了する。
 
 ### 4.2 `deploy/cloud-run/Dockerfile`・`.dockerignore`・`deploy/cloud-run/robots.txt`
 
 #### `deploy/cloud-run/Dockerfile`（新規作成）
 
 ```dockerfile
-# 非特権 nginx 公式イメージ（nginxinc/nginx-unprivileged は移行済みのため nginx 名前空間を使用）
-FROM nginx/nginx-unprivileged:1.28-alpine
+# 非特権 nginx 公式イメージ（nginx 名前空間。1.28-alpine タグは存在しないため stable-alpine を使用）
+FROM nginx/nginx-unprivileged:stable-alpine
 
 COPY deploy/cloud-run/nginx.conf /etc/nginx/conf.d/default.conf
 COPY dist /usr/share/nginx/html
@@ -310,6 +310,7 @@ server {
 
     gzip on;
     gzip_vary on;
+    gzip_proxied any;
     gzip_types
         text/plain
         text/css
@@ -567,7 +568,7 @@ jobs:
 | `src/ui/screen/AppHeader.tsx` | 変更 | `__IS_PREVIEW__` 時にタイトル横へ「プレビュー」ピルバッジを描画 |
 | `src/ui/screen/AppHeader.test.tsx` | 変更 | 非プレビュー既定時のテストおよびバッジ有無の確認テスト |
 | `src/ui/screen/main-screen.css` | 変更 | `:root[data-app-env="preview"] .app-header`（上部 `0.25rem` ライン・文字色）および `.app-header__preview-badge` スタイルを MD3 トークンのみで追加 |
-| `deploy/cloud-run/Dockerfile` | 新規 | `nginx/nginx-unprivileged:1.28-alpine` ベースの配信用コンテナ定義 |
+| `deploy/cloud-run/Dockerfile` | 新規 | `nginx/nginx-unprivileged:stable-alpine` ベースの配信用コンテナ定義 |
 | `deploy/cloud-run/nginx.conf` | 新規 | ポート 8080、`X-Robots-Tag`、MIME、キャッシュ制御、SPA フォールバック設定 |
 | `deploy/cloud-run/robots.txt` | 新規 | `User-agent: *` / `Disallow: /` |
 | `.dockerignore` | 新規 | `dist/` と `deploy/cloud-run/` のみコンテキストへ含める |
