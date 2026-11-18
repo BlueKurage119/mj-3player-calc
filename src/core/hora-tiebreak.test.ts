@@ -603,3 +603,109 @@ describe('同点の和了分解の選択 (I82-01〜I82-06)', () => {
     );
   });
 });
+
+describe('I92: uniqueHoras 直接呼び出しによる段6(生の符)の単体テスト (I92-01〜I92-02)', () => {
+  const horaTile: Tile = { type: 'p', n: 1 };
+
+  const expectBothOrders = (
+    a: Hora,
+    b: Hora,
+    expected: Hora,
+    rule: Rule = DEFAULT_RULE
+  ): void => {
+    const ab = uniqueHoras([a, b], rule);
+    const ba = uniqueHoras([b, a], rule);
+    expect(ab).toEqual([expected]);
+    expect(ba).toEqual([expected]);
+  };
+
+  test('I92-01: 非満貫域・基本点同点(40符1飜=320)・同飜・同じ待ちで生の符 36 と 40 なら 40 が残る', () => {
+    // 出典: 選択規則は Issue #82 確定事項1(mahjong-rules.md §4.3 3)、符・基本点は手計算(Wikipedia『麻雀の得点計算』の式、mahjong-rules.md §6)
+    const hora36: Hora = {
+      type: 'mentsu',
+      by: 'ron',
+      horaTile,
+      melds: [],
+      fu: [
+        { type: 'futei', fu: 20 },
+        { type: 'kotsu', tile: 10, kotsuType: 'anko', fu: 4 },
+        { type: 'menzen-ron', fu: 10 },
+        {
+          type: 'waiting',
+          waitingType: 'tanki',
+          block: { type: 'head', tile: 9, fu: 0 },
+          fu: 2
+        }
+      ],
+      yaku: [{ type: 'yaku', name: 'riichi', han: 1 }]
+    };
+    const hora40: Hora = {
+      type: 'mentsu',
+      by: 'ron',
+      horaTile,
+      melds: [],
+      fu: [
+        { type: 'futei', fu: 20 },
+        { type: 'kotsu', tile: 17, kotsuType: 'anko', fu: 8 },
+        { type: 'menzen-ron', fu: 10 },
+        {
+          type: 'waiting',
+          waitingType: 'tanki',
+          block: { type: 'head', tile: 9, fu: 0 },
+          fu: 2
+        }
+      ],
+      yaku: [{ type: 'yaku', name: 'riichi', han: 1 }]
+    };
+    expect(sumOfFu(hora36.fu)).toBe(36);
+    expect(sumOfFu(hora40.fu)).toBe(40);
+    expect(canonicalKey(hora36) < canonicalKey(hora40)).toBe(true);
+    expectBothOrders(hora36, hora40, hora40);
+  });
+
+  test('I92-02: 満貫域・同飜(6飜=基本点3000)・同じ待ちで生の符 40 と 44 なら 44 が残る', () => {
+    // 出典: 選択規則は Issue #82 確定事項1(mahjong-rules.md §4.3 3)、符・基本点は手計算(Wikipedia『麻雀の得点計算』の式、mahjong-rules.md §6)
+    const hora40: Hora = {
+      type: 'mentsu',
+      by: 'ron',
+      horaTile,
+      melds: [],
+      fu: [
+        { type: 'futei', fu: 20 },
+        { type: 'kotsu', tile: 10, kotsuType: 'anko', fu: 4 },
+        { type: 'kotsu', tile: 11, kotsuType: 'anko', fu: 4 },
+        { type: 'menzen-ron', fu: 10 },
+        {
+          type: 'waiting',
+          waitingType: 'kanchan',
+          block: { type: 'shuntsu', tile: 12, fu: 0 },
+          fu: 2
+        }
+      ],
+      yaku: [{ type: 'yaku', name: 'chinitsu', han: 6 }]
+    };
+    const hora44: Hora = {
+      type: 'mentsu',
+      by: 'ron',
+      horaTile,
+      melds: [],
+      fu: [
+        { type: 'futei', fu: 20 },
+        { type: 'kotsu', tile: 17, kotsuType: 'anko', fu: 8 },
+        { type: 'kotsu', tile: 11, kotsuType: 'anko', fu: 4 },
+        { type: 'menzen-ron', fu: 10 },
+        {
+          type: 'waiting',
+          waitingType: 'kanchan',
+          block: { type: 'shuntsu', tile: 12, fu: 0 },
+          fu: 2
+        }
+      ],
+      yaku: [{ type: 'yaku', name: 'chinitsu', han: 6 }]
+    };
+    expect(sumOfFu(hora40.fu)).toBe(40);
+    expect(sumOfFu(hora44.fu)).toBe(44);
+    expect(canonicalKey(hora40) < canonicalKey(hora44)).toBe(true);
+    expectBothOrders(hora40, hora44, hora44);
+  });
+});
