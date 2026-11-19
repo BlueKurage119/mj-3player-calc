@@ -37,7 +37,7 @@ products: [Claude, Codex, Antigravity]
 - 設計担当に使うモデルは、次を下限とする。製造用の中堅モデルを設計に使ってはならない。
   - Claude: Opus
   - Codex: Sol
-  - Antigravity: Argon・Opus
+  - Antigravity: Neon(Argon)・Opus
 - 設計担当が使ったモデル名を、設計書のヘッダー(状態の近く)に記載する。
 - 統括担当が設計を外部コマンドへ委託する場合、依頼文でモデルを指定する。
 
@@ -46,7 +46,7 @@ products: [Claude, Codex, Antigravity]
 設計担当が設計書を書き終え、未決事項がなくなった段階で、統括がユーザーへ設計承認を求める**前に**、設計書の独立レビューを1本通す。
 
 - レビュー担当: 
-  - 極力設計担当とは別のモデルを使用すること。Opus・Argon・Sol以上とする。
+  - 極力設計担当とは別のモデルを使用すること。Opus・Neon(Argon)・Sol以上とする。
   - 使用可能ならば、オーナー指示でフロンティアモデル（Fable・Carbon・Astra）を使用する。
   - 会話・判断経緯を共有しない。読むだけで設計書は直さないこと。
 - レビュー観点:
