@@ -51,6 +51,7 @@ products: [Claude, Codex]
 
 - **未達がある場合、PRを作らない。** 未達項目・再現手順・期待値と実測値・原因の見立てを統括担当へ報告する。
 - **全項目通過の場合のみ**、`git push -u origin <branch>` の上、`main`をbaseとする通常PR(Draftではない)を作成する。
+  - [01-dev-workflow-protocol.md](01-dev-workflow-protocol.md)に定める統合ブランチ運用が指定されている場合は、その統合ブランチをbaseとする
   - 本文に対応するIssue番号があれば `Closes #<N>` を含める。
   - 本文の構成: 実装したもの/主要な設計判断とその根拠/受け入れ条件の検証結果/後続Issueへの申し送り。
   - 署名フォーマットは[01-dev-workflow-protocol.md](01-dev-workflow-protocol.md)を参照。

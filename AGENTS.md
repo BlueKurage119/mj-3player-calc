@@ -21,7 +21,7 @@
 ここに書かれていることは、エージェントとオーナーとの契約である。契約の遵守はエージェントの存在意義であり、違反は絶対に許されないことを強く自覚すること。
 
 1. **ホームディレクトリ名を、コードおよびドキュメントに残してはならない**
-2. **リモート・ローカル問わず、mainへ直接コミットをしてはならない**
+2. **リモート・ローカル問わず、mainおよび統合ブランチ(`develop/*`)へ直接コミットをしてはならない**
 3. **明確な指示を受けずにPRをマージしてはならない**
 4. **明確な着手指示の範囲や、指示されたフェーズ・依頼範囲を超えて、勝手に作業してはならない**
 5. **明確な指示を受けずに、既存ファイルの削除・大幅な構造変更・マシンに波及する破壊的操作を行ってはならない**
@@ -40,7 +40,7 @@
 - 計画または設計の承認を受けるときは、ユーザーにその要点とユーザーの判断が必要な事項、その他決められた事項を提示すること
 - コミット前に `npm run lint` / `npm run typecheck` / `npm run format:check` / `npm test` を実行し、エラーがないことを確かめること（ただし、変更が`docs/**`配下の`*.md`のみの場合は省略できる）
 - マージが可能となったとき、マージ手順が複雑でユーザーが行わない方がよい場合を除き、マージ代行の提案をしないこと（マージを行っても支障ないことだけを報告すること）
-- マージ後は、`git merge-base --is-ancestor <マージコミット> origin/main` が真であることを確かめること
+- マージ後は、`git merge-base --is-ancestor <マージコミット> origin/<baseブランチ>` が真であることを確かめること（通常は `origin/main`。統合ブランチ運用の例外は [docs/rules/01-dev-workflow-protocol.md](docs/rules/01-dev-workflow-protocol.md) を参照）
 
 #### UIデザインに関する遵守事項
 
@@ -120,7 +120,7 @@ npm test               # Vitest
 ## 7. ブランチ・コミット・PR
 
 - ブランチ名は `<プレフィックス>/issue-<番号>-<短い説明>` (例: `feature/issue-2-sanma-tiles`)とする。Issueによらない作業は、その都度統括担当が決める。
-- PR 作成時は base が `main` であることを確認する。
+- PR 作成時は base が `main` であることを確認する（統合ブランチ運用時の例外は [docs/rules/01-dev-workflow-protocol.md](docs/rules/01-dev-workflow-protocol.md) を参照）。
 - **製造担当(`mj3calc-builder`)の作業はコミットまでとし、push・PRの作成・本文の記述は検収担当(`mj3calc-inspector`)が行う**
 - コミット・PR・コメントの署名の必須事項・フォーマット、コミット粒度、PR本文構成は [docs/rules/01-dev-workflow-protocol.md](docs/rules/01-dev-workflow-protocol.md) を参照
 
