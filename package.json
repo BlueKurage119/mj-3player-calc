@@ -1,6 +1,6 @@
 {
   "name": "mj-3player-calc",
-  "version": "1.0.1",
+  "version": "2.0.0-dev",
   "description": "三人麻雀特化の点数計算機",
   "type": "module",
   "private": true,
