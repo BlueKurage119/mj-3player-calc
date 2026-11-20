@@ -1,7 +1,7 @@
 # Issue #85 十三不搭のチャンス・成立メッセージ(天地和オフ時) 設計書
 
 - ブランチ: `claude/issue-85-jyusan-message-c89620`(起点 main `46f0feb`)
-- 状態: 第4版(設計承認済み。シェブロンをオーナー確定)
+- 状態: 第5版(UI監修を反映。§9。第4版で設計承認済み)
 - 設計担当のモデル: Claude Opus 5.5(`claude-opus-5-5`)
 
 ## 1. 参照資料と設計判断の根拠
@@ -49,6 +49,7 @@
 ### 2.1 core: 判定関数(`src/core/local-yaku.ts` に追加)
 
 ```ts
+// 第5版で戻り値型を変更(§9.2)。下は第4版までの型
 export type ShisanputaNotice = 'chance' | 'formed' | null;
 
 /**
@@ -94,7 +95,7 @@ export const shisanputaNotice = (
 
 表示の判定は、結果の分類と組にする(古い結果との食い違い防止):
 
-- `resultState.shisanputa === 'chance'` かつ `view.kind === 'shanten'` → チャンスカード
+- `resultState.shisanputa === 'chance'` かつ `view.kind === 'shanten'` → チャンスカード(第5版で `resultState.shisanputa?.kind === 'chance'` に変更。§9)
 - `resultState.shisanputa === 'formed'` かつ `view.kind === 'discard'` → 成立バナー
 - それ以外は出さない
 
@@ -104,7 +105,7 @@ export const shisanputaNotice = (
 
 - 基準値: **128,937 B**(設計担当が main `46f0feb` を本 worktree で `npm run build` し、`dist/index.html` の `<script type="module" src>` が指す `assets/index-BVvUesAx.js` を `gzip -9 -c | wc -c` で測定。`modulepreload` なし。09号記載の確定値 128,883 B との差 +54 B は v1.0.1 の版番号更新等と推定、内訳未調査)
 - 増分の積算(見積もり): `ShisanputaNotice.tsx`+CSS は初回チャンクに入る(+約400 B)、`ResultPanel`/`use-result`/`result-state` の変更(+約150 B)。`local-yaku.ts` は `compute` チャンク側(初回JSに含めない)
-- 目標値: **約 129,500 B**(基準値+約550 B)。超過しても不合格にしない
+- 目標値: **約 129,500 B**(基準値+約550 B。第5版で約 129,650 B に更新、§9.3)。超過しても不合格にしない
 - 参考: `compute` チャンク(遅延)は 9,175 B(gzip -9。同じビルドで測定)
 
 ### 2.3 UI: 部品と配置
@@ -202,6 +203,12 @@ export const shisanputaNotice = (
 | C-16 | 同一牌3枚(刻子)を含む13枚 `1m 9m 1p 4p 7p 1s 4s 7s 1z 1z 1z 2z 3z`(4枚目を足しても不成立) | `null` |
 | C-17 | 12枚・11枚・1枚 | `null` |
 | C-18 | 14枚 国士聴牌形 `1m 9m 1p 5p 9p 1s 9s 1z 1z 2z 3z 4z 5z 6z`(境界固定。§1.4-2) | `null` |
+| C-19 | C-02(`4z` 対子)、赤なしルール(第5版) | `kind: 'chance'`。`tileAvailabilities` は成立牌 `5z`・`6z`・`7z` の3件で各 `count: 4`(`compareTiles` 昇順)。`9m` 等の不成立牌を含まない |
+| C-20 | C-19 の入力にドラ表示牌 `6z` を1枚追加 | `6z` の `count: 3`、他は 4 |
+| C-21 | C-01 に抜き北1(`nuki: 1`)を追加 | 成立牌 `4z`(北)の `count` が `4 - 1(手牌) - 1(抜き)= 2` |
+| C-22 | 赤ありルール(p に赤1枚)、13枚 `1m 9m 1p 9p 1s 4s 7s 1z 2z 3z 4z 4z 5z`(5p で成立) | 5p が赤なし(`count: 3`)と赤(`count: 1`)の2件(`tileAvailableCount` の規則)。赤なしルールでは 5p は赤なし1件(`count: 4`) |
+| C-23 | C-22 のルールで、ドラ表示牌に赤5p(`0p`)を1枚 | 5p 赤の `count: 0`(配列には残る)、赤なし `count: 3` |
+| C-24 | C-01 の `tileAvailabilities` の `count` 合計 | 各成立牌について `4 - 手牌枚数` を足した値と一致 |
 
 合格: 上記を `npm test -- src/core/local-yaku.test.ts` で実行し全件 pass。C-01〜C-17 の各期待値は、検収担当が手牌の並びを見て mahjong-rules.md §4.2.1 の条件(面子・搭子なし、対子1つ、同色の数字の差3以上、国士形除外)と照合できること(照合結果を検収報告に1行ずつ記す)。
 
@@ -209,8 +216,9 @@ export const shisanputaNotice = (
 
 | ID | 描画 | 合格条件(HTML文字列・DOMParser 等での検査) |
 | --- | --- | --- |
-| U-01 | `ResultPanel` に、C-01 を `generateResult` に通した結果(`classifyResult` が `shanten`)と `shisanputa: 'chance'` の `resultState` | 「十三不搭チャンス」を含む `div` が `<section id="result-panel"` より前にある。その要素は `button` でなく、`md-ripple`・`md-focus-ring` を含まない |
-| U-02 | `shisanputa: 'chance'` で view が `discard` | 通知の文言・クラスが出ない |
+| U-01 | `ResultPanel` に、C-01 を `generateResult` に通した結果(`classifyResult` が `shanten`)と `shisanputa`(第5版では `shisanputaNotice` の戻り値)の `resultState` | 「十三不搭チャンス」を含む `div` が `<section id="result-panel"` より前にある。その要素は `button` でなく、`md-ripple`・`md-focus-ring` を含まない |
+| U-01b | U-01 の HTML(第5版。§9) | 通知内に `result-body__title` の「十三不搭チャンス」と `result-body__summary` の「M種 N枚」(C-01・赤なしで M=成立牌の種類数、N=C-24 の合計)。牌は `result-body__wait` の組で並び各組に「×{count}」。C-23 を与えたとき「×0」を含まない。牌は `button` でなく、`aria-label` に「ツモ」を含まない |
+| U-02 | `shisanputa` が chance で view が `discard` | 通知の文言・クラスが出ない |
 | U-03 | C-10 の結果(`discard`)と `shisanputa: 'formed'` | `<button type="button"` で文言「十三不搭の形です」、`md-ripple`・`md-focus-ring` を内包し、`<section id="result-panel"` より前 |
 | U-04 | `shisanputa: 'formed'` で view が `shanten` | 通知が出ない |
 | U-05 | `shisanputa` なし | 通知が出ず、`<section id="result-panel"` の属性は従来どおり |
@@ -226,7 +234,8 @@ export const shisanputaNotice = (
 | --- | --- | --- |
 | S-01 | `npm run lint`・`npm run typecheck`・`npm run format:check` | エラーなし |
 | S-02 | `git diff main --stat` | 変更が `src/core/local-yaku.ts`・`src/core/local-yaku.test.ts`・`src/ui/calc/compute.ts`・`src/ui/calc/result-state.ts`・`src/ui/calc/use-result.ts`・`src/ui/result/ShisanputaNotice.tsx`・`src/ui/result/result.css`・`src/ui/result/i85-shisanputa.test.tsx`・`src/ui/screen/ResultPanel.tsx`・`src/ui/screen/MainScreen.tsx`・本設計書 に限られる(`package.json`・`package-lock.json` の変更なし=依存追加なし) |
-| S-03 | `git diff main -- src/core/result.ts src/ui/result/slots.tsx src/ui/result/discard.tsx src/ui/screen/ResultBanner.tsx` | 差分なし(戻り値型・既存部品を変えていない) |
+| S-03 | `git diff main -- src/core/result.ts src/ui/result/discard.tsx src/ui/screen/ResultBanner.tsx` | 差分なし(戻り値型・既存部品を変えていない) |
+| S-03b | `git diff main -- src/ui/result/slots.tsx` | 差分は `renderWaitTiles` 宣言への `export` 付与のみ(第5版。§9.3) |
 | S-04 | 追加 CSS を `grep -nE '#[0-9a-fA-F]{3,8}\b'` | ヒットなし |
 | S-06 | `npm run build` 後、09号の計測方法で初回JSを実測 | 基準値 128,937 B・実測値・増分・目標値(約 129,500 B)との差を検収報告と PR 本文に記録する(超過は不合格条件でない)。`dist/assets/` の初回チャンクに `shisanputa` 判定本体(`isShisanputa` 相当)が入っていないことを、`compute` チャンク側にあることで確認 |
 | S-05 | 変更ファイルを `grep -n` でホームディレクトリ名・絶対パス検索 | ヒットなし |
@@ -235,13 +244,15 @@ export const shisanputaNotice = (
 
 | ID | 操作 | 合格条件 |
 | --- | --- | --- |
-| V-01 | 設定でローカル役オン、C-01 の13枚を入力 | 結果カードの上に別カードでチャンス文言、結果カードは「N向聴」 |
+| V-01 | 設定でローカル役オン、C-01 の13枚を入力(第5版で表示内容は V-06 に従う) | 結果カードの上に別カードでチャンス文言、結果カードは「N向聴」 |
 | V-02 | C-10 の14枚を入力 | 何切るカードの上に「十三不搭の形です」 |
 | V-03 | V-02 のバナーをクリック | バナーが消え、和了表示に切り替わる。役は十三不搭のみ。状況カードに「天和」(親)が表示。他の状況入力(事前に立直・海底をオンにしておく)は変わらない |
 | V-03b | 自風を南(子)にして V-03 | 状況カードに「地和/人和」が表示され、和了の役は十三不搭のみ(地和は付かない) |
 | V-03c | V-02 の状態でバナーに Tab でフォーカスし Enter | フォーカスリングが見え、V-03 と同じ切り替えが起きる |
 | V-04 | ライト/ダーク両テーマで V-01・V-02 を表示 | 文字が背景に埋もれない。V-02 のバナーにカーソルを載せるとポインタになる。行末にシェブロンが見える。V-01 のカードはどちらもない(スクリーンショットを検収報告に添付) |
 | V-05 | 幅 360px で V-02 | 横スクロールが出ない |
+| V-06 | ローカル役オン、C-02 の13枚を入力(第5版) | 向聴カードの上の別カードに、見出し「十三不搭チャンス」と右に「3種 12枚」、その下に白・發・中の牌画像と各「×4」。向聴カードの待ち牌と同じ大きさ・間隔。牌をタップしても何も起きない |
+| V-07 | 幅 360px・ライト/ダークで C-01 | 成立牌が折り返して横スクロールが出ない。「M種 N枚」が見出しの右(狭いときは次行)に出る |
 
 ## 7. 実機確認(検収後にユーザーが行う。合否に含めない。C-02)
 
@@ -261,14 +272,53 @@ export const shisanputaNotice = (
 ### 8.2 残る【未確定】
 
 1. 【未確定】国士聴牌形(14枚の国士向聴0。例 `1m 9m 1p 5p 9p 1s 9s 1z 1z 2z 3z 4z 5z 6z`)が十三不搭に当たらないことのルール上の根拠。本Issueは既存コアに合わせ通知しない(オーナー回答)が、出典との照合は未了。見直す場合は別Issue
+2. 【未確定】UI監修の指示「M種N牌」の「牌」は、既存の「M種 N枚」に揃える誤記と解釈した。「枚」でよいか
 
 ## 9. UI 監修による変更
 
-(なし)
+### 9.1 指示(製造後。製造コミット 069611c・f59be16 の後)
+
+オーナー: 十三不搭チャンスを、向聴の待ちカードの様式で、見出し「十三不搭チャンス M種N牌」と、牌×枚数の並びで表示する。
+
+解釈: `ShantenBody`(`slots.tsx`)と同じ様式。見出し行に「十三不搭チャンス」、右に「M種 N枚」(M=成立牌の種類数。赤五と通常の五は同一視、N=残り枚数の合計。`summarizeAcceptance` と同じ)。下に成立牌を牌画像+「×残り枚数」で並べ、残り0枚は出さない(E4-04 と同じ)。表記は既存に合わせ「枚」(指示の「牌」は誤記と解釈。§8.2-2 で確認)。13枚チャンスはタップ不可のまま。14枚の成立バナーは変更なし。
+
+### 9.2 core の変更(`src/core/local-yaku.ts`)
+
+```ts
+export type ShisanputaNotice =
+  | { kind: 'chance'; tileAvailabilities: TileAvailability[] }
+  | { kind: 'formed' }
+  | null;
+```
+
+- 判定条件(§2.1)は変えない。`chance` のとき、`generateShisanputaHora(table, input.hand, { ...options, tenho: true }, rule)` の和了牌から牌種(`type`+`n`)を重複なく取り出し、向聴の有効牌と同じ規則で `TileAvailability` に展開する:
+  - 差し引く牌 = 手牌 + 副露の牌(本機能では副露なしで空) + ドラ表示牌 + 裏ドラ表示牌 + 抜き北の枚数分の北(`result.ts` の `allInputTiles` と同じ構成)
+  - 数牌の5: `red: false` と `red: true` の2件を `tileAvailableCount(rule.red, existing, t)` で求め、`null` の件は除く。それ以外: 1件
+  - `compareTiles` 昇順。`count: 0` の件も残す(表示側で除外)
+- 和了牌の赤展開(`horaTileVariants`)は使わず上の規則で展開し直す。向聴の有効牌の表記と揃えるため
+- `result.ts` の `tileCountsIndexToTileAvailabilities` は export されていないクロージャなので、同じ規則を `local-yaku.ts` 内の小関数として書く(`result.ts` は変えない。S-03)
+- `formed` は `{ kind: 'formed' }`(判定は不変)
+
+### 9.3 UI の変更
+
+| ファイル | 変更 |
+| --- | --- |
+| `src/ui/result/slots.tsx` | `renderWaitTiles` に `export` を付けるだけ |
+| `src/ui/result/ShisanputaNotice.tsx` | `ShisanputaChanceCard({ tileAvailabilities })`。`summarizeAcceptance` で集計し、`<div className="shisanputa-notice result-body" data-result-kind="shisanputa-chance">` に `ShantenBody` と同じ `result-body__heading`(`<h2 className="result-body__title">十三不搭チャンス</h2>`、`<span className="result-body__summary tabular-nums" data-kinds data-total>{kinds}種 {total}枚</span>`)と `<div className="result-body__tiles">{renderWaitTiles(available)}</div>`。`onTsumo` は渡さない |
+| `src/ui/screen/ResultPanel.tsx` | 条件を `resultState.shisanputa?.kind === 'chance'` / `'formed'` に変え、chance で `tileAvailabilities` を渡す |
+| `src/ui/result/result.css` | 既存の `.result-body--shanten .result-body__tiles` 等の群に `.shisanputa-notice .result-body__tiles` を加える。新色・HEXなし |
+| `compute.ts`・`result-state.ts`・`use-result.ts` | 型参照で追従(コード変更は原則不要)。「`null` ならキーを付けない」互換は維持 |
+| テスト | `local-yaku.test.ts`(C-19〜C-24 と既存 C 系の期待値の型変更)、`i85-shisanputa.test.tsx`(U-01b、既存 U 系の型変更) |
+
+- `.result-body` の併用で `--tile-width`・縦並び・間隔が `ShantenBody` と揃う。`.shisanputa-notice` の背景・角丸・padding は維持
+- 変更ファイルは S-02 の許可範囲内(`slots.tsx` のみ S-03 の例外。S-03b)
+- 初回JS: `ShisanputaNotice.tsx` の増分(+約100〜150 B 見積もり)。core 側は `compute` チャンク。目標値は約 129,650 B に更新(S-06 で記録。超過は不合格でない)
+- 既存 C-01〜C-18 の期待値 `'chance'`・`'formed'` は、それぞれ `kind: 'chance'`・`{ kind: 'formed' }` と読み替える
 
 ## 10. 改訂履歴
 
 - 初版作成(Issue #85)
+- 改訂4(第5版): UI監修を反映(§9)。チャンスに成立牌と残り枚数を持たせる戻り値型、`ShantenBody` 様式の表示、C-19〜C-24・U-01b・S-03b・V-06・V-07 追加、目標値更新
 - 改訂3(第4版): シェブロンを確定(§2.3・V-04・§8)。設計承認
 - 改訂2(第3版): 独立レビュー指摘を反映(地和との複合の誤記訂正、国士聴牌形の境界と C-18、UIテストを静的HTML方式に変更しクリック操作を V-03 系へ移動、初回JSの比較と基準値・目標値・S-06、`Ripple`・`FocusRing` ラッパー明記、シェブロンの確認を条件付きに、記載修正・モデル名・外部事実記録)
 - 改訂1: オーナー回答を反映(チャンス文言「十三不搭チャンス」、通知色 `surface-container`、13枚はタップ不可、14枚も要約バナーに出さない、mahjong-rules.md 追記は範囲外)。タップ可能の手がかり(シェブロン)を設計案として追加
