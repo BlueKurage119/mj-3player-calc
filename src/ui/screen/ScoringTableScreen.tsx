@@ -8,6 +8,7 @@ import { IconButton } from '../md';
 import {
   type Cell,
   HAN_LIST,
+  type ScoringMode,
   type ScoringRule,
   buildFuHanTable,
   buildLimitTable
@@ -22,14 +23,19 @@ export interface ScoringTableViewProps {
   initialDealer?: boolean;
   /** 初期の本場数(省略時 0。STEPPER_BOUNDS.continue の範囲にクランプする) */
   initialHonba?: number;
+  /** 初期の供託本数(省略時 0。STEPPER_BOUNDS.deposit の範囲にクランプする) */
+  initialDeposit?: number;
+  /** 初期の表示モード(省略時 'score') */
+  initialMode?: ScoringMode;
   onBack: () => void;
 }
 
 const [HONBA_MIN, HONBA_MAX] = STEPPER_BOUNDS.continue;
+const [DEPOSIT_MIN, DEPOSIT_MAX] = STEPPER_BOUNDS.deposit;
 
-const clampHonba = (value: number): number => {
-  if (!Number.isFinite(value)) return HONBA_MIN;
-  return Math.min(HONBA_MAX, Math.max(HONBA_MIN, Math.trunc(value)));
+const clampCount = (value: number, min: number, max: number): number => {
+  if (!Number.isFinite(value)) return min;
+  return Math.min(max, Math.max(min, Math.trunc(value)));
 };
 
 /** ツモ損の方式の表示名(設定画面と同じラベル)。該当がなければ null */
@@ -41,12 +47,21 @@ export function getTsumoLossLabel(
   return item.options.find(o => o.value === tsumoLoss)?.label ?? null;
 }
 
+const MODE_OPTIONS = [
+  { value: 'score' as const, label: '得点' },
+  { value: 'diff' as const, label: '点差' }
+] as const;
+
 const DEALER_OPTIONS = [
   { value: 'dealer' as const, label: '親' },
   { value: 'child' as const, label: '子' }
 ] as const;
 
-function renderCellLine(cell: Cell, by: 'ron' | 'tsumo'): React.JSX.Element {
+function renderCellLine(
+  cell: Cell,
+  by: 'ron' | 'tsumo',
+  mode: ScoringMode
+): React.JSX.Element {
   if (cell.kind === 'absent') {
     return (
       <span
@@ -69,7 +84,7 @@ function renderCellLine(cell: Cell, by: 'ron' | 'tsumo'): React.JSX.Element {
     <span
       className={`scoring-table__value scoring-table__value--${by} tabular-nums`}
     >
-      {cell.text}
+      {mode === 'diff' ? cell.diffText : cell.text}
     </span>
   );
 }
@@ -80,17 +95,23 @@ export function ScoringTableView({
   rule,
   initialDealer,
   initialHonba,
+  initialDeposit,
+  initialMode,
   onBack
 }: ScoringTableViewProps): React.JSX.Element {
+  const [mode, setMode] = useState<ScoringMode>(() => initialMode ?? 'score');
   const [dealer, setDealer] = useState<boolean>(
     () => initialDealer ?? seat === 'east'
   );
   const [honba, setHonba] = useState<number>(() =>
-    clampHonba(initialHonba ?? 0)
+    clampCount(initialHonba ?? 0, HONBA_MIN, HONBA_MAX)
+  );
+  const [deposit, setDeposit] = useState<number>(() =>
+    clampCount(initialDeposit ?? 0, DEPOSIT_MIN, DEPOSIT_MAX)
   );
 
-  const fuHanTable = buildFuHanTable(rule, { dealer, honba });
-  const limitTable = buildLimitTable(rule, { dealer, honba });
+  const fuHanTable = buildFuHanTable(rule, { dealer, honba, deposit });
+  const limitTable = buildLimitTable(rule, { dealer, honba, deposit });
 
   return (
     <div className="scoring-table-screen">
@@ -111,6 +132,13 @@ export function ScoringTableView({
           >
             {getTsumoLossLabel(rule.tsumoLoss)}
           </span>
+          <ConnectedButtonGroup<ScoringMode>
+            label="表示切替"
+            className="scoring-table-screen__mode-toggle"
+            options={MODE_OPTIONS}
+            value={mode}
+            onValueChange={setMode}
+          />
         </div>
         <div className="scoring-table-screen__controls">
           <ConnectedButtonGroup<'dealer' | 'child'>
@@ -127,8 +155,24 @@ export function ScoringTableView({
               value={honba}
               min={HONBA_MIN}
               max={HONBA_MAX}
-              onStep={delta => setHonba(prev => clampHonba(prev + delta))}
+              onStep={delta =>
+                setHonba(prev => clampCount(prev + delta, HONBA_MIN, HONBA_MAX))
+              }
             />
+            {mode === 'diff' && (
+              <Stepper
+                aria-label="供託"
+                className="scoring-table-screen__deposit-stepper"
+                value={deposit}
+                min={DEPOSIT_MIN}
+                max={DEPOSIT_MAX}
+                onStep={delta =>
+                  setDeposit(prev =>
+                    clampCount(prev + delta, DEPOSIT_MIN, DEPOSIT_MAX)
+                  )
+                }
+              />
+            )}
           </div>
         </div>
       </header>
@@ -163,8 +207,8 @@ export function ScoringTableView({
                         {cell.ron.kind === 'absent' &&
                         cell.tsumo.kind === 'absent' ? null : (
                           <div className="scoring-table__cell-values">
-                            {renderCellLine(cell.ron, 'ron')}
-                            {renderCellLine(cell.tsumo, 'tsumo')}
+                            {renderCellLine(cell.ron, 'ron', mode)}
+                            {renderCellLine(cell.tsumo, 'tsumo', mode)}
                           </div>
                         )}
                       </td>
@@ -205,10 +249,18 @@ export function ScoringTableView({
                     </div>
                   </th>
                   <td className="tabular-nums">
-                    {row.ron.kind === 'value' ? row.ron.text : '-'}
+                    {row.ron.kind === 'value'
+                      ? mode === 'diff'
+                        ? row.ron.diffText
+                        : row.ron.text
+                      : '-'}
                   </td>
                   <td className="tabular-nums">
-                    {row.tsumo.kind === 'value' ? row.tsumo.text : '-'}
+                    {row.tsumo.kind === 'value'
+                      ? mode === 'diff'
+                        ? row.tsumo.diffText
+                        : row.tsumo.text
+                      : '-'}
                   </td>
                 </tr>
               ))}
@@ -230,6 +282,7 @@ export function ScoringTableScreen(): React.JSX.Element {
       seat={table.seat}
       rule={rule}
       initialHonba={table.continue}
+      initialDeposit={table.deposit}
       onBack={() => dispatch({ type: 'navigate', screen: 'main' })}
     />
   );

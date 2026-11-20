@@ -8,15 +8,22 @@ const defaultRule = () => {
   return {
     tsumoLoss: rule.tsumoLoss,
     honbaPoint: rule.honbaPoint,
+    depositPoint: rule.depositPoint,
     roundedMangan: rule.roundedMangan,
     accumlatedYakuman: rule.accumlatedYakuman,
     doubleWindFu: rule.doubleWindFu
   };
 };
 
-const extractRadioStates = (html: string) => {
+const extractRadioStates = (html: string, groupLabel: string) => {
+  const groupMatch = html.match(
+    new RegExp(
+      `<div[^>]*role="radiogroup"[^>]*aria-label="${groupLabel}"[^>]*>([\\s\\S]*?)<\\/div>`
+    )
+  );
+  const block = groupMatch?.[1] ?? '';
   const matches = [
-    ...html.matchAll(
+    ...block.matchAll(
       /<button[^>]*role="radio"[^>]*aria-checked="(true|false)"[^>]*>[\s\S]*?<span>([^<]+)<\/span><\/button>/g
     )
   ];
@@ -66,7 +73,7 @@ describe('H1: 点数計算表画面 (ScoringTableView)', () => {
     const eastHtml = renderToStaticMarkup(
       <ScoringTableView seat="east" rule={defaultRule()} onBack={() => {}} />
     );
-    expect(extractRadioStates(eastHtml)).toEqual([
+    expect(extractRadioStates(eastHtml, '親子')).toEqual([
       { label: '親', checked: true },
       { label: '子', checked: false }
     ]);
@@ -74,7 +81,7 @@ describe('H1: 点数計算表画面 (ScoringTableView)', () => {
     const southHtml = renderToStaticMarkup(
       <ScoringTableView seat="south" rule={defaultRule()} onBack={() => {}} />
     );
-    expect(extractRadioStates(southHtml)).toEqual([
+    expect(extractRadioStates(southHtml, '親子')).toEqual([
       { label: '親', checked: false },
       { label: '子', checked: true }
     ]);
@@ -87,7 +94,7 @@ describe('H1: 点数計算表画面 (ScoringTableView)', () => {
         onBack={() => {}}
       />
     );
-    expect(extractRadioStates(overrideChildHtml)).toEqual([
+    expect(extractRadioStates(overrideChildHtml, '親子')).toEqual([
       { label: '親', checked: false },
       { label: '子', checked: true }
     ]);
@@ -100,18 +107,23 @@ describe('H1: 点数計算表画面 (ScoringTableView)', () => {
         onBack={() => {}}
       />
     );
-    expect(extractRadioStates(overrideDealerHtml)).toEqual([
+    expect(extractRadioStates(overrideDealerHtml, '親子')).toEqual([
       { label: '親', checked: true },
       { label: '子', checked: false }
     ]);
   });
 
-  it('H1-22: 供託の文字が描画結果に出ない', () => {
+  it('H1-22: 得点モード(既定)で供託の文字が描画結果に出ない', () => {
     const html = renderToStaticMarkup(
-      <ScoringTableView seat="south" rule={defaultRule()} onBack={() => {}} />
+      <ScoringTableView
+        seat="south"
+        rule={defaultRule()}
+        initialDeposit={2}
+        onBack={() => {}}
+      />
     );
 
-    // 理由: Issue #105 では本場のみを導入し供託は範囲外のため、画面全体に供託の文言が一切含まれないことを検証する
+    // 理由: 得点モードでは供託非表示のため、initialDeposit を渡しても画面全体に供託の文言が一切含まれないことを検証する
     expect(html.includes('供託')).toBe(false);
   });
 
@@ -326,5 +338,185 @@ describe('H1: 点数計算表画面 (ScoringTableView)', () => {
       { name: '倍満', han: '8〜10飜' },
       { name: '三倍満', han: '11飜以上' }
     ]);
+  });
+
+  it('H1-2-20: 「得点 / 点差」切替がヘッダー1行目に描画され、initialMode に応じて選択状態が変わる', () => {
+    const defaultHtml = renderToStaticMarkup(
+      <ScoringTableView seat="south" rule={defaultRule()} onBack={() => {}} />
+    );
+    const headerRowMatch = defaultHtml.match(
+      /<div class="app-header__inner[^"]*">([\s\S]*?)<\/div><div class="scoring-table-screen__controls">/
+    );
+    // 理由: UI監修により表示切替がヘッダー1行目の app-header__inner 末尾に配置されたことを検証するため
+    expect(headerRowMatch?.[1]).toContain('aria-label="表示切替"');
+    const controlsMatch = defaultHtml.match(
+      /<div class="scoring-table-screen__controls">([\s\S]*?)<\/header>/
+    );
+    // 理由: 2行目の controls には表示切替が含まれないことを検証するため
+    expect(controlsMatch?.[1]?.includes('aria-label="表示切替"')).toBe(false);
+
+    expect(extractRadioStates(defaultHtml, '表示切替')).toEqual([
+      { label: '得点', checked: true },
+      { label: '点差', checked: false }
+    ]);
+
+    const diffHtml = renderToStaticMarkup(
+      <ScoringTableView
+        seat="south"
+        rule={defaultRule()}
+        initialMode="diff"
+        onBack={() => {}}
+      />
+    );
+    expect(extractRadioStates(diffHtml, '表示切替')).toEqual([
+      { label: '得点', checked: false },
+      { label: '点差', checked: true }
+    ]);
+  });
+
+  it('H1-2-21: 供託ステッパーは点差モード時のみ描画され、初期値・境界値・クランプが反映される', () => {
+    const omittedModeHtml = renderToStaticMarkup(
+      <ScoringTableView seat="south" rule={defaultRule()} onBack={() => {}} />
+    );
+    expect(extractStepperState(omittedModeHtml, '供託').present).toBe(false);
+
+    const scoreModeHtml = renderToStaticMarkup(
+      <ScoringTableView
+        seat="south"
+        rule={defaultRule()}
+        initialMode="score"
+        initialDeposit={2}
+        onBack={() => {}}
+      />
+    );
+    expect(extractStepperState(scoreModeHtml, '供託').present).toBe(false);
+
+    const omittedDepositHtml = renderToStaticMarkup(
+      <ScoringTableView
+        seat="south"
+        rule={defaultRule()}
+        initialMode="diff"
+        onBack={() => {}}
+      />
+    );
+    expect(extractStepperState(omittedDepositHtml, '供託')).toEqual({
+      present: true,
+      value: '0',
+      minusDisabled: true,
+      plusDisabled: false
+    });
+
+    const maxDepositHtml = renderToStaticMarkup(
+      <ScoringTableView
+        seat="south"
+        rule={defaultRule()}
+        initialMode="diff"
+        initialDeposit={99}
+        onBack={() => {}}
+      />
+    );
+    expect(extractStepperState(maxDepositHtml, '供託')).toEqual({
+      present: true,
+      value: '99',
+      minusDisabled: false,
+      plusDisabled: true
+    });
+
+    const underMinHtml = renderToStaticMarkup(
+      <ScoringTableView
+        seat="south"
+        rule={defaultRule()}
+        initialMode="diff"
+        initialDeposit={-1}
+        onBack={() => {}}
+      />
+    );
+    expect(extractStepperState(underMinHtml, '供託')).toEqual({
+      present: true,
+      value: '0',
+      minusDisabled: true,
+      plusDisabled: false
+    });
+
+    const overMaxHtml = renderToStaticMarkup(
+      <ScoringTableView
+        seat="south"
+        rule={defaultRule()}
+        initialMode="diff"
+        initialDeposit={120}
+        onBack={() => {}}
+      />
+    );
+    expect(extractStepperState(overMaxHtml, '供託')).toEqual({
+      present: true,
+      value: '99',
+      minusDisabled: false,
+      plusDisabled: true
+    });
+  });
+
+  it('H1-2-22: 点差モードで子・親・本場供託あり・ロン打点折半の点差が画面に描画される', () => {
+    // 出典: docs/mahjong-rules.md §3.1・§3.2、四麻の点数早見表(Wikipedia「麻雀の得点計算」)および Q1 確定式
+    const childHtml = renderToStaticMarkup(
+      <ScoringTableView
+        seat="south"
+        rule={defaultRule()}
+        initialMode="diff"
+        initialHonba={0}
+        initialDeposit={0}
+        onBack={() => {}}
+      />
+    );
+    // 理由: SSR HTML 文字列内の子30符1飜ロンセルに点差表記が出力されることを検証するため
+    expect(childHtml).toContain('>-2,000<');
+    // 理由: SSR HTML 文字列内の子30符1飜ツモセルに点差表記が出力されることを検証するため
+    expect(childHtml).toContain('>-1,100 / -1,300<');
+    // 理由: SSR HTML 文字列内の満貫表5飜ツモセルに点差表記が出力されることを検証するため
+    expect(childHtml).toContain('>-8,000 / -10,000<');
+
+    const dealerHtml = renderToStaticMarkup(
+      <ScoringTableView
+        seat="east"
+        rule={defaultRule()}
+        initialMode="diff"
+        initialHonba={0}
+        initialDeposit={0}
+        onBack={() => {}}
+      />
+    );
+    // 理由: SSR HTML 文字列内の親5飜ツモセルに点差表記が出力されることを検証するため
+    expect(dealerHtml).toContain('>-12,000<');
+
+    const bonusHtml = renderToStaticMarkup(
+      <ScoringTableView
+        seat="south"
+        rule={defaultRule()}
+        initialMode="diff"
+        initialHonba={1}
+        initialDeposit={1}
+        onBack={() => {}}
+      />
+    );
+    // 理由: 1本場・供託1の子30符1飜ロン点差が画面 HTML に出力されることを検証するため
+    expect(bonusHtml).toContain('>-3,400<');
+    // 理由: 1本場・供託1の子30符1飜ツモ点差が画面 HTML に出力されることを検証するため
+    expect(bonusHtml).toContain('>-2,400 / -2,600<');
+    // 理由: 1本場・供託1の子5飜ロン点差が画面 HTML に出力されることを検証するため
+    expect(bonusHtml).toContain('>-17,400<');
+
+    const ronSplitHtml = renderToStaticMarkup(
+      <ScoringTableView
+        seat="south"
+        rule={{ ...defaultRule(), tsumoLoss: 'ron-split' }}
+        initialMode="diff"
+        initialHonba={0}
+        initialDeposit={0}
+        onBack={() => {}}
+      />
+    );
+    // 理由: ロン打点折半の子5飜ツモセルに親子同額の1値のみが描画されることを検証するため
+    expect(ronSplitHtml).toContain('>-12,000<');
+    // 理由: ロン打点折半でスラッシュ区切りの2値表記にならないことを検証するため
+    expect(ronSplitHtml.includes('-12,000 / ')).toBe(false);
   });
 });

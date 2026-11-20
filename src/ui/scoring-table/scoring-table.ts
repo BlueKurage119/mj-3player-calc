@@ -11,11 +11,12 @@ import {
 export const FU_LIST = [20, 25, 30, 40, 50, 60, 70, 80, 90, 100, 110] as const;
 export const HAN_LIST = [1, 2, 3, 4] as const;
 
-/** 点数表が参照するルール設定(供託は範囲外のため含めない) */
+/** 点数表が参照するルール設定 */
 export type ScoringRule = Pick<
   Rule,
   | 'tsumoLoss'
   | 'honbaPoint'
+  | 'depositPoint'
   | 'roundedMangan'
   | 'accumlatedYakuman'
   | 'doubleWindFu'
@@ -25,12 +26,16 @@ export interface ScoringContext {
   dealer: boolean;
   /** 本場数(0以上の整数) */
   honba: number;
+  /** 供託本数(0以上の整数) */
+  deposit: number;
 }
+
+export type ScoringMode = 'score' | 'diff';
 
 export type Cell =
   | { kind: 'absent' }
   | { kind: 'na' }
-  | { kind: 'value'; payment: Payment; text: string };
+  | { kind: 'value'; payment: Payment; text: string; diffText: string };
 
 export type LimitKind =
   | 'mangan'
@@ -61,23 +66,33 @@ const buildContextTable = (ctx: ScoringContext): Table => ({
   round: 'east',
   seat: ctx.dealer ? 'east' : 'south',
   continue: ctx.honba,
-  deposit: 0
+  deposit: ctx.deposit
 });
 
 const buildPaymentRule = (
-  rule: Pick<ScoringRule, 'tsumoLoss' | 'honbaPoint'>
+  rule: Pick<ScoringRule, 'tsumoLoss' | 'honbaPoint' | 'depositPoint'>
 ): PaymentRule => ({
   tsumoLoss: rule.tsumoLoss,
   honbaPoint: rule.honbaPoint,
-  depositPoint: 0
+  depositPoint: rule.depositPoint
 });
+
+const isNonNegativeInt = (n: number): boolean => Number.isInteger(n) && n >= 0;
 
 const resolveSafeInput = (
   rule: ScoringRule,
   ctx: ScoringContext
 ): { table: Table; paymentRule: PaymentRule } => {
-  const table = buildContextTable(ctx);
-  const paymentRule = buildPaymentRule(rule);
+  const depositValid =
+    isNonNegativeInt(ctx.deposit) && isNonNegativeInt(rule.depositPoint);
+  const table: Table = {
+    ...buildContextTable(ctx),
+    deposit: depositValid ? ctx.deposit : 0
+  };
+  const paymentRule: PaymentRule = {
+    ...buildPaymentRule(rule),
+    depositPoint: depositValid ? rule.depositPoint : 0
+  };
   try {
     // ツモ側の事前検証1回で honbaPoint・continue の妥当性とツモ折半100点単位をまとめて確認する
     calculatePayment(2000, table, 'tsumo', paymentRule);
@@ -108,6 +123,27 @@ export function formatCellPayment(payment: Payment): string {
   return `${formatNumber(detail.nonDealer.base)}${TSUMO_SEPARATOR}${formatNumber(detail.dealer.base)} は ${formatNumber(detail.nonDealer.withHonba)}${TSUMO_SEPARATOR}${formatNumber(detail.dealer.withHonba)}`;
 }
 
+const formatDiffValue = (diff: number): string => `-${formatNumber(diff)}`;
+
+/** 点数表のセル向け点差表記(三麻2人払い: 自分の増分 + 対象の減分、負数表示) */
+export function formatCellDiff(payment: Payment): string {
+  const { detail, deposit } = payment;
+  if (detail.by === 'ron') {
+    return formatDiffValue(2 * detail.discarder.withHonba + deposit);
+  }
+  if (detail.winner === 'dealer') {
+    return formatDiffValue(3 * detail.eachNonDealer.withHonba + deposit);
+  }
+  const vsNonDealer =
+    detail.dealer.withHonba + 2 * detail.nonDealer.withHonba + deposit;
+  const vsDealer =
+    2 * detail.dealer.withHonba + detail.nonDealer.withHonba + deposit;
+  if (vsNonDealer === vsDealer) {
+    return formatDiffValue(vsNonDealer);
+  }
+  return `${formatDiffValue(vsNonDealer)} / ${formatDiffValue(vsDealer)}`;
+}
+
 const makeValueCell = (
   basePoint: number,
   table: Table,
@@ -118,7 +154,8 @@ const makeValueCell = (
   return {
     kind: 'value',
     payment,
-    text: formatCellPayment(payment)
+    text: formatCellPayment(payment),
+    diffText: formatCellDiff(payment)
   };
 };
 
