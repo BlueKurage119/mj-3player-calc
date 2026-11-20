@@ -44,7 +44,7 @@ export interface TableCell {
   han: number;
   ron: Cell;
   tsumo: Cell;
-  limit: LimitKind | null;
+  limit: LimitKind | 'near-mangan' | null;
 }
 
 export interface LimitRow {
@@ -181,12 +181,20 @@ export function buildFuHanTable(
         rule.accumlatedYakuman
       );
       const hasAnyValue = ronStatus === 'ok' || tsumoStatus === 'ok';
+      let limit: TableCell['limit'] = null;
+      if (hasAnyValue) {
+        if (basePoint >= 2000) {
+          limit = 'mangan';
+        } else if (!rule.roundedMangan && basePoint >= 1920) {
+          limit = 'near-mangan';
+        }
+      }
       return {
         fu,
         han,
         ron: toCell(ronStatus, basePoint, table, 'ron', paymentRule),
         tsumo: toCell(tsumoStatus, basePoint, table, 'tsumo', paymentRule),
-        limit: hasAnyValue && basePoint >= 2000 ? 'mangan' : null
+        limit
       };
     })
   );

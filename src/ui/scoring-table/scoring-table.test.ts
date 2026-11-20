@@ -452,4 +452,23 @@ describe('H1: 点数計算表 純関数 (scoring-table.ts)', () => {
       expectValueText(limitTable[0]?.tsumo, '2,000・4,000');
     }
   });
+
+  it('H1-1-07: roundedMangan false で30符4飜・60符3飜のみ near-mangan になり、true で mangan になる', () => {
+    // 出典: docs/mahjong-rules.md §3.3(切り上げ満貫の対象である基本点1,920の30符4飜・60符3飜)
+    const withoutRounded = buildFuHanTable(
+      { ...defaultScoringRule(), roundedMangan: false },
+      { dealer: false, honba: 0 }
+    );
+    expect(findCell(withoutRounded, 30, 4).limit).toBe('near-mangan');
+    expect(findCell(withoutRounded, 60, 3).limit).toBe('near-mangan');
+    expect(findCell(withoutRounded, 40, 3).limit).toBeNull();
+    expect(findCell(withoutRounded, 40, 4).limit).toBe('mangan');
+
+    const withRounded = buildFuHanTable(
+      { ...defaultScoringRule(), roundedMangan: true },
+      { dealer: false, honba: 0 }
+    );
+    expect(findCell(withRounded, 30, 4).limit).toBe('mangan');
+    expect(findCell(withRounded, 60, 3).limit).toBe('mangan');
+  });
 });
