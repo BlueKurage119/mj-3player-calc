@@ -45,14 +45,17 @@
   display: contents;
 }
 
+.scoring-table-screen__mode-toggle,
 .scoring-table-screen__dealer-toggle,
-.scoring-table-screen__honba-stepper {
+.scoring-table-screen__honba-stepper,
+.scoring-table-screen__deposit-stepper {
   flex: 1 1 6.25rem;
   min-width: 6.25rem;
   max-width: 9.375rem;
   width: auto;
 }
 
+.scoring-table-screen__mode-toggle .connected-button,
 .scoring-table-screen__dealer-toggle .connected-button {
   --expressive-morph-height: 2.5rem;
 
@@ -62,11 +65,13 @@
   padding-inline: 0.25rem;
 }
 
-.scoring-table-screen__honba-stepper.stepper {
+.scoring-table-screen__honba-stepper.stepper,
+.scoring-table-screen__deposit-stepper.stepper {
   gap: 0.125rem;
 }
 
-.scoring-table-screen__honba-stepper .stepper__button {
+.scoring-table-screen__honba-stepper .stepper__button,
+.scoring-table-screen__deposit-stepper .stepper__button {
   --expressive-morph-height: 2.5rem;
 
   flex: 0 1 2.5rem;
@@ -74,7 +79,8 @@
   height: 2.5rem;
 }
 
-.scoring-table-screen__honba-stepper .stepper__value {
+.scoring-table-screen__honba-stepper .stepper__value,
+.scoring-table-screen__deposit-stepper .stepper__value {
   flex: 1 1 0;
   min-width: 2ch;
   height: 2.5rem;
