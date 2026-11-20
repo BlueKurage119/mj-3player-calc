@@ -2,7 +2,7 @@ import { describe, expect, test } from 'vitest';
 import { sumOfFu } from './fu';
 import type { HandOptions, Meld } from './input';
 import type { Hora } from './hora';
-import { judgeMentsuLocalYaku } from './local-yaku';
+import { judgeMentsuLocalYaku, shisanputaNotice } from './local-yaku';
 import { generateResult } from './result';
 import { type Rule, compareRules } from './rule';
 import { calculateBasePoint, ceil10 } from './score';
@@ -1550,5 +1550,217 @@ describe('A7: オープンダブル立直+一発時の槍槓・海底', () => {
       { type: 'yaku', name: 'chitoitsu', han: 2 }
     ]);
     expect(computeBasePoint(tsumoHora, defaultRule)).toBe(3000);
+  });
+});
+
+describe('I85: 十三不搭のチャンス・成立メッセージ判定', () => {
+  const eastTable: Table = { ...defaultTable, seat: 'east' };
+  const makeInput = (handStr: string, melds: Meld[] = []) => ({
+    hand: parseTiles(handStr),
+    melds,
+    dora: [],
+    nuki: 0
+  });
+
+  test('I85-C-01: 13枚で十三面待ち相当の十三不搭チャンスを返す', () => {
+    expect(
+      shisanputaNotice(
+        eastTable,
+        makeInput('19m147p147s12345z'),
+        defaultOptions,
+        defaultRule
+      )
+    ).toBe('chance');
+  });
+
+  test('I85-C-02: 13枚で対子1つあり(孤立1種追加で成立)のとき chance を返す', () => {
+    expect(
+      shisanputaNotice(
+        eastTable,
+        makeInput('19m147p147s12344z'),
+        defaultOptions,
+        defaultRule
+      )
+    ).toBe('chance');
+  });
+
+  test('I85-C-03: 13枚で搭子(1p3p)があるときは null を返す', () => {
+    expect(
+      shisanputaNotice(
+        eastTable,
+        makeInput('19m137p147s12345z'),
+        defaultOptions,
+        defaultRule
+      )
+    ).toBeNull();
+  });
+
+  test('I85-C-04: 13枚で対子が2つあるときは null を返す', () => {
+    expect(
+      shisanputaNotice(
+        eastTable,
+        makeInput('19m147p14s112234z'),
+        defaultOptions,
+        defaultRule
+      )
+    ).toBeNull();
+  });
+
+  test('I85-C-05: 13枚で国士聴牌の形は null を返す', () => {
+    expect(
+      shisanputaNotice(
+        eastTable,
+        makeInput('19m19p19s1234567z'),
+        defaultOptions,
+        defaultRule
+      )
+    ).toBeNull();
+  });
+
+  test('I85-C-06: 13枚で赤5pを含む形(赤ありルール)は chance を返す', () => {
+    expect(
+      shisanputaNotice(
+        eastTable,
+        makeInput('19m109p147s12345z'),
+        defaultOptions,
+        defaultRule
+      )
+    ).toBe('chance');
+  });
+
+  test('I85-C-07: 13枚チャンス形で localYaku=false のときは null を返す', () => {
+    expect(
+      shisanputaNotice(
+        eastTable,
+        makeInput('19m147p147s12345z'),
+        defaultOptions,
+        { ...defaultRule, localYaku: false }
+      )
+    ).toBeNull();
+  });
+
+  test('I85-C-08: 13枚チャンス形で tenho=true のときは null を返す', () => {
+    expect(
+      shisanputaNotice(
+        eastTable,
+        makeInput('19m147p147s12345z'),
+        { ...defaultOptions, tenho: true },
+        defaultRule
+      )
+    ).toBeNull();
+  });
+
+  test('I85-C-09: 13枚相当でも副露があるときは null を返す', () => {
+    expect(
+      shisanputaNotice(
+        eastTable,
+        makeInput('19m147p147s12z', [
+          { type: 'pon', tile: parseSingleTile('3z') }
+        ]),
+        defaultOptions,
+        defaultRule
+      )
+    ).toBeNull();
+  });
+
+  test('I85-C-10: 14枚で十三不搭成立のとき formed を返す', () => {
+    expect(
+      shisanputaNotice(
+        eastTable,
+        makeInput('19m147p147s123455z'),
+        defaultOptions,
+        defaultRule
+      )
+    ).toBe('formed');
+  });
+
+  test('I85-C-11: 14枚でC-10を並べ替えて末尾を1mにしたときも formed を返す', () => {
+    expect(
+      shisanputaNotice(
+        eastTable,
+        makeInput('9m147p147s123455z1m'),
+        defaultOptions,
+        defaultRule
+      )
+    ).toBe('formed');
+  });
+
+  test('I85-C-12: 14枚で国士無双完成形のときは null を返す', () => {
+    expect(
+      shisanputaNotice(
+        eastTable,
+        makeInput('19m19p19s12345677z'),
+        defaultOptions,
+        defaultRule
+      )
+    ).toBeNull();
+  });
+
+  test('I85-C-13: 14枚で搭子(1p2p)があるときは null を返す', () => {
+    expect(
+      shisanputaNotice(
+        eastTable,
+        makeInput('19m127p147s123455z'),
+        defaultOptions,
+        defaultRule
+      )
+    ).toBeNull();
+  });
+
+  test('I85-C-14: 14枚成立形で tenho=true のときは null を返す', () => {
+    expect(
+      shisanputaNotice(
+        eastTable,
+        makeInput('19m147p147s123455z'),
+        { ...defaultOptions, tenho: true },
+        defaultRule
+      )
+    ).toBeNull();
+  });
+
+  test('I85-C-15: 14枚成立形で localYaku=false のときは null を返す', () => {
+    expect(
+      shisanputaNotice(
+        eastTable,
+        makeInput('19m147p147s123455z'),
+        defaultOptions,
+        { ...defaultRule, localYaku: false }
+      )
+    ).toBeNull();
+  });
+
+  test('I85-C-16: 同一牌3枚(刻子)を含む13枚は4枚目を足しても不成立のため null を返す', () => {
+    expect(
+      shisanputaNotice(
+        eastTable,
+        makeInput('19m147p147s11123z'),
+        defaultOptions,
+        defaultRule
+      )
+    ).toBeNull();
+  });
+
+  test('I85-C-17: 12枚・11枚・1枚のときは null を返す', () => {
+    for (const handStr of ['19m147p147s1234z', '19m147p147s123z', '1m']) {
+      expect(
+        shisanputaNotice(
+          eastTable,
+          makeInput(handStr),
+          defaultOptions,
+          defaultRule
+        )
+      ).toBeNull();
+    }
+  });
+
+  test('I85-C-18: 14枚で国士聴牌形は既存コアに合わせて null を返す', () => {
+    expect(
+      shisanputaNotice(
+        eastTable,
+        makeInput('19m159p19s1123456z'),
+        defaultOptions,
+        defaultRule
+      )
+    ).toBeNull();
   });
 });

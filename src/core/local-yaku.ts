@@ -1,4 +1,4 @@
-import type { HandOptions, Meld } from './input';
+import type { HandOptions, Input, Meld } from './input';
 import { type Rule, redCountOf } from './rule';
 import type { Table } from './table';
 import {
@@ -696,4 +696,49 @@ export const generateShisanputaHora = (
   }
 
   return horas;
+};
+
+export type ShisanputaNotice = 'chance' | 'formed' | null;
+
+/**
+ * 天地和オフのときに出す十三不搭のメッセージ種別を返す(Issue #85)
+ * - 'chance': 13枚で、1枚足すと十三不搭になる牌がある【設計案】
+ * - 'formed': 14枚で、天地和をオンにすると十三不搭の和了になる
+ */
+export const shisanputaNotice = (
+  table: Table,
+  input: Input,
+  options: HandOptions,
+  rule: Rule
+): ShisanputaNotice => {
+  if (!rule.localYaku || options.tenho || input.melds.length > 0) {
+    return null;
+  }
+
+  if (input.hand.length === 13) {
+    return generateShisanputaHora(
+      table,
+      input.hand,
+      { ...options, tenho: true },
+      rule
+    ).length > 0
+      ? 'chance'
+      : null;
+  }
+
+  if (input.hand.length === 14) {
+    const last = input.hand[13];
+    if (last === undefined) return null;
+    const rest = input.hand.slice(0, 13);
+    return generateShisanputaHora(
+      table,
+      rest,
+      { ...options, tenho: true },
+      rule
+    ).some(h => compareTiles(h.horaTile, last) === 0)
+      ? 'formed'
+      : null;
+  }
+
+  return null;
 };
