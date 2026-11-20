@@ -48,6 +48,7 @@ export interface TableCell {
 }
 
 export interface LimitRow {
+  name: string;
   label: string;
   kind: LimitKind;
   ron: Cell;
@@ -201,24 +202,25 @@ export function buildFuHanTable(
 }
 
 interface LimitSpec {
+  name: string;
   label: string;
   kind: LimitKind;
   han: number;
 }
 
 const LIMIT_SPECS_WITH_ACCUMLATED: readonly LimitSpec[] = [
-  { label: '5飜', kind: 'mangan', han: 5 },
-  { label: '6〜7飜', kind: 'haneman', han: 6 },
-  { label: '8〜10飜', kind: 'baiman', han: 8 },
-  { label: '11〜12飜', kind: 'sanbaiman', han: 11 },
-  { label: '13飜以上', kind: 'yakuman', han: 13 }
+  { name: '満貫', label: '5飜', kind: 'mangan', han: 5 },
+  { name: '跳満', label: '6〜7飜', kind: 'haneman', han: 6 },
+  { name: '倍満', label: '8〜10飜', kind: 'baiman', han: 8 },
+  { name: '三倍満', label: '11〜12飜', kind: 'sanbaiman', han: 11 },
+  { name: '役満', label: '13飜以上', kind: 'yakuman', han: 13 }
 ];
 
 const LIMIT_SPECS_WITHOUT_ACCUMLATED: readonly LimitSpec[] = [
-  { label: '5飜', kind: 'mangan', han: 5 },
-  { label: '6〜7飜', kind: 'haneman', han: 6 },
-  { label: '8〜10飜', kind: 'baiman', han: 8 },
-  { label: '11飜以上', kind: 'sanbaiman', han: 11 }
+  { name: '満貫', label: '5飜', kind: 'mangan', han: 5 },
+  { name: '跳満', label: '6〜7飜', kind: 'haneman', han: 6 },
+  { name: '倍満', label: '8〜10飜', kind: 'baiman', han: 8 },
+  { name: '三倍満', label: '11飜以上', kind: 'sanbaiman', han: 11 }
 ];
 
 /** 満貫以上の点数表を生成する */
@@ -239,6 +241,7 @@ export function buildLimitTable(
       rule.accumlatedYakuman
     );
     return {
+      name: spec.name,
       label: spec.label,
       kind: spec.kind,
       ron: makeValueCell(basePoint, table, 'ron', paymentRule),

@@ -195,7 +195,16 @@ export function ScoringTableView({
                   className="scoring-table__limit-row"
                   data-limit={row.kind}
                 >
-                  <th scope="row">{row.label}</th>
+                  <th scope="row">
+                    <div className="scoring-table__limit-heading">
+                      <span className="scoring-table__limit-name">
+                        {row.name}
+                      </span>
+                      <span className="scoring-table__limit-han">
+                        {row.label}
+                      </span>
+                    </div>
+                  </th>
                   <td className="tabular-nums">
                     {row.ron.kind === 'value' ? row.ron.text : '-'}
                   </td>

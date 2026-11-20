@@ -471,4 +471,34 @@ describe('H1: 点数計算表 純関数 (scoring-table.ts)', () => {
     expect(findCell(withRounded, 30, 4).limit).toBe('mangan');
     expect(findCell(withRounded, 60, 3).limit).toBe('mangan');
   });
+
+  it('H1-1-08: buildLimitTable の各行に満貫以上の名称(name)と飜数ラベル(label)が付く', () => {
+    // 出典: docs/mahjong-rules.md §3.3(満貫・跳満・倍満・三倍満・役満の区分)
+    const baseRule = defaultScoringRule();
+
+    const withYakuman = buildLimitTable(
+      { ...baseRule, accumlatedYakuman: true },
+      { dealer: false, honba: 0 }
+    );
+    expect(withYakuman.map(r => ({ name: r.name, label: r.label }))).toEqual([
+      { name: '満貫', label: '5飜' },
+      { name: '跳満', label: '6〜7飜' },
+      { name: '倍満', label: '8〜10飜' },
+      { name: '三倍満', label: '11〜12飜' },
+      { name: '役満', label: '13飜以上' }
+    ]);
+
+    const withoutYakuman = buildLimitTable(
+      { ...baseRule, accumlatedYakuman: false },
+      { dealer: false, honba: 0 }
+    );
+    expect(withoutYakuman.map(r => ({ name: r.name, label: r.label }))).toEqual(
+      [
+        { name: '満貫', label: '5飜' },
+        { name: '跳満', label: '6〜7飜' },
+        { name: '倍満', label: '8〜10飜' },
+        { name: '三倍満', label: '11飜以上' }
+      ]
+    );
+  });
 });

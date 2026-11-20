@@ -285,4 +285,46 @@ describe('H1: 点数計算表画面 (ScoringTableView)', () => {
       expect(match?.[2]).toBe(label);
     }
   });
+
+  it('H1-1-24: 満貫以上の表に満貫・跳満・倍満・三倍満・役満の名称と飜数ラベルが描画される', () => {
+    // 出典: docs/mahjong-rules.md §3.3
+    const withYakumanHtml = renderToStaticMarkup(
+      <ScoringTableView
+        seat="south"
+        rule={{ ...defaultRule(), accumlatedYakuman: true }}
+        onBack={() => {}}
+      />
+    );
+    const namesWithYakuman = [
+      ...withYakumanHtml.matchAll(
+        /<span class="scoring-table__limit-name">([^<]*)<\/span><span class="scoring-table__limit-han">([^<]*)<\/span>/g
+      )
+    ].map(m => ({ name: m[1] ?? '', han: m[2] ?? '' }));
+    expect(namesWithYakuman).toEqual([
+      { name: '満貫', han: '5飜' },
+      { name: '跳満', han: '6〜7飜' },
+      { name: '倍満', han: '8〜10飜' },
+      { name: '三倍満', han: '11〜12飜' },
+      { name: '役満', han: '13飜以上' }
+    ]);
+
+    const withoutYakumanHtml = renderToStaticMarkup(
+      <ScoringTableView
+        seat="south"
+        rule={{ ...defaultRule(), accumlatedYakuman: false }}
+        onBack={() => {}}
+      />
+    );
+    const namesWithoutYakuman = [
+      ...withoutYakumanHtml.matchAll(
+        /<span class="scoring-table__limit-name">([^<]*)<\/span><span class="scoring-table__limit-han">([^<]*)<\/span>/g
+      )
+    ].map(m => ({ name: m[1] ?? '', han: m[2] ?? '' }));
+    expect(namesWithoutYakuman).toEqual([
+      { name: '満貫', han: '5飜' },
+      { name: '跳満', han: '6〜7飜' },
+      { name: '倍満', han: '8〜10飜' },
+      { name: '三倍満', han: '11飜以上' }
+    ]);
+  });
 });
