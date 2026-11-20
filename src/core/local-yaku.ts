@@ -4,10 +4,13 @@ import type { Table } from './table';
 import {
   type Tile,
   type TileCounts,
+  type TileAvailability,
   type TileCountsIndex,
   compareTiles,
   countsIndexToTile,
+  tileAvailableCount,
   tileCountsFirstIndex,
+  tileToCountsIndex,
   tilesToCounts
 } from './tile';
 import { countKokushiShanten } from './tile/shanten';
@@ -698,7 +701,41 @@ export const generateShisanputaHora = (
   return horas;
 };
 
-export type ShisanputaNotice = 'chance' | 'formed' | null;
+export type ShisanputaNotice =
+  | { kind: 'chance'; tileAvailabilities: TileAvailability[] }
+  | { kind: 'formed' }
+  | null;
+
+/** 成立牌の牌種ごとに、向聴の有効牌と同じ規則で残り枚数を数える(5は赤と通常の2件) */
+const shisanputaTileAvailabilities = (
+  horaTiles: Tile[],
+  input: Input,
+  rule: Rule
+): TileAvailability[] => {
+  const northTile: Tile = { type: 'z', n: 4 };
+  const allInputTiles: Tile[] = [
+    ...input.hand,
+    ...input.dora,
+    ...(input.uradora ?? []),
+    ...Array<Tile>(input.nuki).fill(northTile)
+  ];
+  const indices = [...new Set(horaTiles.map(t => tileToCountsIndex(t)))].sort(
+    (a, b) => a - b
+  );
+  return indices.flatMap(index => {
+    const tile = countsIndexToTile(index as TileCountsIndex);
+    if (tile.type !== 'z' && tile.n === 5) {
+      return [false, true].flatMap(red => {
+        const t = { ...tile, red } as Tile;
+        const c = tileAvailableCount(rule.red, allInputTiles, t);
+        return c === null ? [] : [{ tile: t, count: c }];
+      });
+    }
+    return [
+      { tile, count: tileAvailableCount(rule.red, allInputTiles, tile) ?? 0 }
+    ];
+  });
+};
 
 /**
  * 天地和オフのときに出す十三不搭のメッセージ種別を返す(Issue #85)
@@ -716,13 +753,21 @@ export const shisanputaNotice = (
   }
 
   if (input.hand.length === 13) {
-    return generateShisanputaHora(
+    const hora = generateShisanputaHora(
       table,
       input.hand,
       { ...options, tenho: true },
       rule
-    ).length > 0
-      ? 'chance'
+    );
+    return hora.length > 0
+      ? {
+          kind: 'chance',
+          tileAvailabilities: shisanputaTileAvailabilities(
+            hora.map(h => h.horaTile),
+            input,
+            rule
+          )
+        }
       : null;
   }
 
@@ -736,7 +781,7 @@ export const shisanputaNotice = (
       { ...options, tenho: true },
       rule
     ).some(h => compareTiles(h.horaTile, last) === 0)
-      ? 'formed'
+      ? { kind: 'formed' }
       : null;
   }
 

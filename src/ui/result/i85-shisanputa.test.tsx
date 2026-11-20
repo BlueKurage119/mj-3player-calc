@@ -1,6 +1,7 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import type { HandOptions } from '../../core/input';
+import { type ShisanputaNotice, shisanputaNotice } from '../../core/local-yaku';
 import { generateResult } from '../../core/result';
 import { DEFAULT_RULE, type Rule } from '../../core/rule';
 import type { Table } from '../../core/table';
@@ -80,6 +81,14 @@ const makeInput = (hand: Tile[]) => ({
   nuki: 0
 });
 
+const chance = (hand: Tile[], dora: Tile[] = []): ShisanputaNotice =>
+  shisanputaNotice(
+    eastTable,
+    { ...makeInput(hand), dora },
+    defaultOptions,
+    localRule
+  );
+
 const stripPreload = (html: string): string =>
   html.replace(/^(?:<link [^>]*\/>)+/, '');
 
@@ -96,16 +105,65 @@ describe('I85: 十三不搭メッセージ UI・統合検査 (U-01〜U-08)', () 
     const body = stripPreload(
       renderToStaticMarkup(
         <ResultPanel
-          resultState={{ status: 'ok', result: res, shisanputa: 'chance' }}
+          resultState={{
+            status: 'ok',
+            result: res,
+            shisanputa: chance(c01Hand)
+          }}
         />
       )
     );
 
     const sectionIdx = body.indexOf('<section id="result-panel"');
     expect(sectionIdx).toBeGreaterThan(0);
-    expect(body.slice(0, sectionIdx)).toBe(
-      '<div class="shisanputa-notice">十三不搭チャンス</div>'
+    const notice = body.slice(0, sectionIdx);
+    expect(
+      notice.startsWith('<div class="shisanputa-notice result-body"')
+    ).toBe(true);
+    expect(notice).toContain('十三不搭チャンス');
+    expect(notice).not.toContain('<button');
+    expect(notice).not.toContain('md-ripple');
+    expect(notice).not.toContain('md-focus-ring');
+  });
+
+  it('I85-U-01b: チャンスカードは見出し・「M種 N枚」・牌と「×残り枚数」を向聴の待ちカード様式で出し、タップ不可', () => {
+    const res = generateResult(
+      eastTable,
+      makeInput(c01Hand),
+      defaultOptions,
+      localRule
     );
+    const render = (notice: ShisanputaNotice) => {
+      const body = stripPreload(
+        renderToStaticMarkup(
+          <ResultPanel
+            resultState={{ status: 'ok', result: res, shisanputa: notice }}
+          />
+        )
+      );
+      return body.slice(0, body.indexOf('<section id="result-panel"'));
+    };
+    const notice = render(chance(c01Hand));
+    const n = chance(c01Hand);
+    if (n?.kind !== 'chance') throw new Error('chance ではない');
+    const kinds = n.tileAvailabilities.length;
+    const total = n.tileAvailabilities.reduce((a, x) => a + x.count, 0);
+    expect(notice).toContain(
+      '<h2 class="result-body__title">十三不搭チャンス</h2>'
+    );
+    expect(notice).toContain('result-body__summary');
+    expect(notice).toContain(`${kinds}種 ${total}枚`);
+    expect(notice.match(/class="result-body__wait"/g)?.length).toBe(kinds);
+    expect(notice.match(/×\d/g)?.length).toBe(kinds);
+    expect(notice).not.toContain('<button');
+    expect(notice).not.toContain('ツモ');
+
+    // 残り0枚の牌は出さない(C-23 相当: 赤5pがドラ表示牌)
+    const hand = parseTiles('1m9m1p9p1s4s7s1z2z3z4z4z5z');
+    const withRedDora = chance(hand, parseTiles('0p'));
+    if (withRedDora?.kind !== 'chance') throw new Error('chance ではない');
+    expect(withRedDora.tileAvailabilities.some(a => a.count === 0)).toBe(true);
+    expect(render(withRedDora)).not.toContain('×0');
   });
 
   it('I85-U-02: shisanputa が chance でも view が discard のときは通知を出さない', () => {
@@ -119,7 +177,7 @@ describe('I85: 十三不搭メッセージ UI・統合検査 (U-01〜U-08)', () 
 
     const html = renderToStaticMarkup(
       <ResultPanel
-        resultState={{ status: 'ok', result: res, shisanputa: 'chance' }}
+        resultState={{ status: 'ok', result: res, shisanputa: chance(c01Hand) }}
       />
     );
     const baseline = renderToStaticMarkup(
@@ -140,7 +198,11 @@ describe('I85: 十三不搭メッセージ UI・統合検査 (U-01〜U-08)', () 
     const body = stripPreload(
       renderToStaticMarkup(
         <ResultPanel
-          resultState={{ status: 'ok', result: res, shisanputa: 'formed' }}
+          resultState={{
+            status: 'ok',
+            result: res,
+            shisanputa: { kind: 'formed' }
+          }}
         />
       )
     );
@@ -163,7 +225,11 @@ describe('I85: 十三不搭メッセージ UI・統合検査 (U-01〜U-08)', () 
 
     const html = renderToStaticMarkup(
       <ResultPanel
-        resultState={{ status: 'ok', result: res, shisanputa: 'formed' }}
+        resultState={{
+          status: 'ok',
+          result: res,
+          shisanputa: { kind: 'formed' }
+        }}
       />
     );
     const baseline = renderToStaticMarkup(
@@ -230,7 +296,7 @@ describe('I85: 十三不搭メッセージ UI・統合検査 (U-01〜U-08)', () 
     expect(withNotice).toEqual({
       status: 'ok',
       result: expectedResult,
-      shisanputa: 'formed'
+      shisanputa: { kind: 'formed' }
     });
 
     const withoutNotice = evaluateResult(computeResult, null, state);

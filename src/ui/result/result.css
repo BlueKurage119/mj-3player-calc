@@ -44,6 +44,7 @@
 
 .result-body--tempai .result-body__tiles,
 .result-body--shanten .result-body__tiles,
+.shisanputa-notice .result-body__tiles,
 .result-body--discard .result-body__tiles {
   gap: 0.5rem 0.75rem;
 }

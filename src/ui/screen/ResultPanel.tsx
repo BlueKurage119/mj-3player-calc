@@ -56,20 +56,19 @@ export function ResultPanel(props: ResultPanelProps): React.JSX.Element {
   const view = classifyResult(
     resultState.status === 'ok' ? resultState.result : null
   );
-  const notice =
-    resultState.status === 'ok'
-      ? resultState.shisanputa === 'chance' && view.kind === 'shanten'
-        ? 'chance'
-        : resultState.shisanputa === 'formed' && view.kind === 'discard'
-          ? 'formed'
-          : null
+  const shisanputa =
+    resultState.status === 'ok' ? resultState.shisanputa : undefined;
+  const chance =
+    shisanputa?.kind === 'chance' && view.kind === 'shanten'
+      ? shisanputa
       : null;
+  const formed = shisanputa?.kind === 'formed' && view.kind === 'discard';
 
   return (
     <>
-      {notice === 'chance' ? (
-        <ShisanputaChanceCard />
-      ) : notice === 'formed' ? (
+      {chance ? (
+        <ShisanputaChanceCard tileAvailabilities={chance.tileAvailabilities} />
+      ) : formed ? (
         <ShisanputaFormedBanner onEnableTenho={onEnableTenho} />
       ) : null}
       <section
