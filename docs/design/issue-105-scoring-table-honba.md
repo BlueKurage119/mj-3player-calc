@@ -410,3 +410,15 @@ export interface ScoringTableViewProps {
 - 第1版（2026-11-21）: 新規作成
 - 第2版（2026-11-21）: 独立レビューの指摘（H-1・M-1・M-2・L-1〜L-4）を反映（コード例コメントの `#106` 除去と §9 への注意事項追記、例外防御と `honbaPoint` 連動を【設計案】化し §8 ユーザー判断事項を新設、`docs/requirements.md` §3.6 との版表記差の注記・引き継ぎ追記、受け入れ条件 2・4・6・8・10 の手順とコマンド具体化、§5 と条件 6(g) の対応整理）
 - 第3版（2026-11-21）: オーナー判断を反映（J1=案C「表全体を本場0へフォールバック」を `resolveSafeInput` 設計・テスト `H1-1-06` に反映、J2=案A・J3=案A を確定、§8 をすべて確定済みに更新、受け入れ条件 8 の HEX 検査に Issue 番号コメントの目視除外を追記し §9 のコメント制限を削除）
+
+## 12. UI 監修による変更（2026-11-21 オーナー確定）
+
+製造後の実機プレビュー監修により、以下の変更を承認・適用した（受け入れ条件 2 の変更ファイル範囲および条件 3 のテスト一覧にはこれらを含む）。
+
+- **12.1（コミット `5462f0e`）**: 操作行の親子トグルをコンパクトにし、積み棒ステッパー（および #106 の供託予定地）を `.scoring-table-screen__steppers` で広く確保。ヘッダー右端の計算方式ピルに `data-tsumo-loss` を付与し、`north-split`・`ron-split` を `--md-sys-color-primary-container` / `--md-sys-color-on-primary-container` で強調（テスト `H1-1-23` 追加）。
+- **12.2（コミット `ac7bfd9`）**: 親子トグル・積み棒ステッパー幅を約 100px（`6.25rem`）に揃え、満貫以上の色階調をシームレスに整理（倍満を `quaternary-container` へ変更）。`roundedMangan: false` の 30符4飜・60符3飜に `limit: 'near-mangan'` を付与して薄い満貫色（`tertiary-container` 42% ミックス）で塗る（テスト `H1-1-07` 追加）。1〜4飜表のロン打点の文字サイズを `--md-sys-typescale-body-medium-size`（14px 相当）に拡大。
+- **12.3（コミット `54c4052`）**: 満貫表の `LimitRow` に `name`（満貫・跳満・倍満・三倍満・役満）を追加して飜数と 2 段表示（テスト `H1-1-08`・`H1-1-24` 追加）。操作行を中央揃え（`justify-content: center`）＋各コントロール幅を最小 100px（`6.25rem`）〜最大 150px（`9.375rem`）に調整。
+- **12.4（コミット `ec1110c`・案A オーナー承認）**:
+  - `scripts/gen-theme-tokens.ts` に `quinary`（-120°・朱赤系）・`senary`（-180°・紫系）各 4 ロールを追加し、`npm run gen:theme` で `src/ui/theme/tokens.css` を再生成（`npm run check:theme` 通過、`src/ui/theme/tokens.test.ts` の `C1-K03` を 53 → 61 役割に更新、`docs/rules/06-ui-md3-protocol.md` へ仕様追記）。三倍満を `quinary-container`、役満を `senary-container` に適用。
+  - 満貫表のロン・ツモ全体の文字サイズを `--md-sys-typescale-body-medium-size`（14px 相当）に統一。
+  - 操作行を `<header className="app-header">` 内に統合してヘッダーと一体で上部固定（`position: sticky; top: 0`）にし、ボタン高さを `2.5rem`（40px）に抑えて下端に区切り線（`--md-sys-color-outline-variant`）を追加。なお、アプリ全体のヘッダー下端部の統一仕上げは Issue #142 として別途起案済み。
