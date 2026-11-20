@@ -137,8 +137,6 @@ pub fn run_solve(
 
             if shanten == 0 {
                 let tid = state.states[sid].tempai_index.expect("tempai_index missing") as usize;
-                let waits = state.states[sid].waits;
-                let is_wait_north = ((waits >> NORTH_INDEX) & 1) != 0;
 
                 // e は降順 (e_max -> 0) に計算すると、同巡内の補充ツモ (e + 1) が参照可能
                 for e_rev in 0..e_count {
@@ -174,7 +172,7 @@ pub fn run_solve(
                                     continue;
                                 }
                             }
-                            if nuki_mode && k == NORTH_INDEX && !is_wait_north {
+                            if nuki_mode && k == NORTH_INDEX {
                                 if e + 1 < e_count {
                                     let ridx = rinshan_idx(t, tid, e + 1, num_tempai, e_count);
                                     sum_win += pk * dp_tempai_rinshan[ridx];
@@ -299,8 +297,6 @@ pub fn run_solve(
                 if shanten == 0 {
                     let tid =
                         state.states[sid].tempai_index.expect("tempai_index missing") as usize;
-                    let waits = state.states[sid].waits;
-                    let is_wait_north = ((waits >> NORTH_INDEX) & 1) != 0;
 
                     for e in 0..e_count {
                         let m0 = cur_mass[sid * e_count + e];
@@ -338,7 +334,7 @@ pub fn run_solve(
                                         continue;
                                     }
                                 }
-                                if nuki_mode && k == NORTH_INDEX && !is_wait_north {
+                                if nuki_mode && k == NORTH_INDEX {
                                     if e + 1 < e_count {
                                         rinshan_mass[tid * e_count + (e + 1)] += prob;
                                     }

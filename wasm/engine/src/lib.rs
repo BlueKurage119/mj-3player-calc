@@ -74,6 +74,27 @@ impl SearchResult {
         out
     }
 
+    /// テスト用: 向聴が増える遷移(戻し)の本数
+    pub fn backtrack_edge_count(&self) -> usize {
+        let st = &self.inner;
+        let mut count = 0;
+        for node in &st.states {
+            if node.shanten == 0 {
+                continue;
+            }
+            let off = node.trans_offset as usize;
+            for tr in &st.transitions[off..off + node.trans_len as usize] {
+                let start = tr.next_offset as usize;
+                for &nsid in &st.next_state_ids[start..start + tr.next_len as usize] {
+                    if st.states[nsid as usize].shanten > node.shanten {
+                        count += 1;
+                    }
+                }
+            }
+        }
+        count
+    }
+
     /// テスト用: 全遷移で現れたツモ牌・打牌・待ちの index のビットマスク
     pub fn seen_tile_masks(&self) -> Vec<u32> {
         let mut draw_mask: u64 = 0;
@@ -122,7 +143,6 @@ pub fn calc_shanten_sanma(hand: &[u8], melds_m: usize) -> i8 {
 #[allow(clippy::too_many_arguments)]
 pub fn search(
     h0: &[u8],
-    s0: i8,
     hands: &[u8],
     melds_m: usize,
     u0: &[u8],
@@ -131,7 +151,8 @@ pub fn search(
     max_draws: u32,
     tegawari: bool,
     backtrack: bool,
-    diff_margin: u8,
+    diff_slack: u8,
+    s_ref: i8,
 ) -> SearchResult {
     assert_eq!(h0.len(), NUM_TILES);
     assert_eq!(u0.len(), NUM_TILES);
@@ -146,7 +167,7 @@ pub fn search(
 
     let state = run_search(
         h0_arr,
-        s0,
+        s_ref,
         hands,
         melds_m,
         u0_arr,
@@ -156,7 +177,7 @@ pub fn search(
         SearchOptions {
             tegawari,
             backtrack,
-            diff_margin,
+            diff_slack,
         },
     );
     SearchResult { inner: state }
@@ -219,7 +240,7 @@ mod tests {
                 u0[i] = 4 - h0[i];
             }
         }
-        let mut res = search(&h0, s0, &h0, 4, &u0, &limits, false, 2, true, true, 2);
+        let mut res = search(&h0, &h0, 4, &u0, &limits, false, 2, true, true, 2, s0);
         assert_eq!(res.tempai_count(), 1);
         assert_eq!(res.total_waits(), 2);
 
