@@ -59,6 +59,7 @@
   display: contents;
 }
 
+.scoring-table-screen__mode-toggle,
 .scoring-table-screen__dealer-toggle,
 .scoring-table-screen__honba-stepper,
 .scoring-table-screen__deposit-stepper {
@@ -68,6 +69,11 @@
   width: auto;
 }
 
+.scoring-table-screen__mode-toggle {
+  margin-inline-start: auto;
+}
+
+.scoring-table-screen__mode-toggle .connected-button,
 .scoring-table-screen__dealer-toggle .connected-button {
   --expressive-morph-height: 2.5rem;
 
@@ -77,21 +83,10 @@
   padding-inline: 0.25rem;
 }
 
-.scoring-table-screen__mode-toggle {
-  margin-inline-start: auto;
-  flex: 0 0 auto;
-  width: auto;
-  max-width: none;
-  min-width: 0;
-}
-
 .scoring-table-screen__mode-toggle .connected-button {
   --expressive-morph-height: 2.25rem;
 
-  flex: 0 0 auto;
   height: 2.25rem;
-  min-width: 2.75rem;
-  padding-inline: 0.625rem;
   font-size: var(--md-sys-typescale-label-medium-size);
   line-height: var(--md-sys-typescale-label-medium-line-height);
   white-space: nowrap;
