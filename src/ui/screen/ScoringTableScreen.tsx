@@ -132,8 +132,6 @@ export function ScoringTableView({
           >
             {getTsumoLossLabel(rule.tsumoLoss)}
           </span>
-        </div>
-        <div className="scoring-table-screen__controls">
           <ConnectedButtonGroup<ScoringMode>
             label="表示切替"
             className="scoring-table-screen__mode-toggle"
@@ -141,6 +139,8 @@ export function ScoringTableView({
             value={mode}
             onValueChange={setMode}
           />
+        </div>
+        <div className="scoring-table-screen__controls">
           <ConnectedButtonGroup<'dealer' | 'child'>
             label="親子"
             className="scoring-table-screen__dealer-toggle"

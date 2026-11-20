@@ -340,10 +340,21 @@ describe('H1: 点数計算表画面 (ScoringTableView)', () => {
     ]);
   });
 
-  it('H1-2-20: 「得点 / 点差」切替が描画され、initialMode に応じて選択状態が変わる', () => {
+  it('H1-2-20: 「得点 / 点差」切替がヘッダー1行目に描画され、initialMode に応じて選択状態が変わる', () => {
     const defaultHtml = renderToStaticMarkup(
       <ScoringTableView seat="south" rule={defaultRule()} onBack={() => {}} />
     );
+    const headerRowMatch = defaultHtml.match(
+      /<div class="app-header__inner[^"]*">([\s\S]*?)<\/div><div class="scoring-table-screen__controls">/
+    );
+    // 理由: UI監修により表示切替がヘッダー1行目の app-header__inner 末尾に配置されたことを検証するため
+    expect(headerRowMatch?.[1]).toContain('aria-label="表示切替"');
+    const controlsMatch = defaultHtml.match(
+      /<div class="scoring-table-screen__controls">([\s\S]*?)<\/header>/
+    );
+    // 理由: 2行目の controls には表示切替が含まれないことを検証するため
+    expect(controlsMatch?.[1]?.includes('aria-label="表示切替"')).toBe(false);
+
     expect(extractRadioStates(defaultHtml, '表示切替')).toEqual([
       { label: '得点', checked: true },
       { label: '点差', checked: false }
