@@ -1,10 +1,4 @@
-import {
-  calc_shanten_sanma,
-  sanma_tile_limits,
-  search,
-  solve,
-  solve_for_candidates
-} from 'engine';
+import { calc_shanten_sanma, sanma_tile_limits, search, solve } from 'engine';
 import { type Input, instantiateMeld } from '../core/input';
 import { validateRule } from '../core/rule';
 import { redCountOf } from '../core/rule';
@@ -20,7 +14,7 @@ import {
   tilesToCounts
 } from '../core/tile';
 import {
-  type EvalContext,
+  type ValuesContext,
   type RedBaseline,
   buildValuesTable
 } from './evaluate';
@@ -40,6 +34,32 @@ const countRedInTiles = (tiles: readonly Tile[], suit: 'p' | 's'): number => {
     if (t.type === suit && t.n === 5 && t.red) c++;
   }
   return c;
+};
+
+/**
+ * 赤の分布の基準(確定 Q20 案a): 起点 (k0, a0) は全候補で共通に、入力の手 H0(打牌前の手)の
+ * 五p・五s の枚数と赤の枚数に取る。N・R は見えていない牌(u0)から求める。
+ */
+export const redBaselineOf = (
+  h0Hand: readonly Tile[],
+  visible: readonly Tile[],
+  u0: ArrayLike<number>,
+  rule: EngineRequest['rule']
+): RedBaseline => {
+  const countFives = (suit: 'p' | 's') =>
+    h0Hand.filter(t => t.type === suit && t.n === 5).length;
+  return {
+    k0: { p: countFives('p'), s: countFives('s') },
+    a0: {
+      p: countRedInTiles(h0Hand, 'p'),
+      s: countRedInTiles(h0Hand, 's')
+    },
+    availableTotal: { p: u0[13] ?? 0, s: u0[22] ?? 0 },
+    availableRed: {
+      p: Math.max(0, redCountOf(rule.red, 'p') - countRedInTiles(visible, 'p')),
+      s: Math.max(0, redCountOf(rule.red, 's') - countRedInTiles(visible, 's'))
+    }
+  };
 };
 
 const isValidInput = (input: Input, rule: EngineRequest['rule']): boolean => {
@@ -85,13 +105,21 @@ interface CandidateInfo {
   discard: Tile | null;
   counts: TileCounts;
   shanten: number;
-  k0: { p: number; s: number };
-  a0: { p: number; s: number };
 }
 
 export interface EngineComputeMeta {
+  /** 全探索の状態数の合計 */
   stateCount: number;
+  /** 全探索の聴牌形数の合計 */
   tempaiCount: number;
+  /** 探索表の数(共通 s_ref は 1、対案S は 14枚入力で最大 2) */
+  searchCount: number;
+  /** `solve` の呼び出し回数 */
+  solveCount: number;
+  /** 密な DP テーブルの要素数の合計(状態数 × T) */
+  denseCells: number;
+  /** 探索ごとの内訳 */
+  searches: { stateCount: number; tempaiCount: number; sRef: number }[];
 }
 
 /**
@@ -110,10 +138,10 @@ export function computeEngine(
       typeof options.tegawari !== 'boolean' ||
       typeof options.backtrack !== 'boolean' ||
       (options.tegawari === false && options.backtrack === true) ||
-      typeof options.backtrackDiffMargin !== 'number' ||
-      !Number.isInteger(options.backtrackDiffMargin) ||
-      options.backtrackDiffMargin < 0 ||
-      options.backtrackDiffMargin > 4
+      typeof options.diffSlack !== 'number' ||
+      !Number.isInteger(options.diffSlack) ||
+      options.diffSlack < 0 ||
+      options.diffSlack > 2
     ) {
       return { id, type: 'error', message: 'invalid-options' };
     }
@@ -170,9 +198,7 @@ export function computeEngine(
         index: 0,
         discard: null,
         counts: h0Counts,
-        shanten: s0,
-        k0: { p: h0Counts[13] ?? 0, s: h0Counts[22] ?? 0 },
-        a0: { p: h0RedP, s: h0RedS }
+        shanten: s0
       });
     } else {
       for (let i = 0; i < 34; i++) {
@@ -186,22 +212,18 @@ export function computeEngine(
         if (candShanten > 3) continue;
 
         let discard = countsIndexToTile(i as TileCountsIndex);
-        let a0P = h0RedP;
-        let a0S = h0RedS;
         // 赤と非赤の五があれば非赤を捨てる候補として表す (§5.2)
         if (discard.type === 'p' && discard.n === 5) {
           if (h0NonRedP > 0) {
             discard = { type: 'p', n: 5, red: false };
           } else {
             discard = { type: 'p', n: 5, red: true };
-            a0P = Math.max(0, h0RedP - 1);
           }
         } else if (discard.type === 's' && discard.n === 5) {
           if (h0NonRedS > 0) {
             discard = { type: 's', n: 5, red: false };
           } else {
             discard = { type: 's', n: 5, red: true };
-            a0S = Math.max(0, h0RedS - 1);
           }
         }
 
@@ -209,9 +231,7 @@ export function computeEngine(
           index: candidates.length,
           discard,
           counts: candCounts,
-          shanten: candShanten,
-          k0: { p: candCounts[13] ?? 0, s: candCounts[22] ?? 0 },
-          a0: { p: a0P, s: a0S }
+          shanten: candShanten
         });
       }
 
@@ -235,92 +255,83 @@ export function computeEngine(
       u0[i] = Math.max(0, 4 - (visibleCounts[i] ?? 0));
     }
 
-    const handsFlat = new Uint8Array(candidates.length * 34);
-    for (let ci = 0; ci < candidates.length; ci++) {
-      const c = candidates[ci];
-      if (c) {
-        handsFlat.set(c.counts, ci * 34);
-      }
+    // 差の上限の基準 s_ref: 計算対象の候補の13枚の向聴の最大値 (確定 Q18。全候補共通の1つの値)
+    const sRefCommon = Math.max(...candidates.map(c => c.shanten));
+
+    // 探索のグループ: 共通 s_ref は1グループ。対案S(測定用の内部フラグ)は候補自身の向聴ごと
+    const searchGroups = new Map<number, CandidateInfo[]>();
+    for (const c of candidates) {
+      const key = req.__experimentalPerCandidateRef ? c.shanten : sRefCommon;
+      const list = searchGroups.get(key);
+      if (list) list.push(c);
+      else searchGroups.set(key, [c]);
     }
 
     const tileLimits = sanma_tile_limits();
     const nukiMode = rule.north === 'nukidora';
-    const searchRes = search(
-      h0Bytes,
-      s0,
-      handsFlat,
-      meldsM,
-      u0,
-      tileLimits,
-      nukiMode,
-      remainingDraws,
-      options.tegawari,
-      options.backtrack,
-      options.backtrackDiffMargin
-    );
 
-    try {
-      onMeta?.({
-        stateCount: searchRes.state_count,
-        tempaiCount: searchRes.tempai_count
-      });
+    const redBase = redBaselineOf(input.hand, visibleWithoutUradora, u0, rule);
 
-      const tempaiHandsFlat = searchRes.tempai_hands();
-      const waitCounts = searchRes.tempai_wait_counts();
-      const waitTiles = searchRes.tempai_wait_tiles();
-      const eMax = searchRes.max_extra_nuki;
+    // 聴牌形の評価キャッシュは手牌キーで探索間に共有する
+    const evalCache = new Map<string, EvaluatedWin[]>();
+    const stride = 3 + remainingDraws * 3;
+    const statsByCandIdx = new Array<CandidateStat>(candidates.length);
+    const meta: EngineComputeMeta = {
+      stateCount: 0,
+      tempaiCount: 0,
+      searchCount: 0,
+      solveCount: 0,
+      denseCells: 0,
+      searches: []
+    };
 
-      const evalCtx: EvalContext = {
-        table,
-        rule,
-        melds: input.melds,
-        dora: input.dora,
-        nuki0: input.nuki,
-        includeRinshan: nukiMode && eMax > 0
-      };
-
-      const visibleRedP = countRedInTiles(visibleWithoutUradora, 'p');
-      const visibleRedS = countRedInTiles(visibleWithoutUradora, 's');
-      const availTotal = { p: u0[13] ?? 0, s: u0[22] ?? 0 };
-      const availRed = {
-        p: Math.max(0, redCountOf(rule.red, 'p') - visibleRedP),
-        s: Math.max(0, redCountOf(rule.red, 's') - visibleRedS)
-      };
-
-      // (k0.p, a0.p, k0.s, a0.s) で候補をグループ化
-      // 13枚入力や五を切らない候補は1つのグループにまとまり、DP 表を共有する
-      const groups = new Map<
-        string,
-        {
-          candIndices: number[];
-          k0: { p: number; s: number };
-          a0: { p: number; s: number };
-        }
-      >();
-      for (const c of candidates) {
-        const key = `${c.k0.p}:${c.a0.p}:${c.k0.s}:${c.a0.s}`;
-        const existing = groups.get(key);
-        if (existing) {
-          existing.candIndices.push(c.index);
-        } else {
-          groups.set(key, { candIndices: [c.index], k0: c.k0, a0: c.a0 });
-        }
+    for (const [sRef, group] of searchGroups) {
+      const handsFlat = new Uint8Array(group.length * 34);
+      for (let gi = 0; gi < group.length; gi++) {
+        const c = group[gi];
+        if (c) handsFlat.set(c.counts, gi * 34);
       }
+      const searchRes = search(
+        h0Bytes,
+        handsFlat,
+        meldsM,
+        u0,
+        tileLimits,
+        nukiMode,
+        remainingDraws,
+        options.tegawari,
+        options.backtrack,
+        options.diffSlack,
+        sRef
+      );
 
-      const evalCache = new Map<number, EvaluatedWin[]>();
-      const stride = 3 + remainingDraws * 3;
-      const statsByCandIdx = new Array<CandidateStat>(candidates.length);
+      try {
+        meta.searchCount++;
+        meta.stateCount += searchRes.state_count;
+        meta.tempaiCount += searchRes.tempai_count;
+        meta.denseCells += searchRes.state_count * Math.max(1, remainingDraws);
+        meta.searches.push({
+          stateCount: searchRes.state_count,
+          tempaiCount: searchRes.tempai_count,
+          sRef
+        });
 
-      const groupList = Array.from(groups.values());
-      const useSingleSolve = groupList.length === 1;
+        const tempaiHandsFlat = searchRes.tempai_hands();
+        const waitCounts = searchRes.tempai_wait_counts();
+        const waitTiles = searchRes.tempai_wait_tiles();
+        const eMax = searchRes.max_extra_nuki;
 
-      for (const g of groupList) {
-        const redBase: RedBaseline = {
-          k0: g.k0,
-          a0: g.a0,
-          availableTotal: availTotal,
-          availableRed: availRed
+        const evalCtx: ValuesContext = {
+          table,
+          rule,
+          melds: input.melds,
+          dora: input.dora,
+          nuki0: input.nuki,
+          u0,
+          h0Counts,
+          includeRinshan: nukiMode && eMax > 0
         };
+
         const values = buildValuesTable(
           tempaiHandsFlat,
           waitCounts,
@@ -330,17 +341,11 @@ export function computeEngine(
           redBase,
           evalCache
         );
-        const solvedFlat = useSingleSolve
-          ? solve(searchRes, values)
-          : solve_for_candidates(
-              searchRes,
-              values,
-              Uint32Array.from(g.candIndices)
-            );
+        const solvedFlat = solve(searchRes, values);
+        meta.solveCount++;
 
-        for (let gi = 0; gi < g.candIndices.length; gi++) {
-          const ci = g.candIndices[gi] as number;
-          const cand = candidates[ci] as CandidateInfo;
+        for (let gi = 0; gi < group.length; gi++) {
+          const cand = group[gi] as CandidateInfo;
           const base = gi * stride;
           const perTurn: TurnStat[] = [];
           for (let t = 0; t < remainingDraws; t++) {
@@ -352,7 +357,7 @@ export function computeEngine(
               ev: solvedFlat[tb + 2] ?? 0
             });
           }
-          statsByCandIdx[ci] = {
+          statsByCandIdx[cand.index] = {
             discard: cand.discard,
             shanten: cand.shanten,
             tenpai: solvedFlat[base] ?? 0,
@@ -361,28 +366,29 @@ export function computeEngine(
             perTurn
           };
         }
+      } finally {
+        searchRes.free();
       }
-
-      if (is14) {
-        statsByCandIdx.sort((a, b) => {
-          if (b.ev !== a.ev) return b.ev - a.ev;
-          if (b.win !== a.win) return b.win - a.win;
-          if (b.tenpai !== a.tenpai) return b.tenpai - a.tenpai;
-          const ia = a.discard ? tileToCountsIndex(a.discard) : 0;
-          const ib = b.discard ? tileToCountsIndex(b.discard) : 0;
-          return ia - ib;
-        });
-      }
-
-      return {
-        id,
-        type: 'ok',
-        candidates: statsByCandIdx,
-        elapsedMs: performance.now() - startMs
-      };
-    } finally {
-      searchRes.free();
     }
+    onMeta?.(meta);
+
+    if (is14) {
+      statsByCandIdx.sort((a, b) => {
+        if (b.ev !== a.ev) return b.ev - a.ev;
+        if (b.win !== a.win) return b.win - a.win;
+        if (b.tenpai !== a.tenpai) return b.tenpai - a.tenpai;
+        const ia = a.discard ? tileToCountsIndex(a.discard) : 0;
+        const ib = b.discard ? tileToCountsIndex(b.discard) : 0;
+        return ia - ib;
+      });
+    }
+
+    return {
+      id,
+      type: 'ok',
+      candidates: statsByCandIdx,
+      elapsedMs: performance.now() - startMs
+    };
   } catch (err) {
     return {
       id,

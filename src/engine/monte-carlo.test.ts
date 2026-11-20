@@ -91,7 +91,6 @@ describe.skipIf(!process.env.ENGINE_MC)(
         const nukiMode = rule.north === 'nukidora';
         const sr = search(
           h0Bytes,
-          s0,
           h0Bytes,
           meldsM,
           u0,
@@ -100,7 +99,8 @@ describe.skipIf(!process.env.ENGINE_MC)(
           T,
           opts.tegawari,
           opts.backtrack,
-          opts.backtrackDiffMargin
+          opts.diffSlack,
+          s0
         );
 
         try {
@@ -124,7 +124,9 @@ describe.skipIf(!process.env.ENGINE_MC)(
               melds: input.melds,
               dora,
               nuki0: input.nuki,
-              includeRinshan: nukiMode && eMax > 0
+              includeRinshan: nukiMode && eMax > 0,
+              u0,
+              h0Counts: h0
             },
             {
               k0: { p: h0[13] ?? 0, s: h0[22] ?? 0 },
@@ -221,12 +223,8 @@ describe.skipIf(!process.env.ENGINE_MC)(
                       break;
                     }
                   }
-                  if (
-                    nukiMode &&
-                    k === NORTH_INDEX &&
-                    wpIdx === undefined &&
-                    e < eMax
-                  ) {
+                  // 確定 Q19 案(ii): 役があって北で和了できるときだけ和了し、それ以外は北を抜く
+                  if (nukiMode && k === NORTH_INDEX && e < eMax) {
                     e++;
                     rinshan = 1;
                     continue;
@@ -283,7 +281,7 @@ describe.skipIf(!process.env.ENGINE_MC)(
 
     it('F31-A5c: 構成A (T=18, n=200,000, 6手) で DP とモンテカルロが 4σ 以内で一致する', () => {
       runMcForConfig(
-        { tegawari: false, backtrack: false, backtrackDiffMargin: 2 },
+        { tegawari: false, backtrack: false, diffSlack: 0 },
         20261121
       );
     }, 180_000);

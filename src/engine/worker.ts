@@ -1,8 +1,12 @@
+import type { EngineComputeMeta } from './compute';
 import type { EngineRequest, EngineResponse } from './types';
+
+/** 計測用に、応答へ探索の統計(状態数など)を添える。UI は無視してよい */
+export type EngineWorkerMessage = EngineResponse & { meta?: EngineComputeMeta };
 
 interface WorkerScope {
   onmessage: ((e: MessageEvent<EngineRequest>) => void) | null;
-  postMessage: (msg: EngineResponse) => void;
+  postMessage: (msg: EngineWorkerMessage) => void;
 }
 
 const workerSelf = self as unknown as WorkerScope;
@@ -15,8 +19,11 @@ workerSelf.onmessage = async (e: MessageEvent<EngineRequest>) => {
   const req = e.data;
   try {
     const { computeEngine } = await computePromise;
-    const res = computeEngine(req);
-    workerSelf.postMessage(res);
+    let meta: EngineComputeMeta | undefined;
+    const res = computeEngine(req, m => {
+      meta = m;
+    });
+    workerSelf.postMessage(meta ? { ...res, meta } : res);
   } catch (err) {
     workerSelf.postMessage({
       id: req.id,

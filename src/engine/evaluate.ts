@@ -28,6 +28,14 @@ export interface EvalContext {
   includeRinshan: boolean;
 }
 
+/** V 表の作成に必要な、山・赤・裏ドラの基準 (§3.2・§3.5) */
+export interface ValuesContext extends EvalContext {
+  /** 見えていない牌の初期枚数 u0 (§3.1) */
+  u0: ArrayLike<number>;
+  /** 入力の手 H0 の枚数配列 (山・赤・裏ドラの基準) */
+  h0Counts: TileCounts;
+}
+
 /** 門前の定義: 副露なし、または暗槓のみ (hora.ts 206行目と同じ) */
 export const isMenzen = (melds: Input['melds']): boolean =>
   melds.every(m => m.type === 'kan' && m.closed);
@@ -290,9 +298,9 @@ export function buildValuesTable(
   waitCounts: Uint32Array,
   waitTiles: Uint8Array,
   eMax: number,
-  ctx: EvalContext,
+  ctx: ValuesContext,
   redBase: RedBaseline,
-  evalCache?: Map<number, EvaluatedWin[]>
+  evalCache?: Map<string, EvaluatedWin[]>
 ): Float64Array {
   const numTempai = waitCounts.length;
   const eCount = eMax + 1;
@@ -306,7 +314,6 @@ export function buildValuesTable(
 
   const meldTiles = ctx.melds.flatMap(m => instantiateMeld(m, ctx.rule.red));
   const meldsCounts = tilesToCounts(meldTiles);
-  const doraCounts = tilesToCounts(ctx.dora);
 
   let waitCursor = 0;
   for (let ti = 0; ti < numTempai; ti++) {
@@ -314,10 +321,12 @@ export function buildValuesTable(
     const form = Array.from(formArr) as TileCounts;
     const wc = waitCounts[ti] ?? 0;
 
-    let evaluatedList = evalCache?.get(ti);
+    // 聴牌形の評価は手牌キーで共有する(探索が複数回あっても同じ形は1回だけ評価する)
+    const formKey = String.fromCharCode(...formArr);
+    let evaluatedList = evalCache?.get(formKey);
     if (!evaluatedList) {
       evaluatedList = evaluateTempaiForm(form, ctx);
-      evalCache?.set(ti, evaluatedList);
+      evalCache?.set(formKey, evaluatedList);
     }
 
     // 高速引き当て: `${winIdx}:${redP}:${redS}:${rinshan?1:0}` -> EvaluatedWin
@@ -355,14 +364,15 @@ export function buildValuesTable(
       );
 
       for (let e = 0; e <= eMax; e++) {
-        const nukiTotal = nukiMode ? ctx.nuki0 + e : 0;
         const uraDist = uradoraDistribution(
           menzen,
           ctx.dora.length,
           finalCounts,
           meldsCounts,
-          doraCounts,
-          nukiTotal
+          ctx.u0,
+          ctx.h0Counts,
+          nukiMode ? ctx.nuki0 : 0,
+          nukiMode ? e : 0
         );
 
         const rMax = ctx.includeRinshan && e > 0 ? 1 : 0;

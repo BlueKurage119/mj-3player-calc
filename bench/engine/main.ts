@@ -1,25 +1,55 @@
 import type { Rule } from '../../src/core/rule';
 import { RULE_PRESETS } from '../../src/core/rule-preset';
 import type { Table } from '../../src/core/table';
+import type { Tile } from '../../src/core/tile';
 import { createEngineClient } from '../../src/engine/client';
-import { computeEngine } from '../../src/engine/compute';
 import {
   DEFAULT_REMAINING_DRAWS,
   type EngineOptions,
-  type EngineRequest
+  type EngineRequest,
+  type EngineResponse
 } from '../../src/engine/types';
-import { BENCH_HANDS, parseTiles } from './hands';
+import type { EngineWorkerMessage } from '../../src/engine/worker';
+import {
+  BENCH_HANDS,
+  BENCH_HANDS_14,
+  type BenchHandSpec,
+  parseTiles
+} from './hands';
+
+/** 打牌候補1件の要約(14枚入力のとき) */
+export interface CandidateSummary {
+  discard: string | null;
+  shanten: number;
+  tenpai: number;
+  win: number;
+  ev: number;
+}
 
 export interface HandRunResult {
   handId: string;
   shanten: 1 | 2 | 3;
   configName: string;
+  /** 全探索の状態数・聴牌形数の合計 */
   stateCount: number;
   tempaiCount: number;
+  /** 探索表の数・solve の回数・密な DP テーブルの要素数(状態数×T) */
+  searchCount: number;
+  solveCount: number;
+  denseCells: number;
+  /** 探索ごとの内訳 */
+  searches: { stateCount: number; tempaiCount: number; sRef: number }[];
+  /** 各回の Worker 内の計算時間(ms。Worker 作成・WASM 初期化は含まない) */
   runsMs: number[];
+  /** 各回の要求から応答までの壁時計時間(ms。冷=Worker 作成を含む) */
+  wallMs: number[];
   medianMs: number;
   minMs: number;
   maxMs: number;
+  /** 先頭候補の値(13枚入力は唯一の候補) */
+  top?: CandidateSummary;
+  /** 14枚入力の全候補(ev 降順) */
+  candidates?: CandidateSummary[];
   error?: string;
 }
 
@@ -30,11 +60,20 @@ interface BenchWindow extends Window {
       configName: string,
       options: EngineOptions,
       runs: number,
-      remainingDraws?: number
+      remainingDraws?: number,
+      perCandidateRef?: boolean,
+      stopAfterMs?: number
     ) => Promise<HandRunResult>;
-    listHands: () => { id: string; shanten: 1 | 2 | 3 }[];
+    listHands: () => { id: string; shanten: 1 | 2 | 3; is14: boolean }[];
   };
 }
+
+const ALL_HANDS: readonly BenchHandSpec[] = [...BENCH_HANDS, ...BENCH_HANDS_14];
+
+const tileStr = (t: Tile | null): string | null =>
+  t === null
+    ? null
+    : `${t.type !== 'z' && t.n === 5 && t.red ? 0 : t.n}${t.type}`;
 
 const table: Table = {
   round: 'east',
@@ -64,9 +103,11 @@ async function runOneHand(
   configName: string,
   options: EngineOptions,
   runs: number,
-  remainingDraws = DEFAULT_REMAINING_DRAWS
+  remainingDraws = DEFAULT_REMAINING_DRAWS,
+  perCandidateRef = false,
+  stopAfterMs = Number.POSITIVE_INFINITY
 ): Promise<HandRunResult> {
-  const spec = BENCH_HANDS.find(h => h.id === handId);
+  const spec = ALL_HANDS.find(h => h.id === handId);
   if (!spec) {
     throw new Error(`Unknown handId: ${handId}`);
   }
@@ -77,86 +118,91 @@ async function runOneHand(
     nuki: spec.nuki
   };
 
-  let stateCount = 0;
-  let tempaiCount = 0;
-  const warmupReq: EngineRequest = {
+  const result: HandRunResult = {
+    handId,
+    shanten: spec.shanten,
+    configName,
+    stateCount: 0,
+    tempaiCount: 0,
+    searchCount: 0,
+    solveCount: 0,
+    denseCells: 0,
+    searches: [],
+    runsMs: [],
+    wallMs: [],
+    medianMs: 0,
+    minMs: 0,
+    maxMs: 0
+  };
+  const baseReq: EngineRequest = {
     id: 0,
     table,
     input,
     rule,
     remainingDraws,
-    options
+    options,
+    ...(perCandidateRef ? { __experimentalPerCandidateRef: true } : {})
   };
 
-  // 到達状態数・聴牌形数を取得 + ウォームアップ1回 (冷計測前にキャッシュ温め)
-  const metaCheck = computeEngine(warmupReq, meta => {
-    stateCount = meta.stateCount;
-    tempaiCount = meta.tempaiCount;
-  });
-  if (metaCheck.type !== 'ok') {
-    return {
-      handId,
-      shanten: spec.shanten,
-      configName,
-      stateCount,
-      tempaiCount,
-      runsMs: [],
-      medianMs: 0,
-      minMs: 0,
-      maxMs: 0,
-      error: `warmup failed: ${metaCheck.type}`
-    };
-  }
-
-  // Worker 冷ウォームアップ 1回
-  {
-    const client = createEngineClient();
-    await client.requestEngine({ ...warmupReq, id: 1 });
-    client.dispose();
-  }
-
-  const runsMs: number[] = [];
+  // 毎回 Worker を作り直す(冷)。最初の1回は WASM・モジュールの読み込みで遅くなるので、
+  // 計測前に小さい要求(T=0)で Worker を温めるのではなく、各回とも冷のまま測る
   for (let i = 0; i < runs; i++) {
     const client = createEngineClient();
     const t0 = performance.now();
-    const res = await client.requestEngine({ ...warmupReq, id: i + 2 });
+    const res = (await client.requestEngine({
+      ...baseReq,
+      id: i + 1
+    })) as EngineWorkerMessage;
     const dt = performance.now() - t0;
     client.dispose();
     if (res.type !== 'ok') {
-      return {
-        handId,
-        shanten: spec.shanten,
-        configName,
-        stateCount,
-        tempaiCount,
-        runsMs,
-        medianMs: 0,
-        minMs: 0,
-        maxMs: 0,
-        error: `run ${i} failed: ${res.type} ${res.type === 'error' ? res.message : ''}`
-      };
+      result.error = `run ${i} failed: ${res.type} ${res.type === 'error' ? res.message : ''}`;
+      break;
     }
-    runsMs.push(res.elapsedMs > 0 ? res.elapsedMs : dt);
+    result.runsMs.push(res.elapsedMs > 0 ? res.elapsedMs : dt);
+    result.wallMs.push(dt);
+    if (i === 0) {
+      const meta = res.meta;
+      if (meta) {
+        result.stateCount = meta.stateCount;
+        result.tempaiCount = meta.tempaiCount;
+        result.searchCount = meta.searchCount;
+        result.solveCount = meta.solveCount;
+        result.denseCells = meta.denseCells;
+        result.searches = meta.searches;
+      }
+      const sum = (
+        c: Extract<EngineResponse, { type: 'ok' }>['candidates'][number]
+      ) => ({
+        discard: tileStr(c.discard),
+        shanten: c.shanten,
+        tenpai: c.tenpai,
+        win: c.win,
+        ev: c.ev
+      });
+      result.candidates = res.candidates.map(sum);
+      const top = result.candidates[0];
+      if (top) result.top = top;
+    }
+    if (dt > stopAfterMs) break;
   }
 
-  const sorted = [...runsMs].sort((a, b) => a - b);
-  return {
-    handId,
-    shanten: spec.shanten,
-    configName,
-    stateCount,
-    tempaiCount,
-    runsMs,
-    medianMs: median(sorted),
-    minMs: sorted[0] ?? 0,
-    maxMs: sorted[sorted.length - 1] ?? 0
-  };
+  const sorted = [...result.runsMs].sort((a, b) => a - b);
+  result.medianMs = median(sorted);
+  result.minMs = sorted[0] ?? 0;
+  result.maxMs = sorted[sorted.length - 1] ?? 0;
+  return result;
 }
 
 const bw = window as BenchWindow;
 bw.__bench = {
   runOneHand,
-  listHands: () => BENCH_HANDS.map(h => ({ id: h.id, shanten: h.shanten }))
+  listHands: () =>
+    ALL_HANDS.map(h => ({
+      id: h.id,
+      shanten: h.shanten,
+      is14: BENCH_HANDS_14.includes(h)
+    }))
 };
 
 const outEl = document.getElementById('output');

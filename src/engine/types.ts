@@ -9,14 +9,17 @@ export const DEFAULT_REMAINING_DRAWS = 18;
 export interface EngineOptions {
   tegawari: boolean;
   backtrack: boolean;
-  /** 0〜4 の整数 (既定 2) */
-  backtrackDiffMargin: number;
+  /**
+   * 維持・戻しの打牌に課す開始手からの差の余裕 M(§3.6a)。0〜2 の整数。
+   * 既定は D-1a の実測後にオーナーが決める(決まるまでの仮の既定は 0)
+   */
+  diffSlack: number;
 }
 
 export const DEFAULT_ENGINE_OPTIONS: Readonly<EngineOptions> = Object.freeze({
   tegawari: true,
   backtrack: true,
-  backtrackDiffMargin: 2
+  diffSlack: 0
 });
 
 export interface EngineRequest {
@@ -28,6 +31,11 @@ export interface EngineRequest {
   /** 0〜55 の整数。既定 18 */
   remainingDraws: number;
   options: EngineOptions;
+  /**
+   * 測定用の内部フラグ(確定 Q18 の対案S。製品の既定には入れない)。
+   * 差の上限の基準を、候補ごとにその候補自身の13枚の向聴にする
+   */
+  __experimentalPerCandidateRef?: boolean;
 }
 
 export interface TurnStat {

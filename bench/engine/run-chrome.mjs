@@ -10,6 +10,7 @@ let filterConfigs = null;
 let filterHands = null;
 let remainingDraws = 18;
 let runs = 10;
+let stopAfterMs = 1e12;
 
 for (let i = 0; i < args.length; i++) {
   const a = args[i];
@@ -21,6 +22,8 @@ for (let i = 0; i < args.length; i++) {
     remainingDraws = Number(args[++i]);
   } else if (a === '--runs' && args[i + 1]) {
     runs = Number(args[++i]);
+  } else if (a === '--stop-after' && args[i + 1]) {
+    stopAfterMs = Number(args[++i]);
   } else if (a === '--out' && args[i + 1]) {
     outFile = args[++i];
   } else if (!a.startsWith('--')) {
@@ -36,27 +39,27 @@ const chromePath =
   '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
 const cdpPort = 9337;
 
+// 構成の名前: A=手替わりなし、Bp_Mx=B′(M=x)、Bt_Mx=B′+戻し(M=x)。
+// 接尾辞 _S は対案S(候補ごとの s_c を基準にする測定用の内部フラグ。14枚入力の比較用)
+const mk = (tegawari, backtrack, diffSlack) => ({
+  tegawari,
+  backtrack,
+  diffSlack
+});
 const CONFIGS = [
-  {
-    name: 'A',
-    options: { tegawari: false, backtrack: false, backtrackDiffMargin: 2 }
-  },
-  {
-    name: 'Bp',
-    options: { tegawari: true, backtrack: false, backtrackDiffMargin: 2 }
-  },
-  {
-    name: 'default_K2',
-    options: { tegawari: true, backtrack: true, backtrackDiffMargin: 2 }
-  },
-  {
-    name: 'backtrack_K0',
-    options: { tegawari: true, backtrack: true, backtrackDiffMargin: 0 }
-  },
-  {
-    name: 'backtrack_K4',
-    options: { tegawari: true, backtrack: true, backtrackDiffMargin: 4 }
-  }
+  { name: 'A', options: mk(false, false, 0) },
+  ...[0, 1, 2].map(m => ({ name: `Bp_M${m}`, options: mk(true, false, m) })),
+  ...[0, 1, 2].map(m => ({ name: `Bt_M${m}`, options: mk(true, true, m) })),
+  ...[0, 1, 2].map(m => ({
+    name: `Bt_M${m}_S`,
+    options: mk(true, true, m),
+    perCandidateRef: true
+  })),
+  ...[0, 1, 2].map(m => ({
+    name: `Bp_M${m}_S`,
+    options: mk(true, false, m),
+    perCandidateRef: true
+  }))
 ];
 
 function median(arr) {
@@ -159,8 +162,11 @@ async function main() {
     }
 
     const handsAll = await cdp.evaluate('window.__bench.listHands()');
+    // --hands は id そのもの、または接頭辞(例: S3 は S3-01〜S3-10、C は C-01〜)で指定する
     const hands = filterHands
-      ? handsAll.filter(h => filterHands.has(h.id))
+      ? handsAll.filter(h =>
+          [...filterHands].some(f => h.id === f || h.id.startsWith(`${f}-`))
+        )
       : handsAll;
     const activeConfigs = filterConfigs
       ? CONFIGS.filter(c => filterConfigs.has(c.name))
@@ -171,18 +177,20 @@ async function main() {
       const cfgResults = [];
       for (const h of hands) {
         const res = await cdp.evaluate(
-          `window.__bench.runOneHand(${JSON.stringify(h.id)}, ${JSON.stringify(cfg.name)}, ${JSON.stringify(cfg.options)}, ${runs}, ${remainingDraws})`
+          `window.__bench.runOneHand(${JSON.stringify(h.id)}, ${JSON.stringify(cfg.name)}, ${JSON.stringify(cfg.options)}, ${runs}, ${remainingDraws}, ${cfg.perCandidateRef ? 'true' : 'false'}, ${stopAfterMs})`
         );
         cfgResults.push(res);
         process.stderr.write(
-          `[${cfg.name}] ${h.id} (s=${h.shanten}, T=${remainingDraws}): states=${res.stateCount}, tempai=${res.tempaiCount}, med=${res.medianMs.toFixed(2)}ms, min=${res.minMs.toFixed(2)}ms, max=${res.maxMs.toFixed(2)}ms${res.error ? ` ERR=${res.error}` : ''}\n`
+          `[${cfg.name}] ${h.id} (s=${h.shanten}, T=${remainingDraws}): states=${res.stateCount}, tempai=${res.tempaiCount}, searches=${res.searchCount}, runs=${res.runsMs.length}, med=${res.medianMs.toFixed(2)}ms, min=${res.minMs.toFixed(2)}ms, max=${res.maxMs.toFixed(2)}ms${res.error ? ` ERR=${res.error}` : ''}\n`
         );
       }
 
       // 向聴別集計
       const summary = {};
       for (const sh of [1, 2, 3]) {
-        const sub = cfgResults.filter(r => r.shanten === sh);
+        const sub = cfgResults.filter(
+          r => r.shanten === sh && r.runsMs.length > 0
+        );
         if (sub.length === 0) continue;
         const meds = sub.map(r => r.medianMs);
         const worstSingle = Math.max(...sub.flatMap(r => r.runsMs));
@@ -203,6 +211,14 @@ async function main() {
         summary,
         hands: cfgResults
       });
+      // 構成ごとに途中経過を保存する(長時間の測定が途中で止まっても残る)
+      if (outFile) {
+        fs.writeFileSync(
+          outFile,
+          JSON.stringify({ targetUrl, results }, null, 2),
+          'utf8'
+        );
+      }
     }
 
     const json = JSON.stringify({ targetUrl, results }, null, 2);

@@ -54,7 +54,6 @@ export function computeReference(
 
   const meldTiles = input.melds.flatMap(m => instantiateMeld(m, rule.red));
   const meldsCounts = tilesToCounts(meldTiles);
-  const doraCounts = tilesToCounts(input.dora);
   const visible: Tile[] = [
     ...input.hand,
     ...meldTiles,
@@ -154,8 +153,10 @@ export function computeReference(
           input.dora.length,
           finalCounts,
           meldsCounts,
-          doraCounts,
-          nukiMode ? input.nuki + e : 0
+          u0,
+          h0,
+          nukiMode ? input.nuki : 0,
+          nukiMode ? e : 0
         );
         const rMax = nukiMode && e > 0 ? 1 : 0;
         for (let r = 0; r <= rMax; r++) {
@@ -262,7 +263,7 @@ export function computeReference(
             continue;
           }
         }
-        if (nukiMode && k === NORTH_INDEX && !waits.has(NORTH_INDEX)) {
+        if (nukiMode && k === NORTH_INDEX) {
           const nxt = solveRec(h, t, e + 1, 1);
           sumWin += pk * nxt.win;
           sumEv += pk * nxt.ev;
@@ -314,9 +315,10 @@ export function computeReference(
               if (d === k) cands.push(d);
             }
           } else {
-            if (sNext <= s) {
-              cands.push(d);
-            } else if (options.backtrack && sNext === s + 1 && sNext <= 3) {
+            // §3.6a: 前進は常に許す。維持・戻しは diff(H′) ≤ (s_ref − s′) + M (ツモ切りは常に許す)。
+            // 入力は13枚(または副露分を除いた手)なので s_ref = s0
+            let withinLimit = d === k;
+            if (!withinLimit && sNext >= s) {
               const hNext = [...h14];
               hNext[d] = (hNext[d] ?? 0) - 1;
               let common = 0;
@@ -324,9 +326,14 @@ export function computeReference(
                 common += Math.min(hNext[j] ?? 0, h0[j] ?? 0);
               }
               const diff = handLen - common;
-              if (diff <= s0 + options.backtrackDiffMargin) {
-                cands.push(d);
-              }
+              withinLimit = diff <= s0 - sNext + options.diffSlack;
+            }
+            if (sNext < s) {
+              cands.push(d);
+            } else if (sNext === s) {
+              if (withinLimit) cands.push(d);
+            } else if (options.backtrack && sNext === s + 1 && sNext <= 3) {
+              if (withinLimit) cands.push(d);
             }
           }
         }

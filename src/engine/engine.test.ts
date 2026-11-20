@@ -9,6 +9,7 @@ import { describe, expect, it } from 'vitest';
 import type { HandOptions, Input } from '../core/input';
 import { generateResult } from '../core/result';
 import { DEFAULT_RULE, type Rule } from '../core/rule';
+import { instantiateMeld } from '../core/input';
 import type { Table } from '../core/table';
 import {
   type Tile,
@@ -17,7 +18,9 @@ import {
   tileToCountsIndex,
   tilesToCounts
 } from '../core/tile';
-import { computeEngine } from './compute';
+import { BENCH_HANDS, parseTiles } from '../../bench/engine/hands';
+import { RULE_PRESETS } from '../core/rule-preset';
+import { computeEngine, redBaselineOf } from './compute';
 import { evaluateTempaiForm } from './evaluate';
 import { redDistributionForSuit } from './red';
 import { computeReference } from './reference.test-util';
@@ -64,18 +67,19 @@ const yakuhaiRule: Rule = {
   red: 0
 };
 
-const OPTS_A: EngineOptions = {
-  tegawari: false,
-  backtrack: false,
-  backtrackDiffMargin: 2
-};
+const mkOpts = (
+  tegawari: boolean,
+  backtrack: boolean,
+  diffSlack: number
+): EngineOptions => ({ tegawari, backtrack, diffSlack });
 
-const OPTS_BP: EngineOptions = {
-  tegawari: true,
-  backtrack: false,
-  backtrackDiffMargin: 2
-};
-
+/** 構成A(手替わりなし。M は使われない) */
+const OPTS_A: EngineOptions = mkOpts(false, false, 0);
+/** B′(手替わりあり・戻しなし)。M を明示する */
+const opBp = (m: number): EngineOptions => mkOpts(true, false, m);
+/** B′+戻し。M を明示する */
+const opBt = (m: number): EngineOptions => mkOpts(true, true, m);
+/** 既定の構成(`DEFAULT_ENGINE_OPTIONS`。M は仮の既定) */
 const OPTS_DEFAULT: EngineOptions = { ...DEFAULT_ENGINE_OPTIONS };
 
 const must = <T>(v: T | null | undefined, label = 'value'): T => {
@@ -107,20 +111,32 @@ const assertPerTurnValid = (res: EngineResponse, remainingDraws: number) => {
   }
 };
 
-/** C-5: search の出力に 2m〜8m が一切現れないことを検査する */
-const assertNo2m8mInSearch = (
+const NORTH_TILE: Tile = { type: 'z', n: 4 };
+
+interface RawSearch {
+  sr: ReturnType<typeof search>;
+  h0: readonly number[];
+  sRef: number;
+  handLen: number;
+  meldsM: number;
+}
+
+/** computeEngine と同じ引数で `search` を直接呼ぶ(テスト用。呼び出し側が `sr.free()` する) */
+const rawSearch = (
   input: Input,
   rule: Rule,
   maxDraws: number,
   options: EngineOptions
-) => {
+): RawSearch => {
   const meldsM = 4 - input.melds.length;
+  const handLen = meldsM * 3 + 1;
   const h0 = tilesToCounts(input.hand);
-  const s0 = calc_shanten_sanma(Uint8Array.from(h0), meldsM);
+  const meldTiles = input.melds.flatMap(m => instantiateMeld(m, rule.red));
   const visibleCounts = tilesToCounts([
     ...input.hand,
+    ...meldTiles,
     ...input.dora,
-    ...Array<Tile>(input.nuki).fill({ type: 'z', n: 4 })
+    ...Array<Tile>(input.nuki).fill(NORTH_TILE)
   ]);
   const u0 = new Uint8Array(34);
   for (let i = 0; i < 34; i++) {
@@ -128,10 +144,28 @@ const assertNo2m8mInSearch = (
       u0[i] = Math.max(0, 4 - (visibleCounts[i] ?? 0));
     }
   }
+  // 起点の候補(13枚入力は入力そのもの、14枚入力は打牌後が3向聴以下の各打牌)と s_ref
+  const cands: number[][] = [];
+  if (input.hand.length === handLen) {
+    cands.push([...h0]);
+  } else {
+    for (let i = 0; i < 34; i++) {
+      if ((h0[i] ?? 0) === 0) continue;
+      const c: number[] = [...h0];
+      c[i] = (c[i] ?? 0) - 1;
+      if (calc_shanten_sanma(Uint8Array.from(c), meldsM) <= 3) cands.push(c);
+    }
+  }
+  const sRef = Math.max(
+    ...cands.map(c => calc_shanten_sanma(Uint8Array.from(c), meldsM))
+  );
+  const hands = new Uint8Array(cands.length * 34);
+  cands.forEach((c, i) => {
+    hands.set(c, i * 34);
+  });
   const sr = search(
     Uint8Array.from(h0),
-    s0,
-    Uint8Array.from(h0),
+    hands,
     meldsM,
     u0,
     sanma_tile_limits(),
@@ -139,8 +173,51 @@ const assertNo2m8mInSearch = (
     maxDraws,
     options.tegawari,
     options.backtrack,
-    options.backtrackDiffMargin
+    options.diffSlack,
+    sRef
   );
+  return { sr, h0, sRef, handLen, meldsM };
+};
+
+const shantenOf = (hand: ArrayLike<number>, meldsM: number): number =>
+  calc_shanten_sanma(Uint8Array.from(hand), meldsM);
+
+/** 入力の手 h0 からの入れ替え枚数 diff(H) = len(H) − Σ min(H, H0) (§3.6) */
+const diffOf = (
+  hand: ArrayLike<number>,
+  h0: ArrayLike<number>,
+  len: number
+) => {
+  let common = 0;
+  for (let j = 0; j < 34; j++) common += Math.min(hand[j] ?? 0, h0[j] ?? 0);
+  return len - common;
+};
+
+/** 探索の全状態(向聴1以上)が差の不変条件 diff ≤ (s_ref − s) + M を満たすことを検査する */
+const assertDiffInvariant = (raw: RawSearch, m: number) => {
+  const all = raw.sr.all_state_hands();
+  let preTempai = 0;
+  for (let off = 0; off < all.length; off += 34) {
+    const hand = all.subarray(off, off + 34);
+    const s = shantenOf(hand, raw.meldsM);
+    if (s === 0) continue;
+    preTempai++;
+    expect(diffOf(hand, raw.h0, raw.handLen)).toBeLessThanOrEqual(
+      raw.sRef - s + m
+    );
+  }
+  expect(preTempai).toBe(raw.sr.state_count - raw.sr.tempai_count);
+};
+
+/** C-5: search の出力に 2m〜8m が一切現れないことを検査する */
+const assertNo2m8mInSearch = (
+  input: Input,
+  rule: Rule,
+  maxDraws: number,
+  options: EngineOptions
+) => {
+  const raw = rawSearch(input, rule, maxDraws, options);
+  const sr = raw.sr;
   try {
     const hands = sr.all_state_hands();
     for (let offset = 0; offset < hands.length; offset += 34) {
@@ -166,7 +243,7 @@ describe('F3-1 計算エンジン (Issue #138)', () => {
       const input: Input = { hand, melds: [], dora: [], nuki: 0 };
       const q = 3 / 95;
 
-      for (const opts of [OPTS_A, OPTS_BP, OPTS_DEFAULT]) {
+      for (const opts of [OPTS_A, opBp(0), OPTS_DEFAULT]) {
         for (const T of [1, 2, 18]) {
           const res = computeEngine({
             id: 1,
@@ -274,10 +351,11 @@ describe('F3-1 計算エンジン (Issue #138)', () => {
       assertNo2m8mInSearch(input, yakuhaiRule, 2, OPTS_A);
     });
 
-    it('F31-A4: B′(手替わり)は維持打牌で有効牌を増やし構成Aより ev が大きく、戻しは起きない', () => {
-      // 副露3つ(ポン7z・ポン6z・ポン5z) + 手牌4枚: 11z 1p 9s (s0=1, T=3)
+    it('F31-A4: B′(M=2)は維持打牌で有効牌を増やし構成Aより ev が大きく、向聴を増やす打牌は方針に現れず、差の不変条件を満たす', () => {
+      // 副露3つ(ポン7z・ポン6z・ポン5z) + 手牌4枚: 11z 1p 9s (s0=1=s_ref, T=3)
       // 端牌 1p・9s を中張牌(3p〜7p・3s〜7s 等)へ振り替える維持打牌で有効牌が増えるため
-      // B′ の ev が構成Aより大きくなる。
+      // B′ の ev が構成Aより大きくなる。s0=1 では M=0 は維持が起きず A と一致する
+      // (§3.6a 退化特性)ので M=2 で検査する。維持は diff ≤ (1−1)+M = 2 まで許される
       const hand = parseHand('11z1p9s');
       const input: Input = {
         hand,
@@ -299,77 +377,56 @@ describe('F3-1 計算エンジン (Issue #138)', () => {
         remainingDraws: T,
         options: OPTS_A
       });
-      const resBp = computeEngine({
+      const resBp2 = computeEngine({
         id: 402,
         table: southTable,
         input,
         rule: yakuhaiRule,
         remainingDraws: T,
-        options: OPTS_BP
+        options: opBp(2)
+      });
+      const resBp0 = computeEngine({
+        id: 403,
+        table: southTable,
+        input,
+        rule: yakuhaiRule,
+        remainingDraws: T,
+        options: opBp(0)
       });
       assertPerTurnValid(resA, T);
-      assertPerTurnValid(resBp, T);
-      if (resA.type !== 'ok' || resBp.type !== 'ok') return;
+      assertPerTurnValid(resBp2, T);
+      assertPerTurnValid(resBp0, T);
+      if (resA.type !== 'ok' || resBp2.type !== 'ok' || resBp0.type !== 'ok') {
+        throw new Error('unexpected non-ok');
+      }
+      const evA = must(resA.candidates[0], 'a cand').ev;
+      expect(must(resBp2.candidates[0], 'bp2 cand').ev).toBeGreaterThan(evA);
+      // 退化特性: s0=1 の M=0 は構成Aと同値
+      expect(must(resBp0.candidates[0], 'bp0 cand').ev).toBeCloseTo(evA, 12);
 
-      expect(must(resBp.candidates[0], 'bp cand').ev).toBeGreaterThan(
-        must(resA.candidates[0], 'a cand').ev
-      );
-
-      // policy_discard で向聴を増やす打牌(戻し)が現れないことを全到達状態・有効ツモで検査
-      const h0 = tilesToCounts(hand);
-      const s0 = calc_shanten_sanma(Uint8Array.from(h0), 1);
-      const visible = tilesToCounts([
-        ...hand,
-        { type: 'z', n: 7 },
-        { type: 'z', n: 7 },
-        { type: 'z', n: 7 },
-        { type: 'z', n: 6 },
-        { type: 'z', n: 6 },
-        { type: 'z', n: 6 },
-        { type: 'z', n: 5 },
-        { type: 'z', n: 5 },
-        { type: 'z', n: 5 }
-      ]);
-      const u0 = new Uint8Array(34);
-      for (let i = 0; i < 34; i++) {
-        if (isSanmaIndex(i as TileCountsIndex)) {
-          u0[i] = Math.max(0, 4 - (visible[i] ?? 0));
+      // 差の不変条件 diff ≤ (s_ref − s) + M を M=0・1・2 で検査
+      for (const m of [0, 1, 2]) {
+        const raw = rawSearch(input, yakuhaiRule, T, opBp(m));
+        try {
+          assertDiffInvariant(raw, m);
+        } finally {
+          raw.sr.free();
         }
       }
-      const sr = search(
-        Uint8Array.from(h0),
-        s0,
-        Uint8Array.from(h0),
-        1,
-        u0,
-        sanma_tile_limits(),
-        false,
-        T,
-        OPTS_BP.tegawari,
-        OPTS_BP.backtrack,
-        OPTS_BP.backtrackDiffMargin
-      );
+
+      // policy_discard で向聴を増やす打牌(戻し)が現れないことを全到達状態・有効ツモで検査 (M=2)
+      const raw = rawSearch(input, yakuhaiRule, T, opBp(2));
+      const sr = raw.sr;
       try {
         const wt = sr.tempai_wait_tiles();
         const vals = new Float64Array(wt.length * 2);
         for (let i = 0; i < wt.length; i++) vals[i * 2] = 1000;
         solve(sr, vals);
 
-        const shCache = new Map<string, number>();
-        const getSh = (arr: Uint8Array) => {
-          const k = arr.join(',');
-          let v = shCache.get(k);
-          if (v === undefined) {
-            v = calc_shanten_sanma(arr, 1);
-            shCache.set(k, v);
-          }
-          return v;
-        };
-
         const allHands = sr.all_state_hands();
         for (let off = 0; off < allHands.length; off += 34) {
           const sh = allHands.subarray(off, off + 34);
-          const curS = getSh(sh);
+          const curS = shantenOf(sh, 1);
           if (curS === 0) continue;
           for (let t = 1; t <= T; t++) {
             for (let k = 0; k < 34; k++) {
@@ -379,157 +436,7 @@ describe('F3-1 計算エンジン (Issue #138)', () => {
                 const nxt = Uint8Array.from(sh);
                 nxt[k] = (nxt[k] ?? 0) + 1;
                 nxt[d] = (nxt[d] ?? 0) - 1;
-                const nxtS = getSh(nxt);
-                expect(nxtS).toBeLessThanOrEqual(curS);
-              }
-            }
-          }
-        }
-      } finally {
-        sr.free();
-      }
-    }, 30000);
-
-    it('F31-A5: 戻し(B′+戻し s0=1, T=4)で独立参照実装と 1e-9 で一致し、戻しで得をする手で ev(B′+戻し) > ev(B′)', () => {
-      // 副露3つ(ポン2p・ポン3s・ポン4s、タンヤオのみ可能) + 手牌4枚: 11p 5p 3s (s0=1)
-      // dora=[1p,1p,5p,5p] により 1p/3s は残り0枚、5p は残り1枚のためトイトイは不可。
-      // B′では 1巡目に 6s 等を引いても 1p 切りが s=2(戻し) となるため 1p を切れず、
-      // B′+戻し では 1巡目に 1p を切って戻せるため ev(B′+戻し) > ev(B′) となる。
-      // 副露3つ(ポン2p・ポン3s・ポン4s) + 手牌4枚: 11p 4p 5s (s0=1, T=4)
-      // 注: m>=2 (7枚以上) は維持無制限による状態爆発のため T=4 でも 180秒超となるため、
-      //     参照実装との 1e-9 一致・単調性・違反打牌なしを m=1 で検証する。
-      //     (3副露では対々和が成立するため戻し優位手 evBt > evBp の確認は仕様改訂後に実施)
-      const hand = parseHand('11p4p5s');
-      const input: Input = {
-        hand,
-        melds: [
-          { type: 'pon', tile: { type: 'p', n: 2 } },
-          { type: 'pon', tile: { type: 's', n: 3 } },
-          { type: 'pon', tile: { type: 's', n: 4 } }
-        ],
-        dora: [],
-        nuki: 0
-      };
-      const T = 4;
-
-      let evA = 0;
-      let evBp = 0;
-      let evBt = 0;
-      for (const opts of [OPTS_A, OPTS_BP, OPTS_DEFAULT]) {
-        const res = computeEngine({
-          id: 500,
-          table: southTable,
-          input,
-          rule: yakuhaiRule,
-          remainingDraws: T,
-          options: opts
-        });
-        assertPerTurnValid(res, T);
-        if (res.type !== 'ok') throw new Error('unexpected non-ok');
-        const cand = must(res.candidates[0], 'candidate');
-        const ref = computeReference(southTable, input, yakuhaiRule, T, opts);
-
-        expect(Math.abs(cand.tenpai - ref.tenpai)).toBeLessThan(1e-9);
-        expect(Math.abs(cand.win - ref.win)).toBeLessThan(1e-9);
-        expect(Math.abs(cand.ev - ref.ev)).toBeLessThan(1e-9);
-
-        if (!opts.tegawari) evA = cand.ev;
-        else if (opts.backtrack) evBt = cand.ev;
-        else evBp = cand.ev;
-      }
-
-      expect(evBp).toBeGreaterThanOrEqual(evA);
-      expect(evBt).toBeGreaterThanOrEqual(evBp);
-
-      // 既定(B′+戻し K=2)の方針に条件違反の打牌(s'>3 または diff > s0+K)が現れないこと
-      const h0 = tilesToCounts(hand);
-      const s0 = calc_shanten_sanma(Uint8Array.from(h0), 1);
-      const visible = tilesToCounts([
-        ...hand,
-        { type: 'p', n: 2 },
-        { type: 'p', n: 2 },
-        { type: 'p', n: 2 },
-        { type: 's', n: 3 },
-        { type: 's', n: 3 },
-        { type: 's', n: 3 },
-        { type: 's', n: 4 },
-        { type: 's', n: 4 },
-        { type: 's', n: 4 }
-      ]);
-      const u0 = new Uint8Array(34);
-      for (let i = 0; i < 34; i++) {
-        if (isSanmaIndex(i as TileCountsIndex)) {
-          u0[i] = Math.max(0, 4 - (visible[i] ?? 0));
-        }
-      }
-      const sr = search(
-        Uint8Array.from(h0),
-        s0,
-        Uint8Array.from(h0),
-        1,
-        u0,
-        sanma_tile_limits(),
-        false,
-        T,
-        OPTS_DEFAULT.tegawari,
-        OPTS_DEFAULT.backtrack,
-        OPTS_DEFAULT.backtrackDiffMargin
-      );
-      try {
-        const wt = sr.tempai_wait_tiles();
-        const vals = new Float64Array(wt.length * 2);
-        for (let i = 0; i < wt.length; i++) vals[i * 2] = 1000;
-        solve(sr, vals);
-
-        const shCache = new Map<string, number>();
-        const getSh = (arr: Uint8Array) => {
-          const k = arr.join(',');
-          let v = shCache.get(k);
-          if (v === undefined) {
-            v = calc_shanten_sanma(arr, 1);
-            shCache.set(k, v);
-          }
-          return v;
-        };
-
-        const visited = new Set<string>();
-        const queue: { sh: Uint8Array; t: number }[] = [
-          { sh: Uint8Array.from(h0), t: T }
-        ];
-        visited.add(`${h0.join(',')}|${T}`);
-        while (queue.length > 0) {
-          const item = queue.shift();
-          if (!item) continue;
-          const { sh, t } = item;
-          if (t <= 0) continue;
-          const curS = getSh(sh);
-          if (curS === 0) continue;
-          for (let k = 0; k < 34; k++) {
-            if (!isSanmaIndex(k as TileCountsIndex)) continue;
-            const d = policy_discard(sr, sh, t, 0, k);
-            if (d >= 0) {
-              const nxt = Uint8Array.from(sh);
-              nxt[k] = (nxt[k] ?? 0) + 1;
-              nxt[d] = (nxt[d] ?? 0) - 1;
-              const nxtS = getSh(nxt);
-              if (nxtS > curS) {
-                expect(nxtS).toBe(curS + 1);
-                expect(nxtS).toBeLessThanOrEqual(3);
-                let common = 0;
-                for (let j = 0; j < 34; j++) {
-                  common += Math.min(nxt[j] ?? 0, h0[j] ?? 0);
-                }
-                const diff = 4 - common;
-                expect(diff).toBeLessThanOrEqual(
-                  s0 + OPTS_DEFAULT.backtrackDiffMargin
-                );
-              }
-              if (t - 1 >= 1 && nxtS >= 1) {
-                const nKey = `${nxt.join(',')}|${t - 1}`;
-                if (!visited.has(nKey)) {
-                  visited.add(nKey);
-                  queue.push({ sh: nxt, t: t - 1 });
-                }
+                expect(shantenOf(nxt, 1)).toBeLessThanOrEqual(curS);
               }
             }
           }
@@ -539,15 +446,199 @@ describe('F3-1 計算エンジン (Issue #138)', () => {
       }
     }, 60000);
 
+    /** 2副露(ポン7z・ポン6z)の入力を作る */
+    const twoMeldInput = (handStr: string): Input => ({
+      hand: parseHand(handStr),
+      melds: [
+        { type: 'pon', tile: { type: 'z', n: 7 } },
+        { type: 'pon', tile: { type: 'z', n: 6 } }
+      ],
+      dora: [],
+      nuki: 0
+    });
+
+    const expectMatchesReference = (
+      input: Input,
+      T: number,
+      opts: EngineOptions
+    ) => {
+      const res = computeEngine({
+        id: 500,
+        table: southTable,
+        input,
+        rule: yakuhaiRule,
+        remainingDraws: T,
+        options: opts
+      });
+      assertPerTurnValid(res, T);
+      if (res.type !== 'ok') throw new Error('unexpected non-ok');
+      const cand = must(res.candidates[0], 'candidate');
+      const ref = computeReference(southTable, input, yakuhaiRule, T, opts);
+      expect(Math.abs(cand.tenpai - ref.tenpai)).toBeLessThan(1e-9);
+      expect(Math.abs(cand.win - ref.win)).toBeLessThan(1e-9);
+      expect(Math.abs(cand.ev - ref.ev)).toBeLessThan(1e-9);
+      return cand;
+    };
+
+    it('F31-A5: s0=1 の2副露・T=4 で、構成A・B′・B′+戻し(M=0・1)が参照実装と 1e-9 で一致し、戻しは起きず B′ と B′+戻しが一致する', () => {
+      // 2副露(ポン7z・ポン6z) + 手牌7枚 2p8p 123s 77s (s0=1: 3p を引いて 8p 切りで 23p 123s 77s の聴牌)
+      // この起点では戻しの条件の右辺が (1−2)+M = M−1: M=0 は不可、M=1 は diff=0(元の手)のみ。
+      // 元の手は1向聴なので戻せず、聴牌後も戻せない。よって B′ と B′+戻しは一致する
+      const input = twoMeldInput('28p12377s');
+      const T = 4;
+      expect(shantenOf(tilesToCounts(input.hand), 2)).toBe(1);
+
+      for (const m of [0, 1]) {
+        const a = expectMatchesReference(input, T, OPTS_A);
+        const bp = expectMatchesReference(input, T, opBp(m));
+        const bt = expectMatchesReference(input, T, opBt(m));
+        expect(bp.ev).toBeGreaterThanOrEqual(a.ev - 1e-12);
+        expect(bt.ev).toBeCloseTo(bp.ev, 12);
+        expect(bt.win).toBeCloseTo(bp.win, 12);
+        expect(bt.tenpai).toBeCloseTo(bp.tenpai, 12);
+
+        // 戻しが起きない: B′+戻し の到達状態に向聴2の手が無い
+        const raw = rawSearch(input, yakuhaiRule, T, opBt(m));
+        try {
+          const all = raw.sr.all_state_hands();
+          for (let off = 0; off < all.length; off += 34) {
+            expect(
+              shantenOf(all.subarray(off, off + 34), 2)
+            ).toBeLessThanOrEqual(1);
+          }
+          assertDiffInvariant(raw, m);
+        } finally {
+          raw.sr.free();
+        }
+      }
+    }, 120000);
+
+    it('F31-A5d: 戻しが起きる起点で参照実装と一致し、戻しでしか到達しない手が到達集合に含まれる', () => {
+      // (1) s0=1・M=2・T=4: 起点で1枚入れ替えた2向聴の手(diff=1 ≤ 1−2+2)へ戻せる。
+      //     最短は 戻し→前進→前進→和了 の4巡
+      // (2) s0=2・M=1・T=5: 1回前進して1向聴(diff=1)の後、前進で入れた牌を捨てる戻し
+      //     (2向聴、diff=1 ≤ 2−2+1)が許される。最短は 前進→戻し→前進→前進→和了 の5巡
+      const cases: { handStr: string; m: number; T: number }[] = [
+        { handStr: '28p12377s', m: 2, T: 4 },
+        { handStr: '34467s12z', m: 1, T: 5 }
+      ];
+      for (const { handStr, m, T } of cases) {
+        const input = twoMeldInput(handStr);
+        expectMatchesReference(input, T, opBt(m));
+
+        const withBack = rawSearch(input, yakuhaiRule, T, opBt(m));
+        const noBack = rawSearch(input, yakuhaiRule, T, opBp(m));
+        try {
+          const keyOf = (a: Uint8Array) => a.join(',');
+          const base = new Set<string>();
+          const noAll = noBack.sr.all_state_hands();
+          for (let off = 0; off < noAll.length; off += 34) {
+            base.add(keyOf(noAll.subarray(off, off + 34)));
+          }
+          const all = withBack.sr.all_state_hands();
+          let onlyByBacktrack = 0;
+          for (let off = 0; off < all.length; off += 34) {
+            const h = all.subarray(off, off + 34);
+            if (!base.has(keyOf(h))) {
+              onlyByBacktrack++;
+              // 戻しでしか到達しない手は、探索の起点より向聴が大きい手を経由する
+            }
+          }
+          // 戻しの遷移(向聴が増える遷移)が存在する。B′・構成Aには存在しない
+          expect(withBack.sr.backtrack_edge_count()).toBeGreaterThan(0);
+          expect(noBack.sr.backtrack_edge_count()).toBe(0);
+          // (1) は戻しでしか到達しない手がある。(2) の戻し先(向聴2・diff=1)は起点からの維持でも
+          // 到達できるので手の集合は増えず、遷移だけが増える
+          if (handStr === '28p12377s') {
+            expect(onlyByBacktrack).toBeGreaterThan(0);
+          }
+          assertDiffInvariant(withBack, m);
+        } finally {
+          withBack.sr.free();
+          noBack.sr.free();
+        }
+      }
+    }, 600000);
+
+    // A-4d: 各 (手, M) を別の it にする(1テストの同期計算を短くし、vitest の RPC タイムアウトを避ける)。
+    // S3 の M=1 は約1万4千状態で重いので T=6・12 だけ検査する(T=18 の状態数は D-1a で測る)
+    const a4dCases: {
+      label: string;
+      m: number;
+      Ts: number[];
+      make: () => { input: Input; rule: Rule };
+    }[] = [
+      ...[
+        { m: 0, Ts: [6, 12, 18] },
+        { m: 1, Ts: [6, 12] }
+      ].map(({ m, Ts }) => ({
+        label: 'S3-01',
+        m,
+        Ts,
+        make: () => {
+          const s3 = BENCH_HANDS.find(h => h.id === 'S3-01');
+          const preset = RULE_PRESETS[0]?.rule;
+          if (!s3 || !preset) throw new Error('S3-01 or preset not found');
+          return {
+            input: {
+              hand: parseTiles(s3.handStr),
+              melds: s3.melds,
+              dora: [],
+              nuki: s3.nuki
+            },
+            rule: preset
+          };
+        }
+      })),
+      ...[0, 1].map(m => ({
+        label: '2副露 34467s12z',
+        m,
+        Ts: [6, 12, 18],
+        make: () => ({ input: twoMeldInput('34467s12z'), rule: yakuhaiRule })
+      }))
+    ];
+    for (const { label, m, Ts, make } of a4dCases) {
+      it(`F31-A4d: ${label} M=${m} の到達する聴牌前の手は差の不変条件を満たし、T=6 の到達集合は T=12 の到達集合に含まれる`, () => {
+        const { input, rule } = make();
+        const counts: Record<number, number> = {};
+        const keysByT = new Map<number, Set<string>>();
+        for (const T of Ts) {
+          const raw = rawSearch(input, rule, T, opBt(m));
+          try {
+            assertDiffInvariant(raw, m);
+            const all = raw.sr.all_state_hands();
+            const keys = new Set<string>();
+            for (let off = 0; off < all.length; off += 34) {
+              const h = all.subarray(off, off + 34);
+              if (shantenOf(h, raw.meldsM) > 0) keys.add(h.join(','));
+            }
+            keysByT.set(T, keys);
+            counts[T] = raw.sr.state_count - raw.sr.tempai_count;
+            expect(keys.size).toBe(counts[T]);
+          } finally {
+            raw.sr.free();
+          }
+        }
+        // 参考測定(合否にしない): 聴牌前の手の異なるキー数
+        console.log(`A-4d参考 ${label} M=${m}`, JSON.stringify(counts));
+        for (const k of keysByT.get(6) ?? []) {
+          expect(keysByT.get(12)?.has(k)).toBe(true);
+        }
+      }, 300000);
+    }
+
     it('F31-A5b: 無効・範囲外オプションと残りツモ回数で error を返す', () => {
       const hand = parseHand('111999m123456p1z');
       const input: Input = { hand, melds: [], dora: [], nuki: 0 };
 
       const badOptionsList: EngineOptions[] = [
-        { tegawari: false, backtrack: true, backtrackDiffMargin: 2 },
-        { tegawari: true, backtrack: true, backtrackDiffMargin: -1 },
-        { tegawari: true, backtrack: true, backtrackDiffMargin: 5 },
-        { tegawari: true, backtrack: true, backtrackDiffMargin: 1.5 }
+        mkOpts(false, true, 0),
+        mkOpts(true, true, -1),
+        mkOpts(true, true, 3),
+        mkOpts(true, true, 1.5),
+        mkOpts(true, false, -1),
+        mkOpts(true, false, 3),
+        mkOpts(true, false, 1.5)
       ];
       for (const opts of badOptionsList) {
         const res = computeEngine({
@@ -593,9 +684,11 @@ describe('F3-1 計算エンジン (Issue #138)', () => {
       expect(distB.find(o => o.count === 1)?.prob).toBeCloseTo(1 / 3, 12);
       expect(distB.find(o => o.count === 0)?.prob).toBeCloseTo(2 / 3, 12);
 
-      // (c) 裏ドラ分布の和が 1、表示牌1枚のとき手計算と一致
-      // 手牌+和了牌: 111m 999m 123p 456p 11z (14枚)、ドラ表示牌: 9m (1枚)、抜き北0
-      // 見えていない牌合計: 108 - 14 - 1 = 93 枚
+      // (c) 裏ドラ分布の和が 1、表示牌1枚のとき手計算と一致(確定 Q21 の山の式で母集団を数える)
+      // 入力の手 H0: 111m 999m 123p 456p 1z (13枚。和了牌は 1z)、ドラ表示牌: 9m (1枚)、抜き北0
+      // 最終14枚 H_f = 111m 999m 123p 456p 11z。H_f[i] − H0[i] は 1z だけ 1
+      // 母集団 c_i = u0[i] − max(0, H_f[i] − H0[i]): u0 は 4 − (H0 + ドラ表示牌)
+      // 見えていない牌合計: 108 − 13 − 1 − 1(和了牌 1z の分) = 93 枚
       // 表示牌候補の残り枚数と加算飜:
       // - 9p (next=1p:1枚): 残り4枚 -> han=1, prob=4/93
       // - 1p (next=2p:1枚): 残り3枚 -> han=1, prob=3/93
@@ -605,17 +698,29 @@ describe('F3-1 計算エンジン (Issue #138)', () => {
       // - 5p (next=6p:1枚): 残り3枚 -> han=1, prob=3/93
       // - 4z (next=1z:2枚): 残り4枚 -> han=2, prob=4/93
       // - 9m (next=1m:3枚): 見えていない9mは 4-3-1=0枚 -> prob=0
-      // - 8m (存在しない), 1m (next=9m:3枚, 残り1m=1枚 -> han=3, prob=1/93)
+      // - 1m (next=9m:3枚): 残り1m=1枚 -> han=3, prob=1/93
       // (注: nextIndex(0=1m)=8=9m(3枚), nextIndex(8=9m)=0=1m(3枚))
+      const h0 = tilesToCounts(parseHand('111999m123456p1z'));
       const final14 = tilesToCounts(parseHand('111999m123456p11z'));
       const emptyCounts = tilesToCounts([]);
-      const doraCounts = tilesToCounts(parseHand('9m'));
+      const u0Of = (handStr: string, doraStr: string) => {
+        const vis = tilesToCounts([
+          ...parseHand(handStr),
+          ...parseHand(doraStr)
+        ]);
+        return Array.from({ length: 34 }, (_, i) =>
+          isSanmaIndex(i as TileCountsIndex) ? 4 - (vis[i] ?? 0) : 0
+        );
+      };
+      const u0a = u0Of('111999m123456p1z', '9m');
       const ura1 = uradoraDistribution(
         true,
         1,
         final14,
         emptyCounts,
-        doraCounts,
+        u0a,
+        h0,
+        0,
         0
       );
       expect(ura1.reduce((s, o) => s + o.prob, 0)).toBeCloseTo(1, 12);
@@ -627,8 +732,17 @@ describe('F3-1 計算エンジン (Issue #138)', () => {
       );
 
       // 複数表示牌でも和が 1
-      const dora2 = tilesToCounts(parseHand('9m1z'));
-      const ura2 = uradoraDistribution(true, 2, final14, emptyCounts, dora2, 0);
+      const u0b = u0Of('111999m123456p1z', '9m1z');
+      const ura2 = uradoraDistribution(
+        true,
+        2,
+        final14,
+        emptyCounts,
+        u0b,
+        h0,
+        0,
+        0
+      );
       expect(ura2.reduce((s, o) => s + o.prob, 0)).toBeCloseTo(1, 12);
 
       // (d) 門前でない手は j=0 のみ
@@ -637,10 +751,115 @@ describe('F3-1 計算エンジン (Issue #138)', () => {
         2,
         final14,
         emptyCounts,
-        dora2,
+        u0b,
+        h0,
+        0,
         0
       );
       expect(uraOpen).toEqual([{ han: 0, prob: 1 }]);
+    });
+
+    it('F31-A7e: 14枚入力で五pを初打で捨てる候補があっても、到達可能な全和了形で赤の分布の総和が1(空の分布が無い)', () => {
+      // 14枚入力: 五p を3枚(うち赤1枚 = 0p)持ち、他に五p は見えていない(N=1, R=0 or 1)。
+      // 山の式(§3.2)は入力の手 H0 を基準にするので、五p を捨てた候補でも捨てた五を引き直せ、
+      // 最終形の五p は最大 4 枚(= k0=3 の H0 基準では d=1 ≤ N=1)。確定 Q20 案a の式で空にならない
+      const rule: Rule = { ...DEFAULT_RULE, north: 'yakuhai', red: 1 };
+      const input: Input = {
+        hand: parseHand('550p123s456s77s11z9m'),
+        melds: [],
+        dora: [],
+        nuki: 0
+      };
+      expect(input.hand).toHaveLength(14);
+      const raw = rawSearch(input, rule, 3, opBp(1));
+      try {
+        const h0 = tilesToCounts(input.hand);
+        expect(h0[13]).toBe(3);
+        // computeEngine が使う赤の基準: H0 の五p は3枚・赤1枚、見えていない五p は N=1、赤は R=0
+        const visible = [...input.hand];
+        const u0 = Array.from({ length: 34 }, (_, i) =>
+          isSanmaIndex(i as TileCountsIndex)
+            ? 4 - (tilesToCounts(visible)[i] ?? 0)
+            : 0
+        );
+        const base = redBaselineOf(input.hand, visible, u0, rule);
+        expect(base.k0.p).toBe(3);
+        expect(base.a0.p).toBe(1);
+        expect(base.availableTotal.p).toBe(1);
+        expect(base.availableRed.p).toBe(0);
+        const distOf = (kFinal: number) =>
+          redDistributionForSuit(
+            kFinal,
+            base.k0.p,
+            base.a0.p,
+            base.availableTotal.p,
+            base.availableRed.p
+          );
+        // 最終形の五p が 0〜4 枚のどれでも分布が空にならず総和が1
+        for (let kFinal = 0; kFinal <= 4; kFinal++) {
+          const dist = distOf(kFinal);
+          expect(dist.length).toBeGreaterThan(0);
+          expect(dist.reduce((a, o) => a + o.prob, 0)).toBeCloseTo(1, 12);
+        }
+        // 探索で到達する全和了形でも同様
+        const tempai = raw.sr.tempai_hands();
+        const waitCounts = raw.sr.tempai_wait_counts();
+        const waitTiles = raw.sr.tempai_wait_tiles();
+        let cursor = 0;
+        let checked = 0;
+        for (let ti = 0; ti < waitCounts.length; ti++) {
+          const form = Array.from(tempai.subarray(ti * 34, (ti + 1) * 34));
+          for (let wi = 0; wi < (waitCounts[ti] ?? 0); wi++) {
+            const w = waitTiles[cursor + wi] ?? 0;
+            const fin = [...form];
+            fin[w] = (fin[w] ?? 0) + 1;
+            const dist = distOf(fin[13] ?? 0);
+            expect(dist.length).toBeGreaterThan(0);
+            expect(dist.reduce((a, o) => a + o.prob, 0)).toBeCloseTo(1, 12);
+            checked++;
+          }
+          cursor += waitCounts[ti] ?? 0;
+        }
+        expect(checked).toBeGreaterThan(0);
+        // 対比: 打牌候補の手(k0=2)を基準にすると kFinal=4 (d=2 > N=1) は空になる(旧式の失敗)
+        expect(redDistributionForSuit(4, 2, 1, 1, 0)).toEqual([]);
+      } finally {
+        raw.sr.free();
+      }
+    }, 60000);
+
+    it('F31-A7f: 初打で捨てた既知牌は裏表示牌に選ばれない(確定 Q21 の式で手計算)', () => {
+      // 入力(14枚) H0: 555z 666z 123p 456p 12s と、ドラ表示牌 5z → 5z は4枚すべて見えている(u0[5z]=0)。
+      // 初打で 5z を1枚捨てた候補の最終14枚 H_f = 55z 666z 123p 456p 12s + 和了牌 3s = 55z 666z 123p 456p 123s。
+      // 山の式の母集団 c_{5z} = u0[5z] − max(0, H_f[5z] − H0[5z]) = 0 − 0 = 0 なので、
+      // 5z が裏表示牌に選ばれる確率は 0。5z が選ばれたときだけ加算飜 3(次の牌 6z が H_f に3枚)になるので、
+      // han=3 の確率は 0 のはず(H_f に3枚あるのは 666z だけで、123p・456p・123s は各1枚)。
+      // 旧式(4 − (H_f + ドラ表示牌)): 4 − (2 + 1) = 1 枚残っていることになり han=3 が正の確率になる(対比)
+      const h0 = tilesToCounts(parseHand('555666z123456p12s'));
+      const final14 = tilesToCounts(parseHand('55666z123456p123s'));
+      const vis = tilesToCounts([
+        ...parseHand('555666z123456p12s'),
+        ...parseHand('5z')
+      ]);
+      const u0 = Array.from({ length: 34 }, (_, i) =>
+        isSanmaIndex(i as TileCountsIndex) ? 4 - (vis[i] ?? 0) : 0
+      );
+      expect(u0[31]).toBe(0);
+      const dist = uradoraDistribution(
+        true,
+        1,
+        final14,
+        tilesToCounts([]),
+        u0,
+        h0,
+        0,
+        0
+      );
+      expect(dist.reduce((a, o) => a + o.prob, 0)).toBeCloseTo(1, 12);
+      expect(dist.find(o => o.han === 3)).toBeUndefined();
+      // 対比(旧式の母集団): 5z が1枚残っていることになる
+      const oldRemaining5z = 4 - ((final14[31] ?? 0) + 1);
+      expect(oldRemaining5z).toBe(1);
     });
   });
 
@@ -787,6 +1006,70 @@ describe('F3-1 計算エンジン (Issue #138)', () => {
           true
         );
       }
+    });
+
+    it('F31-B4b: 副露・役なし・北待ち(抜きドラ設定)は、北を抜いて補充ツモの嶺上開花で和了できる(確定 Q19 案(ii))', () => {
+      // 2副露(ポン1m・ポン9m。役牌なし・トイトイでない) + 手牌7枚 234s 44z 99p の聴牌(北と 9p の双碰)。
+      // 副露の手で 234s があり(混全帯么九・トイトイにならず)、和了牌のツモ和了は役なし(北は抜きドラ設定で役牌でない)。
+      // §3.2 の記号: 見えていない北 u_N=2、9p が u_X=2、全体 U=108−7−6=95。T=1:
+      //  (ii): 1巡目に北を引く(u_N/U)→ 抜いて補充ツモ(e=1。北は u_N−1=1、全体 U−1=94)
+      //        → 北または 9p を引けば嶺上開花で役ありの和了: win = (u_N/U)×((u_N−1)+u_X)/(U−1)
+      //        9p を最初に引いた場合は役なしでツモ切り(和了しない)
+      //  (i) だと北は待ちに入っていて抜かれず役もないので win=0
+      const input: Input = {
+        hand: parseHand('234s44z99p'),
+        melds: [
+          { type: 'pon', tile: { type: 'm', n: 1 } },
+          { type: 'pon', tile: { type: 'm', n: 9 } }
+        ],
+        dora: [],
+        nuki: 0
+      };
+      const nukiRule: Rule = { ...DEFAULT_RULE, north: 'nukidora', red: 0 };
+      const res = computeEngine({
+        id: 205,
+        table: southTable,
+        input,
+        rule: nukiRule,
+        remainingDraws: 1,
+        options: OPTS_DEFAULT
+      });
+      assertPerTurnValid(res, 1);
+      if (res.type !== 'ok') throw new Error('unexpected non-ok');
+      const cand = must(res.candidates[0], 'cand');
+      const expectedWin = (2 / 95) * ((1 + 2) / 94);
+      expect(cand.tenpai).toBe(1);
+      expect(expectedWin).toBeGreaterThan(0);
+      expect(Math.abs(cand.win - expectedWin)).toBeLessThan(1e-12);
+      expect(
+        Math.abs(must(cand.perTurn[0], 'turn 1').win - expectedWin)
+      ).toBeLessThan(1e-12);
+      expect(cand.ev).toBeGreaterThan(0);
+
+      // 和了候補に rinshan が含まれる(補充ツモ経由の評価)
+      const form = tilesToCounts(input.hand);
+      const evaluated = evaluateTempaiForm(form, {
+        table: southTable,
+        rule: nukiRule,
+        melds: input.melds,
+        dora: [],
+        nuki0: 0,
+        includeRinshan: true
+      });
+      const rinshanNorth = evaluated.find(
+        e => e.rinshan && tileToCountsIndex(e.winTile) === 30
+      );
+      expect(rinshanNorth?.best).not.toBeNull();
+      expect(
+        rinshanNorth?.candidates.some(c =>
+          c.yaku.some(y => y.name === 'rinshan')
+        )
+      ).toBe(true);
+      // 嶺上でない評価は役なし(best === null)
+      const plainNorth = evaluated.find(
+        e => !e.rinshan && tileToCountsIndex(e.winTile) === 30
+      );
+      expect(plainNorth?.best).toBeNull();
     });
 
     it('F31-B5: 門前の手の V は riichi: none で評価した値以上になる', () => {
@@ -946,24 +1229,13 @@ describe('F3-1 計算エンジン (Issue #138)', () => {
     it('F31-C3: 共通役牌設定で北(4z)が通常の牌として有効牌に数えられる', () => {
       // 111m 999m 123p 456p 4z (北単騎待ち)
       const hand = parseHand('111999m123456p4z');
-      const h0 = tilesToCounts(hand);
-      const u0 = new Uint8Array(34);
-      for (let i = 0; i < 34; i++) {
-        if (isSanmaIndex(i as TileCountsIndex)) u0[i] = 4 - (h0[i] ?? 0);
-      }
-      const sr = search(
-        Uint8Array.from(h0),
-        0,
-        Uint8Array.from(h0),
-        4,
-        u0,
-        sanma_tile_limits(),
-        false,
+      const raw = rawSearch(
+        { hand, melds: [], dora: [], nuki: 0 },
+        yakuhaiRule,
         1,
-        false,
-        false,
-        2
+        OPTS_A
       );
+      const sr = raw.sr;
       try {
         expect(Array.from(sr.tempai_wait_tiles())).toContain(30); // 30 = 北
       } finally {
@@ -999,24 +1271,13 @@ describe('F3-1 計算エンジン (Issue #138)', () => {
 
     it('F31-C5: 三麻の2m〜8mが現れず、国士13面待ちで待ちが13種になる', () => {
       const kokushi13 = parseHand('19m19p19s1234567z');
-      const h0 = tilesToCounts(kokushi13);
-      const u0 = new Uint8Array(34);
-      for (let i = 0; i < 34; i++) {
-        if (isSanmaIndex(i as TileCountsIndex)) u0[i] = 4 - (h0[i] ?? 0);
-      }
-      const sr = search(
-        Uint8Array.from(h0),
-        0,
-        Uint8Array.from(h0),
-        4,
-        u0,
-        sanma_tile_limits(),
-        false,
+      const raw = rawSearch(
+        { hand: kokushi13, melds: [], dora: [], nuki: 0 },
+        yakuhaiRule,
         1,
-        true,
-        true,
-        2
+        opBt(2)
       );
+      const sr = raw.sr;
       try {
         const waits = Array.from(sr.tempai_wait_tiles());
         expect(waits).toHaveLength(13);

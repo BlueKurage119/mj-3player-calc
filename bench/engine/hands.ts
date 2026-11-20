@@ -290,3 +290,92 @@ export const BENCH_HANDS: readonly BenchHandSpec[] = [
     doraStr: []
   }
 ];
+
+/**
+ * D-1a(c) 用の14枚入力(打牌前の手)。#137 の30手には打牌前の入力が無いので、
+ * 製造担当が牌姿を選んで固定した。`shanten` は14枚の最小向聴 s0。
+ * 候補ごとの打牌後の向聴(製造時に `computeEngine` を T=0 で実行して確認。赤・ドラ表示牌・副露・抜き北を含む):
+ * - C-01: s0=1。向聴1: 9m 5s 8s 9s / 向聴2: 1p 2p 3p 4p 5p 6p 7s 1z
+ * - C-02: s0=1。向聴1: 9m 3p 6p / 向聴2: 1p 2p 4p 5p 7s 8s 1z 4z
+ * - C-03: s0=1(ポン7z)。向聴1: 2p 3p 3s 4s 6s 7s 1z / 向聴2: 5p 6p 7p 5s
+ * - C-04: s0=1(ポン6z)。向聴1: 2s 6s 1z / 向聴2: 1m 3p 4p 5p 6p 8p 4s
+ * - C-05: s0=2。向聴2: 1m 9m 4s 8s 4z / 向聴3: 2p 3p 4p 5p 6s 7s
+ * - C-06: s0=2。向聴2: 1m 9m 1z 3z 4z 5z / 向聴3: 1p 8p 2s 9s
+ * - C-07: s0=2(ポン7z)。向聴2: 1m 5s 8s 9s 1z 3z / 向聴3: 2p 4p 6s 7s
+ * - C-08: s0=2。向聴2: 1m 4z 7z / 向聴3: 9m 2p 4p 5p 6s 7s 1z
+ * - C-09: s0=3(対照。4向聴の候補は計算対象外なので、全候補が向聴3で共通 s_ref と対案S が同じ結果になるはず)。向聴3: 全候補
+ */
+export const BENCH_HANDS_14: readonly BenchHandSpec[] = [
+  {
+    id: 'C-01',
+    shanten: 1,
+    handStr: '9m123p406p5s78s99s11z',
+    melds: [],
+    nuki: 0,
+    doraStr: ['2s']
+  },
+  {
+    id: 'C-02',
+    shanten: 1,
+    handStr: '123p456p78s44z11z9m3p',
+    melds: [],
+    nuki: 1,
+    doraStr: ['3z']
+  },
+  {
+    id: 'C-03',
+    shanten: 1,
+    handStr: '23p067p34567s1z',
+    melds: [pon('7z')],
+    nuki: 0,
+    doraStr: ['2s']
+  },
+  {
+    id: 'C-04',
+    shanten: 1,
+    handStr: '11m345p68p24s1z6s',
+    melds: [pon('6z')],
+    nuki: 1,
+    doraStr: ['5p']
+  },
+  {
+    id: 'C-05',
+    shanten: 2,
+    handStr: '19m22p345p678s468s4z',
+    melds: [],
+    nuki: 0,
+    doraStr: ['2s']
+  },
+  {
+    id: 'C-06',
+    shanten: 2,
+    handStr: '19m1188p2299s135z4z',
+    melds: [],
+    nuki: 2,
+    doraStr: ['7p']
+  },
+  {
+    id: 'C-07',
+    shanten: 2,
+    handStr: '1m24p0678s99s1z3z',
+    melds: [pon('7z')],
+    nuki: 0,
+    doraStr: ['2s']
+  },
+  {
+    id: 'C-08',
+    shanten: 2,
+    handStr: '199m24p055p67s11z7z4z',
+    melds: [],
+    nuki: 1,
+    doraStr: ['4p']
+  },
+  {
+    id: 'C-09',
+    shanten: 3,
+    handStr: '1m134p067p2479s15z3z',
+    melds: [],
+    nuki: 0,
+    doraStr: ['2s']
+  }
+];
