@@ -35,19 +35,19 @@ mahjong-cpp の仕様欄は README の記述だけに基づく。README は機�
 | 機能 | ① mahjong-cpp の仕様(README) | ② 既存資産 | ③ shanten-dp | 判定 | 根拠 |
 | --- | --- | --- | --- | --- | --- |
 | 向聴数(一般形) | 向聴数計算あり | あり。WASM の分解器で最小向聴数と分解結果を返す | あり(`Mode::STANDARD`) | カバー | ② `wasm/decomposer/src/lib.rs` `decompose_from_counts`、`src/core/tile/shanten.ts` `minShanten`。③ docs.rs `calc_shanten` / `Mode` |
-| 向聴数(七対子) | 向聴数計算の対象に含む旨の記載 | あり | あり(`Mode::SEVEN_PAIRS`。4枚使い七対子の可否を引数で切替) | カバー | ② `countChitoitsuShanten`。③ `calc_shanten2` の `four_tile_seven_pairs` |
-| 向聴数(国士無双) | 同上 | あり | あり(`Mode::THIRTEEN_ORPHANS`) | カバー | ② `countKokushiShanten`。③ docs.rs `Mode` |
+| 向聴数(七対子) | README に個別の記載なし(未確認) | あり | あり(`Mode::SEVEN_PAIRS`。4枚使い七対子の可否を引数で切替) | カバー | ② `countChitoitsuShanten`。③ `calc_shanten2` の `four_tile_seven_pairs` |
+| 向聴数(国士無双) | README に個別の記載なし(未確認) | あり | あり(`Mode::THIRTEEN_ORPHANS`) | カバー | ② `countKokushiShanten`。③ docs.rs `Mode` |
 | 有効牌(受け入れ) | 有効牌計算あり | あり。種類と残り枚数(見えている牌を差し引く)を返す | あり(`Data.waits` をビットで返す。枚数は返さない) | カバー | ② `src/core/result.ts` の `tileAvailabilities`、`waitingTiles`・`shantenTiles`、`src/core/tile/index.ts` `tileAvailableCount`。③ docs.rs `calc_shanten2` / `Data` |
 | 不要牌・何切る候補 | 不要牌計算あり | あり。打牌ごとに次の向聴数と受け入れを列挙 | あり(`Data.discards`) | カバー | ② `src/core/result.ts` `Discard`・`DiscardShanten`。③ `Data.discards` |
-| 聴牌確率 | 期待値計算機能に含む(巡目ごとに示される旨) | なし | なし(確率の記載なし) | なし | ③ docs.rs クレートトップに確率関連 API なし |
+| 聴牌確率 | 機能一覧に「聴牌確率/和了確率/期待値計算」とある。巡目との関係は README に記載なし(未確認) | なし | なし(確率の記載なし) | なし | ③ docs.rs クレートトップに確率関連 API なし |
 | 和了確率 | 同上 | なし | なし | なし | 同上 |
 | 期待値(打点の期待値) | 同上 | なし。ただし和了形の点数計算はある | なし | なし(点数評価の部品は②にある) | ② `calculateHoraScore`(`src/core/hora-score.ts`) |
 | 点数計算 | 点数計算あり(立直等のフラグ指定) | あり。三麻ルール(抜き北・ツモ損等)込み | なし | カバー(②) | ② `src/core/result.ts` `generateResult`、`src/core/rule.ts`(`DEFAULT_NORTH = 'nukidora'`、`DEFAULT_TSUMO_LOSS`) |
 | 手替わりの考慮 | README に記載なし(未確認) | なし | なし | なし | — |
 | 向聴戻しの考慮 | README に記載なし(未確認) | なし(何切るは最小向聴の打牌が中心。向聴を落とす打牌の評価は未確認) | `discards` は向聴数を維持する打牌を表すと推測(未確認) | なし | — |
 | 立直の考慮 | 点数計算の設定に立直フラグがある旨 | 和了形の点数計算で立直・ダブル立直・オープン立直・一発に対応 | なし | 部分(和了時の加算は可。期待値計算で「聴牌即立直」とするかは未設計) | ② `src/core/input.ts` `HandOptions.riichi` |
-| 巡目の考慮 | 期待値計算の結果が巡目ごとに示される旨 | なし | なし | なし | — |
-| 赤ドラ | ルール設定で指定可能の旨 | あり(色ごとの赤枚数、残り枚数計算にも反映) | なし(34種の枚数のみで赤を区別しない) | 部分(向聴・受け入れは赤無視で可。期待値には②の赤処理を通す必要) | ② `src/core/rule.ts` `redCountOf`、`tileAvailableCount` |
+| 巡目の考慮 | README に記載なし(未確認) | なし | なし | なし | — |
+| 赤ドラ | README に牌表記 `0m`/`0p`/`0s` の赤五の記述あり。ルール設定は未確認 | あり(色ごとの赤枚数、残り枚数計算にも反映) | なし(34種の枚数のみで赤を区別しない) | 部分(向聴・受け入れは赤無視で可。期待値には②の赤処理を通す必要) | ② `src/core/rule.ts` `redCountOf`、`tileAvailableCount` |
 | 抜き北 | README に記載なし(三麻対応自体が未記載) | あり(`input.nuki`、北を抜きドラとして加算) | なし。ただし34種の北を手牌から除くのは呼び出し側で可能 | 部分(引いた北を抜いて嶺上で補充するモデルは新規) | ② `src/core/result.ts` の北の扱い、`src/core/rule.ts` `DEFAULT_NORTH` |
 | ドラ | 表示牌で指定可能の旨 | あり | なし | カバー(②) | ② `Input.dora` |
 | 裏ドラ期待値 | 裏ドラ表示牌を指定可能の旨(期待値に乗るかは未確認) | 裏ドラ表示牌の入力と加算あり。期待値としての扱いはなし | なし | 部分 | ② `Input.uradora`、`src/core/ura-dora.test.ts` |
@@ -58,6 +58,8 @@ mahjong-cpp の仕様欄は README の記述だけに基づく。README は機�
 | 他家の扱い(ロン・放銃・流局) | README に記載なし | なし | なし | 不要または選択(4章) | — |
 | 出力形式 | 英語出力の切替あり。Docker で HTTP サーバーとして起動できる旨。JSON の項目は未確認 | TS の型(`Result`)を UI に渡す | Rust の関数・構造体 | 不要(mahjong-cpp の形式に合わせる必要はない) | ① README のビルド節 |
 | 実行環境 | C++17・Boost・CMake | ブラウザ内(TS + WASM) | Rust(依存 `bitflags`・`thiserror`)。WASM 化は可能と推測(未確認) | — | ③ docs.rs の依存一覧 |
+
+> 統括の確認(2026-11-20): 初稿の「巡目ごと」「七対子・国士を含む」は README 原文にないため上のとおり修正した。README の副露記述にはチー(`Chow`)があり、四麻前提とみられる(三麻対応は未確認)。
 
 ## 3. 三人麻雀への適合のまとめ
 
@@ -149,7 +151,7 @@ mahjong-cpp の仕様欄は README の記述だけに基づく。README は機�
 | 主張 | 根拠 | 状態 |
 | --- | --- | --- |
 | mahjong-cpp は向聴数・有効牌・不要牌・点数・期待値(聴牌確率・和了確率)を計算する | README の機能一覧 | README で確認 |
-| mahjong-cpp の期待値は巡目ごとに示される | README の記述(取得ツールによる要約) | README で確認。挙動は未確認 |
+| (撤回)mahjong-cpp の期待値は巡目ごとに示される | README に記載なし(当初の記述は取得ツールの要約に由来し、README 原文で裏が取れなかったため撤回) | 検証不能 |
 | mahjong-cpp は C++17・Boost・CMake、Docker で HTTP サーバー起動 | README のビルド節 | README で確認 |
 | mahjong-cpp は GPL-3.0 | `gh api repos/nekobean/mahjong-cpp` | 確認 |
 | mahjong-cpp の三麻対応・手替わり・向聴戻し・他家の扱い | README に記載なし | 検証不能 |
