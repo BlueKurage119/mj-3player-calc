@@ -2,7 +2,7 @@ import { useState } from 'react';
 import type React from 'react';
 import { RULE_ITEMS } from '../../core/rule-items';
 import type { Wind } from '../../core/table';
-import { ConnectedButtonGroup } from '../expressive';
+import { ConnectedButtonGroup, Stepper } from '../expressive';
 import { SYMBOL_ARROW_BACK, SymbolIcon } from '../icons';
 import { IconButton } from '../md';
 import {
@@ -12,7 +12,7 @@ import {
   buildFuHanTable,
   buildLimitTable
 } from '../scoring-table/scoring-table';
-import { useAppDispatch, useAppState } from '../state';
+import { STEPPER_BOUNDS, useAppDispatch, useAppState } from '../state';
 import './main-screen.css';
 import './scoring-table.css';
 
@@ -20,8 +20,17 @@ export interface ScoringTableViewProps {
   seat: Wind;
   rule: ScoringRule;
   initialDealer?: boolean;
+  /** 初期の本場数(省略時 0。STEPPER_BOUNDS.continue の範囲にクランプする) */
+  initialHonba?: number;
   onBack: () => void;
 }
+
+const [HONBA_MIN, HONBA_MAX] = STEPPER_BOUNDS.continue;
+
+const clampHonba = (value: number): number => {
+  if (!Number.isFinite(value)) return HONBA_MIN;
+  return Math.min(HONBA_MAX, Math.max(HONBA_MIN, Math.trunc(value)));
+};
 
 /** ツモ損の方式の表示名(設定画面と同じラベル)。該当がなければ null */
 export function getTsumoLossLabel(
@@ -70,14 +79,18 @@ export function ScoringTableView({
   seat,
   rule,
   initialDealer,
+  initialHonba,
   onBack
 }: ScoringTableViewProps): React.JSX.Element {
   const [dealer, setDealer] = useState<boolean>(
     () => initialDealer ?? seat === 'east'
   );
+  const [honba, setHonba] = useState<number>(() =>
+    clampHonba(initialHonba ?? 0)
+  );
 
-  const fuHanTable = buildFuHanTable(rule, { dealer });
-  const limitTable = buildLimitTable(rule, { dealer });
+  const fuHanTable = buildFuHanTable(rule, { dealer, honba });
+  const limitTable = buildLimitTable(rule, { dealer, honba });
 
   return (
     <div className="scoring-table-screen">
@@ -98,13 +111,23 @@ export function ScoringTableView({
         </div>
       </header>
       <main className="scoring-table-screen__content">
-        <ConnectedButtonGroup<'dealer' | 'child'>
-          label="親子"
-          className="scoring-table-screen__dealer-toggle"
-          options={DEALER_OPTIONS}
-          value={dealer ? 'dealer' : 'child'}
-          onValueChange={val => setDealer(val === 'dealer')}
-        />
+        <div className="scoring-table-screen__controls">
+          <ConnectedButtonGroup<'dealer' | 'child'>
+            label="親子"
+            className="scoring-table-screen__dealer-toggle"
+            options={DEALER_OPTIONS}
+            value={dealer ? 'dealer' : 'child'}
+            onValueChange={val => setDealer(val === 'dealer')}
+          />
+          <Stepper
+            aria-label="積み棒"
+            className="scoring-table-screen__honba-stepper"
+            value={honba}
+            min={HONBA_MIN}
+            max={HONBA_MAX}
+            onStep={delta => setHonba(prev => clampHonba(prev + delta))}
+          />
+        </div>
 
         <div className="scoring-table__scroll">
           <table className="scoring-table scoring-table--fu-han">
@@ -193,6 +216,7 @@ export function ScoringTableScreen(): React.JSX.Element {
     <ScoringTableView
       seat={table.seat}
       rule={rule}
+      initialHonba={table.continue}
       onBack={() => dispatch({ type: 'navigate', screen: 'main' })}
     />
   );

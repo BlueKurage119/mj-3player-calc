@@ -7,6 +7,7 @@ const defaultRule = () => {
   const rule = createDefaultRule();
   return {
     tsumoLoss: rule.tsumoLoss,
+    honbaPoint: rule.honbaPoint,
     roundedMangan: rule.roundedMangan,
     accumlatedYakuman: rule.accumlatedYakuman,
     doubleWindFu: rule.doubleWindFu
@@ -20,6 +21,30 @@ const extractRadioStates = (html: string) => {
     )
   ];
   return matches.map(m => ({ label: m[2] ?? '', checked: m[1] === 'true' }));
+};
+
+const extractStepperState = (html: string, label: string) => {
+  const fieldsetMatch = html.match(
+    new RegExp(
+      `<fieldset[^>]*aria-label="${label}"[^>]*>[\\s\\S]*?<\\/fieldset>`
+    )
+  );
+  const block = fieldsetMatch?.[0] ?? '';
+  const valueMatch = block.match(/<output[^>]*>([^<]+)<\/output>/);
+  const minusMatch = block.match(
+    new RegExp(`<button[^>]*aria-label="${label}を減らす"[^>]*>`)
+  );
+  const plusMatch = block.match(
+    new RegExp(`<button[^>]*aria-label="${label}を増やす"[^>]*>`)
+  );
+  return {
+    present: Boolean(fieldsetMatch),
+    value: valueMatch?.[1] ?? null,
+    minusDisabled: minusMatch
+      ? /\bdisabled(?:=""|\b)/.test(minusMatch[0])
+      : null,
+    plusDisabled: plusMatch ? /\bdisabled(?:=""|\b)/.test(plusMatch[0]) : null
+  };
 };
 
 describe('H1: 点数計算表画面 (ScoringTableView)', () => {
@@ -81,14 +106,12 @@ describe('H1: 点数計算表画面 (ScoringTableView)', () => {
     ]);
   });
 
-  it('H1-22: 本場・供託の文字が描画結果に出ない', () => {
+  it('H1-22: 供託の文字が描画結果に出ない', () => {
     const html = renderToStaticMarkup(
       <ScoringTableView seat="south" rule={defaultRule()} onBack={() => {}} />
     );
 
-    // 理由: 本 Issue では本場・供託を範囲外としており、画面全体にそれらの文言が一切含まれないことを検証するため
-    expect(html.includes('本場')).toBe(false);
-    // 理由: 同様に供託に関する文言が一切含まれないことを検証するため
+    // 理由: Issue #105 では本場のみを導入し供託は範囲外のため、画面全体に供託の文言が一切含まれないことを検証する
     expect(html.includes('供託')).toBe(false);
   });
 
@@ -118,9 +141,127 @@ describe('H1: 点数計算表画面 (ScoringTableView)', () => {
           onBack={() => {}}
         />
       );
+      // 理由: 設定画面と同じ計算方式ラベルがヘッダーの専用 span に出力されることを確認するため
       expect(html).toContain(
         `<span class="scoring-table-screen__rule-label">${label}</span>`
       );
     }
+  });
+
+  it('H1-1-20: 積み棒ステッパーが描画され、初期値・境界値・クランプが正しく反映される', () => {
+    const omittedHtml = renderToStaticMarkup(
+      <ScoringTableView seat="south" rule={defaultRule()} onBack={() => {}} />
+    );
+    expect(extractStepperState(omittedHtml, '積み棒')).toEqual({
+      present: true,
+      value: '0',
+      minusDisabled: true,
+      plusDisabled: false
+    });
+
+    const maxHtml = renderToStaticMarkup(
+      <ScoringTableView
+        seat="south"
+        rule={defaultRule()}
+        initialHonba={99}
+        onBack={() => {}}
+      />
+    );
+    expect(extractStepperState(maxHtml, '積み棒')).toEqual({
+      present: true,
+      value: '99',
+      minusDisabled: false,
+      plusDisabled: true
+    });
+
+    const underMinHtml = renderToStaticMarkup(
+      <ScoringTableView
+        seat="south"
+        rule={defaultRule()}
+        initialHonba={-1}
+        onBack={() => {}}
+      />
+    );
+    expect(extractStepperState(underMinHtml, '積み棒')).toEqual({
+      present: true,
+      value: '0',
+      minusDisabled: true,
+      plusDisabled: false
+    });
+
+    const overMaxHtml = renderToStaticMarkup(
+      <ScoringTableView
+        seat="south"
+        rule={defaultRule()}
+        initialHonba={120}
+        onBack={() => {}}
+      />
+    );
+    expect(extractStepperState(overMaxHtml, '積み棒')).toEqual({
+      present: true,
+      value: '99',
+      minusDisabled: false,
+      plusDisabled: true
+    });
+  });
+
+  it('H1-1-21: initialHonba=1 で子・親の本場込み「は」表記が画面に描画される', () => {
+    // 出典: 四麻の点数早見表(Wikipedia「麻雀の得点計算」)および docs/mahjong-rules.md §3.1・§3.2
+    const childHtml = renderToStaticMarkup(
+      <ScoringTableView
+        seat="south"
+        rule={defaultRule()}
+        initialHonba={1}
+        onBack={() => {}}
+      />
+    );
+    // 理由: SSR HTML 文字列内の該当セル(子30符1飜ロン・ツモおよび5飜ロン)に本場込み表記が出力されることを検証するため
+    expect(childHtml).toContain('1,000 は 1,200');
+    // 理由: 子30符1飜ツモの本場込み表記が画面 HTML に出力されることを検証するため
+    expect(childHtml).toContain('300・500 は 400・600');
+    // 理由: 満貫5飜ロンの本場込み表記が画面 HTML に出力されることを検証するため
+    expect(childHtml).toContain('8,000 は 8,200');
+
+    const dealerHtml = renderToStaticMarkup(
+      <ScoringTableView
+        seat="east"
+        rule={defaultRule()}
+        initialHonba={1}
+        onBack={() => {}}
+      />
+    );
+    // 理由: 親30符1飜ツモの本場込み表記(「オール」1回)が画面 HTML に出力されることを検証するため
+    expect(dealerHtml).toContain('500 は 600オール');
+  });
+
+  it('H1-1-22: initialHonba=0 で「は」表記が含まれず本場0の表記が出る', () => {
+    // 出典: 四麻の点数早見表(Wikipedia「麻雀の得点計算」)および docs/mahjong-rules.md §3.2
+    const childHtml = renderToStaticMarkup(
+      <ScoringTableView
+        seat="south"
+        rule={defaultRule()}
+        initialHonba={0}
+        onBack={() => {}}
+      />
+    );
+    // 理由: 本場0の画面 HTML 全体に「は」併記が一切含まれないことを検証するため
+    expect(childHtml.includes(' は ')).toBe(false);
+    // 理由: 子30符1飜ロンの本場0表記が画面 HTML に出力されることを検証するため
+    expect(childHtml).toContain('>1,000<');
+    // 理由: 子30符1飜ツモの本場0表記が画面 HTML に出力されることを検証するため
+    expect(childHtml).toContain('>300・500<');
+
+    const dealerHtml = renderToStaticMarkup(
+      <ScoringTableView
+        seat="east"
+        rule={defaultRule()}
+        initialHonba={0}
+        onBack={() => {}}
+      />
+    );
+    // 理由: 本場0の親画面 HTML 全体に「は」併記が一切含まれないことを検証するため
+    expect(dealerHtml.includes(' は ')).toBe(false);
+    // 理由: 親30符1飜ツモの本場0表記が画面 HTML に出力されることを検証するため
+    expect(dealerHtml).toContain('>500オール<');
   });
 });

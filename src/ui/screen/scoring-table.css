@@ -24,8 +24,20 @@
   gap: 1rem;
 }
 
+.scoring-table-screen__controls {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
 .scoring-table-screen__dealer-toggle {
-  width: 100%;
+  flex: 1 1 10rem;
+  min-width: 0;
+}
+
+.scoring-table-screen__honba-stepper {
+  flex: 0 0 auto;
 }
 
 /* ヘッダー右端の計算方式(ツモ損の方式)。表示のみ */
