@@ -32,12 +32,28 @@
 }
 
 .scoring-table-screen__dealer-toggle {
-  flex: 1 1 10rem;
+  flex: 0 0 auto;
+}
+
+.scoring-table-screen__dealer-toggle .connected-button {
+  --expressive-morph-height: 2.75rem;
+
+  flex: 0 0 auto;
+  min-width: 3rem;
+  height: 2.75rem;
+  padding-inline: 0.875rem;
+}
+
+.scoring-table-screen__steppers {
+  flex: 1 1 8rem;
   min-width: 0;
+  display: flex;
+  gap: 0.5rem;
 }
 
 .scoring-table-screen__honba-stepper {
-  flex: 0 0 auto;
+  flex: 1 1 0;
+  min-width: 0;
 }
 
 /* ヘッダー右端の計算方式(ツモ損の方式)。表示のみ */
@@ -52,6 +68,13 @@
   line-height: var(--md-sys-typescale-label-small-line-height);
   font-weight: var(--md-sys-typescale-label-small-weight);
   white-space: nowrap;
+}
+
+/* ツモ損なし系(北家分折半・ロン打点折半)は強調トークンで識別する */
+.scoring-table-screen__rule-label[data-tsumo-loss="north-split"],
+.scoring-table-screen__rule-label[data-tsumo-loss="ron-split"] {
+  background-color: var(--md-sys-color-primary-container);
+  color: var(--md-sys-color-on-primary-container);
 }
 
 .scoring-table__scroll {

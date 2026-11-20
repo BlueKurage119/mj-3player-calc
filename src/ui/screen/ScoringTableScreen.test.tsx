@@ -143,7 +143,7 @@ describe('H1: 点数計算表画面 (ScoringTableView)', () => {
       );
       // 理由: 設定画面と同じ計算方式ラベルがヘッダーの専用 span に出力されることを確認するため
       expect(html).toContain(
-        `<span class="scoring-table-screen__rule-label">${label}</span>`
+        `<span class="scoring-table-screen__rule-label" data-tsumo-loss="${value}">${label}</span>`
       );
     }
   });
@@ -263,5 +263,26 @@ describe('H1: 点数計算表画面 (ScoringTableView)', () => {
     expect(dealerHtml.includes(' は ')).toBe(false);
     // 理由: 親30符1飜ツモの本場0表記が画面 HTML に出力されることを検証するため
     expect(dealerHtml).toContain('>500オール<');
+  });
+
+  it('H1-1-23: ツモ損ありとツモ損なし系で計算方式ラベルの強調判別属性が切り替わる', () => {
+    for (const [value, label] of [
+      ['loss', 'ツモ損あり'],
+      ['north-split', '北家分折半'],
+      ['ron-split', 'ロン打点折半']
+    ] as const) {
+      const html = renderToStaticMarkup(
+        <ScoringTableView
+          seat="east"
+          rule={{ ...defaultRule(), tsumoLoss: value }}
+          onBack={() => {}}
+        />
+      );
+      const match = html.match(
+        /<span class="scoring-table-screen__rule-label" data-tsumo-loss="([^"]*)">([^<]*)<\/span>/
+      );
+      expect(match?.[1]).toBe(value);
+      expect(match?.[2]).toBe(label);
+    }
   });
 });

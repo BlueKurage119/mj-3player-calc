@@ -105,7 +105,10 @@ export function ScoringTableView({
             <SymbolIcon d={SYMBOL_ARROW_BACK} />
           </IconButton>
           <h1 className="app-header__title">点数計算表</h1>
-          <span className="scoring-table-screen__rule-label">
+          <span
+            className="scoring-table-screen__rule-label"
+            data-tsumo-loss={rule.tsumoLoss}
+          >
             {getTsumoLossLabel(rule.tsumoLoss)}
           </span>
         </div>
@@ -119,14 +122,16 @@ export function ScoringTableView({
             value={dealer ? 'dealer' : 'child'}
             onValueChange={val => setDealer(val === 'dealer')}
           />
-          <Stepper
-            aria-label="積み棒"
-            className="scoring-table-screen__honba-stepper"
-            value={honba}
-            min={HONBA_MIN}
-            max={HONBA_MAX}
-            onStep={delta => setHonba(prev => clampHonba(prev + delta))}
-          />
+          <div className="scoring-table-screen__steppers">
+            <Stepper
+              aria-label="積み棒"
+              className="scoring-table-screen__honba-stepper"
+              value={honba}
+              min={HONBA_MIN}
+              max={HONBA_MAX}
+              onStep={delta => setHonba(prev => clampHonba(prev + delta))}
+            />
+          </div>
         </div>
 
         <div className="scoring-table__scroll">
