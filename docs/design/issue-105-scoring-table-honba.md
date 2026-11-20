@@ -349,12 +349,17 @@ export interface ScoringTableViewProps {
 1. **静的検査・全テスト**: `npm run lint`・`npm run typecheck`・`npm run format:check`・`npm test` がすべて終了コード 0 で通過する。
 2. **変更範囲の制約**:
    - `git diff --stat origin/main...HEAD -- src/core src/ui/expressive src/ui/state src/ui/result src/ui/App.tsx src/ui/screen/AppHeader.tsx src/ui/screen/MainScreen.tsx` が空である。
-   - `git diff --name-only origin/main...HEAD -- src` の出力が、以下の5ファイルの範囲内に収まっている:
+   - `git diff --name-only origin/main...HEAD` の出力が、以下の計 10 ファイル（当初 §2.1 の 5 ファイル＋§12 UI 監修でオーナー承認された 5 ファイル）の範囲内に収まっている:
      - `src/ui/scoring-table/scoring-table.ts`
      - `src/ui/scoring-table/scoring-table.test.ts`
      - `src/ui/screen/ScoringTableScreen.tsx`
      - `src/ui/screen/ScoringTableScreen.test.tsx`
      - `src/ui/screen/scoring-table.css`
+     - `scripts/gen-theme-tokens.ts`（§12.4 承認）
+     - `src/ui/theme/tokens.css`（§12.4 `npm run gen:theme` 再生成）
+     - `src/ui/theme/tokens.test.ts`（§12.4 追従）
+     - `docs/rules/06-ui-md3-protocol.md`（§12.4 仕様追記）
+     - `docs/design/issue-105-scoring-table-honba.md`（本設計書）
 3. **単体テストの網羅と出典**:
    - `npx vitest run src/ui/scoring-table src/ui/screen/ScoringTableScreen.test.tsx` の出力に、既存テスト `H1-01`〜`H1-06`・`H1-10`〜`H1-13`・`H1-20`〜`H1-23`・`H1-25` と、新規テスト `H1-1-01`〜`H1-1-06`・`H1-1-20`〜`H1-1-22` がすべて現れ通過する。
    - `H1-1-01`〜`H1-1-06` の期待値が §2.6 の表と一致し、出典コメントが記載されていることをテストコードで確認する。
