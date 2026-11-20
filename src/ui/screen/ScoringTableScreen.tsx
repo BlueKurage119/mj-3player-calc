@@ -112,8 +112,6 @@ export function ScoringTableView({
             {getTsumoLossLabel(rule.tsumoLoss)}
           </span>
         </div>
-      </header>
-      <main className="scoring-table-screen__content">
         <div className="scoring-table-screen__controls">
           <ConnectedButtonGroup<'dealer' | 'child'>
             label="親子"
@@ -133,7 +131,8 @@ export function ScoringTableView({
             />
           </div>
         </div>
-
+      </header>
+      <main className="scoring-table-screen__content">
         <div className="scoring-table__scroll">
           <table className="scoring-table scoring-table--fu-han">
             <thead>

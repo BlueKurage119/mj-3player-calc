@@ -73,24 +73,68 @@ export const COLOR_ROLES = [
 
 export type ColorRole = (typeof COLOR_ROLES)[number];
 
-const QUATERNARY_ROLES = [
-  { role: 'quaternary', source: 'tertiary' },
-  { role: 'onQuaternary', source: 'onTertiary' },
-  { role: 'quaternaryContainer', source: 'tertiaryContainer' },
-  { role: 'onQuaternaryContainer', source: 'onTertiaryContainer' }
-] as const;
-
+const EXTRA_PALETTE_CHROMA = 24.0;
 const QUATERNARY_HUE_OFFSET = -60;
-const QUATERNARY_CHROMA = 24.0;
+const QUINARY_HUE_OFFSET = -120;
+const SENARY_HUE_OFFSET = -180;
+
+const EXTRA_PALETTES = [
+  {
+    hueOffset: QUATERNARY_HUE_OFFSET,
+    roles: [
+      { role: 'quaternary', source: 'tertiary' },
+      { role: 'onQuaternary', source: 'onTertiary' },
+      { role: 'quaternaryContainer', source: 'tertiaryContainer' },
+      { role: 'onQuaternaryContainer', source: 'onTertiaryContainer' }
+    ]
+  },
+  {
+    hueOffset: QUINARY_HUE_OFFSET,
+    roles: [
+      { role: 'quinary', source: 'tertiary' },
+      { role: 'onQuinary', source: 'onTertiary' },
+      { role: 'quinaryContainer', source: 'tertiaryContainer' },
+      { role: 'onQuinaryContainer', source: 'onTertiaryContainer' }
+    ]
+  },
+  {
+    hueOffset: SENARY_HUE_OFFSET,
+    roles: [
+      { role: 'senary', source: 'tertiary' },
+      { role: 'onSenary', source: 'onTertiary' },
+      { role: 'senaryContainer', source: 'tertiaryContainer' },
+      { role: 'onSenaryContainer', source: 'onTertiaryContainer' }
+    ]
+  }
+] as const;
 
 function camelToKebab(str: string): string {
   return str.replace(/[A-Z]/g, match => `-${match.toLowerCase()}`);
 }
 
+function createExtraScheme(
+  hct: Hct,
+  hueOffset: number,
+  isDark: boolean
+): DynamicScheme {
+  const hue = (hct.hue + hueOffset + 360) % 360;
+  return new DynamicScheme({
+    sourceColorHct: hct,
+    variant: Variant.TONAL_SPOT,
+    contrastLevel: CONTRAST_LEVEL,
+    isDark,
+    specVersion: SPEC_VERSION,
+    tertiaryPalette: TonalPalette.fromHueAndChroma(hue, EXTRA_PALETTE_CHROMA)
+  });
+}
+
 function appendColorRoleLines(
   lines: string[],
   scheme: DynamicScheme,
-  quaternaryScheme: DynamicScheme
+  extraSchemes: readonly {
+    roles: (typeof EXTRA_PALETTES)[number]['roles'];
+    scheme: DynamicScheme;
+  }[]
 ): void {
   for (const role of COLOR_ROLES) {
     const dynamicColor = MaterialDynamicColors[role];
@@ -100,12 +144,14 @@ function appendColorRoleLines(
     lines.push(`  ${varName}: ${hex};`);
 
     if (role === 'onTertiaryContainer') {
-      for (const entry of QUATERNARY_ROLES) {
-        const quaternaryColor = MaterialDynamicColors[entry.source];
-        const quaternaryArgb = quaternaryColor.getArgb(quaternaryScheme);
-        const quaternaryHex = hexFromArgb(quaternaryArgb).toLowerCase();
-        const quaternaryVarName = `--md-sys-color-${camelToKebab(entry.role)}`;
-        lines.push(`  ${quaternaryVarName}: ${quaternaryHex};`);
+      for (const extra of extraSchemes) {
+        for (const entry of extra.roles) {
+          const extraColor = MaterialDynamicColors[entry.source];
+          const extraArgb = extraColor.getArgb(extra.scheme);
+          const extraHex = hexFromArgb(extraArgb).toLowerCase();
+          const extraVarName = `--md-sys-color-${camelToKebab(entry.role)}`;
+          lines.push(`  ${extraVarName}: ${extraHex};`);
+        }
       }
     }
   }
@@ -113,7 +159,6 @@ function appendColorRoleLines(
 
 export function generateTokensCss(): string {
   const hct = Hct.fromInt(argbFromHex(SEED));
-  const quaternaryHue = (hct.hue + QUATERNARY_HUE_OFFSET + 360) % 360;
   const lightScheme = new SchemeTonalSpot(
     hct,
     false,
@@ -126,28 +171,14 @@ export function generateTokensCss(): string {
     CONTRAST_LEVEL,
     SPEC_VERSION
   );
-  const quaternaryLightScheme = new DynamicScheme({
-    sourceColorHct: hct,
-    variant: Variant.TONAL_SPOT,
-    contrastLevel: CONTRAST_LEVEL,
-    isDark: false,
-    specVersion: SPEC_VERSION,
-    tertiaryPalette: TonalPalette.fromHueAndChroma(
-      quaternaryHue,
-      QUATERNARY_CHROMA
-    )
-  });
-  const quaternaryDarkScheme = new DynamicScheme({
-    sourceColorHct: hct,
-    variant: Variant.TONAL_SPOT,
-    contrastLevel: CONTRAST_LEVEL,
-    isDark: true,
-    specVersion: SPEC_VERSION,
-    tertiaryPalette: TonalPalette.fromHueAndChroma(
-      quaternaryHue,
-      QUATERNARY_CHROMA
-    )
-  });
+  const extraLightSchemes = EXTRA_PALETTES.map(palette => ({
+    roles: palette.roles,
+    scheme: createExtraScheme(hct, palette.hueOffset, false)
+  }));
+  const extraDarkSchemes = EXTRA_PALETTES.map(palette => ({
+    roles: palette.roles,
+    scheme: createExtraScheme(hct, palette.hueOffset, true)
+  }));
 
   const lines: string[] = [
     '/* 生成物。編集禁止。scripts/gen-theme-tokens.ts で再生成する(npm run gen:theme) */',
@@ -156,14 +187,14 @@ export function generateTokensCss(): string {
     '  color-scheme: light;'
   ];
 
-  appendColorRoleLines(lines, lightScheme, quaternaryLightScheme);
+  appendColorRoleLines(lines, lightScheme, extraLightSchemes);
 
   lines.push('}');
   lines.push('');
   lines.push(':root[data-theme="dark"] {');
   lines.push('  color-scheme: dark;');
 
-  appendColorRoleLines(lines, darkScheme, quaternaryDarkScheme);
+  appendColorRoleLines(lines, darkScheme, extraDarkSchemes);
 
   lines.push('}');
   lines.push(''); // 末尾改行

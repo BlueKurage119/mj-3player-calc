@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 const TOKENS_CSS_PATH = path.resolve(__dirname, 'tokens.css');
 const STATIC_TOKENS_CSS_PATH = path.resolve(__dirname, 'static-tokens.css');
 
-// 設計書 2.2 の固定リスト + Issue #123 クォータリー 4 役割 (計 53 役割・kebab-case)
+// 設計書 2.2 の固定リスト + Issue #123 クォータリー 4 役割 + Issue #105 quinary・senary 8 役割 (計 61 役割・kebab-case)
 const EXPECTED_COLOR_ROLES = [
   'primary',
   'on-primary',
@@ -24,6 +24,14 @@ const EXPECTED_COLOR_ROLES = [
   'on-quaternary',
   'quaternary-container',
   'on-quaternary-container',
+  'quinary',
+  'on-quinary',
+  'quinary-container',
+  'on-quinary-container',
+  'senary',
+  'on-senary',
+  'senary-container',
+  'on-senary-container',
   'error',
   'on-error',
   'error-container',
@@ -89,7 +97,7 @@ describe('トークン生成物の静的検査 (C1-K01〜K05)', () => {
     expect(tokensCss).toContain('--md-sys-color-surface: #10140f;');
   });
 
-  it('C1-K03: tokens.css の両ブロックで 53 役割の変数が過不足なく順序通り存在する', () => {
+  it('C1-K03: tokens.css の両ブロックで 61 役割の変数が過不足なく順序通り存在する', () => {
     const blocks = tokensCss.split(':root[data-theme="dark"]');
     expect(blocks.length).toBe(2);
     const lightBlock = blocks[0] ?? '';
@@ -111,8 +119,8 @@ describe('トークン生成物の静的検査 (C1-K01〜K05)', () => {
 
     expect(lightVars).toEqual(expectedVars);
     expect(darkVars).toEqual(expectedVars);
-    expect(lightVars.length).toBe(53);
-    expect(darkVars.length).toBe(53);
+    expect(lightVars.length).toBe(61);
+    expect(darkVars.length).toBe(61);
 
     // 不要・2025専用変数が含まれていないこと
     expect(tokensCss).not.toContain('-palette-key-color');

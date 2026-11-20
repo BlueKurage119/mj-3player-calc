@@ -24,12 +24,21 @@
   gap: 1rem;
 }
 
+.scoring-table-screen .app-header {
+  border-bottom: 1px solid var(--md-sys-color-outline-variant);
+}
+
 .scoring-table-screen__controls {
   display: flex;
   align-items: flex-end;
   justify-content: center;
   gap: 0.5rem;
   flex-wrap: wrap;
+  width: 100%;
+  max-width: var(--app-max-width, 600px);
+  margin-inline: auto;
+  padding: 0.25rem 1rem 0.5rem;
+  box-sizing: border-box;
 }
 
 .scoring-table-screen__steppers {
@@ -45,22 +54,30 @@
 }
 
 .scoring-table-screen__dealer-toggle .connected-button {
-  --expressive-morph-height: 2.75rem;
+  --expressive-morph-height: 2.5rem;
 
   flex: 1 1 0;
   min-width: 0;
-  height: 2.75rem;
+  height: 2.5rem;
   padding-inline: 0.25rem;
 }
 
+.scoring-table-screen__honba-stepper.stepper {
+  gap: 0.125rem;
+}
+
 .scoring-table-screen__honba-stepper .stepper__button {
+  --expressive-morph-height: 2.5rem;
+
   flex: 0 1 2.5rem;
   min-width: 2rem;
+  height: 2.5rem;
 }
 
 .scoring-table-screen__honba-stepper .stepper__value {
   flex: 1 1 0;
   min-width: 2ch;
+  height: 2.5rem;
 }
 
 /* ヘッダー右端の計算方式(ツモ損の方式)。表示のみ */
@@ -172,8 +189,8 @@
 }
 
 .scoring-table--limit tbody td {
-  font-size: 0.8125rem;
-  line-height: 1.3;
+  font-size: var(--md-sys-typescale-body-medium-size);
+  line-height: 1.25;
 }
 
 .scoring-table__limit-heading {
@@ -227,13 +244,13 @@
 }
 
 .scoring-table [data-limit="sanbaiman"] {
-  background-color: var(--md-sys-color-error-container);
-  color: var(--md-sys-color-on-error-container);
+  background-color: var(--md-sys-color-quinary-container);
+  color: var(--md-sys-color-on-quinary-container);
 }
 
 .scoring-table [data-limit="yakuman"] {
-  background-color: var(--md-sys-color-error);
-  color: var(--md-sys-color-on-error);
+  background-color: var(--md-sys-color-senary-container);
+  color: var(--md-sys-color-on-senary-container);
 }
 
 /* 色分けされた行・欄内の文字は背景トークンに対応する前景色を継承する */
