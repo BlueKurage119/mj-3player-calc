@@ -497,3 +497,4 @@ export interface ScoringTableViewProps {
 - **12.1（コミット `afbfb2a`）**: 「得点 / 点差」切替ボタン（`.scoring-table-screen__mode-toggle`）を `.scoring-table-screen__controls` からヘッダー 1 行目（`.app-header__inner`）の最右へ移動し、計算方式ピルをタイトル「点数計算表」のすぐ右へ配置（`margin-inline-start: 0`）。これにより 2 行目（`.scoring-table-screen__controls`）は「親/子・積み棒（・点差時は供託）」の 1 行のみとなり、点差モードでもヘッダー全体の高さと情報量がすっきり収まる構成とした（`H1-2-20` に配置検証を追加）。
 - **12.2（コミット `967dd16`）**: 「得点 / 点差」切替ボタンの幅も他スイッチと揃え、最小 100px（`6.25rem`）・最大 150px（`9.375rem`）に設定。
 - **12.3（コミット `8188d12`）**: ヘッダータイトル「点数計算表」の文字サイズを元の `.app-header__title`（`title-large`）へ戻した。
+- **12.4（検収後・案A オーナー確定）**: `.scoring-table-screen .app-header__inner` の上下パディングを `0.5rem`、`.scoring-table-screen__back-button` を `min-width: 3rem; min-height: 3rem;` へ戻し、ヘッダー 1 行目の高さを他画面（主画面・設定画面）と同じ 64px に揃えた。
