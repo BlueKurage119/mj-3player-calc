@@ -21,8 +21,6 @@
 }
 
 .scoring-table-screen .app-header__title {
-  font-size: var(--md-sys-typescale-title-medium-size);
-  line-height: var(--md-sys-typescale-title-medium-line-height);
   white-space: nowrap;
   flex-shrink: 0;
 }
