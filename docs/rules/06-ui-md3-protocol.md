@@ -13,7 +13,7 @@ products: [Claude, Codex, Antigravity]
 
 ## テーマ(C1 で確定)
 
-1. シード `#1B5E20`・SchemeTonalSpot・contrast 0・spec `'2021'`(明示指定)。利用者変更なし。クォータリーカラー（山吹色、Issue #123 で追加）として、シード `#1B5E20` の色相を赤側に 60° 下げ（`(hue - 60 + 360) % 360`）・クロマ `24.0` としたパレットに対し同スキーム（`DynamicScheme` / `Variant.TONAL_SPOT`・contrast `0`・spec `'2021'`）で `quaternary`・`onQuaternary`・`quaternaryContainer`・`onQuaternaryContainer` の 4 ロールを生成し `tokens.css` に含める。
+1. シード `#1B5E20`・SchemeTonalSpot・contrast 0・spec `'2021'`(明示指定)。利用者変更なし。クォータリーカラー（山吹色、Issue #123 で追加）として、シード `#1B5E20` の色相を赤側に 60° 下げ（`(hue - 60 + 360) % 360`）・クロマ `24.0` としたパレットに対し同スキーム（`DynamicScheme` / `Variant.TONAL_SPOT`・contrast `0`・spec `'2021'`）で `quaternary`・`onQuaternary`・`quaternaryContainer`・`onQuaternaryContainer` の 4 ロールを生成し `tokens.css` に含める。さらに Issue #105 の満貫以上階調表示用として、同様に色相を `-120°`（`(hue - 120 + 360) % 360`、クロマ `24.0`）とした `quinary` 系 4 ロール（`quinary`・`onQuinary`・`quinaryContainer`・`onQuinaryContainer`）、および `-180°`（`(hue - 180 + 360) % 360`、クロマ `24.0`）とした `senary` 系 4 ロール（`senary`・`onSenary`・`senaryContainer`・`onSenaryContainer`）を生成し `tokens.css` に含める。
 2. ライト/ダーク: `'auto' | 'light' | 'dark'`、既定 auto、`<html data-theme>` で切替。OS 設定に連動する要素（プレビューのステータスバー連動ライン等）のための `<html data-os-theme>` の解決も `src/ui/theme/apply-theme.ts` に集約し、CSS で `prefers-color-scheme` を直接使わない原則を維持する。
 3. 生成手順: シードやライブラリ版を変えたら `npm run gen:theme` で `src/ui/theme/tokens.css` を再生成してコミット。`tokens.css` は手編集禁止。CI の `check:theme` が差分を検出する。
 4. spring モーションは Expressive 方式(`--md-sys-motion-spring-*`)を使う。形状・モーション・タイポグラフィも `--md-sys-shape-*`・`--md-sys-motion-*`・`--md-sys-typescale-*` を使い、px・ms・cubic-bezier を部品に直書きしない。
