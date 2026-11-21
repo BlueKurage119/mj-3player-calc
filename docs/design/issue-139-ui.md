@@ -393,3 +393,14 @@ export interface TurnChartProps { series: ChartSeries[]; displayTurn: number }
 | 14枚・M=1 の所要時間 | 未実行 | **未確認**(E-1b) |
 
 注: 計測のため `npm ci` と `npm run build:wasm` を実行した(`node_modules`・`wasm/*/pkg`・`dist` は Git 管理外。`git status --porcelain` は計測後も空)。
+
+## 13. 製造時の確定値(製造担当の追記)
+
+実測の詳細は [docs/research/issue-139-ui-build-record.md](../research/issue-139-ui-build-record.md)。
+
+- E-1: 14枚(C-01〜C-04、開始向聴1)の `oneShantenSlack: true`(M=0)は中央値 436〜1,304 ms。14枚でも true のまま
+- E-1: 13枚聴牌(2手)は M=0 と M=1 の結果が完全一致。13枚の聴牌・1向聴では計算方法の2択を出さない
+- E-1b: 14枚・M=1 は C-01 23 s、C-07 69 s、C-05 139 s、C-09 51 s。10 分超の手はなし
+- 閾値 N = 5 秒(仮置きのまま確定)。判定表は `src/ui/engine/engine-estimate.ts`(該当: 13枚の詳しく×3向聴、14枚の概算×開始向聴2、14枚の詳しく×開始向聴1〜3)
+- 初回JS: 129,480 B(基準 128,930 B との差 +550 B。目標値 129,230 B を 250 B 超過)
+
