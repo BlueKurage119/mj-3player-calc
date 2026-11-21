@@ -1,6 +1,6 @@
 # Issue #138 F3-1. 計算エンジン(聴牌確率・和了確率・期待値)設計書
 
-- 状態: 第14版。承認済み。Q1〜Q21 はすべて確定(Q18 は A-5c(MC)の結果を見てオーナーが共通 s_ref に確定)
+- 状態: 第15版(Worker の起動・初期化失敗からの復旧を §5.2 に追記。PR レビュー指摘の反映)。承認済み。Q1〜Q21 はすべて確定(Q18 は A-5c(MC)の結果を見てオーナーが共通 s_ref に確定)
 - 第14版の変更(D-1a 後のオーナー確定): (1) M の既定は 0(`DEFAULT_ENGINE_OPTIONS.diffSlack = 0`)、加えて 1向聴(s_ref=1)だけ M=1 にするオプション `oneShantenSlack`(既定 false)を追加(§3.6a の型)。(2) 14枚入力の速度超過は #139 の UI で対処(エンジンは変えない)。(3) Q18 は共通 s_ref で確定(A-5c・D-1a(c) の比較後。対案S は測定用の内部フラグとして残すが製品の既定にしない)。(4) Q16 後退案は不要(B′ と B′+戻しの差は測定上ごく小さく、M=0 は全手 1,000 ms 未満)。(5) A-5d(2) は戻し先が維持だけでも到達できるため「戻しでしか到達しない手」の検査を外し、「向聴が増える遷移が存在する(戻しの辺が1本以上)」の検査とする。(6) A-5c・D-1 の「既定」は diffSlack=0、oneShantenSlack=false に加え、oneShantenSlack=true も1向聴の手で測る
 - 設計担当モデル: Claude Opus 5.5(claude-opus-5-5)
 - 親: #111(F3)。前提: #136(F3-0a 機能調査)・#137(F3-0 速度スパイク)完了
@@ -311,7 +311,7 @@ export function evaluateTempaiForm(form: TileCounts, ctx: EvalContext): Evaluate
 ```
 
 - 14枚入力の候補: 打牌後の向聴が3以下の牌の種類すべて。ev の降順、同値は win・tenpai の降順、牌順(確定 Q7: 向聴を増やす打牌も、打牌後が3向聴以下なら出す)
-- `client.ts`: `requestEngine(req): Promise<EngineResponse>`。新しい要求が来たら古い要求の Promise は `{type:'error', message:'cancelled'}` で解決し、Worker を terminate して作り直す
+- `client.ts`: `requestEngine(req): Promise<EngineResponse>`。新しい要求が来たら古い要求の Promise は `{type:'error', message:'cancelled'}` で解決し、Worker を terminate して作り直す。Worker の起動失敗(`onerror`)と、初期化失敗の応答(Worker 内部の補助型 `EngineWorkerMessage` の `fatal?: boolean` が真のエラー応答。計測用の `meta?` も同型)を受けたときも、現在の要求を error で解決したうえで Worker を破棄し、次の要求で作り直す(第15版。通常の計算エラーでは作り直さない)
 
 ### 5.3 Rust の公開関数(要点)
 
