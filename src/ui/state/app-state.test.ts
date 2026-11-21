@@ -161,6 +161,8 @@ describe('D1: 状態管理と reducer (条件6〜9)', () => {
     const populated: AppState = {
       screen: 'main',
       returnScreen: 'main',
+      helpFocus: null,
+      helpReturn: 'main',
       rule: customRule,
       table: {
         round: 'south',
@@ -255,6 +257,8 @@ describe('D1: 状態管理と reducer (条件6〜9)', () => {
     expect(initial).toEqual({
       screen: 'main',
       returnScreen: 'main',
+      helpFocus: null,
+      helpReturn: 'main',
       rule,
       table: {
         round: 'east',
@@ -2391,5 +2395,59 @@ describe('G4: ヘルプ画面からのライセンス画面への遷移', () => 
       screen: toLicense.returnScreen
     });
     expect(back.screen).toBe('help');
+  });
+});
+
+describe('Issue #139: 確率・期待値の画面への遷移とヘルプの戻り先', () => {
+  it('U-3: navigate で engine に入り、main に戻っても入力が保持される', () => {
+    const initial = createInitialState(createDefaultRule());
+    const withTile = appReducer(initial, {
+      type: 'add-hand-tile',
+      tile: { type: 'z', n: 1 }
+    });
+    const inEngine = appReducer(withTile, {
+      type: 'navigate',
+      screen: 'engine'
+    });
+    expect(inEngine.screen).toBe('engine');
+    const back = appReducer(inEngine, { type: 'navigate', screen: 'main' });
+    expect(back.screen).toBe('main');
+    expect(back.input).toEqual(withTile.input);
+  });
+
+  it('U-11: open-help で helpFocus・helpReturn が入り、ライセンス画面への往復では保持され、ヘルプを離れると捨てる', () => {
+    const initial = createInitialState(createDefaultRule());
+    const inHelp = appReducer(initial, {
+      type: 'open-help',
+      focus: 'engine',
+      returnTo: 'engine'
+    });
+    expect(inHelp).toMatchObject({
+      screen: 'help',
+      helpFocus: 'engine',
+      helpReturn: 'engine'
+    });
+    const toLicense = appReducer(inHelp, {
+      type: 'navigate',
+      screen: 'license',
+      returnTo: 'help'
+    });
+    const backToHelp = appReducer(toLicense, {
+      type: 'navigate',
+      screen: 'help'
+    });
+    expect(backToHelp).toMatchObject({
+      helpFocus: 'engine',
+      helpReturn: 'engine'
+    });
+    const left = appReducer(backToHelp, {
+      type: 'navigate',
+      screen: backToHelp.helpReturn
+    });
+    expect(left).toMatchObject({
+      screen: 'engine',
+      helpFocus: null,
+      helpReturn: 'main'
+    });
   });
 });

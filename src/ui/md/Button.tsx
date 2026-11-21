@@ -24,6 +24,8 @@ export interface ButtonProps {
   type?: 'button' | 'submit' | 'reset' | undefined;
   onClick?: React.MouseEventHandler<HTMLElement> | undefined;
   className?: string | undefined;
+  /** ラベルの前に置くアイコン(slot="icon" として渡す) */
+  icon?: React.ReactNode | undefined;
   children?: React.ReactNode | undefined;
 }
 
@@ -36,6 +38,7 @@ export function Button(props: ButtonProps): React.JSX.Element {
     type = 'button',
     onClick,
     className,
+    icon,
     children
   } = props;
 
@@ -55,6 +58,7 @@ export function Button(props: ButtonProps): React.JSX.Element {
           onClick={onClick}
           className={className}
         >
+          {icon ? <span slot="icon">{icon}</span> : null}
           {children}
         </md-filled-button>
       );
@@ -69,6 +73,7 @@ export function Button(props: ButtonProps): React.JSX.Element {
           onClick={onClick}
           className={className}
         >
+          {icon ? <span slot="icon">{icon}</span> : null}
           {children}
         </md-filled-tonal-button>
       );
@@ -83,6 +88,7 @@ export function Button(props: ButtonProps): React.JSX.Element {
           onClick={onClick}
           className={className}
         >
+          {icon ? <span slot="icon">{icon}</span> : null}
           {children}
         </md-outlined-button>
       );
@@ -97,6 +103,7 @@ export function Button(props: ButtonProps): React.JSX.Element {
           onClick={onClick}
           className={className}
         >
+          {icon ? <span slot="icon">{icon}</span> : null}
           {children}
         </md-text-button>
       );

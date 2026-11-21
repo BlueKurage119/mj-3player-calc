@@ -63,6 +63,11 @@
   --md-sys-color-shadow: #000000;
   --md-sys-color-scrim: #000000;
   --md-sys-color-surface-tint: #3c6939;
+  --md-sys-color-chart-primary: #548250;
+  --md-sys-color-chart-tertiary: #527e83;
+  --md-sys-color-chart-senary: #8b6d8d;
+  --md-sys-color-chart-quinary: #9e6a63;
+  --md-sys-color-chart-quaternary: #8b7444;
 }
 
 :root[data-theme="dark"] {
@@ -128,4 +133,9 @@
   --md-sys-color-shadow: #000000;
   --md-sys-color-scrim: #000000;
   --md-sys-color-surface-tint: #a1d399;
+  --md-sys-color-chart-primary: #a1d399;
+  --md-sys-color-chart-tertiary: #a0cfd4;
+  --md-sys-color-chart-senary: #debcdf;
+  --md-sys-color-chart-quinary: #f5b7af;
+  --md-sys-color-chart-quaternary: #dfc38c;
 }

@@ -1,6 +1,7 @@
 import { useLayoutEffect, useRef } from 'react';
 import type React from 'react';
 import type { Table } from '../../core/table';
+import type { Tile as TileType } from '../../core/tile';
 import { CUSTOM_DEPOSIT_STICK, CUSTOM_HONBA_STICK, SymbolIcon } from '../icons';
 import {
   formatWinds,
@@ -16,11 +17,14 @@ export interface SummaryStatusRowProps {
   table: Table;
   /** 抜き北の枚数。undefined のとき(抜き北なしのルール)は表示しない */
   nuki?: number | undefined;
+  /** false のとき積み棒・供託のピルを出さない(既定 true) */
+  showCounters?: boolean | undefined;
 }
 
 export function SummaryStatusRow({
   table,
-  nuki
+  nuki,
+  showCounters = true
 }: SummaryStatusRowProps): React.JSX.Element {
   return (
     <div
@@ -29,26 +33,30 @@ export function SummaryStatusRow({
     >
       <span className="summary-card__winds">{formatWinds(table)}</span>
       <div className="summary-card__counters">
-        <span
-          className="summary-card__pill"
-          role="img"
-          aria-label={`積み棒 ${table.continue}`}
-        >
-          <span className="summary-card__pill-inner" aria-hidden="true">
-            <SymbolIcon d={CUSTOM_HONBA_STICK} size="2rem" />
-            <span className="summary-card__count">{table.continue}</span>
-          </span>
-        </span>
-        <span
-          className="summary-card__pill"
-          role="img"
-          aria-label={`供託 ${table.deposit}`}
-        >
-          <span className="summary-card__pill-inner" aria-hidden="true">
-            <SymbolIcon d={CUSTOM_DEPOSIT_STICK} size="2rem" />
-            <span className="summary-card__count">{table.deposit}</span>
-          </span>
-        </span>
+        {showCounters ? (
+          <>
+            <span
+              className="summary-card__pill"
+              role="img"
+              aria-label={`積み棒 ${table.continue}`}
+            >
+              <span className="summary-card__pill-inner" aria-hidden="true">
+                <SymbolIcon d={CUSTOM_HONBA_STICK} size="2rem" />
+                <span className="summary-card__count">{table.continue}</span>
+              </span>
+            </span>
+            <span
+              className="summary-card__pill"
+              role="img"
+              aria-label={`供託 ${table.deposit}`}
+            >
+              <span className="summary-card__pill-inner" aria-hidden="true">
+                <SymbolIcon d={CUSTOM_DEPOSIT_STICK} size="2rem" />
+                <span className="summary-card__count">{table.deposit}</span>
+              </span>
+            </span>
+          </>
+        ) : null}
         {nuki === undefined ? null : (
           <span
             className="summary-card__pill"
@@ -117,30 +125,54 @@ function useFitTiles(ref: React.RefObject<HTMLElement | null>): void {
   }, [ref]);
 }
 
+export interface SummaryDoraRowViewProps {
+  dora: readonly TileType[];
+  /** undefined のとき、裏ドラの列は出さない */
+  uradora?: readonly TileType[] | undefined;
+  rowRef?: React.Ref<HTMLDivElement> | undefined;
+}
+
+/** ドラ(と裏ドラ)の行の描画本体 */
+export function SummaryDoraRowView({
+  dora,
+  uradora,
+  rowRef
+}: SummaryDoraRowViewProps): React.JSX.Element {
+  return (
+    <div
+      ref={rowRef}
+      className="summary-card__row summary-card__dora"
+      data-slot="summary-dora"
+    >
+      <div className="summary-card__tiles">
+        <span className="summary-card__label">ドラ</span>
+        {dora.map((tile, idx) => (
+          <Tile key={`d${tile.type}${tile.n}-${idx}`} tile={tile} />
+        ))}
+      </div>
+      {uradora ? (
+        <div className="summary-card__tiles">
+          <span className="summary-card__label">裏</span>
+          {uradora.map((tile, idx) => (
+            <Tile key={`u${tile.type}${tile.n}-${idx}`} tile={tile} />
+          ))}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 function SummaryDoraRow(): React.JSX.Element {
   const { input } = useAppState();
   const ref = useRef<HTMLDivElement | null>(null);
   useFitTiles(ref);
 
   return (
-    <div
-      ref={ref}
-      className="summary-card__row summary-card__dora"
-      data-slot="summary-dora"
-    >
-      <div className="summary-card__tiles">
-        <span className="summary-card__label">ドラ</span>
-        {input.dora.map((tile, idx) => (
-          <Tile key={`d${tile.type}${tile.n}-${idx}`} tile={tile} />
-        ))}
-      </div>
-      <div className="summary-card__tiles">
-        <span className="summary-card__label">裏</span>
-        {input.uradora.map((tile, idx) => (
-          <Tile key={`u${tile.type}${tile.n}-${idx}`} tile={tile} />
-        ))}
-      </div>
-    </div>
+    <SummaryDoraRowView
+      rowRef={ref}
+      dora={input.dora}
+      uradora={input.uradora}
+    />
   );
 }
 

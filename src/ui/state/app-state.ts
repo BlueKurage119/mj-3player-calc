@@ -29,7 +29,14 @@ import {
   normalizeHandOptions
 } from './situation-rules';
 
-export type Screen = 'main' | 'settings' | 'scoring-table' | 'license' | 'help';
+export type Screen =
+  | 'main'
+  | 'settings'
+  | 'scoring-table'
+  | 'license'
+  | 'help'
+  | 'engine';
+export type HelpFocus = 'engine';
 export type SheetMode = 'palette' | 'tenkey';
 export type TenkeySuit = 'm' | 'p' | 's' | 'z';
 export type MeldKind = 'pon' | 'minkan' | 'ankan';
@@ -44,6 +51,8 @@ export type AppInput = Input & { uradora: Tile[] };
 export interface AppState {
   screen: Screen;
   returnScreen: Screen; // ライセンス画面の「戻る」の行き先。初期値 'main'
+  helpFocus: HelpFocus | null; // ヘルプ画面で開いて見せる節。通常は null
+  helpReturn: Screen; // ヘルプ画面の「戻る」の行き先。初期値 'main'
   rule: Rule;
   table: Table;
   input: AppInput;
@@ -54,6 +63,7 @@ export interface AppState {
 }
 export type AppAction =
   | { type: 'navigate'; screen: Screen; returnTo?: Screen | undefined }
+  | { type: 'open-help'; focus: HelpFocus; returnTo: Screen }
   | { type: 'open-sheet'; target: SheetTarget }
   | { type: 'close-sheet' }
   | { type: 'set-wind'; field: 'round' | 'seat'; wind: Wind }
@@ -111,6 +121,8 @@ export const isNukiEnabled = (rule: Rule): boolean => rule.north !== 'yakuhai';
 export const createInitialState = (rule: Rule): AppState => ({
   screen: 'main',
   returnScreen: 'main',
+  helpFocus: null,
+  helpReturn: 'main',
   rule,
   table: {
     round: 'east',
@@ -172,7 +184,19 @@ export const appReducer = (state: AppState, action: AppAction): AppState => {
         screen: action.screen,
         ...(action.returnTo !== undefined
           ? { returnScreen: action.returnTo }
+          : {}),
+        // ヘルプ画面を離れる(ライセンス画面への往復を除く)とき、節の指定と戻り先を捨てる
+        ...(state.screen === 'help' && action.screen !== 'license'
+          ? { helpFocus: null, helpReturn: 'main' as const }
           : {})
+      };
+
+    case 'open-help':
+      return {
+        ...state,
+        screen: 'help',
+        helpFocus: action.focus,
+        helpReturn: action.returnTo
       };
 
     case 'open-sheet': {

@@ -11,6 +11,7 @@ import {
   formatDiscardRange,
   sortDiscards
 } from './discard-summary';
+import { EngineButton } from './EngineButton';
 import { GlanceTiles, summarizeAcceptance } from './slots';
 
 const tileKey = (t: CoreTile): string =>
@@ -127,11 +128,14 @@ export function DiscardItem({
 export interface DiscardBodyProps {
   discards: Discard[];
   onDiscard?: ((tile: CoreTile) => void) | undefined;
+  /** 指定時のみ、見出し行(右端)に「計算」ボタンを出す */
+  onOpenEngine?: (() => void) | undefined;
 }
 
 export function DiscardBody({
   discards,
-  onDiscard
+  onDiscard,
+  onOpenEngine
 }: DiscardBodyProps): React.JSX.Element {
   if (discards.length === 0) {
     return (
@@ -148,7 +152,14 @@ export function DiscardBody({
       data-result-kind="discard"
       className="result-body result-body--discard"
     >
-      <h2 className="result-body__title">{heading}</h2>
+      {onOpenEngine ? (
+        <div className="result-body__heading result-body__heading--action">
+          <h2 className="result-body__title">{heading}</h2>
+          <EngineButton onClick={onOpenEngine} />
+        </div>
+      ) : (
+        <h2 className="result-body__title">{heading}</h2>
+      )}
       <ul className="discard-list">
         {sorted.map((d, i) => (
           <DiscardItem

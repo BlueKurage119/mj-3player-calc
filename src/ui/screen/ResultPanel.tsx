@@ -7,6 +7,7 @@ import {
   ShisanputaFormedBanner
 } from '../result/ShisanputaNotice';
 import { classifyResult } from '../result/classify';
+import { isEngineEntryAvailable } from '../result/engine-entry';
 import type { ResultContext } from '../result/hora/HoraDetail';
 import { preloadHoraDetail } from '../result/slots';
 
@@ -16,6 +17,10 @@ export interface ResultPanelProps {
   context?: ResultContext | undefined;
   tileActions?: ResultTileActions | undefined;
   onEnableTenho?: (() => void) | undefined;
+  /** 確率・期待値の画面への入口。handLength・meldCount は出す条件の判定に使う */
+  engineEntry?:
+    | { onOpen: () => void; handLength: number; meldCount: number }
+    | undefined;
   ref?: React.Ref<HTMLElement> | undefined;
 }
 
@@ -26,6 +31,7 @@ export function ResultPanel(props: ResultPanelProps): React.JSX.Element {
     context,
     tileActions,
     onEnableTenho,
+    engineEntry,
     ref
   } = props;
 
@@ -103,6 +109,16 @@ export function ResultPanel(props: ResultPanelProps): React.JSX.Element {
               view={view}
               context={context}
               tileActions={tileActions}
+              onOpenEngine={
+                engineEntry &&
+                isEngineEntryAvailable(
+                  view,
+                  engineEntry.handLength,
+                  engineEntry.meldCount
+                )
+                  ? engineEntry.onOpen
+                  : undefined
+              }
             />
           )}
         </div>

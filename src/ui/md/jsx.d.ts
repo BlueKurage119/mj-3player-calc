@@ -21,6 +21,7 @@ import type { MdMenu } from '@material/web/menu/menu.js';
 import type { MdRipple } from '@material/web/ripple/ripple.js';
 import type { MdOutlinedSelect } from '@material/web/select/outlined-select.js';
 import type { MdSelectOption } from '@material/web/select/select-option.js';
+import type { MdSlider } from '@material/web/slider/slider.js';
 import type { MdSwitch } from '@material/web/switch/switch.js';
 import type { MdPrimaryTab } from '@material/web/tabs/primary-tab.js';
 import type { MdTabs } from '@material/web/tabs/tabs.js';
@@ -96,6 +97,15 @@ declare module 'react' {
       'md-switch': CustomElementBaseProps<MdSwitch> & {
         disabled?: boolean | undefined;
         selected?: boolean | undefined;
+      };
+
+      'md-slider': CustomElementBaseProps<MdSlider> & {
+        min?: number | undefined;
+        max?: number | undefined;
+        step?: number | undefined;
+        value?: number | undefined;
+        labeled?: boolean | undefined;
+        disabled?: boolean | undefined;
       };
 
       'md-dialog': CustomElementBaseProps<MdDialog> & {

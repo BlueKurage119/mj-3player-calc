@@ -91,3 +91,31 @@ describe('G3: バージョン表示 (G3-T1〜T3)', () => {
     expect(versionIndex).toBeGreaterThan(licenseIndex);
   });
 });
+
+describe('Issue #139 U-11: ヘルプの「確率・期待値」の節', () => {
+  const sectionOf = (html: string): string => {
+    const i = html.indexOf('id="help-engine"');
+    expect(i).toBeGreaterThan(-1);
+    return html.slice(i, html.indexOf('ライセンス', i));
+  };
+
+  it('focus="engine" のとき、節の本文が開いた状態で見える(hidden が付かない)', () => {
+    const html = renderToStaticMarkup(
+      <HelpView onBack={() => {}} onOpenLicense={() => {}} focus="engine" />
+    );
+    const section = sectionOf(html);
+    expect(section).toContain('aria-expanded="true"');
+    expect(section).not.toContain('hidden=""');
+    expect(section).toContain('一人麻雀');
+    expect(section).toContain('裏ドラは牌が決まらない');
+  });
+
+  it('直接開いたとき(focus 指定なし)は既存の節と同じく閉じている', () => {
+    const html = renderToStaticMarkup(
+      <HelpView onBack={() => {}} onOpenLicense={() => {}} />
+    );
+    const section = sectionOf(html);
+    expect(section).toContain('aria-expanded="false"');
+    expect(section).toContain('hidden=""');
+  });
+});
