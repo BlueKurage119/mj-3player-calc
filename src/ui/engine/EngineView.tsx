@@ -39,7 +39,12 @@ export interface EngineViewProps {
   onCancel: () => void;
   result: Pick<
     EngineResultProps,
-    'displayTurn' | 'onTurnChange' | 'selectedIndex' | 'onSelect'
+    | 'displayTurn'
+    | 'onTurnChange'
+    | 'selectedIndex'
+    | 'onSelect'
+    | 'rankMetric'
+    | 'onRankMetricChange'
   >;
 }
 

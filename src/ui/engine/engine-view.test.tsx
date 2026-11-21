@@ -7,6 +7,7 @@ import { CHART_TURNS } from './chart-series';
 import type { EngineRunState } from './engine-run';
 
 const noop = () => {};
+const TABLE = { round: 'east', seat: 'east', continue: 0, deposit: 0 } as const;
 
 const turns = (f: (d: number) => Partial<TurnStat>): TurnStat[] =>
   Array.from({ length: CHART_TURNS }, (_, i) => ({
@@ -37,7 +38,7 @@ const view = (over: Partial<EngineViewProps> = {}): EngineViewProps => ({
   onBack: noop,
   onOpenHelp: noop,
   tiles: [{ type: 'z', n: 1 }],
-  premise: { dora: [], nuki: 0, round: 'east', seat: 'east' },
+  premise: { table: TABLE, dora: [], nuki: 0 },
   available: true,
   methodChoice: true,
   detailed: false,
@@ -50,7 +51,9 @@ const view = (over: Partial<EngineViewProps> = {}): EngineViewProps => ({
     displayTurn: 3,
     onTurnChange: noop,
     selectedIndex: null,
-    onSelect: noop
+    onSelect: noop,
+    rankMetric: 'ev',
+    onRankMetricChange: noop
   },
   ...over
 });
@@ -116,60 +119,118 @@ describe('EngineView: 実行前後の表示', () => {
 describe('EngineView: 結果', () => {
   const c13 = cand(null, d => ({ win: d / 100, tenpai: d / 50, ev: d * 100 }));
 
-  it('U-6/U-7: 13枚は1組の要約(表示巡目3の値)・グラフ(折れ線2本)・18行の表。18行目は要約の18巡目の値と一致する', () => {
+  it('U-6/U-7: 13枚は1組の要約(3巡目 = draw 15 の値)・グラフ(折れ線2本)・18行の表。1巡目は draw 17、18巡目は補った値', () => {
     const html = render(view({ run: done([c13]) }));
-    // 3巡目: win 0.03 / tenpai 0.06 / ev 300
-    expect(html).toContain('3.0%');
-    expect(html).toContain('6.0%');
-    expect(html).toContain('>300<');
+    // 3巡目: 残り15回 = win 0.15 / tenpai 0.30 / ev 1,500
+    expect(html).toContain('15.0%');
+    expect(html).toContain('30.0%');
+    expect(html).toContain('>1,500<');
     expect(html).not.toContain('engine-candidates');
     expect(html.match(/class="turn-chart__line"/g)?.length).toBe(2);
-    const rows = html.match(/<tr class="turn-table__row"/g) ?? [];
+    const rows = html.match(/<tr class="turn-table__row"[\s\S]*?<\/tr>/g) ?? [];
     expect(rows.length).toBe(18);
-    // 18行目(18巡目): win 18.0% / tenpai 36.0% / ev 1,800 が c13.win・tenpai・ev と一致
-    const last =
-      html.match(/<tr class="turn-table__row"[^>]*>(?:(?!<tr)[\s\S])*$/)?.[0] ??
-      '';
-    expect(last).toContain('36.0%');
-    expect(last).toContain('18.0%');
-    expect(last).toContain('1,800');
-    expect(c13.win).toBe(0.18);
-    expect(c13.tenpai).toBe(0.36);
-    expect(c13.ev).toBe(1800);
+    // 1行目(1巡目 = 残り17回 = draw 17): win 17.0% / tenpai 34.0% / ev 1,700
+    expect(rows[0]).toContain('34.0%');
+    expect(rows[0]).toContain('17.0%');
+    expect(rows[0]).toContain('1,700');
+    // 17行目(17巡目 = 残り1回 = draw 1): win 1.0% / ev 100
+    expect(rows[16]).toContain('1.0%');
+    expect(rows[16]).toContain('>100<');
+    // 18行目(18巡目 = 残り0回): 和了率 0.0%・期待値 0、聴牌率は向聴1なので 0.0%
+    expect(rows[17]).toContain('0.0%');
+    expect(rows[17]).toContain('>0<');
+    expect(rows[17]).not.toContain('100.0%');
     // 表示巡目の行が強調される
     expect(html.match(/data-current="true"/g)?.length).toBe(1);
   });
 
-  it('表示巡目を変えると表示が perTurn[i-1] に変わる', () => {
+  it('表示巡目を 1 / 17 / 18 にすると、要約が draw 17 / draw 1 / 補った値に変わる', () => {
     const p = view({ run: done([c13]) });
-    const html = render({ ...p, result: { ...p.result, displayTurn: 10 } });
-    expect(html).toContain('10.0%');
-    expect(html).toContain('20.0%');
-    expect(html).toContain('>1,000<');
+    const at = (displayTurn: number) =>
+      render({ ...p, result: { ...p.result, displayTurn } });
+    expect(at(1)).toContain('>1,700<');
+    expect(at(17)).toContain('>100<');
+    const h18 = at(18);
+    expect(h18).toContain('class="engine-summary"');
+    expect(h18.match(/engine-summary[\s\S]*?<\/dl>/)?.[0]).toContain('>0<');
   });
 
-  it('U-6: 14枚は候補ごとの行が表示巡目の期待値の降順に並び、先頭行が選択されている。selectedIndex で切り替わる', () => {
-    const a = cand({ type: 'z', n: 1 }, () => ({ ev: 100, win: 0.1 }));
+  it('現在の巡目が「n巡目」で表示される', () => {
+    const p = view({ run: done([c13]) });
+    expect(render(p)).toContain('>3巡目<');
+    expect(
+      render({ ...p, result: { ...p.result, displayTurn: 17 } })
+    ).toContain('>17巡目<');
+  });
+
+  it('U-6: 14枚は列ヘッダー(和了率・聴牌率・期待値)があり、既定は期待値の降順で先頭行が選択される。selectedIndex で切り替わる', () => {
+    const a = cand({ type: 'z', n: 1 }, () => ({ ev: 100, win: 0.3 }));
     const b = cand({ type: 'z', n: 2 }, () => ({ ev: 900, win: 0.2 }));
     const html = render(view({ run: done([a, b]) }));
-    const pressed = [...html.matchAll(/aria-pressed="(true|false)"/g)].map(
-      m => m[1]
-    );
-    // 先頭行(期待値の最大)が選択されている
-    expect(pressed).toEqual(['true', 'false']);
-    // 行の牌は b の打牌(南)、a の打牌(東)の順
+    const header =
+      html.match(/engine-candidates__header[\s\S]*?<\/div>/)?.[0] ?? '';
+    expect(header).toContain('和了率');
+    expect(header).toContain('聴牌率');
+    expect(header).toContain('期待値');
+    // 選択中の列は期待値
     expect(
-      [...html.matchAll(/aria-label="([^"]+)を切る場合"/g)].map(m => m[1])
+      [...header.matchAll(/aria-pressed="(true|false)"[^>]*>([^<]+)</g)].map(
+        m => [m[2], m[1]]
+      )
+    ).toEqual([
+      ['和了率', 'false'],
+      ['聴牌率', 'false'],
+      ['期待値', 'true']
+    ]);
+    const body = html.slice(html.indexOf('engine-candidates__list'));
+    expect(
+      [...body.matchAll(/aria-label="([^"]+)を切る場合"/g)].map(m => m[1])
     ).toEqual(['南', '東']);
-    // 900 の候補(b)が先頭
-    expect(html.indexOf('900')).toBeLessThan(html.indexOf('>100<'));
-    // a(元の位置0)を選ぶと a の行が pressed
+    expect(
+      [...body.matchAll(/aria-pressed="(true|false)"/g)].map(m => m[1])
+    ).toEqual(['true', 'false']);
+    // 各行に和了率・聴牌率・期待値の3つが並ぶ
+    expect(body.match(/engine-candidates__value/g)?.length).toBe(6);
+    // a(元の位置0)を選ぶ
     const p = view({ run: done([a, b]) });
     const html2 = render({ ...p, result: { ...p.result, selectedIndex: 0 } });
-    const rows2 = [...html2.matchAll(/aria-pressed="(true|false)"/g)].map(
-      m => m[1]
-    );
-    expect(rows2).toEqual(['false', 'true']);
+    const body2 = html2.slice(html2.indexOf('engine-candidates__list'));
+    expect(
+      [...body2.matchAll(/aria-pressed="(true|false)"/g)].map(m => m[1])
+    ).toEqual(['false', 'true']);
+  });
+
+  it('U-6: rankMetric を和了率にすると並びが和了率の降順になり、和了率の列が強調される', () => {
+    const a = cand({ type: 'z', n: 1 }, () => ({ ev: 100, win: 0.3 }));
+    const b = cand({ type: 'z', n: 2 }, () => ({ ev: 900, win: 0.2 }));
+    const p = view({ run: done([a, b]) });
+    const html = render({ ...p, result: { ...p.result, rankMetric: 'win' } });
+    const body = html.slice(html.indexOf('engine-candidates__list'));
+    expect(
+      [...body.matchAll(/aria-label="([^"]+)を切る場合"/g)].map(m => m[1])
+    ).toEqual(['東', '南']);
+    const header =
+      html.match(/engine-candidates__header[\s\S]*?<\/div>/)?.[0] ?? '';
+    expect(header).toMatch(/aria-pressed="true"[^>]*>和了率</);
+  });
+
+  it('U-6: 向聴戻しの候補にだけ「向聴戻し」のチップが付く。13枚には付かない', () => {
+    const keep = {
+      ...cand({ type: 'z', n: 1 }, () => ({ ev: 900 })),
+      shanten: 1
+    };
+    const back = {
+      ...cand({ type: 'z', n: 2 }, () => ({ ev: 100 })),
+      shanten: 2
+    };
+    const html = render(view({ run: done([keep, back]) }));
+    expect(html.match(/向聴戻し/g)?.length).toBe(1);
+    const rows = html.split('engine-candidates__row').slice(1);
+    expect(rows[0]).not.toContain('向聴戻し');
+    expect(rows[1]).toContain('向聴戻し');
+    expect(
+      render(view({ run: done([{ ...cand(null, () => ({})), shanten: 2 }]) }))
+    ).not.toContain('向聴戻し');
   });
 });
 
@@ -230,30 +291,31 @@ describe(' UI監修: ボタン配置・スライダー・前提', () => {
     expect(html.indexOf('turn-chart')).toBeLessThan(html.indexOf('<md-slider'));
   });
 
-  it('前提: 風は常に牌で2枚、ドラ表示牌・抜き北は入力があるときだけ出す(文字ラベルなし)', () => {
+  it('前提: 要約カードと同じ表記(場風・自風の文字、積み棒・供託のピル)。ドラ・抜き北は入力があるときだけ出す', () => {
     const empty = render(view());
-    expect(empty).toContain('data-premise="winds"');
-    expect(empty).not.toContain('data-premise="dora"');
-    expect(empty).not.toContain('data-premise="nuki"');
+    expect(empty).toContain('summary-card__winds">東場・東家<');
+    expect(empty).toContain('aria-label="積み棒 0"');
+    expect(empty).toContain('aria-label="供託 0"');
+    expect(empty).not.toContain('summary-card__dora');
+    expect(empty).not.toContain('抜き北');
     const html = render(
       view({
         premise: {
+          table: { round: 'south', seat: 'west', continue: 2, deposit: 1 },
           dora: [
             { type: 'p', n: 3 },
             { type: 'z', n: 5 }
           ],
-          nuki: 2,
-          round: 'south',
-          seat: 'west'
+          nuki: 2
         }
       })
     );
-    expect(html).toContain('場風 南、自風 西');
-    expect(html).toContain('data-premise="dora"');
+    expect(html).toContain('summary-card__winds">南場・西家<');
+    expect(html).toContain('aria-label="積み棒 2"');
+    expect(html).toContain('summary-card__dora');
     expect(html).toContain('aria-label="3筒"');
-    expect(html).toContain('data-premise="nuki"');
-    expect(html).toContain('×2');
+    expect(html).toContain('aria-label="抜き北 2"');
     // 裏ドラは出さない
-    expect(html).not.toContain('裏ドラ');
+    expect(html).not.toContain('>裏<');
   });
 });

@@ -1,6 +1,7 @@
 import { useLayoutEffect, useRef } from 'react';
 import type React from 'react';
 import type { Table } from '../../core/table';
+import type { Tile as TileType } from '../../core/tile';
 import { CUSTOM_DEPOSIT_STICK, CUSTOM_HONBA_STICK, SymbolIcon } from '../icons';
 import {
   formatWinds,
@@ -117,30 +118,54 @@ function useFitTiles(ref: React.RefObject<HTMLElement | null>): void {
   }, [ref]);
 }
 
+export interface SummaryDoraRowViewProps {
+  dora: readonly TileType[];
+  /** undefined のとき、裏ドラの列は出さない */
+  uradora?: readonly TileType[] | undefined;
+  rowRef?: React.Ref<HTMLDivElement> | undefined;
+}
+
+/** ドラ(と裏ドラ)の行の描画本体 */
+export function SummaryDoraRowView({
+  dora,
+  uradora,
+  rowRef
+}: SummaryDoraRowViewProps): React.JSX.Element {
+  return (
+    <div
+      ref={rowRef}
+      className="summary-card__row summary-card__dora"
+      data-slot="summary-dora"
+    >
+      <div className="summary-card__tiles">
+        <span className="summary-card__label">ドラ</span>
+        {dora.map((tile, idx) => (
+          <Tile key={`d${tile.type}${tile.n}-${idx}`} tile={tile} />
+        ))}
+      </div>
+      {uradora ? (
+        <div className="summary-card__tiles">
+          <span className="summary-card__label">裏</span>
+          {uradora.map((tile, idx) => (
+            <Tile key={`u${tile.type}${tile.n}-${idx}`} tile={tile} />
+          ))}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 function SummaryDoraRow(): React.JSX.Element {
   const { input } = useAppState();
   const ref = useRef<HTMLDivElement | null>(null);
   useFitTiles(ref);
 
   return (
-    <div
-      ref={ref}
-      className="summary-card__row summary-card__dora"
-      data-slot="summary-dora"
-    >
-      <div className="summary-card__tiles">
-        <span className="summary-card__label">ドラ</span>
-        {input.dora.map((tile, idx) => (
-          <Tile key={`d${tile.type}${tile.n}-${idx}`} tile={tile} />
-        ))}
-      </div>
-      <div className="summary-card__tiles">
-        <span className="summary-card__label">裏</span>
-        {input.uradora.map((tile, idx) => (
-          <Tile key={`u${tile.type}${tile.n}-${idx}`} tile={tile} />
-        ))}
-      </div>
-    </div>
+    <SummaryDoraRowView
+      rowRef={ref}
+      dora={input.dora}
+      uradora={input.uradora}
+    />
   );
 }
 

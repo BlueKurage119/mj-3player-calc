@@ -1,6 +1,6 @@
 import type React from 'react';
 import type { CandidateStat } from '../../engine/types';
-import { formatEv, formatPercent } from './chart-series';
+import { formatEv, formatPercent, turnValues } from './chart-series';
 import './engine.css';
 
 export interface TurnTableProps {
@@ -25,14 +25,14 @@ export function TurnTable({
           </tr>
         </thead>
         <tbody>
-          {candidate.perTurn.map(t => (
+          {turnValues(candidate).map(t => (
             <tr
-              key={t.draw}
+              key={t.turn}
               className="turn-table__row"
-              data-current={t.draw === displayTurn ? 'true' : undefined}
+              data-current={t.turn === displayTurn ? 'true' : undefined}
             >
               <th scope="row" className="tabular-nums">
-                {t.draw}
+                {t.turn}
               </th>
               <td className="tabular-nums">{formatPercent(t.tenpai)}</td>
               <td className="tabular-nums">{formatPercent(t.win)}</td>

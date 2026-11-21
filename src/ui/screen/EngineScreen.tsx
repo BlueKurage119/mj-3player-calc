@@ -3,6 +3,7 @@ import type React from 'react';
 import { instantiateMeld } from '../../core/input';
 import type { EngineClient } from '../../engine/client';
 import { useResult } from '../calc/use-result';
+import { DEFAULT_RANK_METRIC, type RankMetric } from '../engine/chart-series';
 import { EngineView } from '../engine/EngineView';
 import {
   ENGINE_DRAWS,
@@ -35,6 +36,7 @@ export function EngineScreen({
   const [detailed, setDetailed] = useState(false);
   const [displayTurn, setDisplayTurn] = useState(DEFAULT_DISPLAY_TURN);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  const [rankMetric, setRankMetric] = useState<RankMetric>(DEFAULT_RANK_METRIC);
   const nextId = useRef(0);
 
   const { hand, melds } = app.input;
@@ -67,10 +69,9 @@ export function EngineScreen({
       }
       tiles={tiles}
       premise={{
+        table: app.table,
         dora: app.input.dora,
-        nuki: app.input.nuki,
-        round: app.table.round,
-        seat: app.table.seat
+        nuki: app.input.nuki
       }}
       available={available}
       methodChoice={methodChoice}
@@ -94,7 +95,9 @@ export function EngineScreen({
         onTurnChange: turn =>
           setDisplayTurn(Math.min(MAX_TURN, Math.max(1, Math.round(turn)))),
         selectedIndex,
-        onSelect: setSelectedIndex
+        onSelect: setSelectedIndex,
+        rankMetric,
+        onRankMetricChange: setRankMetric
       }}
     />
   );

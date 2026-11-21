@@ -8,8 +8,11 @@ import { TurnChart } from './TurnChart';
 import { TurnTable } from './TurnTable';
 import {
   CHART_TURNS,
+  RANK_METRICS,
+  type RankMetric,
   formatEv,
   formatPercent,
+  isShantenBack,
   rankCandidates,
   statAt,
   toRateSeries
@@ -24,6 +27,9 @@ export interface EngineResultProps {
   /** 表示中の候補の元の位置。null は先頭行(期待値の最大)に追従する */
   selectedIndex: number | null;
   onSelect: (index: number) => void;
+  /** 14枚入力の候補行の並びに使う列 */
+  rankMetric: RankMetric;
+  onRankMetricChange: (metric: RankMetric) => void;
 }
 
 export function EngineSummary({
@@ -52,57 +58,93 @@ export function EngineSummary({
   );
 }
 
-/** 14枚入力: 打牌候補ごとの行(表示巡目の期待値の降順)。行タップで表示対象を切り替える */
+/** 14枚入力: 打牌候補ごとの行。列ヘッダー(和了率・聴牌率・期待値)のタップで、その列の降順に並べ替える */
 export function EngineCandidates({
   candidates,
   displayTurn,
   selectedIndex,
-  onSelect
+  onSelect,
+  rankMetric,
+  onRankMetricChange
 }: Pick<
   EngineResultProps,
-  'candidates' | 'displayTurn' | 'selectedIndex' | 'onSelect'
+  | 'candidates'
+  | 'displayTurn'
+  | 'selectedIndex'
+  | 'onSelect'
+  | 'rankMetric'
+  | 'onRankMetricChange'
 >): React.JSX.Element {
-  const ranked = rankCandidates(candidates, displayTurn);
+  const ranked = rankCandidates(candidates, displayTurn, rankMetric);
   const current = selectedIndex ?? ranked[0]?.index ?? 0;
   return (
-    <ul className="engine-candidates">
-      {ranked.map(({ index, candidate }) => {
-        const s = statAt(candidate, displayTurn);
-        const discard: CoreTile | null = candidate.discard;
-        return (
-          <li key={index}>
-            <button
-              type="button"
-              className="engine-candidates__row"
-              aria-pressed={index === current}
-              aria-label={
-                discard ? `${tileLabelOf(discard)}を切る場合` : undefined
-              }
-              onClick={() => onSelect(index)}
-            >
-              <span className="engine-candidates__tile">
-                {discard ? <Tile tile={discard} /> : null}
-              </span>
-              <span className="engine-candidates__value tabular-nums">
-                {formatPercent(s.win)}
-              </span>
-              <span className="engine-candidates__value tabular-nums">
-                {formatEv(s.ev)}
-              </span>
-            </button>
-          </li>
-        );
-      })}
-    </ul>
+    <div className="engine-candidates">
+      <div className="engine-candidates__header">
+        <span aria-hidden="true" />
+        {RANK_METRICS.map(m => (
+          <button
+            key={m.value}
+            type="button"
+            className="engine-candidates__sort"
+            aria-pressed={m.value === rankMetric}
+            onClick={() => onRankMetricChange(m.value)}
+          >
+            {m.label}
+          </button>
+        ))}
+      </div>
+      <ul className="engine-candidates__list">
+        {ranked.map(({ index, candidate }) => {
+          const s = statAt(candidate, displayTurn);
+          const discard: CoreTile | null = candidate.discard;
+          return (
+            <li key={index}>
+              <button
+                type="button"
+                className="engine-candidates__row"
+                aria-pressed={index === current}
+                aria-label={
+                  discard ? `${tileLabelOf(discard)}を切る場合` : undefined
+                }
+                onClick={() => onSelect(index)}
+              >
+                <span className="engine-candidates__tile">
+                  {discard ? <Tile tile={discard} /> : null}
+                  {isShantenBack(candidate, candidates) ? (
+                    <span className="engine-candidates__chip">向聴戻し</span>
+                  ) : null}
+                </span>
+                <span className="engine-candidates__value tabular-nums">
+                  {formatPercent(s.win)}
+                </span>
+                <span className="engine-candidates__value tabular-nums">
+                  {formatPercent(s.tenpai)}
+                </span>
+                <span className="engine-candidates__value tabular-nums">
+                  {formatEv(s.ev)}
+                </span>
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
   );
 }
 
 /** 計算結果の表示(要約・候補行・グラフ・巡目別の表)。表示巡目の変更では再計算しない */
 export function EngineResult(props: EngineResultProps): React.JSX.Element {
-  const { candidates, displayTurn, onTurnChange, selectedIndex, onSelect } =
-    props;
+  const {
+    candidates,
+    displayTurn,
+    onTurnChange,
+    selectedIndex,
+    onSelect,
+    rankMetric,
+    onRankMetricChange
+  } = props;
   const is14 = candidates.some(c => c.discard !== null);
-  const ranked = rankCandidates(candidates, displayTurn);
+  const ranked = rankCandidates(candidates, displayTurn, rankMetric);
   const current =
     (selectedIndex !== null ? candidates[selectedIndex] : undefined) ??
     ranked[0]?.candidate;
@@ -121,6 +163,16 @@ export function EngineResult(props: EngineResultProps): React.JSX.Element {
             labeled
             onValueChange={onTurnChange}
           />
+          <div className="engine-result__turn-track">
+            <output
+              className="engine-result__turn-label tabular-nums"
+              style={{
+                insetInlineStart: `${((displayTurn - 1) / (CHART_TURNS - 1)) * 100}%`
+              }}
+            >
+              {displayTurn}巡目
+            </output>
+          </div>
         </div>
       ) : null}
       {is14 ? (
@@ -129,6 +181,8 @@ export function EngineResult(props: EngineResultProps): React.JSX.Element {
           displayTurn={displayTurn}
           selectedIndex={selectedIndex}
           onSelect={onSelect}
+          rankMetric={rankMetric}
+          onRankMetricChange={onRankMetricChange}
         />
       ) : current ? (
         <EngineSummary candidate={current} displayTurn={displayTurn} />

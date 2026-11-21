@@ -36,32 +36,18 @@
 }
 
 .engine-premise {
-  --tile-width: 1.125rem;
+  --tile-width: 1.25rem;
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.375rem 1rem;
-  margin-top: 0.5rem;
-  padding-top: 0.5rem;
-  border-top: 1px solid var(--md-sys-color-outline-variant);
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--md-sys-shape-corner-medium);
+  background-color: var(--md-sys-color-secondary-container);
+  color: var(--md-sys-color-on-secondary-container);
 }
 
-.engine-premise__group {
-  margin: 0;
-  padding: 0;
-  border: none;
-  min-width: 0;
-  display: inline-flex;
-  align-items: center;
-  gap: 2px;
-}
-
-.engine-premise__count {
-  margin-inline-start: 0.25rem;
-  color: var(--md-sys-color-on-surface-variant);
-  font-family: var(--md-sys-typescale-label-medium-font);
-  font-size: var(--md-sys-typescale-label-medium-size);
-  line-height: var(--md-sys-typescale-label-medium-line-height);
+.engine-premise .summary-card__dora {
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .engine-screen__actions {
@@ -92,6 +78,24 @@
 
 /* スライダーの両端を、グラフの描画領域(左 34/320・右 8/320)に合わせる。
    md-slider のトラックはホストの端から 20px 内側から始まる(実測。360・430px でつまみの位置とグラフの縦線が一致) */
+.engine-result__turn-track {
+  position: relative;
+  height: 1.25rem;
+  margin-inline-start: calc(34 / 320 * 100%);
+  margin-inline-end: calc(8 / 320 * 100%);
+}
+
+.engine-result__turn-label {
+  position: absolute;
+  top: 0;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  color: var(--md-sys-color-on-surface);
+  font-family: var(--md-sys-typescale-label-large-font);
+  font-size: var(--md-sys-typescale-label-large-size);
+  line-height: var(--md-sys-typescale-label-large-line-height);
+}
+
 .engine-result__slider {
   --engine-slider-inset: 20px;
   margin-inline-start: calc(34 / 320 * 100% - var(--engine-slider-inset));
@@ -204,6 +208,12 @@
 
 .engine-candidates {
   --tile-width: 1.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.engine-candidates__list {
   list-style: none;
   margin: 0;
   padding: 0;
@@ -212,14 +222,71 @@
   gap: 0.25rem;
 }
 
+.engine-candidates__header,
+.engine-candidates__row {
+  display: grid;
+  grid-template-columns: 4.5rem repeat(3, minmax(0, 1fr));
+  align-items: center;
+  column-gap: 0.5rem;
+}
+
+.engine-candidates__header {
+  padding-inline: 0.75rem;
+}
+
+.engine-candidates__sort {
+  all: unset;
+  box-sizing: border-box;
+  min-height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  cursor: pointer;
+  border-radius: var(--md-sys-shape-corner-extra-small);
+  padding-inline: 0.25rem;
+  color: var(--md-sys-color-on-surface-variant);
+  font-family: var(--md-sys-typescale-label-medium-font);
+  font-size: var(--md-sys-typescale-label-medium-size);
+  line-height: var(--md-sys-typescale-label-medium-line-height);
+  font-weight: var(--md-sys-typescale-label-medium-weight);
+}
+
+.engine-candidates__sort:focus-visible {
+  outline: 2px solid var(--md-sys-color-primary);
+}
+
+.engine-candidates__sort[aria-pressed="true"] {
+  color: var(--md-sys-color-on-secondary-container);
+  background-color: var(--md-sys-color-secondary-container);
+  font-weight: 700;
+}
+
+.engine-candidates__tile {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.125rem;
+}
+
+.engine-candidates__chip {
+  padding: 0 0.375rem;
+  border-radius: var(--md-sys-shape-corner-full);
+  background-color: var(--md-sys-color-tertiary-container);
+  color: var(--md-sys-color-on-tertiary-container);
+  font-family: var(--md-sys-typescale-label-small-font);
+  font-size: var(--md-sys-typescale-label-small-size);
+  line-height: var(--md-sys-typescale-label-small-line-height);
+  white-space: nowrap;
+}
+
 .engine-candidates__row {
   all: unset;
   box-sizing: border-box;
   width: 100%;
   display: grid;
-  grid-template-columns: 3rem 1fr 1fr;
+  grid-template-columns: 4.5rem repeat(3, minmax(0, 1fr));
   align-items: center;
-  column-gap: 0.75rem;
+  column-gap: 0.5rem;
   min-height: 3rem;
   padding: 0.25rem 0.75rem;
   border-radius: var(--md-sys-shape-corner-medium);
