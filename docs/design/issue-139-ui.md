@@ -515,3 +515,12 @@ export interface TurnChartProps { series: ChartSeries[]; displayTurn: number }
 3. 折れ線の色(本体色)→ コンテナ色・文字色トークンの対応は `chart-series.ts` の `LINE_TINT_TOKENS`・`tintStyle` の1か所にまとめた(`--line-color`・`--tint-bg`・`--tint-fg` を行・カードの `style` に渡す)。
 4. 確認(本番ビルド。develop/v2.0 取り込み済みで `tokens.css` の重ねは不要): ライト・ダークの双方で、14枚の5行(緑・青緑・紫・赤褐・黄褐)と13枚のカードの文字(on-コンテナ色)が読めることをスクリーンショットと計算色で確認。360・390・430px で牌の左端(x=36)は全行一致、横あふれなし。
 5. バンドル: 初回JS 130048 B(取り込み後の基準 129,254 B から +794 B、前回 130,047 B から 1 B)。
+
+### 13.14 第19版: グラフ線用トークンの追加と、染めの色味を薄める(オーナー確定。案2・選択肢B)
+
+1. **グラフ線用トークン**: `scripts/gen-theme-tokens.ts` に `chartPrimary`・`chartTertiary`・`chartSenary`・`chartQuinary`・`chartQuaternary` の5ロール(`--md-sys-color-chart-*`)を追加し、`tokens.css` の末尾に生成した。ライトは T=50、ダークは T=80(ダークは各ロールの本体色と同値)。値(ライト / ダーク): primary `#548250` / `#a1d399`、tertiary `#527e83` / `#a0cfd4`、senary `#8b6d8d` / `#debcdf`、quinary `#9e6a63` / `#f5b7af`、quaternary `#8b7444` / `#dfc38c`。06号に追加分を追記、`tokens.test.ts` を 66 ロールに更新。`npm run check:theme` 通過。
+   - 経緯: ライトの本体色(T40)は線として濃すぎ、T80 は背景に溶ける(コントラスト 1.3〜1.6)ため、T50(背景 surface に対し 4.3:1)を選んだ。このトークン追加はこのブランチで行う(別PRにしない)とのオーナー・統括判断。
+   - `chart-series.ts` の線・点・短い縦線の色参照を `chart-*` に差し替えた。14枚の5色の順位(緑・青緑・紫・赤褐・黄褐)、13枚の和了率 = primary・聴牌率 = quaternary の対応は不変。染めのコンテナ色・`on-…-container` 文字色は変更なし(`LINE_TINT_TOKENS` のキーだけ `chart-*` に)。
+2. **染めを薄める**: 行・カードの背景を、コンテナ色トークンと `surface-container` の `color-mix` にした(コンテナ色の割合 `--engine-tint-ratio`、`.engine-result` で定義。既定 55%。候補は 70% / 55% / 40%)。文字色は `on-…-container` のまま。期待値カード・短い縦線は変更なし。比較スクリーンショットはオーナー選択用(統括へ提示済み)。
+   - 文字色(on-コンテナ)の背景に対するコントラスト比(5ロールの最小〜最大): ライト 100%=7.20〜7.25、70%=7.40〜7.47、55%=7.51〜7.62、40%=7.64〜7.72。ダーク 100%=7.20〜7.27、70%=8.66〜8.72、55%=9.50〜9.58、40%=10.28〜10.41。いずれも 4.5:1 以上。
+3. バンドル: 初回JS 130048 B(基準 129,254 B から +794 B、前回 130,048 B から 0 B)。

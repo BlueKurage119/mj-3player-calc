@@ -404,19 +404,21 @@ describe('第13版: 14枚のグラフは上位5候補の折れ線', () => {
     // 6位以降は見えないスペーサー(同じ幅)で牌の位置をそろえる。7行中 2行
     expect(h.match(/data-line="none"/g)?.length).toBe(2);
     expect(h.match(/engine-candidates__mark/g)?.length).toBe(7);
-    expect(h).toContain('background-color:var(--md-sys-color-primary)');
+    expect(h).toContain('background-color:var(--md-sys-color-chart-primary)');
     // 行の背景は既定のまま(染めない)
     const css = readFileSync(new URL('./engine.css', import.meta.url), 'utf8');
     // 上位5行だけ背景を、線のロールのコンテナ色で染める(混色なし)。6位以降は既定の背景
     expect(h.match(/data-tint="true"/g)?.length).toBe(5);
-    expect(h).toContain('--line-color:var(--md-sys-color-primary)');
+    expect(h).toContain('--line-color:var(--md-sys-color-chart-primary)');
     const tint =
       css.match(
         /\.engine-candidates__row\[data-tint="true"\] \{[^}]*\}/
       )?.[0] ?? '';
-    expect(tint).toContain('background-color: var(--tint-bg)');
+    // コンテナ色を surface-container と混ぜて薄める(割合は --engine-tint-ratio。既定 55%)
+    expect(tint).toContain('var(--tint-bg) var(--engine-tint-ratio)');
+    expect(tint).toContain('--md-sys-color-surface-container)');
+    expect(css).toMatch(/\.engine-result \{[^}]*--engine-tint-ratio: 55%;/);
     expect(tint).toContain('color: var(--tint-fg)');
-    expect(tint).not.toContain('color-mix');
     expect(tint).not.toContain('box-shadow');
     expect(h).toContain('--tint-bg:var(--md-sys-color-primary-container)');
     expect(h).toContain('--tint-fg:var(--md-sys-color-on-primary-container)');
@@ -450,12 +452,14 @@ describe('第13版: 14枚のグラフは上位5候補の折れ線', () => {
     expect(items.length).toBe(3);
     const [win, tenpai, ev] = items;
     expect(win?.[1]).toContain('data-tint="true"');
-    expect(win?.[1]).toContain('--line-color:var(--md-sys-color-primary)');
+    expect(win?.[1]).toContain(
+      '--line-color:var(--md-sys-color-chart-primary)'
+    );
     expect(win?.[2]).toContain('engine-summary__mark');
     expect(win?.[2]).toContain('和了率');
     expect(tenpai?.[1]).toContain('data-tint="true"');
     expect(tenpai?.[1]).toContain(
-      '--line-color:var(--md-sys-color-quaternary)'
+      '--line-color:var(--md-sys-color-chart-quaternary)'
     );
     expect(tenpai?.[1]).toContain(
       '--tint-bg:var(--md-sys-color-quaternary-container)'
@@ -474,9 +478,9 @@ describe('第13版: 14枚のグラフは上位5候補の折れ線', () => {
     const card =
       css.match(/\.engine-summary__item\[data-tint="true"\] \{[^}]*\}/)?.[0] ??
       '';
-    expect(card).toContain('background-color: var(--tint-bg)');
+    expect(card).toContain('var(--tint-bg) var(--engine-tint-ratio)');
+    expect(card).toContain('--md-sys-color-surface-container)');
     expect(card).toContain('color: var(--tint-fg)');
-    expect(card).not.toContain('color-mix');
     expect(css.match(/\.engine-summary__mark \{[^}]*\}/)?.[0]).toContain(
       'width: 0.25rem'
     );
@@ -499,11 +503,11 @@ describe('第13版: 14枚のグラフは上位5候補の折れ線', () => {
     expect(new Set(tokens).size).toBe(5);
     // 色相順(1位 緑 → 青緑 → 紫 → 赤褐 → 5位 黄褐)
     expect(tokens).toEqual([
-      '--md-sys-color-primary',
-      '--md-sys-color-tertiary',
-      '--md-sys-color-senary',
-      '--md-sys-color-quinary',
-      '--md-sys-color-quaternary'
+      '--md-sys-color-chart-primary',
+      '--md-sys-color-chart-tertiary',
+      '--md-sys-color-chart-senary',
+      '--md-sys-color-chart-quinary',
+      '--md-sys-color-chart-quaternary'
     ]);
     // 茶系で隣り合う4位・5位は、破線が明確に異なる
     const dashes = CANDIDATE_LINE_STYLES.map(x => x.dash);

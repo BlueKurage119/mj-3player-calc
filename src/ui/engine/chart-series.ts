@@ -82,13 +82,13 @@ export const toRateSeries = (c: CandidateStat): ChartSeries[] => {
     {
       id: 'win',
       label: '和了率',
-      colorToken: '--md-sys-color-primary',
+      colorToken: '--md-sys-color-chart-primary',
       values: vs.map(v => v.win)
     },
     {
       id: 'tenpai',
       label: '聴牌率',
-      colorToken: '--md-sys-color-quaternary',
+      colorToken: '--md-sys-color-chart-quaternary',
       dash: '5 3',
       values: vs.map(v => v.tenpai)
     }
@@ -105,14 +105,14 @@ export interface ChartAxis {
 export const PERCENT_AXIS: ChartAxis = { kind: 'percent', max: 1 };
 
 /**
- * 折れ線の色(本体色トークン)→ 染めに使うコンテナ色と、その上の文字色トークン。
+ * 折れ線の色(グラフ線用トークン `chart-*`)→ 染めに使うコンテナ色と、その上の文字色トークン。
  * 色の混合はせず、各ロールのコンテナ色(ライト90・ダーク30)をそのまま使う。対応はここだけに置く
  */
 export const LINE_TINT_TOKENS: Readonly<
   Record<string, { container: string; onContainer: string }>
 > = Object.fromEntries(
   ['primary', 'tertiary', 'quaternary', 'quinary', 'senary'].map(role => [
-    `--md-sys-color-${role}`,
+    `--md-sys-color-chart-${role}`,
     {
       container: `--md-sys-color-${role}-container`,
       onContainer: `--md-sys-color-on-${role}-container`
@@ -139,11 +139,11 @@ export const CANDIDATE_LINE_STYLES: readonly {
   colorToken: string;
   dash: string | undefined;
 }[] = [
-  { colorToken: '--md-sys-color-primary', dash: undefined },
-  { colorToken: '--md-sys-color-tertiary', dash: '6 3' },
-  { colorToken: '--md-sys-color-senary', dash: '2 2' },
-  { colorToken: '--md-sys-color-quinary', dash: '6 3 2 3' },
-  { colorToken: '--md-sys-color-quaternary', dash: '1 3' }
+  { colorToken: '--md-sys-color-chart-primary', dash: undefined },
+  { colorToken: '--md-sys-color-chart-tertiary', dash: '6 3' },
+  { colorToken: '--md-sys-color-chart-senary', dash: '2 2' },
+  { colorToken: '--md-sys-color-chart-quinary', dash: '6 3 2 3' },
+  { colorToken: '--md-sys-color-chart-quaternary', dash: '1 3' }
 ];
 
 /** b案で描く候補の数 */
@@ -177,7 +177,7 @@ export const toCandidateSeries = (
   const top = rankCandidates(candidates, turn, metric).slice(0, limit);
   const series = top.map(({ index, candidate }, i): ChartSeries => {
     const style = CANDIDATE_LINE_STYLES[i % CANDIDATE_LINE_STYLES.length] ?? {
-      colorToken: '--md-sys-color-primary',
+      colorToken: '--md-sys-color-chart-primary',
       dash: undefined
     };
     return {

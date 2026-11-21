@@ -164,6 +164,11 @@
   flex: 1 1 6rem;
 }
 
+.engine-result {
+  /* 染め(行・カード)のコンテナ色の割合。残りは surface-container(同系統・同トーン帯なので濁りにくい) */
+  --engine-tint-ratio: 55%;
+}
+
 .engine-result__chart {
   /* 縦軸の目盛りと「n順目」の文字の大きさ(SVG の viewBox 幅 320 に対する単位)。5桁の期待値が収まる大きさ。2か所で共用する */
   --turn-chart-tick-size: 8;
@@ -292,7 +297,11 @@
 }
 
 .engine-summary__item[data-tint="true"] {
-  background-color: var(--tint-bg);
+  background-color: color-mix(
+    in srgb,
+    var(--tint-bg) var(--engine-tint-ratio),
+    var(--md-sys-color-surface-container)
+  );
   color: var(--tint-fg);
 }
 
@@ -432,7 +441,11 @@
 
 /* 上位5行は、行の背景を折れ線のロールのコンテナ色で染め、文字は on-コンテナ色にする(表示専用。混色なし) */
 .engine-candidates__row[data-tint="true"] {
-  background-color: var(--tint-bg);
+  background-color: color-mix(
+    in srgb,
+    var(--tint-bg) var(--engine-tint-ratio),
+    var(--md-sys-color-surface-container)
+  );
   color: var(--tint-fg);
 }
 
