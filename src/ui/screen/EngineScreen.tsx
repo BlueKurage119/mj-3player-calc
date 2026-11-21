@@ -66,6 +66,12 @@ export function EngineScreen({
         dispatch({ type: 'open-help', focus: 'engine', returnTo: 'engine' })
       }
       tiles={tiles}
+      premise={{
+        dora: app.input.dora,
+        nuki: app.input.nuki,
+        round: app.table.round,
+        seat: app.table.seat
+      }}
       available={available}
       methodChoice={methodChoice}
       detailed={effectiveDetailed}
@@ -85,8 +91,8 @@ export function EngineScreen({
       onCancel={engine.cancel}
       result={{
         displayTurn,
-        onTurnStep: delta =>
-          setDisplayTurn(t => Math.min(MAX_TURN, Math.max(1, t + delta))),
+        onTurnChange: turn =>
+          setDisplayTurn(Math.min(MAX_TURN, Math.max(1, Math.round(turn)))),
         selectedIndex,
         onSelect: setSelectedIndex
       }}

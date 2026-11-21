@@ -107,6 +107,7 @@ describe('Issue #139 U-11: ヘルプの「確率・期待値」の節', () => {
     expect(section).toContain('aria-expanded="true"');
     expect(section).not.toContain('hidden=""');
     expect(section).toContain('一人麻雀');
+    expect(section).toContain('裏ドラは牌が決まらない');
   });
 
   it('直接開いたとき(focus 指定なし)は既存の節と同じく閉じている', () => {

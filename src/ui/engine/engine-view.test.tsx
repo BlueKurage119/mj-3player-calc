@@ -37,6 +37,7 @@ const view = (over: Partial<EngineViewProps> = {}): EngineViewProps => ({
   onBack: noop,
   onOpenHelp: noop,
   tiles: [{ type: 'z', n: 1 }],
+  premise: { dora: [], nuki: 0, round: 'east', seat: 'east' },
   available: true,
   methodChoice: true,
   detailed: false,
@@ -47,7 +48,7 @@ const view = (over: Partial<EngineViewProps> = {}): EngineViewProps => ({
   onCancel: noop,
   result: {
     displayTurn: 3,
-    onTurnStep: noop,
+    onTurnChange: noop,
     selectedIndex: null,
     onSelect: noop
   },
@@ -183,5 +184,76 @@ describe('U-12: 色の直書きがない', () => {
     for (const f of files) {
       expect(readFileSync(f, 'utf8')).not.toMatch(/#[0-9a-fA-F]{3,8}\b/);
     }
+  });
+});
+
+describe(' UI監修: ボタン配置・スライダー・前提', () => {
+  const actionsOf = (html: string): string => {
+    const i = html.indexOf('engine-screen__actions');
+    expect(i).toBeGreaterThan(-1);
+    return html.slice(i, html.indexOf('</section>', i));
+  };
+
+  it('「計算する」は計算方法トグルと同じ行(engine-screen__actions)にある', () => {
+    const row = actionsOf(render(view()));
+    expect(row).toContain('role="radiogroup"');
+    expect(row).toContain('計算する');
+  });
+
+  it('実行中は同じ位置が「中止」に替わり、スピナーと経過時間は行の外に出る', () => {
+    const html = render(
+      view({ run: { status: 'running', startedAt: 0, elapsedMs: 3000 } })
+    );
+    const row = actionsOf(html);
+    const actions = row.slice(0, row.indexOf('engine-screen__running'));
+    expect(actions).toContain('中止');
+    expect(actions).not.toContain('計算する');
+    expect(html).toContain('3秒');
+  });
+
+  it('2択を出さないときも「計算する」は行の中にある', () => {
+    const html = render(view({ methodChoice: false }));
+    expect(actionsOf(html)).toContain('計算する');
+    expect(html).not.toContain('radiogroup');
+  });
+
+  it('巡目はスライダー(md-slider。1〜18、既定3の値)で、Stepper は使わない', () => {
+    const html = render(
+      view({ run: done([cand(null, d => ({ win: d / 100 }))]) })
+    );
+    expect(html).toMatch(/<md-slider[^>]*min="1"/);
+    expect(html).toMatch(/<md-slider[^>]*max="18"/);
+    expect(html).toMatch(/<md-slider[^>]*value="3"/);
+    expect(html).toContain('aria-label="巡目"');
+    expect(html).not.toContain('class="stepper');
+    // グラフの直後にスライダーがある
+    expect(html.indexOf('turn-chart')).toBeLessThan(html.indexOf('<md-slider'));
+  });
+
+  it('前提: 風は常に牌で2枚、ドラ表示牌・抜き北は入力があるときだけ出す(文字ラベルなし)', () => {
+    const empty = render(view());
+    expect(empty).toContain('data-premise="winds"');
+    expect(empty).not.toContain('data-premise="dora"');
+    expect(empty).not.toContain('data-premise="nuki"');
+    const html = render(
+      view({
+        premise: {
+          dora: [
+            { type: 'p', n: 3 },
+            { type: 'z', n: 5 }
+          ],
+          nuki: 2,
+          round: 'south',
+          seat: 'west'
+        }
+      })
+    );
+    expect(html).toContain('場風 南、自風 西');
+    expect(html).toContain('data-premise="dora"');
+    expect(html).toContain('aria-label="3筒"');
+    expect(html).toContain('data-premise="nuki"');
+    expect(html).toContain('×2');
+    // 裏ドラは出さない
+    expect(html).not.toContain('裏ドラ');
   });
 });

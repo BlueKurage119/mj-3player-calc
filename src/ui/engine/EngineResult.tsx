@@ -1,7 +1,8 @@
 import type React from 'react';
 import type { Tile as CoreTile } from '../../core/tile';
 import type { CandidateStat } from '../../engine/types';
-import { Disclosure, Stepper } from '../expressive';
+import { Disclosure } from '../expressive';
+import { Slider } from '../md';
 import { Tile, tileLabelOf } from '../tile';
 import { TurnChart } from './TurnChart';
 import { TurnTable } from './TurnTable';
@@ -18,7 +19,8 @@ import './engine.css';
 export interface EngineResultProps {
   candidates: CandidateStat[];
   displayTurn: number;
-  onTurnStep: (delta: 1 | -1) => void;
+  /** 表示する巡目の変更(1〜18)。再計算はしない */
+  onTurnChange: (turn: number) => void;
   /** 表示中の候補の元の位置。null は先頭行(期待値の最大)に追従する */
   selectedIndex: number | null;
   onSelect: (index: number) => void;
@@ -97,7 +99,7 @@ export function EngineCandidates({
 
 /** 計算結果の表示(要約・候補行・グラフ・巡目別の表)。表示巡目の変更では再計算しない */
 export function EngineResult(props: EngineResultProps): React.JSX.Element {
-  const { candidates, displayTurn, onTurnStep, selectedIndex, onSelect } =
+  const { candidates, displayTurn, onTurnChange, selectedIndex, onSelect } =
     props;
   const is14 = candidates.some(c => c.discard !== null);
   const ranked = rankCandidates(candidates, displayTurn);
@@ -106,13 +108,21 @@ export function EngineResult(props: EngineResultProps): React.JSX.Element {
     ranked[0]?.candidate;
   return (
     <div className="engine-result">
-      <Stepper
-        aria-label="巡目"
-        value={displayTurn}
-        min={1}
-        max={CHART_TURNS}
-        onStep={onTurnStep}
-      />
+      {current ? (
+        <div className="engine-result__chart">
+          <TurnChart series={toRateSeries(current)} displayTurn={displayTurn} />
+          <Slider
+            className="engine-result__slider"
+            label="巡目"
+            min={1}
+            max={CHART_TURNS}
+            step={1}
+            value={displayTurn}
+            labeled
+            onValueChange={onTurnChange}
+          />
+        </div>
+      ) : null}
       {is14 ? (
         <EngineCandidates
           candidates={candidates}
@@ -124,12 +134,9 @@ export function EngineResult(props: EngineResultProps): React.JSX.Element {
         <EngineSummary candidate={current} displayTurn={displayTurn} />
       ) : null}
       {current ? (
-        <>
-          <TurnChart series={toRateSeries(current)} displayTurn={displayTurn} />
-          <Disclosure summary="巡目別の表">
-            <TurnTable candidate={current} displayTurn={displayTurn} />
-          </Disclosure>
-        </>
+        <Disclosure summary="巡目別の表">
+          <TurnTable candidate={current} displayTurn={displayTurn} />
+        </Disclosure>
       ) : null}
     </div>
   );
