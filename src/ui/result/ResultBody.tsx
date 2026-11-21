@@ -15,12 +15,15 @@ export interface ResultBodyProps {
   view: ResultView;
   context?: ResultContext | undefined;
   tileActions?: ResultTileActions | undefined;
+  /** 指定時のみ、対象の結果の見出し行に「計算」ボタンを出す(出すかどうかの判定は呼び出し側) */
+  onOpenEngine?: (() => void) | undefined;
 }
 
 export function ResultBody({
   view,
   context,
-  tileActions
+  tileActions,
+  onOpenEngine
 }: ResultBodyProps): React.JSX.Element | null {
   switch (view.kind) {
     case 'none':
@@ -28,12 +31,19 @@ export function ResultBody({
     case 'just-hora':
       return <JustHoraBody />;
     case 'hora':
-      return <HoraBody hora={view.hora} context={context} />;
+      return (
+        <HoraBody
+          hora={view.hora}
+          context={context}
+          onOpenEngine={onOpenEngine}
+        />
+      );
     case 'tempai':
       return (
         <TempaiBody
           tileAvailabilities={view.tileAvailabilities}
           onTsumo={tileActions?.tsumo}
+          onOpenEngine={onOpenEngine}
         />
       );
     case 'shanten':
@@ -42,6 +52,7 @@ export function ResultBody({
           shanten={view.shanten}
           tileAvailabilities={view.tileAvailabilities}
           onTsumo={tileActions?.tsumo}
+          onOpenEngine={onOpenEngine}
         />
       );
     case 'discard':
@@ -49,6 +60,7 @@ export function ResultBody({
         <DiscardBody
           discards={view.discards}
           onDiscard={tileActions?.discard}
+          onOpenEngine={onOpenEngine}
         />
       );
   }

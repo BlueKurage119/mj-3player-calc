@@ -250,6 +250,11 @@ export function MainScreen(): React.JSX.Element {
             }
           }}
           tileActions={tileActions}
+          engineEntry={{
+            onOpen: () => dispatch({ type: 'navigate', screen: 'engine' }),
+            handLength: input.hand.length,
+            meldCount: input.melds.length
+          }}
         />
         <div className="main-screen__bottom-spacer" aria-hidden="true" />
       </main>

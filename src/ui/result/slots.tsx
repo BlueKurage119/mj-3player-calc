@@ -3,6 +3,7 @@ import { Suspense, lazy } from 'react';
 import type { ScoredHora } from '../../core/result';
 import type { Tile as CoreTile, TileAvailability } from '../../core/tile';
 import { Tile, tileLabelOf } from '../tile';
+import { EngineButton } from './EngineButton';
 import { horaGlanceParts } from './hora-summary';
 import type { ResultContext } from './hora/HoraDetail';
 
@@ -53,17 +54,30 @@ export function JustHoraBody(): React.JSX.Element {
 export interface HoraBodyProps {
   hora: ScoredHora[];
   context?: ResultContext | undefined;
+  /** 指定時のみ、見出し行(右端)に「計算」ボタンを出す */
+  onOpenEngine?: (() => void) | undefined;
 }
 
-export function HoraBody({ hora, context }: HoraBodyProps): React.JSX.Element {
+export function HoraBody({
+  hora,
+  context,
+  onOpenEngine
+}: HoraBodyProps): React.JSX.Element {
   return (
     <div data-result-kind="hora" className="result-body result-body--hora">
       {hora.length === 0 ? (
         <p className="result-body__text">和了牌なし</p>
       ) : (
-        <Suspense fallback={null}>
-          <HoraDetail hora={hora} context={context} />
-        </Suspense>
+        <>
+          {onOpenEngine ? (
+            <div className="result-body__heading result-body__heading--action">
+              <EngineButton onClick={onOpenEngine} />
+            </div>
+          ) : null}
+          <Suspense fallback={null}>
+            <HoraDetail hora={hora} context={context} />
+          </Suspense>
+        </>
       )}
     </div>
   );
@@ -72,6 +86,8 @@ export function HoraBody({ hora, context }: HoraBodyProps): React.JSX.Element {
 export interface TempaiBodyProps {
   tileAvailabilities: TileAvailability[];
   onTsumo?: ((tile: CoreTile) => void) | undefined;
+  /** 指定時のみ、見出し行(右端)に「計算」ボタンを出す */
+  onOpenEngine?: (() => void) | undefined;
 }
 
 const renderWaitTiles = (
@@ -101,7 +117,8 @@ const renderWaitTiles = (
 
 export function TempaiBody({
   tileAvailabilities,
-  onTsumo
+  onTsumo,
+  onOpenEngine
 }: TempaiBodyProps): React.JSX.Element {
   const available = tileAvailabilities.filter(a => a.count > 0);
   return (
@@ -110,7 +127,14 @@ export function TempaiBody({
         <p className="result-body__text">和了牌なし</p>
       ) : (
         <>
-          <h2 className="result-body__title">聴牌</h2>
+          {onOpenEngine ? (
+            <div className="result-body__heading result-body__heading--action">
+              <h2 className="result-body__title">聴牌</h2>
+              <EngineButton onClick={onOpenEngine} />
+            </div>
+          ) : (
+            <h2 className="result-body__title">聴牌</h2>
+          )}
           <div className="result-body__tiles">
             {renderWaitTiles(available, onTsumo)}
           </div>
@@ -144,12 +168,15 @@ export interface ShantenBodyProps {
   shanten: number;
   tileAvailabilities: TileAvailability[];
   onTsumo?: ((tile: CoreTile) => void) | undefined;
+  /** 指定時のみ、見出し行(右端)に「計算」ボタンを出す */
+  onOpenEngine?: (() => void) | undefined;
 }
 
 export function ShantenBody({
   shanten,
   tileAvailabilities,
-  onTsumo
+  onTsumo,
+  onOpenEngine
 }: ShantenBodyProps): React.JSX.Element {
   const { available, kinds, total } = summarizeAcceptance(tileAvailabilities);
   return (
@@ -157,7 +184,13 @@ export function ShantenBody({
       data-result-kind="shanten"
       className="result-body result-body--shanten"
     >
-      <div className="result-body__heading">
+      <div
+        className={
+          onOpenEngine
+            ? 'result-body__heading result-body__heading--action'
+            : 'result-body__heading'
+        }
+      >
         <h2 className="result-body__title">{shanten}向聴</h2>
         <span
           className="result-body__summary tabular-nums"
@@ -166,6 +199,7 @@ export function ShantenBody({
         >
           {kinds}種 {total}枚
         </span>
+        {onOpenEngine ? <EngineButton onClick={onOpenEngine} /> : null}
       </div>
       <div className="result-body__tiles">
         {renderWaitTiles(available, onTsumo)}

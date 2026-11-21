@@ -14,6 +14,14 @@
   row-gap: 0.25rem;
 }
 
+.result-body__heading--action {
+  align-items: center;
+}
+
+.result-body__engine-button {
+  margin-inline-start: auto;
+}
+
 .result-body__title {
   margin: 0;
   font-family: var(--md-sys-typescale-title-medium-font);

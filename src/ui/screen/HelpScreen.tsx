@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import type React from 'react';
 import type { Rule } from '../../core/rule';
 import {
@@ -9,13 +10,16 @@ import { Disclosure } from '../expressive';
 import { SYMBOL_ARROW_BACK, SymbolIcon } from '../icons';
 import { Button, Divider, IconButton } from '../md';
 import { TSUMO_LOSS_DESCRIPTIONS } from '../settings/rule-help';
-import { useAppDispatch } from '../state';
+import { useAppDispatch, useAppState } from '../state';
+import type { HelpFocus } from '../state';
 import '../help/help.css';
 import './main-screen.css';
 
 export interface HelpViewProps {
   onBack: () => void;
   onOpenLicense: () => void;
+  /** 開いた状態で表示する節(確率・期待値の画面から来たとき) */
+  focus?: HelpFocus | null | undefined;
 }
 
 function getRuleLabel(key: RuleItem['key']): string {
@@ -35,8 +39,17 @@ function getSelectOptionLabel<K extends SelectRuleKey>(
 /** ヘルプ画面の描画本体(props のみで描画し、テスト可能にする) */
 export function HelpView({
   onBack,
-  onOpenLicense
+  onOpenLicense,
+  focus = null
 }: HelpViewProps): React.JSX.Element {
+  useEffect(() => {
+    if (focus === 'engine') {
+      document.getElementById('help-engine')?.scrollIntoView?.({
+        block: 'start'
+      });
+    }
+  }, [focus]);
+
   const tsumoLossLabel = getRuleLabel('tsumoLoss');
   const tsumoLossLossLabel = getSelectOptionLabel('tsumoLoss', 'loss');
   const tsumoLossNorthSplitLabel = getSelectOptionLabel(
@@ -303,6 +316,46 @@ export function HelpView({
               </p>
             </div>
           </Disclosure>
+
+          {/* 本文は仮置き(文言はオーナー監修で差し替える。材料は Issue #139 設計書 §1) */}
+          <div id="help-engine" className="help-screen__anchor">
+            <Disclosure summary="確率・期待値" defaultOpen={focus === 'engine'}>
+              <div className="help-screen__body">
+                <p>
+                  {
+                    '手牌から先の和了率・聴牌率・期待値を、巡目ごとに概算します。他家の和了・鳴き・流局は考えない一人麻雀で、ツモ和了だけを数えます。'
+                  }
+                </p>
+                <ul>
+                  <li>
+                    {
+                      '表示する巡目は、1〜18巡目のうち選んだ巡目までの累積です。配牌直後の手なら実際の巡目と一致し、途中の手ではずれます。'
+                    }
+                  </li>
+                  <li>
+                    {
+                      '門前は聴牌したらすぐ立直し、聴牌後は待ちを変えません。役がない聴牌は、聴牌には数えますが和了には数えません。'
+                    }
+                  </li>
+                  <li>
+                    {
+                      '一発・ダブル立直・天和・地和・海底は含めません。立直の1000点は引きません。山と裏ドラは近似です。'
+                    }
+                  </li>
+                  <li>
+                    {
+                      '方針は期待値が最大になる打ち方です。条件を変えると、和了率・聴牌率が下がることがあります。'
+                    }
+                  </li>
+                  <li>
+                    {
+                      '「概算」は手替わりを制限した計算です。「手替わりを詳しく」は制限をゆるめるぶん、時間がかかります。4向聴以上は計算しません。'
+                    }
+                  </li>
+                </ul>
+              </div>
+            </Disclosure>
+          </div>
         </div>
 
         <Divider />
@@ -322,10 +375,12 @@ export function HelpView({
 /** ヘルプ画面 */
 export function HelpScreen(): React.JSX.Element {
   const dispatch = useAppDispatch();
+  const { helpFocus, helpReturn } = useAppState();
 
   return (
     <HelpView
-      onBack={() => dispatch({ type: 'navigate', screen: 'main' })}
+      focus={helpFocus}
+      onBack={() => dispatch({ type: 'navigate', screen: helpReturn })}
       onOpenLicense={() =>
         dispatch({ type: 'navigate', screen: 'license', returnTo: 'help' })
       }

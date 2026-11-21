@@ -4,6 +4,7 @@ import type { ResultState } from '../calc/result-state';
 import type { ResultContext } from '../result/hora/HoraDetail';
 import { ResultBody, type ResultTileActions } from '../result/ResultBody';
 import { classifyResult } from '../result/classify';
+import { isEngineEntryAvailable } from '../result/engine-entry';
 import { preloadHoraDetail } from '../result/slots';
 
 export interface ResultPanelProps {
@@ -11,12 +12,22 @@ export interface ResultPanelProps {
   dispatchTimestampRef?: MutableRefObject<number | null> | undefined;
   context?: ResultContext | undefined;
   tileActions?: ResultTileActions | undefined;
+  /** 確率・期待値の画面への入口。handLength・meldCount は出す条件の判定に使う */
+  engineEntry?:
+    | { onOpen: () => void; handLength: number; meldCount: number }
+    | undefined;
   ref?: React.Ref<HTMLElement> | undefined;
 }
 
 export function ResultPanel(props: ResultPanelProps): React.JSX.Element {
-  const { resultState, dispatchTimestampRef, context, tileActions, ref } =
-    props;
+  const {
+    resultState,
+    dispatchTimestampRef,
+    context,
+    tileActions,
+    engineEntry,
+    ref
+  } = props;
 
   useEffect(() => {
     preloadHoraDetail().catch(() => {});
@@ -75,7 +86,21 @@ export function ResultPanel(props: ResultPanelProps): React.JSX.Element {
         ) : resultState.result === null ? (
           <div className="result-panel__empty" data-state="empty" />
         ) : (
-          <ResultBody view={view} context={context} tileActions={tileActions} />
+          <ResultBody
+            view={view}
+            context={context}
+            tileActions={tileActions}
+            onOpenEngine={
+              engineEntry &&
+              isEngineEntryAvailable(
+                view,
+                engineEntry.handLength,
+                engineEntry.meldCount
+              )
+                ? engineEntry.onOpen
+                : undefined
+            }
+          />
         )}
       </div>
     </section>
