@@ -108,6 +108,33 @@ const EXTRA_PALETTES = [
   }
 ] as const;
 
+/**
+ * グラフ線用の色(Issue #139)。ロールの本体色(ライト T40・ダーク T80)ではライトの背景で細い線が弱いため、
+ * ライトは T50、ダークは T80(本体色と同値)の同じトーンパレットから取る
+ */
+const CHART_LIGHT_TONE = 50;
+const CHART_DARK_TONE = 80;
+
+const CHART_ROLES = [
+  'chartPrimary',
+  'chartTertiary',
+  'chartSenary',
+  'chartQuinary',
+  'chartQuaternary'
+] as const;
+
+function appendChartLines(
+  lines: string[],
+  isDark: boolean,
+  palettes: Record<(typeof CHART_ROLES)[number], TonalPalette>
+): void {
+  const tone = isDark ? CHART_DARK_TONE : CHART_LIGHT_TONE;
+  for (const role of CHART_ROLES) {
+    const hex = hexFromArgb(palettes[role].tone(tone)).toLowerCase();
+    lines.push(`  --md-sys-color-${camelToKebab(role)}: ${hex};`);
+  }
+}
+
 function camelToKebab(str: string): string {
   return str.replace(/[A-Z]/g, match => `-${match.toLowerCase()}`);
 }
@@ -157,6 +184,24 @@ function appendColorRoleLines(
   }
 }
 
+function chartPalettes(
+  hct: Hct,
+  scheme: DynamicScheme
+): Record<(typeof CHART_ROLES)[number], TonalPalette> {
+  const extra = (offset: number): TonalPalette =>
+    TonalPalette.fromHueAndChroma(
+      (hct.hue + offset + 360) % 360,
+      EXTRA_PALETTE_CHROMA
+    );
+  return {
+    chartPrimary: scheme.primaryPalette,
+    chartTertiary: scheme.tertiaryPalette,
+    chartSenary: extra(SENARY_HUE_OFFSET),
+    chartQuinary: extra(QUINARY_HUE_OFFSET),
+    chartQuaternary: extra(QUATERNARY_HUE_OFFSET)
+  };
+}
+
 export function generateTokensCss(): string {
   const hct = Hct.fromInt(argbFromHex(SEED));
   const lightScheme = new SchemeTonalSpot(
@@ -188,6 +233,7 @@ export function generateTokensCss(): string {
   ];
 
   appendColorRoleLines(lines, lightScheme, extraLightSchemes);
+  appendChartLines(lines, false, chartPalettes(hct, lightScheme));
 
   lines.push('}');
   lines.push('');
@@ -195,6 +241,7 @@ export function generateTokensCss(): string {
   lines.push('  color-scheme: dark;');
 
   appendColorRoleLines(lines, darkScheme, extraDarkSchemes);
+  appendChartLines(lines, true, chartPalettes(hct, darkScheme));
 
   lines.push('}');
   lines.push(''); // 末尾改行
