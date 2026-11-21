@@ -350,6 +350,54 @@ describe(' UI監修: ボタン配置・スライダー・前提', () => {
   });
 });
 
+describe('第12版: 前提と手牌の固定カード', () => {
+  const css = readFileSync(new URL('./engine.css', import.meta.url), 'utf8');
+  const block = (re: RegExp) => css.match(re)?.[0] ?? '';
+
+  it('前提と手牌が1枚のカード(.engine-card)に入り、固定前は data-stuck=false', () => {
+    const html = render(view());
+    const card = html.indexOf('class="engine-card"');
+    expect(card).toBeGreaterThan(-1);
+    expect(html).toContain('data-stuck="false"');
+    expect(html.indexOf('engine-premise')).toBeGreaterThan(card);
+    expect(html.indexOf('engine-screen__hand')).toBeGreaterThan(
+      html.indexOf('engine-premise')
+    );
+    // 目印はカードの外(流れに影響しない絶対配置)
+    expect(html.indexOf('engine-card__sentinel')).toBeLessThan(card);
+  });
+
+  it('カードはヘッダーの下に sticky、固定中は要約カードと同じ色トークン、遷移はモーショントークン', () => {
+    const card = block(/\.engine-card \{[^}]*\}/);
+    expect(card).toContain('position: sticky');
+    expect(card).toContain('top: var(--engine-header-height');
+    expect(card).toContain('--md-sys-motion-spring-effects-fast-duration');
+    expect(card).toContain('--md-sys-motion-spring-effects-fast-easing');
+    const stuck = block(/\.engine-card\[data-stuck="true"\] \{[^}]*\}/);
+    expect(stuck).toContain('--md-sys-color-secondary-container');
+    expect(stuck).toContain('--md-sys-color-on-secondary-container');
+    expect(css).not.toMatch(/#[0-9a-fA-F]{3,8}\b/);
+  });
+
+  it('手牌の牌は通常 1.5rem、固定中はドラと同じ 1.25rem に縮み、14枚でも折り返さない', () => {
+    expect(block(/\.engine-screen__hand \{[^}]*\}/)).toContain(
+      '--hand-tile: 1.5rem'
+    );
+    expect(
+      block(
+        /\.engine-card\[data-stuck="true"\] \.engine-screen__hand \{[^}]*\}/
+      )
+    ).toContain('--hand-tile: 1.25rem');
+    expect(block(/\.engine-premise \{[^}]*\}/)).toContain(
+      '--tile-width: 1.25rem'
+    );
+    const tiles = block(/\.engine-screen__hand \.glance-tiles \{[^}]*\}/);
+    expect(tiles).toContain('flex-wrap: nowrap');
+    expect(tiles).toContain('100cqw');
+    expect(render(view())).toContain('--hand-count');
+  });
+});
+
 describe('第8版: 並びとスタイル', () => {
   it('前提は手牌より前にあり、カード(secondary-container)に入れない', () => {
     const html = render(view());
@@ -361,6 +409,9 @@ describe('第8版: 並びとスタイル', () => {
     const premise = css.match(/\.engine-premise \{[^}]*\}/)?.[0] ?? '';
     expect(premise).not.toContain('secondary-container');
     expect(premise).not.toContain('background-color');
+    expect(html.indexOf('class="engine-card"')).toBeLessThan(
+      html.indexOf('engine-premise')
+    );
   });
 
   it('列ヘッダーは中央揃え、「向聴戻し」は2文字ずつで改行する幅', () => {

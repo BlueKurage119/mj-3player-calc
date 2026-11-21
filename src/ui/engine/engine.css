@@ -26,13 +26,67 @@
   display: flex;
   flex-direction: column;
   gap: 1rem;
+  position: relative;
 }
 
-.engine-screen__hand {
-  --tile-width: 1.5rem;
+/* 固定中かの判定に使う見えない目印(カードの定位置。流れに影響しない) */
+.engine-card__sentinel {
+  position: absolute;
+  inset-inline: 0;
+  top: 0.75rem;
+  height: 0;
+  pointer-events: none;
+}
+
+/* 前提と手牌を納めた1枚のカード。スクロールでヘッダーの下に固定され、固定中は要約カードの色合い・牌の高さになる */
+.engine-card {
+  position: sticky;
+  top: var(--engine-header-height, 0px);
+  z-index: 10;
   background-color: var(--md-sys-color-surface-container);
+  color: var(--md-sys-color-on-surface);
   border-radius: var(--md-sys-shape-corner-large);
-  padding: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  box-shadow: 0 0 0 transparent;
+  transition-property: background-color, color, box-shadow, border-radius;
+  transition-duration: var(--md-sys-motion-spring-effects-fast-duration);
+  transition-timing-function: var(--md-sys-motion-spring-effects-fast-easing);
+}
+
+.engine-card[data-stuck="true"] {
+  background-color: var(--md-sys-color-secondary-container);
+  color: var(--md-sys-color-on-secondary-container);
+  border-radius: var(--md-sys-shape-corner-medium);
+  box-shadow: 0 2px 6px
+    color-mix(in srgb, var(--md-sys-color-shadow) 30%, transparent);
+}
+
+/* 手牌: 通常は 1.5rem、固定中はドラの牌と同じ 1.25rem。14枚でも折り返さず、幅に収まる大きさに縮める */
+.engine-screen__hand {
+  --hand-tile: 1.5rem;
+  container-type: inline-size;
+}
+
+.engine-card[data-stuck="true"] .engine-screen__hand {
+  --hand-tile: 1.25rem;
+}
+
+.engine-screen__hand .glance-tiles {
+  flex-wrap: nowrap;
+  --tile-width: min(
+    var(--hand-tile),
+    calc((100cqw - 2px * (var(--hand-count, 1) - 1)) / var(--hand-count, 1))
+  );
+}
+
+.engine-screen__hand .tile {
+  flex-shrink: 0;
+  transition-property: width;
+  transition-duration: var(--md-sys-motion-spring-effects-fast-duration);
+  transition-timing-function: var(--md-sys-motion-spring-effects-fast-easing);
 }
 
 .engine-premise {
@@ -43,11 +97,14 @@
   color: var(--md-sys-color-on-surface);
 }
 
-/* 要約カードの部品を、カードなし(画面のサーフェスの上)で使う。文字・ピルは on-surface 系のトークンにする */
+/* 要約カードの部品を使う。通常時は on-surface 系、固定中は要約カードの既定(on-secondary-container 系)に遷移する */
 .engine-premise .summary-card__winds,
 .engine-premise .summary-card__pill,
 .engine-premise .summary-card__label {
   color: var(--md-sys-color-on-surface);
+  transition-property: color, background-color;
+  transition-duration: var(--md-sys-motion-spring-effects-fast-duration);
+  transition-timing-function: var(--md-sys-motion-spring-effects-fast-easing);
 }
 
 .engine-premise .summary-card__label {
@@ -56,6 +113,30 @@
 
 .engine-premise .summary-card__pill {
   background-color: var(--md-sys-color-surface-container-high);
+}
+
+.engine-card[data-stuck="true"] .engine-premise .summary-card__winds,
+.engine-card[data-stuck="true"] .engine-premise .summary-card__pill,
+.engine-card[data-stuck="true"] .engine-premise .summary-card__label {
+  color: var(--md-sys-color-on-secondary-container);
+}
+
+.engine-card[data-stuck="true"] .engine-premise .summary-card__pill {
+  background-color: color-mix(
+    in srgb,
+    var(--md-sys-color-on-secondary-container) 16%,
+    transparent
+  );
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .engine-card,
+  .engine-premise .summary-card__winds,
+  .engine-premise .summary-card__pill,
+  .engine-premise .summary-card__label,
+  .engine-screen__hand .tile {
+    transition: none;
+  }
 }
 
 .engine-premise .summary-card__dora {

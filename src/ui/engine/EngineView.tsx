@@ -1,8 +1,10 @@
+import { useEffect, useRef, useState } from 'react';
 import type React from 'react';
 import type { Tile as CoreTile } from '../../core/tile';
 import { ConnectedButtonGroup } from '../expressive';
 import { SYMBOL_ARROW_BACK, SYMBOL_HELP, SymbolIcon } from '../icons';
 import { Button, IconButton } from '../md';
+import { useInView } from '../screen/use-in-view';
 import { GlanceTiles } from '../result/slots';
 import { EnginePremise, type EnginePremiseProps } from './EnginePremise';
 import { EngineResult, type EngineResultProps } from './EngineResult';
@@ -57,9 +59,35 @@ const METHOD_OPTIONS = [
 export function EngineView(props: EngineViewProps): React.JSX.Element {
   const { run } = props;
   const running = run.status === 'running';
+  // 前提と手牌のカードは、ヘッダーの下に固定する(初期画面の要約カードと同じ流儀。ヘッダーの高さを実測)
+  const headerRef = useRef<HTMLElement | null>(null);
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
+  const [headerHeight, setHeaderHeight] = useState(0);
+  useEffect(() => {
+    const el = headerRef.current;
+    if (!el) return;
+    const update = () => setHeaderHeight(el.offsetHeight);
+    update();
+    if (typeof ResizeObserver === 'undefined') return;
+    const observer = new ResizeObserver(update);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+  // カードの定位置に置いた見えない目印がヘッダーの下に隠れたら「固定中」
+  const inFlow = useInView(
+    sentinelRef,
+    { rootMargin: `-${headerHeight}px 0px 0px 0px` },
+    true
+  );
+  const stuck = !inFlow;
   return (
-    <div className="engine-screen">
-      <header className="app-header">
+    <div
+      className="engine-screen"
+      style={
+        { '--engine-header-height': `${headerHeight}px` } as React.CSSProperties
+      }
+    >
+      <header ref={headerRef} className="app-header">
         <div className="app-header__inner app-header__inner--start">
           <IconButton
             variant="standard"
@@ -81,10 +109,25 @@ export function EngineView(props: EngineViewProps): React.JSX.Element {
         </div>
       </header>
       <main className="engine-screen__content">
-        <EnginePremise {...props.premise} />
-        <section className="engine-screen__hand" aria-label="対象の手牌">
-          <GlanceTiles tiles={props.tiles} />
-        </section>
+        <div
+          ref={sentinelRef}
+          className="engine-card__sentinel"
+          aria-hidden="true"
+        />
+        <div className="engine-card" data-stuck={stuck ? 'true' : 'false'}>
+          <EnginePremise {...props.premise} />
+          <section
+            className="engine-screen__hand"
+            aria-label="対象の手牌"
+            style={
+              {
+                '--hand-count': Math.max(1, props.tiles.length)
+              } as React.CSSProperties
+            }
+          >
+            <GlanceTiles tiles={props.tiles} />
+          </section>
+        </div>
         {props.available ? (
           <section className="engine-screen__controls">
             <div className="engine-screen__actions">

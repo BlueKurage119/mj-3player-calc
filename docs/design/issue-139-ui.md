@@ -457,3 +457,12 @@ export interface TurnChartProps { series: ChartSeries[]; displayTurn: number }
 - 追記(オーナー確定): 「計算」ボタンはカード内の見出し行ではテキストボタン(文字だけ。tonal をやめた。`EngineButton` は `variant="text"`)にし、ラベルは全て「計算」で統一する(「何切る」は使わない)。
 - 追記(オーナー確定): 「計算」ボタン(聴牌・向聴・打牌候補・13枚聴牌の追加カードの全箇所)の先頭に Material Symbols の `Analytics` アイコンを付け、アイコン+「計算」の文字を併記する。アイコンは `src/ui/icons/symbol-paths.ts` に `SYMBOL_ANALYTICS`(公式 `analytics_24px.svg` の path を無改変で書き写し。`symbol-paths.test.ts` で完全一致を検査、CREDITS.md の件数を 17 に更新)として追加。`Button` ラッパーには、`Chip` の流儀(`<span slot="icon">`)に合わせた任意の `icon` を追加し、`EngineButton` が `SymbolIcon`(1.125rem)を渡す。
 
+### 13.7 第12版: 前提と手牌を1枚の固定カードに(オーナー確定。案Q)
+
+- 計算の前提(`EnginePremise`)と手牌(`.engine-screen__hand`)を1枚のカード `.engine-card` に納め、`position: sticky; top: var(--engine-header-height)`(画面のヘッダーは元から sticky なので、その下に固定。`EngineView` がヘッダーの高さを実測して CSS 変数に渡す。`MainScreen` と同じ流儀)。
+- 固定前: `surface-container` の背景。固定中(`data-stuck="true"`): 初期画面の要約カード(`.summary-card__inner`)と同じ `secondary-container` / `on-secondary-container`・角丸 medium・影に遷移する。前提の文字・ピルも同様に `on-secondary-container` 系へ遷移する。遷移は `--md-sys-motion-spring-effects-fast-*`(要約カードと同じ)。`prefers-reduced-motion` では遷移なし。色はトークンのみ。
+- 固定の検出: カードの定位置(内容領域の上端から 0.75rem)に、高さ0・絶対配置の目印 `.engine-card__sentinel` を置き、`useInView`(要約カードと同じ部品)でヘッダーの下に隠れたかを見る。流れに影響しない。
+- 手牌の牌: 通常 `--hand-tile: 1.5rem`、固定中はドラの牌(`.engine-premise` の `--tile-width: 1.25rem`)と同じ 1.25rem に縮む(`width` を遷移)。`.glance-tiles` は折り返さず(`nowrap`)、牌幅は `min(--hand-tile, (100cqw − 2px×(n−1)) / n)`(n は牌数 `--hand-count`)で14枚でも幅に収まる。
+- 実測(本番ビルド、14枚・ドラ2枚): カード高さ 固定前/固定中 = 360px: 98.5 / 98.5、390px: 101.3 / 98.7、430px: 104.0 / 98.7(手牌の牌高さ 360: 26.5 / 26.5、390: 29.3 / 26.7、430: 32.0 / 26.7。ドラは 26.7)。折り返しなし、固定位置はヘッダー(64px)の直下(top=64)。360px は 14枚が幅で律速されるため固定前後で変わらない。
+- バンドル: 初回JS 129,723 B(第11版の 129,721 B から +2 B)。計算画面チャンクは生 39,160 B / gzip 10.71 kB(`EngineScreen-*.js` 10.71 kB)、CSS gzip 2.01 kB。
+
