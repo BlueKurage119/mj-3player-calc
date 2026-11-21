@@ -89,18 +89,19 @@ export function EngineCandidates({
           const discard: CoreTile | null = candidate.discard;
           return (
             <li key={index}>
-              <div
-                className="engine-candidates__row"
-                data-line={line ? 'true' : undefined}
-                style={
-                  line
-                    ? ({
-                        '--line-color': `var(${line.colorToken})`
-                      } as React.CSSProperties)
-                    : undefined
-                }
-              >
+              <div className="engine-candidates__row">
                 <span className="engine-candidates__tile">
+                  {/* 上位5行は折れ線の色の短い縦線。6位以降は同じ幅の見えないスペーサーで、牌の位置を全行でそろえる */}
+                  <span
+                    className="engine-candidates__mark"
+                    data-line={line ? 'true' : 'none'}
+                    aria-hidden="true"
+                    style={
+                      line
+                        ? { backgroundColor: `var(${line.colorToken})` }
+                        : undefined
+                    }
+                  />
                   {discard ? <Tile tile={discard} /> : null}
                   {isShantenBack(candidate, candidates) ? (
                     <span className="engine-candidates__chip">向聴戻し</span>

@@ -399,10 +399,20 @@ describe('第13版: 14枚のグラフは上位5候補の折れ線', () => {
     expect(win).not.toContain('(点)');
   });
 
-  it('候補行の上位5行だけがグラフと同じ色で塗られ(--line-color)、14枚のグラフ凡例はない', () => {
+  it('候補行の上位5行の牌の左に折れ線と同じ色の短い線が付き(6位以降は同幅のスペーサー)、14枚のグラフ凡例はない', () => {
     const h = html('ev');
     expect(h.match(/data-line="true"/g)?.length).toBe(5);
-    expect(h).toContain('--line-color:var(--md-sys-color-primary)');
+    // 6位以降は見えないスペーサー(同じ幅)で牌の位置をそろえる。7行中 2行
+    expect(h.match(/data-line="none"/g)?.length).toBe(2);
+    expect(h.match(/engine-candidates__mark/g)?.length).toBe(7);
+    expect(h).toContain('background-color:var(--md-sys-color-primary)');
+    // 行の背景は既定のまま(染めない)
+    const css = readFileSync(new URL('./engine.css', import.meta.url), 'utf8');
+    expect(css).not.toContain('--line-color');
+    const mark = css.match(/\.engine-candidates__mark \{[^}]*\}/)?.[0] ?? '';
+    expect(mark).toContain('width: 0.25rem');
+    expect(mark).toContain('flex: none');
+    expect(css).not.toMatch(/\.engine-candidates__row\[data-line/);
     // 線の色は凡例を兼ねるので、グラフの凡例は出さない
     expect(h).not.toContain('turn-chart__legend');
     // 13枚は従来どおり凡例(和了率・聴牌率)
