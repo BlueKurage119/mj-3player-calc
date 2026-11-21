@@ -88,7 +88,7 @@ export const toRateSeries = (c: CandidateStat): ChartSeries[] => {
     {
       id: 'tenpai',
       label: '聴牌率',
-      colorToken: '--md-sys-color-tertiary',
+      colorToken: '--md-sys-color-quaternary',
       dash: '5 3',
       values: vs.map(v => v.tenpai)
     }
@@ -103,6 +103,36 @@ export interface ChartAxis {
 }
 
 export const PERCENT_AXIS: ChartAxis = { kind: 'percent', max: 1 };
+
+/**
+ * 折れ線の色(本体色トークン)→ 染めに使うコンテナ色と、その上の文字色トークン。
+ * 色の混合はせず、各ロールのコンテナ色(ライト90・ダーク30)をそのまま使う。対応はここだけに置く
+ */
+export const LINE_TINT_TOKENS: Readonly<
+  Record<string, { container: string; onContainer: string }>
+> = Object.fromEntries(
+  ['primary', 'tertiary', 'quaternary', 'quinary', 'senary'].map(role => [
+    `--md-sys-color-${role}`,
+    {
+      container: `--md-sys-color-${role}-container`,
+      onContainer: `--md-sys-color-on-${role}-container`
+    }
+  ])
+);
+
+/** 染めのスタイル(--line-color は短線の本体色、--tint-bg・--tint-fg はコンテナ色と文字色) */
+export const tintStyle = (colorToken: string): Record<string, string> => {
+  const t = LINE_TINT_TOKENS[colorToken];
+  return {
+    '--line-color': `var(${colorToken})`,
+    ...(t
+      ? {
+          '--tint-bg': `var(${t.container})`,
+          '--tint-fg': `var(${t.onContainer})`
+        }
+      : {})
+  };
+};
 
 /** 折れ線5本に割り当てる色トークン(色相順: 緑・青緑・紫・赤褐・黄褐。セカンダリー系を除く5色。quinary・senary は 別PRで main に追加済みで、develop/v2.0 への同期後に有効になる)と、色に頼らない識別用の破線 */
 export const CANDIDATE_LINE_STYLES: readonly {

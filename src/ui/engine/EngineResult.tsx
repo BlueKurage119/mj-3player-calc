@@ -15,6 +15,7 @@ import {
   CANDIDATE_LINE_STYLES,
   statAt,
   toCandidateSeries,
+  tintStyle,
   toRateSeries
 } from './chart-series';
 import './engine.css';
@@ -45,7 +46,7 @@ export function EngineSummary({
     return token
       ? {
           'data-tint': 'true',
-          style: { '--line-color': `var(${token})` } as React.CSSProperties
+          style: tintStyle(token) as React.CSSProperties
         }
       : {};
   };
@@ -115,9 +116,7 @@ export function EngineCandidates({
                 data-tint={line ? 'true' : undefined}
                 style={
                   line
-                    ? ({
-                        '--line-color': `var(${line.colorToken})`
-                      } as React.CSSProperties)
+                    ? (tintStyle(line.colorToken) as React.CSSProperties)
                     : undefined
                 }
               >

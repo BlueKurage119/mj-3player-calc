@@ -292,11 +292,12 @@
 }
 
 .engine-summary__item[data-tint="true"] {
-  background-color: color-mix(
-    in srgb,
-    var(--line-color) 24%,
-    var(--md-sys-color-surface-container)
-  );
+  background-color: var(--tint-bg);
+  color: var(--tint-fg);
+}
+
+.engine-summary__item[data-tint="true"] dt {
+  color: var(--tint-fg);
 }
 
 /* 見出しの横の短い縦線(14枚の候補行と同じ幅 0.25rem・線の色) */
@@ -429,13 +430,10 @@
   border-radius: var(--md-sys-shape-corner-full);
 }
 
-/* 上位5行は、行の背景を折れ線の色で薄く染める(表示専用。左端の太い塗りはしない) */
+/* 上位5行は、行の背景を折れ線のロールのコンテナ色で染め、文字は on-コンテナ色にする(表示専用。混色なし) */
 .engine-candidates__row[data-tint="true"] {
-  background-color: color-mix(
-    in srgb,
-    var(--line-color) 24%,
-    var(--md-sys-color-surface-container)
-  );
+  background-color: var(--tint-bg);
+  color: var(--tint-fg);
 }
 
 .engine-candidates__value {

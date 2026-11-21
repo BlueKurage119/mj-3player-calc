@@ -407,16 +407,23 @@ describe('第13版: 14枚のグラフは上位5候補の折れ線', () => {
     expect(h).toContain('background-color:var(--md-sys-color-primary)');
     // 行の背景は既定のまま(染めない)
     const css = readFileSync(new URL('./engine.css', import.meta.url), 'utf8');
-    // 上位5行だけ背景を線の色で薄く染める(24%)。6位以降は既定の背景
+    // 上位5行だけ背景を、線のロールのコンテナ色で染める(混色なし)。6位以降は既定の背景
     expect(h.match(/data-tint="true"/g)?.length).toBe(5);
     expect(h).toContain('--line-color:var(--md-sys-color-primary)');
     const tint =
       css.match(
         /\.engine-candidates__row\[data-tint="true"\] \{[^}]*\}/
       )?.[0] ?? '';
-    expect(tint).toContain('var(--line-color) 24%');
-    expect(tint).toContain('--md-sys-color-surface-container)');
+    expect(tint).toContain('background-color: var(--tint-bg)');
+    expect(tint).toContain('color: var(--tint-fg)');
+    expect(tint).not.toContain('color-mix');
     expect(tint).not.toContain('box-shadow');
+    expect(h).toContain('--tint-bg:var(--md-sys-color-primary-container)');
+    expect(h).toContain('--tint-fg:var(--md-sys-color-on-primary-container)');
+    expect(h).toContain('--tint-bg:var(--md-sys-color-senary-container)');
+    expect(h).toContain(
+      '--tint-fg:var(--md-sys-color-on-quaternary-container)'
+    );
     const mark = css.match(/\.engine-candidates__mark \{[^}]*\}/)?.[0] ?? '';
     expect(mark).toContain('width: 0.25rem');
     expect(mark).toContain('flex: none');
@@ -431,7 +438,7 @@ describe('第13版: 14枚のグラフは上位5候補の折れ線', () => {
     expect(h13).not.toContain('turn-chart__legend');
   });
 
-  it('13枚: 和了率・聴牌率のカードだけが線の色で染まり(24%)見出しの横に短線、期待値のカードは染めなし', () => {
+  it('13枚: 和了率・聴牌率のカードだけが線の色で染まり(コンテナ色)見出しの横に短線、期待値のカードは染めなし', () => {
     const h = render(
       view({ run: done([cand(null, d => ({ win: d / 100 }))]) })
     );
@@ -447,15 +454,29 @@ describe('第13版: 14枚のグラフは上位5候補の折れ線', () => {
     expect(win?.[2]).toContain('engine-summary__mark');
     expect(win?.[2]).toContain('和了率');
     expect(tenpai?.[1]).toContain('data-tint="true"');
-    expect(tenpai?.[1]).toContain('--line-color:var(--md-sys-color-tertiary)');
+    expect(tenpai?.[1]).toContain(
+      '--line-color:var(--md-sys-color-quaternary)'
+    );
+    expect(tenpai?.[1]).toContain(
+      '--tint-bg:var(--md-sys-color-quaternary-container)'
+    );
+    expect(tenpai?.[1]).toContain(
+      '--tint-fg:var(--md-sys-color-on-quaternary-container)'
+    );
+    expect(win?.[1]).toContain(
+      '--tint-bg:var(--md-sys-color-primary-container)'
+    );
     expect(tenpai?.[2]).toContain('engine-summary__mark');
     expect(ev?.[1]).not.toContain('data-tint');
     expect(ev?.[1]).not.toContain('--line-color');
     expect(ev?.[2]).not.toContain('engine-summary__mark');
     const css = readFileSync(new URL('./engine.css', import.meta.url), 'utf8');
-    expect(css).toMatch(
-      /\.engine-summary__item\[data-tint="true"\] \{[^}]*var\(--line-color\) 24%[^}]*surface-container\)/
-    );
+    const card =
+      css.match(/\.engine-summary__item\[data-tint="true"\] \{[^}]*\}/)?.[0] ??
+      '';
+    expect(card).toContain('background-color: var(--tint-bg)');
+    expect(card).toContain('color: var(--tint-fg)');
+    expect(card).not.toContain('color-mix');
     expect(css.match(/\.engine-summary__mark \{[^}]*\}/)?.[0]).toContain(
       'width: 0.25rem'
     );
