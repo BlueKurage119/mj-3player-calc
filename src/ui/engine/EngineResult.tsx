@@ -37,14 +37,35 @@ export function EngineSummary({
   displayTurn: number;
 }): React.JSX.Element {
   const s = statAt(candidate, displayTurn);
+  // 和了率・聴牌率のカードは、グラフの折れ線(toRateSeries)と同じ色で染め、見出しの横に短い縦線を置く(凡例を兼ねる)
+  const colorOf = (id: string): string | undefined =>
+    toRateSeries(candidate).find(x => x.id === id)?.colorToken;
+  const lineProps = (id: string) => {
+    const token = colorOf(id);
+    return token
+      ? {
+          'data-tint': 'true',
+          style: { '--line-color': `var(${token})` } as React.CSSProperties
+        }
+      : {};
+  };
+  const Mark = () => (
+    <span className="engine-summary__mark" aria-hidden="true" />
+  );
   return (
     <dl className="engine-summary">
-      <div className="engine-summary__item">
-        <dt>和了率</dt>
+      <div className="engine-summary__item" {...lineProps('win')}>
+        <dt>
+          <Mark />
+          和了率
+        </dt>
         <dd className="tabular-nums">{formatPercent(s.win)}</dd>
       </div>
-      <div className="engine-summary__item">
-        <dt>聴牌率</dt>
+      <div className="engine-summary__item" {...lineProps('tenpai')}>
+        <dt>
+          <Mark />
+          聴牌率
+        </dt>
         <dd className="tabular-nums">{formatPercent(s.tenpai)}</dd>
       </div>
       <div className="engine-summary__item">
@@ -184,6 +205,7 @@ export function EngineResult(props: EngineResultProps): React.JSX.Element {
           ) : (
             <TurnChart
               series={toRateSeries(current)}
+              legend={false}
               displayTurn={displayTurn}
             />
           )}

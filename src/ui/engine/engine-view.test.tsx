@@ -426,9 +426,43 @@ describe('第13版: 14枚のグラフは上位5候補の折れ線', () => {
     expect(html('win')).not.toContain('turn-chart__caption');
     // 線の色は凡例を兼ねるので、グラフの凡例は出さない
     expect(h).not.toContain('turn-chart__legend');
-    // 13枚は従来どおり凡例(和了率・聴牌率)
+    // 13枚もグラフ凡例は出さない(要約のカードの染めと短線が兼ねる)
     const h13 = render(view({ run: done([cand(null, () => ({}))]) }));
-    expect(h13).toContain('turn-chart__legend');
+    expect(h13).not.toContain('turn-chart__legend');
+  });
+
+  it('13枚: 和了率・聴牌率のカードだけが線の色で染まり(24%)見出しの横に短線、期待値のカードは染めなし', () => {
+    const h = render(
+      view({ run: done([cand(null, d => ({ win: d / 100 }))]) })
+    );
+    const items = [
+      ...h.matchAll(
+        /<div class="engine-summary__item"([^>]*)>([\s\S]*?)<\/div>/g
+      )
+    ];
+    expect(items.length).toBe(3);
+    const [win, tenpai, ev] = items;
+    expect(win?.[1]).toContain('data-tint="true"');
+    expect(win?.[1]).toContain('--line-color:var(--md-sys-color-primary)');
+    expect(win?.[2]).toContain('engine-summary__mark');
+    expect(win?.[2]).toContain('和了率');
+    expect(tenpai?.[1]).toContain('data-tint="true"');
+    expect(tenpai?.[1]).toContain('--line-color:var(--md-sys-color-tertiary)');
+    expect(tenpai?.[2]).toContain('engine-summary__mark');
+    expect(ev?.[1]).not.toContain('data-tint');
+    expect(ev?.[1]).not.toContain('--line-color');
+    expect(ev?.[2]).not.toContain('engine-summary__mark');
+    const css = readFileSync(new URL('./engine.css', import.meta.url), 'utf8');
+    expect(css).toMatch(
+      /\.engine-summary__item\[data-tint="true"\] \{[^}]*var\(--line-color\) 24%[^}]*surface-container\)/
+    );
+    expect(css.match(/\.engine-summary__mark \{[^}]*\}/)?.[0]).toContain(
+      'width: 0.25rem'
+    );
+    // 14枚の行の短線と同じ幅
+    expect(css.match(/\.engine-candidates__mark \{[^}]*\}/)?.[0]).toContain(
+      'width: 0.25rem'
+    );
   });
 
   it('13枚は従来どおり2本(和了率・聴牌率)', () => {
