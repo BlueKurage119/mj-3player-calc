@@ -146,17 +146,18 @@ describe('EngineView: 結果', () => {
     expect(h18.match(/engine-summary[\s\S]*?<\/dl>/)?.[0]).toContain('>0<');
   });
 
-  it('現在の巡目が「n順」で表示される(「巡目」は使わない)', () => {
+  it('現在の巡目が「n順目」で表示される(「巡目」「n順」は使わない)', () => {
     const p = view({ run: done([c13]) });
-    expect(render(p)).toContain('>3順<');
-    // 「n順」はスライダーの左(同じ行で、スライダーより前)にある
+    expect(render(p)).toContain('>3順目<');
+    expect(render(p)).not.toContain('>3順<');
+    // 「n順目」はスライダーの左(同じ行で、スライダーより前)にある
     const row =
       render(p).match(/engine-result__slider-row[\s\S]*?<\/div>/)?.[0] ?? '';
-    expect(row.indexOf('3順')).toBeGreaterThan(-1);
-    expect(row.indexOf('3順')).toBeLessThan(row.indexOf('<md-slider'));
+    expect(row.indexOf('3順目')).toBeGreaterThan(-1);
+    expect(row.indexOf('3順目')).toBeLessThan(row.indexOf('<md-slider'));
     expect(
       render({ ...p, result: { ...p.result, displayTurn: 17 } })
-    ).toContain('>17順<');
+    ).toContain('>17順目<');
   });
 
   it('U-6: 14枚は列ヘッダー(和了率・聴牌率・期待値)があり、既定は期待値の降順で先頭行が選択される。selectedIndex で切り替わる', () => {
@@ -333,7 +334,7 @@ describe(' UI監修: ボタン配置・スライダー・前提', () => {
     expect(html).not.toContain('北 ');
   });
 
-  it('「n順」は縦軸の目盛りと同じ書式(フォント・色トークン・10/320 の大きさ・右寄せ)', () => {
+  it('「n順目」は縦軸の目盛りと同じ書式(フォント・色トークン・10/320 の大きさ・右寄せ)', () => {
     const css = readFileSync(new URL('./engine.css', import.meta.url), 'utf8');
     const label = css.match(/\.engine-result__turn-label \{[^}]*\}/)?.[0] ?? '';
     const tick = css.match(/\.turn-chart__tick \{[^}]*\}/)?.[0] ?? '';

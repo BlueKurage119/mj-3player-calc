@@ -83,6 +83,23 @@ describe('U-1: 見出し右の「計算」ボタン', () => {
     expect(renderPanel(make(), len)).not.toMatch(HAS_BUTTON);
   });
 
+  it('聴牌のカード(TempaiBody)は、枠の内側の先頭行に「聴牌」の見出し(左)と「計算」ボタン(右)を置く。13枚聴牌の hora(HoraBody)は見出しを足さず、ボタンだけの行をカードの外に置く', () => {
+    const t = renderPanel(tempaiNoScore, 13);
+    expect(t).toMatch(/class="result-panel"/);
+    expect(t.indexOf('result-panel__body')).toBeLessThan(
+      t.indexOf('result-body__heading')
+    );
+    expect(t).toMatch(
+      /class="result-body__heading result-body__heading--action"><h2 class="result-body__title">聴牌<\/h2><[^>]*result-body__engine-button/
+    );
+    const h = renderPanel(tempai13(), 13);
+    expect(h).toContain('result-panel--flat');
+    expect(h).toMatch(
+      /class="result-body__heading result-body__heading--action"><md-filled-tonal-button[^>]*result-body__engine-button/
+    );
+    expect(h).not.toContain('<h2');
+  });
+
   it('engineEntry を渡さないとき、どの種別でも HTML が既存と同じ(ボタンも見出し行の追加もない)', () => {
     for (const make of [
       shantenResult2,
