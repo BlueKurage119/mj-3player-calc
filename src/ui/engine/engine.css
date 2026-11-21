@@ -165,6 +165,8 @@
 }
 
 .engine-result__chart {
+  /* 縦軸の目盛りと「n順目」の文字の大きさ(SVG の viewBox 幅 320 に対する単位)。5桁の期待値が収まる大きさ。2か所で共用する */
+  --turn-chart-tick-size: 8;
   container-type: inline-size;
   display: flex;
   flex-direction: column;
@@ -192,7 +194,7 @@
   white-space: nowrap;
   color: var(--md-sys-color-on-surface-variant);
   font-family: var(--md-sys-typescale-label-small-font);
-  font-size: calc(10 / 320 * 100cqw);
+  font-size: calc(var(--turn-chart-tick-size, 8) / 320 * 100cqw);
   font-weight: normal;
   line-height: 1;
 }
@@ -326,7 +328,7 @@
 .engine-candidates__header,
 .engine-candidates__row {
   display: grid;
-  grid-template-columns: 5.75rem repeat(3, minmax(0, 1fr));
+  grid-template-columns: 6.5rem repeat(3, minmax(0, 1fr));
   align-items: center;
   column-gap: 0.5rem;
 }
@@ -372,17 +374,13 @@
 .engine-candidates__chip {
   padding: 0 0.375rem;
   border-radius: var(--md-sys-shape-corner-medium);
-  background-color: var(--md-sys-color-tertiary-container);
-  color: var(--md-sys-color-on-tertiary-container);
+  background-color: var(--md-sys-color-surface-container-highest);
+  color: var(--md-sys-color-on-surface-variant);
   font-family: var(--md-sys-typescale-label-small-font);
   font-size: var(--md-sys-typescale-label-small-size);
   line-height: var(--md-sys-typescale-label-small-line-height);
-  /* 2文字ずつで改行する(向聴 / 戻し) */
-  width: 2em;
   flex: none;
-  box-sizing: content-box;
-  white-space: normal;
-  word-break: break-all;
+  white-space: nowrap;
   text-align: center;
 }
 
@@ -391,7 +389,7 @@
   box-sizing: border-box;
   width: 100%;
   display: grid;
-  grid-template-columns: 4.5rem repeat(3, minmax(0, 1fr));
+  grid-template-columns: 6.5rem repeat(3, minmax(0, 1fr));
   align-items: center;
   column-gap: 0.5rem;
   min-height: 3rem;
@@ -399,20 +397,20 @@
   border-radius: var(--md-sys-shape-corner-medium);
   background-color: var(--md-sys-color-surface-container);
   color: var(--md-sys-color-on-surface);
-  cursor: pointer;
   font-family: var(--md-sys-typescale-body-large-font);
   font-size: var(--md-sys-typescale-body-large-size);
   line-height: var(--md-sys-typescale-body-large-line-height);
 }
 
-.engine-candidates__row:focus-visible {
-  outline: 2px solid var(--md-sys-color-primary);
-  outline-offset: 2px;
-}
-
-.engine-candidates__row[aria-pressed="true"] {
-  background-color: var(--md-sys-color-secondary-container);
-  color: var(--md-sys-color-on-secondary-container);
+/* 上位5行は、グラフの折れ線の色で塗る(凡例を兼ねる)。左端を線の色で太く塗り、行全体を同じ色で薄く染める */
+.engine-candidates__row[data-line="true"] {
+  background-color: color-mix(
+    in srgb,
+    var(--line-color) 24%,
+    var(--md-sys-color-surface-container)
+  );
+  box-shadow: inset 0.5rem 0 0 var(--line-color);
+  padding-inline-start: 1.25rem;
 }
 
 .engine-candidates__value {
@@ -454,7 +452,7 @@
 .turn-chart__tick {
   fill: var(--md-sys-color-on-surface-variant);
   font-family: var(--md-sys-typescale-label-small-font);
-  font-size: 10px;
+  font-size: calc(var(--turn-chart-tick-size, 8) * 1px);
 }
 
 .turn-chart__legend {
@@ -496,12 +494,4 @@
 
 .turn-chart__legend {
   --tile-width: 1rem;
-}
-
-/* 候補行の牌の左の色の印(グラフの折れ線の色。上位5行のみ) */
-.engine-candidates__mark {
-  flex: none;
-  width: 0.25rem;
-  height: 1.5rem;
-  border-radius: var(--md-sys-shape-corner-full);
 }

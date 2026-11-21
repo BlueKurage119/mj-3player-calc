@@ -2,7 +2,7 @@ import type React from 'react';
 import type { Tile as CoreTile } from '../../core/tile';
 import type { CandidateStat } from '../../engine/types';
 import { Slider } from '../md';
-import { Tile, tileLabelOf } from '../tile';
+import { Tile } from '../tile';
 import { TurnChart } from './TurnChart';
 import {
   CHART_TURNS,
@@ -24,9 +24,6 @@ export interface EngineResultProps {
   displayTurn: number;
   /** 表示する巡目の変更(1〜18)。再計算はしない */
   onTurnChange: (turn: number) => void;
-  /** 表示中の候補の元の位置。null は先頭行(期待値の最大)に追従する */
-  selectedIndex: number | null;
-  onSelect: (index: number) => void;
   /** 14枚入力の候補行の並びに使う列 */
   rankMetric: RankMetric;
   onRankMetricChange: (metric: RankMetric) => void;
@@ -62,21 +59,13 @@ export function EngineSummary({
 export function EngineCandidates({
   candidates,
   displayTurn,
-  selectedIndex,
-  onSelect,
   rankMetric,
   onRankMetricChange
 }: Pick<
   EngineResultProps,
-  | 'candidates'
-  | 'displayTurn'
-  | 'selectedIndex'
-  | 'onSelect'
-  | 'rankMetric'
-  | 'onRankMetricChange'
+  'candidates' | 'displayTurn' | 'rankMetric' | 'onRankMetricChange'
 >): React.JSX.Element {
   const ranked = rankCandidates(candidates, displayTurn, rankMetric);
-  const current = selectedIndex ?? ranked[0]?.index ?? 0;
   return (
     <div className="engine-candidates">
       <div className="engine-candidates__header">
@@ -100,23 +89,18 @@ export function EngineCandidates({
           const discard: CoreTile | null = candidate.discard;
           return (
             <li key={index}>
-              <button
-                type="button"
+              <div
                 className="engine-candidates__row"
-                aria-pressed={index === current}
-                aria-label={
-                  discard ? `${tileLabelOf(discard)}を切る場合` : undefined
+                data-line={line ? 'true' : undefined}
+                style={
+                  line
+                    ? ({
+                        '--line-color': `var(${line.colorToken})`
+                      } as React.CSSProperties)
+                    : undefined
                 }
-                onClick={() => onSelect(index)}
               >
                 <span className="engine-candidates__tile">
-                  {line ? (
-                    <span
-                      className="engine-candidates__mark"
-                      aria-hidden="true"
-                      style={{ backgroundColor: `var(${line.colorToken})` }}
-                    />
-                  ) : null}
                   {discard ? <Tile tile={discard} /> : null}
                   {isShantenBack(candidate, candidates) ? (
                     <span className="engine-candidates__chip">向聴戻し</span>
@@ -131,7 +115,7 @@ export function EngineCandidates({
                 <span className="engine-candidates__value tabular-nums">
                   {formatEv(s.ev)}
                 </span>
-              </button>
+              </div>
             </li>
           );
         })}
@@ -160,6 +144,7 @@ function CandidateChart({
       series={series}
       displayTurn={displayTurn}
       axis={axis}
+      legend={false}
       caption={axis.kind === 'point' ? `${label}(点)` : label}
     />
   );
@@ -171,16 +156,12 @@ export function EngineResult(props: EngineResultProps): React.JSX.Element {
     candidates,
     displayTurn,
     onTurnChange,
-    selectedIndex,
-    onSelect,
     rankMetric,
     onRankMetricChange
   } = props;
   const is14 = candidates.some(c => c.discard !== null);
   const ranked = rankCandidates(candidates, displayTurn, rankMetric);
-  const current =
-    (selectedIndex !== null ? candidates[selectedIndex] : undefined) ??
-    ranked[0]?.candidate;
+  const current = ranked[0]?.candidate;
   return (
     <div className="engine-result">
       {current ? (
@@ -218,8 +199,6 @@ export function EngineResult(props: EngineResultProps): React.JSX.Element {
         <EngineCandidates
           candidates={candidates}
           displayTurn={displayTurn}
-          selectedIndex={selectedIndex}
-          onSelect={onSelect}
           rankMetric={rankMetric}
           onRankMetricChange={onRankMetricChange}
         />

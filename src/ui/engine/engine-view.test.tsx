@@ -50,8 +50,6 @@ const view = (over: Partial<EngineViewProps> = {}): EngineViewProps => ({
   result: {
     displayTurn: 3,
     onTurnChange: noop,
-    selectedIndex: null,
-    onSelect: noop,
     rankMetric: 'ev',
     onRankMetricChange: noop
   },
@@ -160,7 +158,7 @@ describe('EngineView: 結果', () => {
     ).toContain('>17順目<');
   });
 
-  it('U-6: 14枚は列ヘッダー(和了率・聴牌率・期待値)があり、既定は期待値の降順で先頭行が選択される。selectedIndex で切り替わる', () => {
+  it('U-6: 14枚は列ヘッダー(和了率・聴牌率・期待値)があり、既定は期待値の降順。行は選択不可の表示専用(button・aria-pressed なし)', () => {
     const a = cand({ type: 'z', n: 1 }, () => ({ ev: 100, win: 0.3 }));
     const b = cand({ type: 'z', n: 2 }, () => ({ ev: 900, win: 0.2 }));
     const html = render(view({ run: done([a, b]) }));
@@ -180,21 +178,14 @@ describe('EngineView: 結果', () => {
       ['期待値', 'true']
     ]);
     const body = html.slice(html.indexOf('engine-candidates__list'));
-    expect(
-      [...body.matchAll(/aria-label="([^"]+)を切る場合"/g)].map(m => m[1])
-    ).toEqual(['南', '東']);
-    expect(
-      [...body.matchAll(/aria-pressed="(true|false)"/g)].map(m => m[1])
-    ).toEqual(['true', 'false']);
+    expect([...body.matchAll(/aria-label="([^"]+)"/g)].map(m => m[1])).toEqual([
+      '南',
+      '東'
+    ]);
+    expect(body).not.toContain('<button');
+    expect(body).not.toContain('aria-pressed');
     // 各行に和了率・聴牌率・期待値の3つが並ぶ
     expect(body.match(/engine-candidates__value/g)?.length).toBe(6);
-    // a(元の位置0)を選ぶ
-    const p = view({ run: done([a, b]) });
-    const html2 = render({ ...p, result: { ...p.result, selectedIndex: 0 } });
-    const body2 = html2.slice(html2.indexOf('engine-candidates__list'));
-    expect(
-      [...body2.matchAll(/aria-pressed="(true|false)"/g)].map(m => m[1])
-    ).toEqual(['false', 'true']);
   });
 
   it('U-6: rankMetric を和了率にすると並びが和了率の降順になり、和了率の列が強調される', () => {
@@ -203,9 +194,10 @@ describe('EngineView: 結果', () => {
     const p = view({ run: done([a, b]) });
     const html = render({ ...p, result: { ...p.result, rankMetric: 'win' } });
     const body = html.slice(html.indexOf('engine-candidates__list'));
-    expect(
-      [...body.matchAll(/aria-label="([^"]+)を切る場合"/g)].map(m => m[1])
-    ).toEqual(['東', '南']);
+    expect([...body.matchAll(/aria-label="([^"]+)"/g)].map(m => m[1])).toEqual([
+      '東',
+      '南'
+    ]);
     const header =
       html.match(/engine-candidates__header[\s\S]*?<\/div>/)?.[0] ?? '';
     expect(header).toMatch(/aria-pressed="true"[^>]*>和了率</);
@@ -334,7 +326,7 @@ describe(' UI監修: ボタン配置・スライダー・前提', () => {
     expect(html).not.toContain('北 ');
   });
 
-  it('「n順目」は縦軸の目盛りと同じ書式(フォント・色トークン・10/320 の大きさ・右寄せ)', () => {
+  it('「n順目」は縦軸の目盛りと同じ書式(フォント・色トークン・tick-size/320 の大きさ・右寄せ)', () => {
     const css = readFileSync(new URL('./engine.css', import.meta.url), 'utf8');
     const label = css.match(/\.engine-result__turn-label \{[^}]*\}/)?.[0] ?? '';
     const tick = css.match(/\.turn-chart__tick \{[^}]*\}/)?.[0] ?? '';
@@ -342,7 +334,14 @@ describe(' UI監修: ボタン配置・スライダー・前提', () => {
     expect(tick).toContain('--md-sys-color-on-surface-variant');
     expect(label).toContain('--md-sys-typescale-label-small-font');
     expect(label).toContain('--md-sys-color-on-surface-variant');
-    expect(label).toContain('font-size: calc(10 / 320 * 100cqw)');
+    expect(label).toContain(
+      'font-size: calc(var(--turn-chart-tick-size, 8) / 320 * 100cqw)'
+    );
+    expect(tick).toContain(
+      'font-size: calc(var(--turn-chart-tick-size, 8) * 1px)'
+    );
+    // 同じ変数を .engine-result__chart で1か所だけ定義する(5桁の期待値が収まる 8)
+    expect(css.match(/--turn-chart-tick-size: 8;/g)?.length).toBe(1);
     expect(label).toContain('text-align: end');
     expect(css).toMatch(
       /\.engine-result__chart \{[^}]*container-type: inline-size/
@@ -400,11 +399,15 @@ describe('第13版: 14枚のグラフは上位5候補の折れ線', () => {
     expect(win).not.toContain('(点)');
   });
 
-  it('候補行の上位5行にだけグラフと同じ色の印が付き、凡例は牌画像', () => {
+  it('候補行の上位5行だけがグラフと同じ色で塗られ(--line-color)、14枚のグラフ凡例はない', () => {
     const h = html('ev');
-    expect(h.match(/engine-candidates__mark/g)?.length).toBe(5);
-    expect(h).toContain('turn-chart__legend');
-    expect(h).toMatch(/turn-chart__legend-item[\s\S]*?class="tile/);
+    expect(h.match(/data-line="true"/g)?.length).toBe(5);
+    expect(h).toContain('--line-color:var(--md-sys-color-primary)');
+    // 線の色は凡例を兼ねるので、グラフの凡例は出さない
+    expect(h).not.toContain('turn-chart__legend');
+    // 13枚は従来どおり凡例(和了率・聴牌率)
+    const h13 = render(view({ run: done([cand(null, () => ({}))]) }));
+    expect(h13).toContain('turn-chart__legend');
   });
 
   it('13枚は従来どおり2本(和了率・聴牌率)', () => {
@@ -412,7 +415,7 @@ describe('第13版: 14枚のグラフは上位5候補の折れ線', () => {
       view({ run: done([cand(null, d => ({ win: d / 100 }))]) })
     );
     expect(h.match(/class="turn-chart__line"/g)?.length).toBe(2);
-    expect(h).not.toContain('engine-candidates__mark');
+    expect(h).not.toContain('data-line');
   });
 
   it('5本の色は互いに異なるトークンで、セカンダリー系を含まない', () => {
@@ -491,8 +494,11 @@ describe('第8版: 並びとスタイル', () => {
     const sort = css.match(/\.engine-candidates__sort \{[^}]*\}/)?.[0] ?? '';
     expect(sort).toContain('justify-content: center');
     const chip = css.match(/\.engine-candidates__chip \{[^}]*\}/)?.[0] ?? '';
-    expect(chip).toContain('width: 2em');
-    expect(chip).toContain('word-break: break-all');
+    expect(chip).toContain('white-space: nowrap');
+    expect(chip).not.toContain('width: 2em');
+    expect(chip).toContain('--md-sys-color-surface-container-highest');
+    expect(chip).toContain('--md-sys-color-on-surface-variant');
+    expect(chip).not.toContain('tertiary');
   });
 
   it('巡目別の表の部品は残っていない', () => {

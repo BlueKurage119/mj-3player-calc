@@ -35,7 +35,6 @@ export function EngineScreen({
   const resultState = useResult();
   const [detailed, setDetailed] = useState(false);
   const [displayTurn, setDisplayTurn] = useState(DEFAULT_DISPLAY_TURN);
-  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [rankMetric, setRankMetric] = useState<RankMetric>(DEFAULT_RANK_METRIC);
   const nextId = useRef(0);
 
@@ -87,7 +86,6 @@ export function EngineScreen({
       run={run}
       onRun={() => {
         nextId.current += 1;
-        setSelectedIndex(null);
         engine.run(buildEngineRequest(nextId.current, app, conditions), key);
       }}
       onCancel={engine.cancel}
@@ -95,8 +93,6 @@ export function EngineScreen({
         displayTurn,
         onTurnChange: turn =>
           setDisplayTurn(Math.min(MAX_TURN, Math.max(1, Math.round(turn)))),
-        selectedIndex,
-        onSelect: setSelectedIndex,
         rankMetric,
         onRankMetricChange: setRankMetric
       }}

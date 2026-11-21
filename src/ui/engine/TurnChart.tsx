@@ -15,6 +15,8 @@ export interface TurnChartProps {
   axis?: ChartAxis | undefined;
   /** 凡例の前に出す指標名(b案) */
   caption?: string | undefined;
+  /** 凡例を出すか(既定 true。14枚は候補行の塗り色が凡例を兼ねるので出さない) */
+  legend?: boolean | undefined;
 }
 
 const W = 320;
@@ -47,7 +49,8 @@ export function TurnChart({
   series,
   displayTurn,
   axis = PERCENT_AXIS,
-  caption
+  caption,
+  legend = true
 }: TurnChartProps): React.JSX.Element {
   return (
     <div className="turn-chart">
@@ -122,28 +125,30 @@ export function TurnChart({
         ))}
       </svg>
       {caption ? <p className="turn-chart__caption">{caption}</p> : null}
-      <ul className="turn-chart__legend">
-        {series.map(s => (
-          <li key={s.id} className="turn-chart__legend-item">
-            <svg
-              viewBox="0 0 20 4"
-              className="turn-chart__legend-swatch"
-              aria-hidden="true"
-            >
-              <line
-                x1="0"
-                x2="20"
-                y1="2"
-                y2="2"
-                style={{ stroke: `var(${s.colorToken})` }}
-                strokeWidth="2"
-                strokeDasharray={s.dash}
-              />
-            </svg>
-            {s.tile ? <Tile tile={s.tile} /> : s.label}
-          </li>
-        ))}
-      </ul>
+      {legend ? (
+        <ul className="turn-chart__legend">
+          {series.map(s => (
+            <li key={s.id} className="turn-chart__legend-item">
+              <svg
+                viewBox="0 0 20 4"
+                className="turn-chart__legend-swatch"
+                aria-hidden="true"
+              >
+                <line
+                  x1="0"
+                  x2="20"
+                  y1="2"
+                  y2="2"
+                  style={{ stroke: `var(${s.colorToken})` }}
+                  strokeWidth="2"
+                  strokeDasharray={s.dash}
+                />
+              </svg>
+              {s.tile ? <Tile tile={s.tile} /> : s.label}
+            </li>
+          ))}
+        </ul>
+      ) : null}
     </div>
   );
 }
