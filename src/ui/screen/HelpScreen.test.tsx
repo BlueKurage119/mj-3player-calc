@@ -70,10 +70,10 @@ describe('G4: ヘルプ画面 (HelpView)', () => {
 });
 
 describe('G3: バージョン表示 (G3-T1〜T3)', () => {
-  it('G3-T1: renderHelpHtml() が「バージョン 1.0.1」を含む', () => {
+  it('G3-T1: renderHelpHtml() が「バージョン 1.1.0」を含む', () => {
     const html = renderHelpHtml();
     const match = html.match(/<p class="help-screen__version">([^<]+)<\/p>/);
-    expect(match?.[1]).toBe('バージョン 1.0.1');
+    expect(match?.[1]).toBe('バージョン 1.1.0');
   });
 
   it('G3-T2: 表示の版番号が package.json の version と一致する', () => {
