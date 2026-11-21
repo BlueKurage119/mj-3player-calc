@@ -12,6 +12,7 @@ const SettingsScreen = lazy(() => import('./screen/SettingsScreen'));
 const ScoringTableScreen = lazy(() => import('./screen/ScoringTableScreen'));
 const LicenseScreen = lazy(() => import('./screen/LicenseScreen'));
 const HelpScreen = lazy(() => import('./screen/HelpScreen'));
+const EngineScreen = lazy(() => import('./screen/EngineScreen'));
 
 let DevTileGallery: ComponentType | null = null;
 let DevMdGallery: ComponentType | null = null;
@@ -48,6 +49,13 @@ function AppContent(): React.JSX.Element {
     return (
       <Suspense fallback={null}>
         <HelpScreen />
+      </Suspense>
+    );
+  }
+  if (screen === 'engine') {
+    return (
+      <Suspense fallback={null}>
+        <EngineScreen />
       </Suspense>
     );
   }
