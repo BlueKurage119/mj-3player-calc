@@ -14,12 +14,18 @@ export interface EngineOptions {
    * 既定は D-1a の実測後にオーナーが決める(決まるまでの仮の既定は 0)
    */
   diffSlack: number;
+  /**
+   * true のとき s_ref = 1 の計算だけ、実効の M を max(diffSlack, 1) とする(第14版)。
+   * s_ref ≥ 2 では diffSlack のまま。既定 false
+   */
+  oneShantenSlack: boolean;
 }
 
 export const DEFAULT_ENGINE_OPTIONS: Readonly<EngineOptions> = Object.freeze({
   tegawari: true,
   backtrack: true,
-  diffSlack: 0
+  diffSlack: 0,
+  oneShantenSlack: false
 });
 
 export interface EngineRequest {

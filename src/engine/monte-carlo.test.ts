@@ -281,7 +281,12 @@ describe.skipIf(!process.env.ENGINE_MC)(
 
     it('F31-A5c: 構成A (T=18, n=200,000, 6手) で DP とモンテカルロが 4σ 以内で一致する', () => {
       runMcForConfig(
-        { tegawari: false, backtrack: false, diffSlack: 0 },
+        {
+          tegawari: false,
+          backtrack: false,
+          diffSlack: 0,
+          oneShantenSlack: false
+        },
         20261121
       );
     }, 180_000);

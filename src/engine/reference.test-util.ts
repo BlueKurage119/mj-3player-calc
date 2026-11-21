@@ -326,7 +326,12 @@ export function computeReference(
                 common += Math.min(hNext[j] ?? 0, h0[j] ?? 0);
               }
               const diff = handLen - common;
-              withinLimit = diff <= s0 - sNext + options.diffSlack;
+              // 実効の M: oneShantenSlack かつ s_ref(=s0)=1 のとき max(M,1)
+              const slack =
+                options.oneShantenSlack && s0 === 1
+                  ? Math.max(options.diffSlack, 1)
+                  : options.diffSlack;
+              withinLimit = diff <= s0 - sNext + slack;
             }
             if (sNext < s) {
               cands.push(d);

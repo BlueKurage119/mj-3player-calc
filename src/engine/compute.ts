@@ -138,6 +138,7 @@ export function computeEngine(
       typeof options.tegawari !== 'boolean' ||
       typeof options.backtrack !== 'boolean' ||
       (options.tegawari === false && options.backtrack === true) ||
+      typeof options.oneShantenSlack !== 'boolean' ||
       typeof options.diffSlack !== 'number' ||
       !Number.isInteger(options.diffSlack) ||
       options.diffSlack < 0 ||
@@ -301,7 +302,9 @@ export function computeEngine(
         remainingDraws,
         options.tegawari,
         options.backtrack,
-        options.diffSlack,
+        options.oneShantenSlack && sRef === 1
+          ? Math.max(options.diffSlack, 1)
+          : options.diffSlack,
         sRef
       );
 

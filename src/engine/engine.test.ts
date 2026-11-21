@@ -70,8 +70,9 @@ const yakuhaiRule: Rule = {
 const mkOpts = (
   tegawari: boolean,
   backtrack: boolean,
-  diffSlack: number
-): EngineOptions => ({ tegawari, backtrack, diffSlack });
+  diffSlack: number,
+  oneShantenSlack = false
+): EngineOptions => ({ tegawari, backtrack, diffSlack, oneShantenSlack });
 
 /** 構成A(手替わりなし。M は使われない) */
 const OPTS_A: EngineOptions = mkOpts(false, false, 0);
@@ -173,7 +174,9 @@ const rawSearch = (
     maxDraws,
     options.tegawari,
     options.backtrack,
-    options.diffSlack,
+    options.oneShantenSlack && sRef === 1
+      ? Math.max(options.diffSlack, 1)
+      : options.diffSlack,
     sRef
   );
   return { sr, h0, sRef, handLen, meldsM };
@@ -547,8 +550,8 @@ describe('F3-1 計算エンジン (Issue #138)', () => {
           // 戻しの遷移(向聴が増える遷移)が存在する。B′・構成Aには存在しない
           expect(withBack.sr.backtrack_edge_count()).toBeGreaterThan(0);
           expect(noBack.sr.backtrack_edge_count()).toBe(0);
-          // (1) は戻しでしか到達しない手がある。(2) の戻し先(向聴2・diff=1)は起点からの維持でも
-          // 到達できるので手の集合は増えず、遷移だけが増える
+          // (1) は戻しでしか到達しない手もある。(2) の戻し先(向聴2・diff=1)は起点からの維持でも
+          // 到達できるので手の集合は増えず、遷移だけが増える(第14版: 辺の存在の検査)
           if (handStr === '28p12377s') {
             expect(onlyByBacktrack).toBeGreaterThan(0);
           }
@@ -627,6 +630,73 @@ describe('F3-1 計算エンジン (Issue #138)', () => {
       }, 300000);
     }
 
+    it('F31-A5e: oneShantenSlack は s_ref=1 のときだけ実効 M を max(diffSlack,1) にする(M=1 相当と一致、s_ref≥2 は無影響)', () => {
+      const run = (input: Input, opts: EngineOptions, T: number) => {
+        const res = computeEngine({
+          id: 560,
+          table: southTable,
+          input,
+          rule: yakuhaiRule,
+          remainingDraws: T,
+          options: opts
+        });
+        if (res.type !== 'ok') throw new Error('unexpected non-ok');
+        return must(res.candidates[0], 'cand');
+      };
+      const close = (a: ReturnType<typeof run>, b: ReturnType<typeof run>) => {
+        expect(Math.abs(a.tenpai - b.tenpai)).toBeLessThan(1e-12);
+        expect(Math.abs(a.win - b.win)).toBeLessThan(1e-12);
+        expect(Math.abs(a.ev - b.ev)).toBeLessThan(1e-9);
+      };
+      // s_ref=1(13枚入力 s0=1): oneShantenSlack=true,M=0 は M=1 と一致し、M=0 とは異なる
+      const one = twoMeldInput('28p12377s');
+      expect(shantenOf(tilesToCounts(one.hand), 2)).toBe(1);
+      const T = 4;
+      const m0 = run(one, opBt(0), T);
+      const m1 = run(one, opBt(1), T);
+      const o0 = run(one, mkOpts(true, true, 0, true), T);
+      close(o0, m1);
+      // 参照実装(実効 M の式を独立に持つ)とも一致
+      expectMatchesReference(one, T, mkOpts(true, true, 0, true));
+      expect(Math.abs(o0.ev - m0.ev)).toBeGreaterThan(1e-6);
+      // M=2 のときは max(2,1)=2 のまま(true でも false でも同じ)
+      close(run(one, mkOpts(true, true, 2, true), 3), run(one, opBt(2), 3));
+      // s_ref≥2: 無影響(true でも M=0 のまま)
+      const two = twoMeldInput('34467s12z');
+      expect(shantenOf(tilesToCounts(two.hand), 2)).toBe(2);
+      close(run(two, mkOpts(true, true, 0, true), 4), run(two, opBt(0), 4));
+      // 14枚入力で候補の向聴の最大が2(s_ref=2)でも無影響
+      const t14 = twoMeldInput('28p12377s3p');
+      const a14 = computeEngine({
+        id: 561,
+        table: southTable,
+        input: t14,
+        rule: yakuhaiRule,
+        remainingDraws: 3,
+        options: mkOpts(true, true, 0, true)
+      });
+      const b14 = computeEngine({
+        id: 562,
+        table: southTable,
+        input: t14,
+        rule: yakuhaiRule,
+        remainingDraws: 3,
+        options: opBt(0)
+      });
+      if (a14.type !== 'ok' || b14.type !== 'ok') throw new Error('non-ok');
+      const sRef14 = Math.max(...a14.candidates.map(c => c.shanten));
+      for (let i = 0; i < a14.candidates.length; i++) {
+        const x = must(a14.candidates[i], 'a14');
+        const y = must(b14.candidates[i], 'b14');
+        if (sRef14 === 1) {
+          expect(x.shanten).toBeLessThanOrEqual(1);
+        } else {
+          expect(x.discard).toEqual(y.discard);
+          expect(Math.abs(x.ev - y.ev)).toBeLessThan(1e-9);
+        }
+      }
+    }, 120000);
+
     it('F31-A5b: 無効・範囲外オプションと残りツモ回数で error を返す', () => {
       const hand = parseHand('111999m123456p1z');
       const input: Input = { hand, melds: [], dora: [], nuki: 0 };
@@ -638,7 +708,15 @@ describe('F3-1 計算エンジン (Issue #138)', () => {
         mkOpts(true, true, 1.5),
         mkOpts(true, false, -1),
         mkOpts(true, false, 3),
-        mkOpts(true, false, 1.5)
+        mkOpts(true, false, 1.5),
+        {
+          ...mkOpts(true, true, 0),
+          oneShantenSlack: 'yes' as unknown as boolean
+        },
+        {
+          ...mkOpts(true, true, 0),
+          oneShantenSlack: undefined as unknown as boolean
+        }
       ];
       for (const opts of badOptionsList) {
         const res = computeEngine({

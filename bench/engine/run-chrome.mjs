@@ -44,10 +44,11 @@ const cdpPort = 9337;
 
 // 構成の名前: A=手替わりなし、Bp_Mx=B′(M=x)、Bt_Mx=B′+戻し(M=x)。
 // 接尾辞 _S は対案S(候補ごとの s_c を基準にする測定用の内部フラグ。14枚入力の比較用)
-const mk = (tegawari, backtrack, diffSlack) => ({
+const mk = (tegawari, backtrack, diffSlack, oneShantenSlack = false) => ({
   tegawari,
   backtrack,
-  diffSlack
+  diffSlack,
+  oneShantenSlack
 });
 const CONFIGS = [
   { name: 'A', options: mk(false, false, 0) },
@@ -58,6 +59,12 @@ const CONFIGS = [
     options: mk(true, true, m),
     perCandidateRef: true
   })),
+  { name: 'Bt_M0_O', options: mk(true, true, 0, true) },
+  {
+    name: 'Bt_M0_O_S',
+    options: mk(true, true, 0, true),
+    perCandidateRef: true
+  },
   ...[0, 1, 2].map(m => ({
     name: `Bp_M${m}_S`,
     options: mk(true, false, m),
