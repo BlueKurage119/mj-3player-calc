@@ -62,7 +62,8 @@ interface BenchWindow extends Window {
       runs: number,
       remainingDraws?: number,
       perCandidateRef?: boolean,
-      stopAfterMs?: number
+      handBudgetMs?: number,
+      runTimeoutMs?: number
     ) => Promise<HandRunResult>;
     listHands: () => { id: string; shanten: 1 | 2 | 3; is14: boolean }[];
   };
@@ -105,7 +106,8 @@ async function runOneHand(
   runs: number,
   remainingDraws = DEFAULT_REMAINING_DRAWS,
   perCandidateRef = false,
-  stopAfterMs = Number.POSITIVE_INFINITY
+  handBudgetMs = Number.POSITIVE_INFINITY,
+  runTimeoutMs = Number.POSITIVE_INFINITY
 ): Promise<HandRunResult> {
   const spec = ALL_HANDS.find(h => h.id === handId);
   if (!spec) {
@@ -146,13 +148,22 @@ async function runOneHand(
 
   // 毎回 Worker を作り直す(冷)。最初の1回は WASM・モジュールの読み込みで遅くなるので、
   // 計測前に小さい要求(T=0)で Worker を温めるのではなく、各回とも冷のまま測る
+  let cumulativeMs = 0;
   for (let i = 0; i < runs; i++) {
     const client = createEngineClient();
     const t0 = performance.now();
-    const res = (await client.requestEngine({
-      ...baseReq,
-      id: i + 1
-    })) as EngineWorkerMessage;
+    // 1回の上限時間を超えたら Worker を terminate して打ち切る(測定不能として記録する)
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const res = (await Promise.race([
+      client.requestEngine({ ...baseReq, id: i + 1 }),
+      new Promise<EngineWorkerMessage>(resolve => {
+        timer = setTimeout(
+          () => resolve({ id: i + 1, type: 'error', message: 'timeout' }),
+          runTimeoutMs
+        );
+      })
+    ])) as EngineWorkerMessage;
+    clearTimeout(timer);
     const dt = performance.now() - t0;
     client.dispose();
     if (res.type !== 'ok') {
@@ -184,7 +195,9 @@ async function runOneHand(
       const top = result.candidates[0];
       if (top) result.top = top;
     }
-    if (dt > stopAfterMs) break;
+    // 1手・1構成あたりの累積時間の上限(遅い構成で測定が終わらなくなるのを避ける。最低1回は測る)
+    cumulativeMs += dt;
+    if (cumulativeMs > handBudgetMs) break;
   }
 
   const sorted = [...result.runsMs].sort((a, b) => a - b);

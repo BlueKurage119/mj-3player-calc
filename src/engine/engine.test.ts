@@ -561,7 +561,7 @@ describe('F3-1 計算エンジン (Issue #138)', () => {
     }, 600000);
 
     // A-4d: 各 (手, M) を別の it にする(1テストの同期計算を短くし、vitest の RPC タイムアウトを避ける)。
-    // S3 の M=1 は約1万4千状態で重いので T=6・12 だけ検査する(T=18 の状態数は D-1a で測る)
+    // S3 は S3-06(1副露。M=1 で約5千状態)を使う。S3-01 のような約1万6千状態の手は1テストの同期計算が長すぎる
     const a4dCases: {
       label: string;
       m: number;
@@ -570,15 +570,15 @@ describe('F3-1 計算エンジン (Issue #138)', () => {
     }[] = [
       ...[
         { m: 0, Ts: [6, 12, 18] },
-        { m: 1, Ts: [6, 12] }
+        { m: 1, Ts: [6, 12, 18] }
       ].map(({ m, Ts }) => ({
-        label: 'S3-01',
+        label: 'S3-06',
         m,
         Ts,
         make: () => {
-          const s3 = BENCH_HANDS.find(h => h.id === 'S3-01');
+          const s3 = BENCH_HANDS.find(h => h.id === 'S3-06');
           const preset = RULE_PRESETS[0]?.rule;
-          if (!s3 || !preset) throw new Error('S3-01 or preset not found');
+          if (!s3 || !preset) throw new Error('S3-06 or preset not found');
           return {
             input: {
               hand: parseTiles(s3.handStr),

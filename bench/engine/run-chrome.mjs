@@ -10,7 +10,8 @@ let filterConfigs = null;
 let filterHands = null;
 let remainingDraws = 18;
 let runs = 10;
-let stopAfterMs = 1e12;
+let handBudgetMs = 1e12;
+let runTimeoutMs = 1e12;
 
 for (let i = 0; i < args.length; i++) {
   const a = args[i];
@@ -22,8 +23,10 @@ for (let i = 0; i < args.length; i++) {
     remainingDraws = Number(args[++i]);
   } else if (a === '--runs' && args[i + 1]) {
     runs = Number(args[++i]);
-  } else if (a === '--stop-after' && args[i + 1]) {
-    stopAfterMs = Number(args[++i]);
+  } else if (a === '--run-timeout' && args[i + 1]) {
+    runTimeoutMs = Number(args[++i]);
+  } else if (a === '--hand-budget' && args[i + 1]) {
+    handBudgetMs = Number(args[++i]);
   } else if (a === '--out' && args[i + 1]) {
     outFile = args[++i];
   } else if (!a.startsWith('--')) {
@@ -177,7 +180,7 @@ async function main() {
       const cfgResults = [];
       for (const h of hands) {
         const res = await cdp.evaluate(
-          `window.__bench.runOneHand(${JSON.stringify(h.id)}, ${JSON.stringify(cfg.name)}, ${JSON.stringify(cfg.options)}, ${runs}, ${remainingDraws}, ${cfg.perCandidateRef ? 'true' : 'false'}, ${stopAfterMs})`
+          `window.__bench.runOneHand(${JSON.stringify(h.id)}, ${JSON.stringify(cfg.name)}, ${JSON.stringify(cfg.options)}, ${runs}, ${remainingDraws}, ${cfg.perCandidateRef ? 'true' : 'false'}, ${handBudgetMs}, ${runTimeoutMs})`
         );
         cfgResults.push(res);
         process.stderr.write(
