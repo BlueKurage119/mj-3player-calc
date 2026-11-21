@@ -1,4 +1,5 @@
 import type { EngineRequest, EngineResponse } from './types';
+import type { EngineWorkerMessage } from './worker';
 
 interface PendingRequest {
   id: number;
@@ -23,13 +24,19 @@ export function createEngineClient(): EngineClient {
     const w = new Worker(new URL('./worker.ts', import.meta.url), {
       type: 'module'
     });
-    w.onmessage = (e: MessageEvent<EngineResponse>) => {
+    // 失敗した Worker は破棄し、次の要求で作り直す(ES モジュールの評価エラーは同じ Worker 内で復旧しない)
+    const discard = () => {
+      if (worker === w) worker = null;
+      w.terminate();
+    };
+    w.onmessage = (e: MessageEvent<EngineWorkerMessage>) => {
       const res = e.data;
       if (pending && res.id === pending.id) {
         const p = pending;
         pending = null;
         p.resolve(res);
       }
+      if (res.fatal === true) discard();
     };
     w.onerror = (e: ErrorEvent) => {
       if (pending) {
@@ -41,6 +48,7 @@ export function createEngineClient(): EngineClient {
           message: e.message || 'worker error'
         });
       }
+      discard();
     };
     return w;
   };
