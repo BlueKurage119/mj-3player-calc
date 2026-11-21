@@ -527,7 +527,7 @@ describe.skipIf(!process.env.ENGINE_MC)(
               sum += c.ev - x.ev;
               n++;
             }
-            return n === 0 ? NaN : sum / n;
+            return n === 0 ? Number.NaN : sum / n;
           };
           rows.push(
             `| ${h.id} | ${minS} | 状態 無制限=${un.searches.map(x => x.stateCount).join('+')} 共通=${sh.searches.map(x => x.stateCount).join('+')} S=${pc.searches.map(x => x.stateCount).join('+')} | 平均乖離 共通=${gs.mean.toFixed(1)}(${gs.rel.toFixed(1)}%) S=${gp.mean.toFixed(1)}(${gp.rel.toFixed(1)}%) | s0候補の乖離 共通=${byGrp(sh, s => s === minS).toFixed(1)} S=${byGrp(pc, s => s === minS).toFixed(1)} / s0+1候補 共通=${byGrp(sh, s => s > minS).toFixed(1)} S=${byGrp(pc, s => s > minS).toFixed(1)} | 推奨 無制限=${topU} 共通=${topS} S=${topP} |`
