@@ -1,0 +1,19 @@
+[package]
+name = "engine"
+version = "0.1.0"
+edition = "2021"
+description = "Three-player mahjong probability and expected value engine"
+license = "MIT"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+shanten-dp = "=0.3.2"
+wasm-bindgen = "0.2.100"
+
+[profile.release]
+opt-level = "s"
+
+[profile.test]
+opt-level = 3

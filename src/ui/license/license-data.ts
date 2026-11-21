@@ -147,6 +147,12 @@ export const CREDIT_GROUPS: readonly CreditGroup[] = [
         url: 'https://github.com/livewing/mahjong-calc'
       },
       {
+        name: 'shanten-dp',
+        license: 'MIT',
+        copyrights: ['Copyright (c) 2026 tomohxx'],
+        url: 'https://github.com/tomohxx/shanten-dp-rust'
+      },
+      {
         name: 'Rust 標準ライブラリ',
         license: 'MIT-dual',
         copyrights: [

@@ -92,14 +92,21 @@
   - バージョン: 7.4.1
   - ライセンス: MIT License (`Copyright 2018 Google LLC`、全文は `LICENSES/MIT.txt` を参照)
 
-## 配布物に含まれる Rust crate(手牌分解器 WASM)
+## 配布物に含まれる Rust crate(手牌分解器・エンジン WASM)
 
-`MIT OR Apache-2.0` のデュアルライセンスの項目はすべて MIT License を選択しています（全文は `LICENSES/MIT.txt` を参照）。なお、`wasm/decomposer/Cargo.lock` を管理していないため、Rust crate の版は固定していません。
+`MIT OR Apache-2.0` のデュアルライセンスの項目はすべて MIT License を選択しています（全文は `LICENSES/MIT.txt` を参照）。なお、`Cargo.lock` を管理していないため、`shanten-dp` (`=0.3.2`) 以外の Rust crate の版は固定していません。
 
 ### decomposer (`livewing/mahjong-calc`)
 
 - URL: https://github.com/livewing/mahjong-calc
 - ライセンス: MIT License (`Copyright 2021 livewing.net`、全文は `LICENSES/MIT.txt` を参照)
+
+### shanten-dp (`tomohxx/shanten-dp-rust`)
+
+- 提供元: tomohxx
+- URL: https://github.com/tomohxx/shanten-dp-rust
+- バージョン: 0.3.2
+- ライセンス: MIT License (`Copyright (c) 2026 tomohxx`、全文は `LICENSES/MIT.txt` を参照)
 
 ### Rust 標準ライブラリ
 
