@@ -121,5 +121,9 @@ export default {
   build: {
     // top-level await
     target: ['chrome89', 'edge89', 'firefox89', 'safari15', 'es2022']
+  },
+  worker: {
+    format: 'es',
+    plugins: () => [wasm()]
   }
 } satisfies UserConfig;

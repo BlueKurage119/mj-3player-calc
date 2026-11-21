@@ -35,6 +35,7 @@ describe('G3L: ライセンス掲載データ (license-data.ts)', () => {
       'vite-plugin-pwa',
       'Workbox',
       'decomposer(livewing/mahjong-calc)',
+      'shanten-dp',
       'Rust 標準ライブラリ',
       'wasm-bindgen・js-sys',
       'serde',
@@ -71,5 +72,16 @@ describe('G3L: ライセンス掲載データ (license-data.ts)', () => {
     for (const item of LICENSE_TEXTS) {
       expect(item.text).toBe(expectedFiles[item.id]);
     }
+  });
+
+  it('F31-D4: shanten-dp の項目(MIT・Copyright (c) 2026 tomohxx)が含まれる', () => {
+    const entries = CREDIT_GROUPS.flatMap(g => g.entries);
+    const shantenDp = entries.find(e => e.name === 'shanten-dp');
+    expect(shantenDp).toEqual({
+      name: 'shanten-dp',
+      license: 'MIT',
+      copyrights: ['Copyright (c) 2026 tomohxx'],
+      url: 'https://github.com/tomohxx/shanten-dp-rust'
+    });
   });
 });
