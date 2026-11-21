@@ -255,6 +255,13 @@ export function MainScreen(): React.JSX.Element {
             handLength: input.hand.length,
             meldCount: input.melds.length
           }}
+          onEnableTenho={() =>
+            trackedDispatch({
+              type: 'set-situation',
+              key: 'tenho',
+              value: true
+            })
+          }
         />
         <div className="main-screen__bottom-spacer" aria-hidden="true" />
       </main>

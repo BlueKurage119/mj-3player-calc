@@ -96,7 +96,7 @@ export interface TempaiBodyProps {
   onOpenEngine?: (() => void) | undefined;
 }
 
-const renderWaitTiles = (
+export const renderWaitTiles = (
   available: TileAvailability[],
   onTsumo?: (tile: CoreTile) => void
 ): React.JSX.Element[] =>
