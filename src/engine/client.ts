@@ -30,6 +30,8 @@ export function createEngineClient(): EngineClient {
       w.terminate();
     };
     w.onmessage = (e: MessageEvent<EngineWorkerMessage>) => {
+      // 取り消し・破棄後に旧 Worker から遅着したイベントは捨てる(現在の要求を誤って解決しない)
+      if (worker !== w) return;
       const res = e.data;
       if (pending && res.id === pending.id) {
         const p = pending;
@@ -39,6 +41,7 @@ export function createEngineClient(): EngineClient {
       if (res.fatal === true) discard();
     };
     w.onerror = (e: ErrorEvent) => {
+      if (worker !== w) return;
       if (pending) {
         const p = pending;
         pending = null;
