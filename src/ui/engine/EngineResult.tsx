@@ -89,7 +89,17 @@ export function EngineCandidates({
           const discard: CoreTile | null = candidate.discard;
           return (
             <li key={index}>
-              <div className="engine-candidates__row">
+              <div
+                className="engine-candidates__row"
+                data-tint={line ? 'true' : undefined}
+                style={
+                  line
+                    ? ({
+                        '--line-color': `var(${line.colorToken})`
+                      } as React.CSSProperties)
+                    : undefined
+                }
+              >
                 <span className="engine-candidates__tile">
                   {/* 上位5行は折れ線の色の短い縦線。6位以降は同じ幅の見えないスペーサーで、牌の位置を全行でそろえる */}
                   <span
@@ -139,14 +149,12 @@ function CandidateChart({
     displayTurn,
     rankMetric
   );
-  const label = RANK_METRICS.find(m => m.value === rankMetric)?.label ?? '';
   return (
     <TurnChart
       series={series}
       displayTurn={displayTurn}
       axis={axis}
       legend={false}
-      caption={axis.kind === 'point' ? `${label}(点)` : label}
     />
   );
 }

@@ -387,15 +387,14 @@ describe('第13版: 14枚のグラフは上位5候補の折れ線', () => {
     expect(ids(html('tenpai'))).toEqual(ids(html('ev')));
   });
 
-  it('期待値のときだけ縦軸が点(上端は最大値の切り上げ)で、凡例の指標名に(点)が付く', () => {
+  it('期待値のときだけ縦軸が点(上端は最大値の切り上げ)で、14枚はグラフの指標名の見出しを出さない', () => {
     const ev = html('ev');
     // 全巡目の最大は t=7・draw 17: 11,900 → 上端 20000
     expect(ev).toContain('>20000<');
-    expect(ev).toContain('期待値(点)');
+    expect(ev).not.toContain('(点)');
     expect(ev).not.toContain('>100%<');
     const win = html('win');
     expect(win).toContain('>100%<');
-    expect(win).toContain('和了率');
     expect(win).not.toContain('(点)');
   });
 
@@ -408,11 +407,23 @@ describe('第13版: 14枚のグラフは上位5候補の折れ線', () => {
     expect(h).toContain('background-color:var(--md-sys-color-primary)');
     // 行の背景は既定のまま(染めない)
     const css = readFileSync(new URL('./engine.css', import.meta.url), 'utf8');
-    expect(css).not.toContain('--line-color');
+    // 上位5行だけ背景を線の色で薄く染める(24%)。6位以降は既定の背景
+    expect(h.match(/data-tint="true"/g)?.length).toBe(5);
+    expect(h).toContain('--line-color:var(--md-sys-color-primary)');
+    const tint =
+      css.match(
+        /\.engine-candidates__row\[data-tint="true"\] \{[^}]*\}/
+      )?.[0] ?? '';
+    expect(tint).toContain('var(--line-color) 24%');
+    expect(tint).toContain('--md-sys-color-surface-container)');
+    expect(tint).not.toContain('box-shadow');
     const mark = css.match(/\.engine-candidates__mark \{[^}]*\}/)?.[0] ?? '';
     expect(mark).toContain('width: 0.25rem');
     expect(mark).toContain('flex: none');
     expect(css).not.toMatch(/\.engine-candidates__row\[data-line/);
+    // 14枚はグラフの指標名の見出しを出さない(列ヘッダーで分かる)
+    expect(h).not.toContain('turn-chart__caption');
+    expect(html('win')).not.toContain('turn-chart__caption');
     // 線の色は凡例を兼ねるので、グラフの凡例は出さない
     expect(h).not.toContain('turn-chart__legend');
     // 13枚は従来どおり凡例(和了率・聴牌率)
@@ -431,6 +442,17 @@ describe('第13版: 14枚のグラフは上位5候補の折れ線', () => {
   it('5本の色は互いに異なるトークンで、セカンダリー系を含まない', () => {
     const tokens = CANDIDATE_LINE_STYLES.map(x => x.colorToken);
     expect(new Set(tokens).size).toBe(5);
+    // 色相順(1位 緑 → 青緑 → 紫 → 赤褐 → 5位 黄褐)
+    expect(tokens).toEqual([
+      '--md-sys-color-primary',
+      '--md-sys-color-tertiary',
+      '--md-sys-color-senary',
+      '--md-sys-color-quinary',
+      '--md-sys-color-quaternary'
+    ]);
+    // 茶系で隣り合う4位・5位は、破線が明確に異なる
+    const dashes = CANDIDATE_LINE_STYLES.map(x => x.dash);
+    expect(new Set(dashes).size).toBe(5);
     expect(tokens.some(t => t.includes('secondary'))).toBe(false);
   });
 });

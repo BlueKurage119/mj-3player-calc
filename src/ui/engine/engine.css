@@ -410,6 +410,15 @@
   border-radius: var(--md-sys-shape-corner-full);
 }
 
+/* 上位5行は、行の背景を折れ線の色で薄く染める(表示専用。左端の太い塗りはしない) */
+.engine-candidates__row[data-tint="true"] {
+  background-color: color-mix(
+    in srgb,
+    var(--line-color) 24%,
+    var(--md-sys-color-surface-container)
+  );
+}
+
 .engine-candidates__value {
   text-align: end;
 }

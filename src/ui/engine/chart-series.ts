@@ -104,16 +104,16 @@ export interface ChartAxis {
 
 export const PERCENT_AXIS: ChartAxis = { kind: 'percent', max: 1 };
 
-/** 折れ線5本に割り当てる色トークン(セカンダリー系を除く5色。quinary・senary は 別PRで main に追加済みで、develop/v2.0 への同期後に有効になる)と、色に頼らない識別用の破線 */
+/** 折れ線5本に割り当てる色トークン(色相順: 緑・青緑・紫・赤褐・黄褐。セカンダリー系を除く5色。quinary・senary は 別PRで main に追加済みで、develop/v2.0 への同期後に有効になる)と、色に頼らない識別用の破線 */
 export const CANDIDATE_LINE_STYLES: readonly {
   colorToken: string;
   dash: string | undefined;
 }[] = [
   { colorToken: '--md-sys-color-primary', dash: undefined },
   { colorToken: '--md-sys-color-tertiary', dash: '6 3' },
-  { colorToken: '--md-sys-color-quaternary', dash: '2 2' },
+  { colorToken: '--md-sys-color-senary', dash: '2 2' },
   { colorToken: '--md-sys-color-quinary', dash: '6 3 2 3' },
-  { colorToken: '--md-sys-color-senary', dash: '1 3' }
+  { colorToken: '--md-sys-color-quaternary', dash: '1 3' }
 ];
 
 /** b案で描く候補の数 */
