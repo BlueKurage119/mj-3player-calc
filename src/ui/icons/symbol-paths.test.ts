@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import * as symbolPaths from './symbol-paths';
 import {
+  SYMBOL_ANALYTICS,
   SYMBOL_ARROW_BACK,
   SYMBOL_CONTENT_COPY,
   SYMBOL_DOWNLOAD,
@@ -43,6 +44,13 @@ describe('インライン SVG の Symbols 化: 新規定数', () => {
     );
   });
 
+  it('SYMBOL_ANALYTICS は公式 analytics_24px.svg のパスと完全一致する', () => {
+    // 理由: 公式 SVG の d を書き写した値と完全一致を確かめるため
+    expect(SYMBOL_ANALYTICS).toBe(
+      'M280-280h80v-200h-80v200Zm320 0h80v-400h-80v400Zm-160 0h80v-120h-80v120Zm0-200h80v-80h-80v80ZM200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h560q33 0 56.5 23.5T840-760v560q0 33-23.5 56.5T760-120H200Zm0-80h560v-560H200v560Zm0-560v560-560Z'
+    );
+  });
+
   it('SYMBOL_CONTENT_COPY は公式 content_copy_24px.svg のパスと完全一致する', () => {
     // 理由: 公式 SVG の d を書き写した値と完全一致を確かめるため
     expect(SYMBOL_CONTENT_COPY).toBe(
@@ -50,8 +58,8 @@ describe('インライン SVG の Symbols 化: 新規定数', () => {
     );
   });
 
-  it('定数の総数は 16 個である', () => {
+  it('定数の総数は 17 個である', () => {
     // 理由: 定数の追加・削除漏れ(出典・ライセンス表記の更新漏れ)を検知するため
-    expect(Object.keys(symbolPaths)).toHaveLength(16);
+    expect(Object.keys(symbolPaths)).toHaveLength(17);
   });
 });

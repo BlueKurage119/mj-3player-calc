@@ -1,6 +1,6 @@
 # Issue #139 F3-2. UI統合(確率・期待値の表示)設計書
 
-- 状態: 第10版(UI監修中の軽微な修正を§13.1〜§13.5に追記。第5版は**設計承認済み**。オーナー承認。製造方式は mj3calc-builder サブエージェント式。UI監修は製造後にまとめて行う)
+- 状態: 第11版(UI監修中の軽微な修正を§13.1〜§13.6に追記。第5版は**設計承認済み**。オーナー承認。製造方式は mj3calc-builder サブエージェント式。UI監修は製造後にまとめて行う)
 - 独立レビュー: 第2版で実施済み。第3・4版の差分は独立レビュー未実施だが、オーナー承知のうえで承認
 - UI監修: 製造後にまとめて行う(オーナー指定。設計承認時の指定事項)
 - 設計担当モデル: Claude Opus 5.5(第1版〜第5版)
@@ -447,4 +447,13 @@ export interface TurnChartProps { series: ChartSeries[]; displayTurn: number }
    - 迷った点: 「14枚聴牌のときのカードの見出しのみ」の解釈。`classify` では `hora` が13枚聴牌と14枚の和了の両方、`tempai`(打点なしの聴牌)と `discard`(14枚の打牌候補)は見出しを持つ。限定指示により、見出しを持たせるのは `TempaiBody` のみで、`HoraBody` は変更しない。
 2. スライダー左の現在の巡目の文言を「n順」から「n順目」(例: 3順目)に訂正した。配置・フォント・色は第9版のまま。
 3. バンドル: 初回JS 129,567 B(第9版の 129,569 B から −2 B)。計算画面チャンクは生 38,592 B / gzip 10,511 B、CSS は gzip 1,662 B。
+
+### 13.6 第11版: 聴牌の「計算」ボタンの置き方(オーナーの再確認。§13.5 の 1 を置き換える)
+
+- 13枚入力で聴牌のとき、「聴牌(左)・計算ボタン(右)」だけを内容とする独立した小さなカード(結果の枠と同じ見た目: `surface-container`・`corner-large`・余白 1rem。`.result-body__engine-card`)を、和了の表示(役・点数などの本体)の上に1枚だけ置く。和了の表示そのものは枠なし(`result-panel--flat`)のまま変更しない。従来の「ボタンだけの行」は、このカードに置き換えて廃止した。
+- 対象: `HoraBody`(13枚の役ありの聴牌)。`TempaiBody`(打点なしの聴牌)は元から「見出し+ボタン」を結果の枠の先頭に持つので、カードを重ねて出さない(1つだけ)。向聴(`ShantenBody`)・打牌候補(`DiscardBody`)は現状のまま。
+- 14枚の和了形・props(`onOpenEngine`)を渡さないときは、カードもボタンも出ず、HTML は既存と同一。
+- 実装: `slots.tsx` の `HoraBody`、`result.css`。初回JS 129,721 B(第10版の 129,567 B から +154 B。うち Analytics アイコン追加分〔`SYMBOL_ANALYTICS`・`Button` の `icon`・`EngineButton`〕は直前の 129,585 B から +136 B)。計算画面チャンクは生 38,592 B / gzip 10,511 B、CSS は gzip 1,662 B。
+- 追記(オーナー確定): 「計算」ボタンはカード内の見出し行ではテキストボタン(文字だけ。tonal をやめた。`EngineButton` は `variant="text"`)にし、ラベルは全て「計算」で統一する(「何切る」は使わない)。
+- 追記(オーナー確定): 「計算」ボタン(聴牌・向聴・打牌候補・13枚聴牌の追加カードの全箇所)の先頭に Material Symbols の `Analytics` アイコンを付け、アイコン+「計算」の文字を併記する。アイコンは `src/ui/icons/symbol-paths.ts` に `SYMBOL_ANALYTICS`(公式 `analytics_24px.svg` の path を無改変で書き写し。`symbol-paths.test.ts` で完全一致を検査、CREDITS.md の件数を 17 に更新)として追加。`Button` ラッパーには、`Chip` の流儀(`<span slot="icon">`)に合わせた任意の `icon` を追加し、`EngineButton` が `SymbolIcon`(1.125rem)を渡す。
 

@@ -7,6 +7,7 @@ import { DEFAULT_RULE } from '../../core/rule';
 import type { ResultState } from '../calc/result-state';
 import { ResultPanel } from '../screen/ResultPanel';
 import { type ResultView, classifyResult } from './classify';
+import { SYMBOL_ANALYTICS } from '../icons';
 import { engineHandSize, engineStartShanten } from './engine-entry';
 
 const table = { round: 'east', seat: 'east', continue: 0, deposit: 0 } as const;
@@ -70,7 +71,7 @@ describe('U-1: 見出し右の「計算」ボタン', () => {
     expect(html).toMatch(HAS_BUTTON);
     // 見出し行(result-body__heading)の中にあり、ラベルは「計算」
     expect(html).toMatch(
-      /class="result-body__heading result-body__heading--action"[\s\S]*?result-body__engine-button[^>]*>計算</
+      /class="result-body__heading result-body__heading--action"[\s\S]*?result-body__engine-button[^>]*><span slot="icon"><svg[\s\S]*?<\/svg><\/span>計算</
     );
   });
 
@@ -83,21 +84,56 @@ describe('U-1: 見出し右の「計算」ボタン', () => {
     expect(renderPanel(make(), len)).not.toMatch(HAS_BUTTON);
   });
 
-  it('聴牌のカード(TempaiBody)は、枠の内側の先頭行に「聴牌」の見出し(左)と「計算」ボタン(右)を置く。13枚聴牌の hora(HoraBody)は見出しを足さず、ボタンだけの行をカードの外に置く', () => {
+  it('13枚聴牌(hora)は、「聴牌+計算」だけの小さなカードが和了の表示の前に1枚だけ出る(見出し左・ボタン右)。ボタンだけの行は廃止', () => {
+    const html = renderPanel(tempai13(), 13);
+    expect((html.match(/data-result-card="tempai-engine"/g) ?? []).length).toBe(
+      1
+    );
+    // カードの中身は 見出し「聴牌」(左)→ ボタン(右) だけ
+    const card =
+      html.match(
+        /<div class="result-body__engine-card"[\s\S]*?<\/div><\/div>/
+      )?.[0] ?? '';
+    expect(card).toMatch(
+      /<h2 class="result-body__title">聴牌<\/h2><[^>]*result-body__engine-button[^>]*><span slot="icon"><svg[\s\S]*?<\/svg><\/span>計算</
+    );
+    // 和了の表示の本体は枠なし(flat)のまま。従来の「ボタンだけの行」は無い
+    expect(html).toContain('result-panel--flat');
+    expect(html).not.toMatch(/result-body__heading--action"><md-text-button/);
+  });
+
+  it('打点なしの聴牌(TempaiBody)は、既存の見出し+ボタンの1つだけで、小さなカードを重ねて出さない', () => {
     const t = renderPanel(tempaiNoScore, 13);
-    expect(t).toMatch(/class="result-panel"/);
-    expect(t.indexOf('result-panel__body')).toBeLessThan(
-      t.indexOf('result-body__heading')
-    );
+    expect(t).not.toContain('result-body__engine-card');
+    expect(t.match(/result-body__engine-button/g)?.length).toBe(1);
     expect(t).toMatch(
-      /class="result-body__heading result-body__heading--action"><h2 class="result-body__title">聴牌<\/h2><[^>]*result-body__engine-button/
+      /class="result-panel"[\s\S]*result-body__heading--action"><h2 class="result-body__title">聴牌<\/h2><[^>]*result-body__engine-button/
     );
-    const h = renderPanel(tempai13(), 13);
-    expect(h).toContain('result-panel--flat');
-    expect(h).toMatch(
-      /class="result-body__heading result-body__heading--action"><md-filled-tonal-button[^>]*result-body__engine-button/
+  });
+
+  it('「計算」ボタンはすべてテキストボタン(tonal ではない)で、ラベルは「計算」で統一する', () => {
+    for (const [make, len] of [
+      [shantenResult2, 13],
+      [tempai13, 13],
+      [() => tempaiNoScore, 13],
+      [discard14, 14]
+    ] as const) {
+      const html = renderPanel(make(), len);
+      expect(html).toMatch(
+        /<md-text-button[^>]*result-body__engine-button[^>]*><span slot="icon"><svg[\s\S]*?<\/svg><\/span>計算</
+      );
+      expect(html).not.toContain('md-filled-tonal-button');
+      // 先頭に Analytics アイコン(slot="icon")、続けて文字「計算」
+      expect(html).toContain(SYMBOL_ANALYTICS);
+      expect(html).not.toContain('何切る');
+    }
+  });
+
+  it('14枚の和了形・props なしには「聴牌+計算」のカードが出ない', () => {
+    expect(renderPanel(hora14(), 14)).not.toContain('result-body__engine-card');
+    expect(renderPanel(tempai13(), 13, false)).not.toContain(
+      'result-body__engine-card'
     );
-    expect(h).not.toContain('<h2');
   });
 
   it('engineEntry を渡さないとき、どの種別でも HTML が既存と同じ(ボタンも見出し行の追加もない)', () => {

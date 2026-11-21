@@ -70,8 +70,14 @@ export function HoraBody({
       ) : (
         <>
           {onOpenEngine ? (
-            <div className="result-body__heading result-body__heading--action">
-              <EngineButton onClick={onOpenEngine} />
+            <div
+              className="result-body__engine-card"
+              data-result-card="tempai-engine"
+            >
+              <div className="result-body__heading result-body__heading--action">
+                <h2 className="result-body__title">聴牌</h2>
+                <EngineButton onClick={onOpenEngine} />
+              </div>
             </div>
           ) : null}
           <Suspense fallback={null}>

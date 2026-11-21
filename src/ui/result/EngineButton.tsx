@@ -1,4 +1,5 @@
 import type React from 'react';
+import { SYMBOL_ANALYTICS, SymbolIcon } from '../icons';
 import { Button } from '../md';
 
 export interface EngineButtonProps {
@@ -11,7 +12,8 @@ export function EngineButton({
 }: EngineButtonProps): React.JSX.Element {
   return (
     <Button
-      variant="tonal"
+      variant="text"
+      icon={<SymbolIcon d={SYMBOL_ANALYTICS} size="1.125rem" />}
       className="result-body__engine-button"
       onClick={onClick}
     >

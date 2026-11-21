@@ -14,6 +14,15 @@
   row-gap: 0.25rem;
 }
 
+.result-body__engine-card {
+  /* 結果の枠(.result-panel)と同じ見た目の小さなカード。和了の表示(枠なし)の上に1枚置く */
+  background-color: var(--md-sys-color-surface-container);
+  color: var(--md-sys-color-on-surface);
+  border-radius: var(--md-sys-shape-corner-large);
+  padding: 1rem;
+  box-sizing: border-box;
+}
+
 .result-body__heading--action {
   align-items: center;
 }
