@@ -153,7 +153,7 @@ export function EngineResult(props: EngineResultProps): React.JSX.Element {
           <TurnChart series={toRateSeries(current)} displayTurn={displayTurn} />
           <div className="engine-result__slider-row">
             <output className="engine-result__turn-label tabular-nums">
-              {displayTurn}巡目
+              {displayTurn}順
             </output>
             <Slider
               className="engine-result__slider"

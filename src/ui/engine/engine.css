@@ -84,6 +84,7 @@
 }
 
 .engine-result__chart {
+  container-type: inline-size;
   display: flex;
   flex-direction: column;
 }
@@ -97,19 +98,22 @@
   justify-content: center;
 }
 
-/* 現在の巡目は、スライダーの左(グラフの縦軸の目盛りの幅)に右寄せで置く。つまみ・値のラベルと重ならない */
+/* 現在の巡目(「n順」)は、スライダーの左に置き、グラフの縦軸の目盛り(.turn-chart__tick)と
+   同じ配置(右寄せ・同じ余白)・同じフォント・同じ大きさ・同じ色トークンにする。
+   目盛りは SVG(viewBox 幅 320)の 10 単位なので、グラフの幅に比例した大きさにそろえる */
 .engine-result__turn-label {
   position: absolute;
   inset-inline-start: 0;
   top: 50%;
   transform: translateY(-50%);
-  width: calc(34 / 320 * 100% - 4px);
+  width: calc(30 / 320 * 100%);
   text-align: end;
   white-space: nowrap;
-  color: var(--md-sys-color-on-surface);
+  color: var(--md-sys-color-on-surface-variant);
   font-family: var(--md-sys-typescale-label-small-font);
-  font-size: var(--md-sys-typescale-label-small-size);
-  line-height: var(--md-sys-typescale-label-small-line-height);
+  font-size: calc(10 / 320 * 100cqw);
+  font-weight: normal;
+  line-height: 1;
 }
 
 .engine-result__slider {

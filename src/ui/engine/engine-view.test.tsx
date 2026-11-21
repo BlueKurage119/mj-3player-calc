@@ -38,7 +38,7 @@ const view = (over: Partial<EngineViewProps> = {}): EngineViewProps => ({
   onBack: noop,
   onOpenHelp: noop,
   tiles: [{ type: 'z', n: 1 }],
-  premise: { table: TABLE, dora: [], nuki: 0 },
+  premise: { table: TABLE, dora: [], nuki: 0, nukiEnabled: true },
   available: true,
   methodChoice: true,
   detailed: false,
@@ -146,17 +146,17 @@ describe('EngineView: 結果', () => {
     expect(h18.match(/engine-summary[\s\S]*?<\/dl>/)?.[0]).toContain('>0<');
   });
 
-  it('現在の巡目が「n巡目」で表示される', () => {
+  it('現在の巡目が「n順」で表示される(「巡目」は使わない)', () => {
     const p = view({ run: done([c13]) });
-    expect(render(p)).toContain('>3巡目<');
-    // 「n巡目」はスライダーの左(同じ行で、スライダーより前)にある
+    expect(render(p)).toContain('>3順<');
+    // 「n順」はスライダーの左(同じ行で、スライダーより前)にある
     const row =
       render(p).match(/engine-result__slider-row[\s\S]*?<\/div>/)?.[0] ?? '';
-    expect(row.indexOf('3巡目')).toBeGreaterThan(-1);
-    expect(row.indexOf('3巡目')).toBeLessThan(row.indexOf('<md-slider'));
+    expect(row.indexOf('3順')).toBeGreaterThan(-1);
+    expect(row.indexOf('3順')).toBeLessThan(row.indexOf('<md-slider'));
     expect(
       render({ ...p, result: { ...p.result, displayTurn: 17 } })
-    ).toContain('>17巡目<');
+    ).toContain('>17順<');
   });
 
   it('U-6: 14枚は列ヘッダー(和了率・聴牌率・期待値)があり、既定は期待値の降順で先頭行が選択される。selectedIndex で切り替わる', () => {
@@ -292,13 +292,15 @@ describe(' UI監修: ボタン配置・スライダー・前提', () => {
     expect(html.indexOf('turn-chart')).toBeLessThan(html.indexOf('<md-slider'));
   });
 
-  it('前提: 要約カードと同じ表記(場風・自風の文字、積み棒・供託のピル)。ドラ・抜き北は入力があるときだけ出す', () => {
+  it('前提: 場風・自風は要約カードと同じ表記。積み棒・供託は出さず、抜き北は 0 枚でも出し、ドラは入力があるときだけ出す', () => {
     const empty = render(view());
     expect(empty).toContain('summary-card__winds">東場・東家<');
-    expect(empty).toContain('aria-label="積み棒 0"');
-    expect(empty).toContain('aria-label="供託 0"');
+    expect(empty).not.toContain('積み棒');
+    expect(empty).not.toContain('供託');
     expect(empty).not.toContain('summary-card__dora');
-    expect(empty).not.toContain('抜き北');
+    // 抜き北は 0 枚でも「北 0」
+    expect(empty).toContain('aria-label="抜き北 0"');
+    expect(empty).toContain('北 0');
     const html = render(
       view({
         premise: {
@@ -307,17 +309,43 @@ describe(' UI監修: ボタン配置・スライダー・前提', () => {
             { type: 'p', n: 3 },
             { type: 'z', n: 5 }
           ],
-          nuki: 2
+          nuki: 2,
+          nukiEnabled: true
         }
       })
     );
     expect(html).toContain('summary-card__winds">南場・西家<');
-    expect(html).toContain('aria-label="積み棒 2"');
+    expect(html).not.toContain('積み棒');
     expect(html).toContain('summary-card__dora');
     expect(html).toContain('aria-label="3筒"');
     expect(html).toContain('aria-label="抜き北 2"');
     // 裏ドラは出さない
     expect(html).not.toContain('>裏<');
+  });
+
+  it('前提: 共通役牌モード(nukiEnabled=false)では北の表示自体を出さない', () => {
+    const html = render(
+      view({
+        premise: { table: TABLE, dora: [], nuki: 0, nukiEnabled: false }
+      })
+    );
+    expect(html).not.toContain('抜き北');
+    expect(html).not.toContain('北 ');
+  });
+
+  it('「n順」は縦軸の目盛りと同じ書式(フォント・色トークン・10/320 の大きさ・右寄せ)', () => {
+    const css = readFileSync(new URL('./engine.css', import.meta.url), 'utf8');
+    const label = css.match(/\.engine-result__turn-label \{[^}]*\}/)?.[0] ?? '';
+    const tick = css.match(/\.turn-chart__tick \{[^}]*\}/)?.[0] ?? '';
+    expect(tick).toContain('--md-sys-typescale-label-small-font');
+    expect(tick).toContain('--md-sys-color-on-surface-variant');
+    expect(label).toContain('--md-sys-typescale-label-small-font');
+    expect(label).toContain('--md-sys-color-on-surface-variant');
+    expect(label).toContain('font-size: calc(10 / 320 * 100cqw)');
+    expect(label).toContain('text-align: end');
+    expect(css).toMatch(
+      /\.engine-result__chart \{[^}]*container-type: inline-size/
+    );
   });
 });
 

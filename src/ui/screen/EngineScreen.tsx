@@ -15,7 +15,7 @@ import { visibleRunState } from '../engine/engine-run';
 import { useEngineRun } from '../engine/use-engine-run';
 import { classifyResult } from '../result/classify';
 import { engineHandSize, engineStartShanten } from '../result/engine-entry';
-import { useAppDispatch, useAppState } from '../state';
+import { isNukiEnabled, useAppDispatch, useAppState } from '../state';
 import './main-screen.css';
 
 /** 表示する巡目の既定(計算は常に18巡目まで一括) */
@@ -71,7 +71,8 @@ export function EngineScreen({
       premise={{
         table: app.table,
         dora: app.input.dora,
-        nuki: app.input.nuki
+        nuki: app.input.nuki,
+        nukiEnabled: isNukiEnabled(app.rule)
       }}
       available={available}
       methodChoice={methodChoice}
