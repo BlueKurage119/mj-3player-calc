@@ -3,7 +3,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import type { CandidateStat, TurnStat } from '../../engine/types';
 import { EngineView, type EngineViewProps } from './EngineView';
-import { CHART_TURNS } from './chart-series';
+import { CANDIDATE_LINE_STYLES, CHART_TURNS } from './chart-series';
 import type { EngineRunState } from './engine-run';
 
 const noop = () => {};
@@ -347,6 +347,78 @@ describe(' UI監修: ボタン配置・スライダー・前提', () => {
     expect(css).toMatch(
       /\.engine-result__chart \{[^}]*container-type: inline-size/
     );
+  });
+});
+
+describe('第13版: 14枚のグラフは上位5候補の折れ線', () => {
+  // tile 1..7 (東〜中は z1..z7)。期待値は tile が大きいほど大、和了率は tile が小さいほど大
+  const c14 = (t: number) =>
+    cand({ type: 'z', n: t as 1 }, d => ({
+      win: (8 - t) / 10,
+      tenpai: t / 10,
+      ev: d * t * 100
+    }));
+  const cs = [1, 2, 3, 4, 5, 6, 7].map(c14);
+  const html = (metric: 'win' | 'tenpai' | 'ev') => {
+    const p = view({ run: done(cs) });
+    return render({ ...p, result: { ...p.result, rankMetric: metric } });
+  };
+  const ids = (h: string) =>
+    [...h.matchAll(/data-series="(cand-\d+)"/g)].map(m => m[1]);
+
+  it('14枚: 折れ線は5本、候補行の並び(期待値降順)の先頭5件と同じ順', () => {
+    expect(ids(html('ev'))).toEqual([
+      'cand-6',
+      'cand-5',
+      'cand-4',
+      'cand-3',
+      'cand-2'
+    ]);
+    expect(html('ev').match(/class="turn-chart__line"/g)?.length).toBe(5);
+  });
+
+  it('並べ替え(指標の切替)で5本が入れ替わる', () => {
+    expect(ids(html('win'))).toEqual([
+      'cand-0',
+      'cand-1',
+      'cand-2',
+      'cand-3',
+      'cand-4'
+    ]);
+    expect(ids(html('tenpai'))).toEqual(ids(html('ev')));
+  });
+
+  it('期待値のときだけ縦軸が点(上端は最大値の切り上げ)で、凡例の指標名に(点)が付く', () => {
+    const ev = html('ev');
+    // 全巡目の最大は t=7・draw 17: 11,900 → 上端 20000
+    expect(ev).toContain('>20000<');
+    expect(ev).toContain('期待値(点)');
+    expect(ev).not.toContain('>100%<');
+    const win = html('win');
+    expect(win).toContain('>100%<');
+    expect(win).toContain('和了率');
+    expect(win).not.toContain('(点)');
+  });
+
+  it('候補行の上位5行にだけグラフと同じ色の印が付き、凡例は牌画像', () => {
+    const h = html('ev');
+    expect(h.match(/engine-candidates__mark/g)?.length).toBe(5);
+    expect(h).toContain('turn-chart__legend');
+    expect(h).toMatch(/turn-chart__legend-item[\s\S]*?class="tile/);
+  });
+
+  it('13枚は従来どおり2本(和了率・聴牌率)', () => {
+    const h = render(
+      view({ run: done([cand(null, d => ({ win: d / 100 }))]) })
+    );
+    expect(h.match(/class="turn-chart__line"/g)?.length).toBe(2);
+    expect(h).not.toContain('engine-candidates__mark');
+  });
+
+  it('5本の色は互いに異なるトークンで、セカンダリー系を含まない', () => {
+    const tokens = CANDIDATE_LINE_STYLES.map(x => x.colorToken);
+    expect(new Set(tokens).size).toBe(5);
+    expect(tokens.some(t => t.includes('secondary'))).toBe(false);
   });
 });
 

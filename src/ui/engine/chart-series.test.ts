@@ -7,7 +7,9 @@ import {
   formatPercent,
   isShantenBack,
   rankCandidates,
+  niceMax,
   statAt,
+  toCandidateSeries,
   toRateSeries
 } from './chart-series';
 
@@ -147,5 +149,29 @@ describe('chart-series', () => {
     expect(formatElapsed(999)).toBe('0秒');
     expect(formatElapsed(59_000)).toBe('59秒');
     expect(formatElapsed(61_000)).toBe('1分1秒');
+  });
+});
+
+describe('toCandidateSeries(b案)', () => {
+  const cs = [1, 2, 3].map(t =>
+    cand(t, d => ({ ev: d * t * 100, win: t / 10 }))
+  );
+  it('上位 limit 件を指標の降順で、順位どおりの色で返す。値は18点', () => {
+    const { series, axis } = toCandidateSeries(cs, 3, 'ev', 2);
+    expect(series.map(s => s.id)).toEqual(['cand-2', 'cand-1']);
+    expect(series[0]?.values.length).toBe(CHART_TURNS);
+    expect(series[0]?.colorToken).not.toBe(series[1]?.colorToken);
+    expect(axis).toEqual({ kind: 'point', max: 10000 });
+  });
+  it('率の指標は縦軸 0〜1', () => {
+    expect(toCandidateSeries(cs, 3, 'win').axis).toEqual({
+      kind: 'percent',
+      max: 1
+    });
+  });
+  it('niceMax は 1・2・5×10^k に切り上げる', () => {
+    expect([0, 1, 1213, 2000, 2001, 10500].map(niceMax)).toEqual([
+      1, 1, 2000, 2000, 5000, 20000
+    ]);
   });
 });

@@ -326,7 +326,7 @@
 .engine-candidates__header,
 .engine-candidates__row {
   display: grid;
-  grid-template-columns: 4.5rem repeat(3, minmax(0, 1fr));
+  grid-template-columns: 5.75rem repeat(3, minmax(0, 1fr));
   align-items: center;
   column-gap: 0.5rem;
 }
@@ -379,6 +379,7 @@
   line-height: var(--md-sys-typescale-label-small-line-height);
   /* 2文字ずつで改行する(向聴 / 戻し) */
   width: 2em;
+  flex: none;
   box-sizing: content-box;
   white-space: normal;
   word-break: break-all;
@@ -478,4 +479,29 @@
 .turn-chart__legend-swatch {
   width: 1.25rem;
   height: 0.25rem;
+}
+
+.turn-chart__dot {
+  stroke: var(--md-sys-color-surface-container-lowest);
+  stroke-width: 1;
+}
+
+.turn-chart__caption {
+  margin: 0;
+  color: var(--md-sys-color-on-surface-variant);
+  font-family: var(--md-sys-typescale-label-medium-font);
+  font-size: var(--md-sys-typescale-label-medium-size);
+  line-height: var(--md-sys-typescale-label-medium-line-height);
+}
+
+.turn-chart__legend {
+  --tile-width: 1rem;
+}
+
+/* 候補行の牌の左の色の印(グラフの折れ線の色。上位5行のみ) */
+.engine-candidates__mark {
+  flex: none;
+  width: 0.25rem;
+  height: 1.5rem;
+  border-radius: var(--md-sys-shape-corner-full);
 }

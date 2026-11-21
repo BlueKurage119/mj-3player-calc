@@ -1,5 +1,6 @@
 // 結果から系列・表示用の値を組む純関数(グラフの種類に依存しない形。b案へ移るときはここに足す)
 import type { CandidateStat } from '../../engine/types';
+import type { Tile as CoreTile } from '../../core/tile';
 
 /** 計算する巡目数(perTurn の長さ) */
 export const CHART_TURNS = 18;
@@ -11,8 +12,12 @@ export interface ChartSeries {
   label: string;
   /** 例 '--md-sys-color-primary' */
   colorToken: string;
-  /** 長さ18。0〜1 */
+  /** 長さ18。a案(和了率・聴牌率)は 0〜1、b案の期待値は点 */
   values: number[];
+  /** 線の破線パターン(SVG の stroke-dasharray。省略は実線) */
+  dash?: string | undefined;
+  /** b案: 凡例に出す候補の打牌(牌画像) */
+  tile?: CoreTile | undefined;
 }
 
 /** 順位づけに使える指標(列ヘッダーで選ぶ) */
@@ -84,9 +89,79 @@ export const toRateSeries = (c: CandidateStat): ChartSeries[] => {
       id: 'tenpai',
       label: '聴牌率',
       colorToken: '--md-sys-color-tertiary',
+      dash: '5 3',
       values: vs.map(v => v.tenpai)
     }
   ];
+};
+
+/** b案の縦軸 */
+export interface ChartAxis {
+  kind: 'percent' | 'point';
+  /** 縦軸の上端の値(percent は 1、point は期待値の最大を切り上げたきりのよい値) */
+  max: number;
+}
+
+export const PERCENT_AXIS: ChartAxis = { kind: 'percent', max: 1 };
+
+/** 折れ線5本に割り当てる色トークン(セカンダリー系を除く5色。quinary・senary は 別PRで main に追加済みで、develop/v2.0 への同期後に有効になる)と、色に頼らない識別用の破線 */
+export const CANDIDATE_LINE_STYLES: readonly {
+  colorToken: string;
+  dash: string | undefined;
+}[] = [
+  { colorToken: '--md-sys-color-primary', dash: undefined },
+  { colorToken: '--md-sys-color-tertiary', dash: '6 3' },
+  { colorToken: '--md-sys-color-quaternary', dash: '2 2' },
+  { colorToken: '--md-sys-color-quinary', dash: '6 3 2 3' },
+  { colorToken: '--md-sys-color-senary', dash: '1 3' }
+];
+
+/** b案で描く候補の数 */
+export const CANDIDATE_LINE_LIMIT = CANDIDATE_LINE_STYLES.length;
+
+/** v 以上の、1・2・5 × 10^k のうち最小の値(縦軸の上端) */
+export const niceMax = (v: number): number => {
+  if (!(v > 1)) return 1;
+  const p = 10 ** Math.floor(Math.log10(v));
+  for (const m of [1, 2, 5, 10]) {
+    if (m * p >= v) return m * p;
+  }
+  return 10 * p;
+};
+
+export interface CandidateSeriesResult {
+  series: ChartSeries[];
+  axis: ChartAxis;
+}
+
+/**
+ * b案: 14枚入力の上位候補(表示巡目での指標の値の降順。候補行の並びの先頭 limit 件)ごとの折れ線。
+ * 系列の順・色は行の順位に対応する。期待値のときは縦軸を点にして上端を最大値から決める
+ */
+export const toCandidateSeries = (
+  candidates: readonly CandidateStat[],
+  turn: number,
+  metric: RankMetric,
+  limit: number = CANDIDATE_LINE_LIMIT
+): CandidateSeriesResult => {
+  const top = rankCandidates(candidates, turn, metric).slice(0, limit);
+  const series = top.map(({ index, candidate }, i): ChartSeries => {
+    const style = CANDIDATE_LINE_STYLES[i % CANDIDATE_LINE_STYLES.length] ?? {
+      colorToken: '--md-sys-color-primary',
+      dash: undefined
+    };
+    return {
+      id: `cand-${index}`,
+      label: RANK_METRICS.find(m => m.value === metric)?.label ?? '',
+      colorToken: style.colorToken,
+      dash: style.dash,
+      tile: candidate.discard ?? undefined,
+      values: turnValues(candidate).map(v => v[metric])
+    };
+  });
+  if (metric !== 'ev') return { series, axis: PERCENT_AXIS };
+  const max = Math.max(0, ...series.flatMap(s => s.values));
+  return { series, axis: { kind: 'point', max: niceMax(max) } };
 };
 
 export interface RankedCandidate {

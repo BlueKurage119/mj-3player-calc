@@ -12,7 +12,9 @@ import {
   formatPercent,
   isShantenBack,
   rankCandidates,
+  CANDIDATE_LINE_STYLES,
   statAt,
+  toCandidateSeries,
   toRateSeries
 } from './chart-series';
 import './engine.css';
@@ -92,7 +94,8 @@ export function EngineCandidates({
         ))}
       </div>
       <ul className="engine-candidates__list">
-        {ranked.map(({ index, candidate }) => {
+        {ranked.map(({ index, candidate }, rank) => {
+          const line = CANDIDATE_LINE_STYLES[rank];
           const s = statAt(candidate, displayTurn);
           const discard: CoreTile | null = candidate.discard;
           return (
@@ -107,6 +110,13 @@ export function EngineCandidates({
                 onClick={() => onSelect(index)}
               >
                 <span className="engine-candidates__tile">
+                  {line ? (
+                    <span
+                      className="engine-candidates__mark"
+                      aria-hidden="true"
+                      style={{ backgroundColor: `var(${line.colorToken})` }}
+                    />
+                  ) : null}
                   {discard ? <Tile tile={discard} /> : null}
                   {isShantenBack(candidate, candidates) ? (
                     <span className="engine-candidates__chip">向聴戻し</span>
@@ -130,6 +140,31 @@ export function EngineCandidates({
   );
 }
 
+/** 14枚入力のグラフ: 候補行の並びの上位5候補の折れ線(指標は列ヘッダーの選択に従う) */
+function CandidateChart({
+  candidates,
+  displayTurn,
+  rankMetric
+}: Pick<
+  EngineResultProps,
+  'candidates' | 'displayTurn' | 'rankMetric'
+>): React.JSX.Element {
+  const { series, axis } = toCandidateSeries(
+    candidates,
+    displayTurn,
+    rankMetric
+  );
+  const label = RANK_METRICS.find(m => m.value === rankMetric)?.label ?? '';
+  return (
+    <TurnChart
+      series={series}
+      displayTurn={displayTurn}
+      axis={axis}
+      caption={axis.kind === 'point' ? `${label}(点)` : label}
+    />
+  );
+}
+
 /** 計算結果の表示(要約・候補行・グラフ・巡目別の表)。表示巡目の変更では再計算しない */
 export function EngineResult(props: EngineResultProps): React.JSX.Element {
   const {
@@ -150,7 +185,18 @@ export function EngineResult(props: EngineResultProps): React.JSX.Element {
     <div className="engine-result">
       {current ? (
         <div className="engine-result__chart">
-          <TurnChart series={toRateSeries(current)} displayTurn={displayTurn} />
+          {is14 ? (
+            <CandidateChart
+              candidates={candidates}
+              displayTurn={displayTurn}
+              rankMetric={rankMetric}
+            />
+          ) : (
+            <TurnChart
+              series={toRateSeries(current)}
+              displayTurn={displayTurn}
+            />
+          )}
           <div className="engine-result__slider-row">
             <output className="engine-result__turn-label tabular-nums">
               {displayTurn}順目
