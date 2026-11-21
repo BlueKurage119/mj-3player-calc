@@ -414,10 +414,10 @@ describe('第13版: 14枚のグラフは上位5候補の折れ線', () => {
       css.match(
         /\.engine-candidates__row\[data-tint="true"\] \{[^}]*\}/
       )?.[0] ?? '';
-    // コンテナ色を surface-container と混ぜて薄める(割合は --engine-tint-ratio。既定 55%)
+    // コンテナ色を surface-container と混ぜて薄める(割合は --engine-tint-ratio。既定 40%)
     expect(tint).toContain('var(--tint-bg) var(--engine-tint-ratio)');
     expect(tint).toContain('--md-sys-color-surface-container)');
-    expect(css).toMatch(/\.engine-result \{[^}]*--engine-tint-ratio: 55%;/);
+    expect(css).toMatch(/\.engine-result \{[^}]*--engine-tint-ratio: 40%;/);
     expect(tint).toContain('color: var(--tint-fg)');
     expect(tint).not.toContain('box-shadow');
     expect(h).toContain('--tint-bg:var(--md-sys-color-primary-container)');

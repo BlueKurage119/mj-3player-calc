@@ -166,7 +166,7 @@
 
 .engine-result {
   /* 染め(行・カード)のコンテナ色の割合。残りは surface-container(同系統・同トーン帯なので濁りにくい) */
-  --engine-tint-ratio: 55%;
+  --engine-tint-ratio: 40%;
 }
 
 .engine-result__chart {
