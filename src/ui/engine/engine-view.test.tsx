@@ -119,7 +119,7 @@ describe('EngineView: 実行前後の表示', () => {
 describe('EngineView: 結果', () => {
   const c13 = cand(null, d => ({ win: d / 100, tenpai: d / 50, ev: d * 100 }));
 
-  it('U-6/U-7: 13枚は1組の要約(3巡目 = draw 15 の値)・グラフ(折れ線2本)・18行の表。1巡目は draw 17、18巡目は補った値', () => {
+  it('U-6/U-7: 13枚は1組の要約(3巡目 = draw 15 の値)とグラフ(折れ線2本)', () => {
     const html = render(view({ run: done([c13]) }));
     // 3巡目: 残り15回 = win 0.15 / tenpai 0.30 / ev 1,500
     expect(html).toContain('15.0%');
@@ -127,21 +127,12 @@ describe('EngineView: 結果', () => {
     expect(html).toContain('>1,500<');
     expect(html).not.toContain('engine-candidates');
     expect(html.match(/class="turn-chart__line"/g)?.length).toBe(2);
-    const rows = html.match(/<tr class="turn-table__row"[\s\S]*?<\/tr>/g) ?? [];
-    expect(rows.length).toBe(18);
-    // 1行目(1巡目 = 残り17回 = draw 17): win 17.0% / tenpai 34.0% / ev 1,700
-    expect(rows[0]).toContain('34.0%');
-    expect(rows[0]).toContain('17.0%');
-    expect(rows[0]).toContain('1,700');
-    // 17行目(17巡目 = 残り1回 = draw 1): win 1.0% / ev 100
-    expect(rows[16]).toContain('1.0%');
-    expect(rows[16]).toContain('>100<');
-    // 18行目(18巡目 = 残り0回): 和了率 0.0%・期待値 0、聴牌率は向聴1なので 0.0%
-    expect(rows[17]).toContain('0.0%');
-    expect(rows[17]).toContain('>0<');
-    expect(rows[17]).not.toContain('100.0%');
-    // 表示巡目の行が強調される
-    expect(html.match(/data-current="true"/g)?.length).toBe(1);
+    // 巡目別の表は無い(値の対応は chart-series のテストと下の要約で検証する)
+    expect(html).not.toContain('turn-table');
+    expect(html).not.toContain('巡目別の表');
+    // 折れ線は 1巡目〜18巡目の18点
+    const d = html.match(/class="turn-chart__line" d="([^"]+)"/)?.[1] ?? '';
+    expect(d.split(/(?=[ML])/).length).toBe(18);
   });
 
   it('表示巡目を 1 / 17 / 18 にすると、要約が draw 17 / draw 1 / 補った値に変わる', () => {
@@ -158,6 +149,11 @@ describe('EngineView: 結果', () => {
   it('現在の巡目が「n巡目」で表示される', () => {
     const p = view({ run: done([c13]) });
     expect(render(p)).toContain('>3巡目<');
+    // 「n巡目」はスライダーの左(同じ行で、スライダーより前)にある
+    const row =
+      render(p).match(/engine-result__slider-row[\s\S]*?<\/div>/)?.[0] ?? '';
+    expect(row.indexOf('3巡目')).toBeGreaterThan(-1);
+    expect(row.indexOf('3巡目')).toBeLessThan(row.indexOf('<md-slider'));
     expect(
       render({ ...p, result: { ...p.result, displayTurn: 17 } })
     ).toContain('>17巡目<');
@@ -228,6 +224,11 @@ describe('EngineView: 結果', () => {
     const rows = html.split('engine-candidates__row').slice(1);
     expect(rows[0]).not.toContain('向聴戻し');
     expect(rows[1]).toContain('向聴戻し');
+    // チップは候補行の牌の右(同じ牌の列の中で、牌の後ろ)にある
+    expect(rows[1]?.indexOf('class="tile"')).toBeGreaterThan(-1);
+    expect(rows[1]?.indexOf('tile')).toBeLessThan(
+      rows[1]?.indexOf('向聴戻し') ?? 0
+    );
     expect(
       render(view({ run: done([{ ...cand(null, () => ({})), shanten: 2 }]) }))
     ).not.toContain('向聴戻し');
@@ -317,5 +318,33 @@ describe(' UI監修: ボタン配置・スライダー・前提', () => {
     expect(html).toContain('aria-label="抜き北 2"');
     // 裏ドラは出さない
     expect(html).not.toContain('>裏<');
+  });
+});
+
+describe('第8版: 並びとスタイル', () => {
+  it('前提は手牌より前にあり、カード(secondary-container)に入れない', () => {
+    const html = render(view());
+    expect(html.indexOf('engine-premise')).toBeGreaterThan(-1);
+    expect(html.indexOf('engine-premise')).toBeLessThan(
+      html.indexOf('engine-screen__hand')
+    );
+    const css = readFileSync(new URL('./engine.css', import.meta.url), 'utf8');
+    const premise = css.match(/\.engine-premise \{[^}]*\}/)?.[0] ?? '';
+    expect(premise).not.toContain('secondary-container');
+    expect(premise).not.toContain('background-color');
+  });
+
+  it('列ヘッダーは中央揃え、「向聴戻し」は2文字ずつで改行する幅', () => {
+    const css = readFileSync(new URL('./engine.css', import.meta.url), 'utf8');
+    const sort = css.match(/\.engine-candidates__sort \{[^}]*\}/)?.[0] ?? '';
+    expect(sort).toContain('justify-content: center');
+    const chip = css.match(/\.engine-candidates__chip \{[^}]*\}/)?.[0] ?? '';
+    expect(chip).toContain('width: 2em');
+    expect(chip).toContain('word-break: break-all');
+  });
+
+  it('巡目別の表の部品は残っていない', () => {
+    const files = readdirSync(new URL('.', import.meta.url));
+    expect(files.some(f => f.startsWith('TurnTable'))).toBe(false);
   });
 });

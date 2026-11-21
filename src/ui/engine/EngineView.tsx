@@ -81,9 +81,9 @@ export function EngineView(props: EngineViewProps): React.JSX.Element {
         </div>
       </header>
       <main className="engine-screen__content">
+        <EnginePremise {...props.premise} />
         <section className="engine-screen__hand" aria-label="対象の手牌">
           <GlanceTiles tiles={props.tiles} />
-          <EnginePremise {...props.premise} />
         </section>
         {props.available ? (
           <section className="engine-screen__controls">

@@ -1,11 +1,9 @@
 import type React from 'react';
 import type { Tile as CoreTile } from '../../core/tile';
 import type { CandidateStat } from '../../engine/types';
-import { Disclosure } from '../expressive';
 import { Slider } from '../md';
 import { Tile, tileLabelOf } from '../tile';
 import { TurnChart } from './TurnChart';
-import { TurnTable } from './TurnTable';
 import {
   CHART_TURNS,
   RANK_METRICS,
@@ -153,25 +151,20 @@ export function EngineResult(props: EngineResultProps): React.JSX.Element {
       {current ? (
         <div className="engine-result__chart">
           <TurnChart series={toRateSeries(current)} displayTurn={displayTurn} />
-          <Slider
-            className="engine-result__slider"
-            label="巡目"
-            min={1}
-            max={CHART_TURNS}
-            step={1}
-            value={displayTurn}
-            labeled
-            onValueChange={onTurnChange}
-          />
-          <div className="engine-result__turn-track">
-            <output
-              className="engine-result__turn-label tabular-nums"
-              style={{
-                insetInlineStart: `${((displayTurn - 1) / (CHART_TURNS - 1)) * 100}%`
-              }}
-            >
+          <div className="engine-result__slider-row">
+            <output className="engine-result__turn-label tabular-nums">
               {displayTurn}巡目
             </output>
+            <Slider
+              className="engine-result__slider"
+              label="巡目"
+              min={1}
+              max={CHART_TURNS}
+              step={1}
+              value={displayTurn}
+              labeled
+              onValueChange={onTurnChange}
+            />
           </div>
         </div>
       ) : null}
@@ -186,11 +179,6 @@ export function EngineResult(props: EngineResultProps): React.JSX.Element {
         />
       ) : current ? (
         <EngineSummary candidate={current} displayTurn={displayTurn} />
-      ) : null}
-      {current ? (
-        <Disclosure summary="巡目別の表">
-          <TurnTable candidate={current} displayTurn={displayTurn} />
-        </Disclosure>
       ) : null}
     </div>
   );
