@@ -29,3 +29,8 @@ export {
   CircularProgress,
   type CircularProgressProps
 } from './CircularProgress';
+
+export {
+  Snackbar,
+  type SnackbarProps
+} from './Snackbar';
