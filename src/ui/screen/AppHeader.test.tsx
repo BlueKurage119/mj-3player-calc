@@ -3,6 +3,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
 import { createDefaultRule } from '../../core/rule';
 import { EngineView } from '../engine/EngineView';
+import { Dialog } from '../md';
 import { type AppAction, AppStateProvider } from '../state';
 import {
   AppHeader,
@@ -441,5 +442,17 @@ describe('ヘッダー下端部の仕上げ改善 (Issue #142)', () => {
     ).toBeNull();
     expect(strippedScoringCss.match(/\b\d+ms\b/g)).toBeNull();
     expect(strippedScoringCss.match(/cubic-bezier\([^)]*\)/g)).toBeNull();
+  });
+
+  it('Issue142-D1: Dialog が position:fixed かつ z-index:30 のコンテナで md-dialog を包む', () => {
+    const html = renderToStaticMarkup(
+      <Dialog open={false} headline="テスト">
+        本文
+      </Dialog>
+    );
+
+    const match = html.match(/^<div style="([^"]*)"><md-dialog\b/);
+    expect(match).not.toBeNull();
+    expect(match?.[1]).toBe('position:fixed;z-index:30');
   });
 });
