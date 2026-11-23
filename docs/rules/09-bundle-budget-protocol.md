@@ -40,10 +40,10 @@ products: [Claude, Codex, Antigravity]
 
 #### 現在の基準値
 
-初回 JS **128,883 B**(gzip -9。v1.0.0〔Issue #110 / G3〕製造後の確定値)。
+初回 JS **131,293 B**(gzip -9。v2.0.0〔Issue #152〕製造後の確定値)。
 
-- 確定の根拠: ブランチ `claude/issue-110-v1-release-af20ae` の dc44604 を 2026-11-16 に `npm run build` でビルドし、`dist/index.html` の `<script type="module" src>` が指す `assets/index-BVVwChpY.js`(`modulepreload` はなし)を `gzip -9 -c <file> | wc -c` で測った。2 回の実測は同値(128,883 B)。遅延チャンク `HelpScreen-DJr5W5oq.js`(3,354 B)は初回 JS に含まれないため、この値に含めない。
-- 2026-11-14 までの基準値は 125,908 B(E4 完了後)。経過は下の表のとおり。
+- 確定の根拠: ブランチ `chore/issue-152-v2-release` の `1d431ce` を 2026-11-24 に `npm run build` でビルドし、`dist/index.html` の `<script type="module" src>` が指す `assets/index-CdyEr68T.js`(`modulepreload` はなし)を `gzip -9 -c <file> | wc -c` で測った。2 回の実測は同値(131,293 B)。遅延チャンク(`HelpScreen-Y4tca8WQ.js`・`EngineScreen-BgtUVAYQ.js` 等)は初回 JS に含まれないため、この値に含めない。
+- 2026-11-16 までの基準値は 128,883 B(v1.0.0 / G3)、2026-11-14 までの基準値は 125,908 B(E4 完了後)。経過は下の表のとおり。
 
 | 時点 | 初回 JS | 備考 |
 | --- | --- | --- |
@@ -58,3 +58,5 @@ products: [Claude, Codex, Antigravity]
 | E4 PR #86 マージ後(main 82de410) | 125,908 B | 確定値。基準 125,827 B との差 +81 B。目標 126,070 B 以下 |
 | G3 設計時(main d7fab4b) | 128,879 B | E4 以降(F・G・H 系)の累積。内訳は未調査 |
 | G3 PR(v1.0.0) | 128,883 B | 基準 128,879 B との差 +4 B。目標 128,879 B との差 +4 B(遅延チャンクのハッシュ変化等による微増、版番号本体は遅延チャンク側) |
+| Issue #152 設計時(develop/v2.0 9daba3f) | 131,291 B | v1.0.0 以降（v1.1.0・F3・#142・#158・#159・#166 等）の累積 |
+| Issue #152 PR(v2.0.0) | 131,293 B | 基準 131,291 B との差 +2 B（版番号・ヘルプ・巡目表記は遅延チャンク側） |
