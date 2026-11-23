@@ -1,11 +1,16 @@
-import { useEffect, useRef, useState } from 'react';
+import { memo, useEffect, useRef, useState } from 'react';
 import type React from 'react';
-import type { Tile as CoreTile } from '../../core/tile';
-import { ConnectedButtonGroup } from '../expressive';
+import {
+  type Tile as CoreTile,
+  type TileOrBack,
+  compareTiles
+} from '../../core/tile';
+import { ConnectedButtonGroup, LoadingIndicator } from '../expressive';
 import { SYMBOL_ARROW_BACK, SYMBOL_HELP, SymbolIcon } from '../icons';
 import { Button, IconButton } from '../md';
+import { useFitTiles } from '../screen/use-fit-tiles';
 import { useInView } from '../screen/use-in-view';
-import { GlanceTiles } from '../result/slots';
+import { Tile } from '../tile';
 import { EnginePremise, type EnginePremiseProps } from './EnginePremise';
 import { EngineResult, type EngineResultProps } from './EngineResult';
 import type { EngineFailReason, EngineRunState } from './engine-run';
@@ -23,8 +28,10 @@ export type EngineMethod = 'rough' | 'detailed';
 export interface EngineViewProps {
   onBack: () => void;
   onOpenHelp: () => void;
-  /** 対象の手牌(副露を含む縮小表示用) */
-  tiles: CoreTile[];
+  /** 門前手牌(未理牌でも可。表示時に compareTiles で全牌理牌する) */
+  hand: readonly CoreTile[];
+  /** 副露ごとの牌列(meldTiles で変換済み。暗槓は両端が裏牌の4枚) */
+  melds: readonly (readonly TileOrBack[])[];
   /** 計算の前提(ドラ表示牌・抜き北・場風・自風) */
   premise: EnginePremiseProps;
   /** 計算できる入力か。false のときは実行ボタンを出さない */
@@ -33,7 +40,7 @@ export interface EngineViewProps {
   methodChoice: boolean;
   detailed: boolean;
   onDetailedChange: (detailed: boolean) => void;
-  /** 「時間がかかります」を出すか(t3-静的) */
+  /** 「時間がかかります」を出す対象か(run.status === 'idle' のときのみ表示) */
   slow: boolean;
   /** 現在の入力・条件に対する状態(古い結果は呼び出し側で捨てる) */
   run: EngineRunState;
@@ -49,6 +56,46 @@ const METHOD_OPTIONS = [
   { value: 'rough', label: '概算' },
   { value: 'detailed', label: '手替わりを詳しく' }
 ] as const;
+
+interface EngineHandRowProps {
+  hand: readonly CoreTile[];
+  melds: readonly (readonly TileOrBack[])[];
+  /** 固定状態の変化で再描画・useFitTiles 再計測をトリガするために受け取る */
+  stuck: boolean;
+}
+
+const EngineHandRow = memo(function EngineHandRow({
+  hand,
+  melds,
+  stuck
+}: EngineHandRowProps): React.JSX.Element {
+  const handRef = useRef<HTMLDivElement | null>(null);
+  useFitTiles(handRef);
+  const sortedHand = [...hand].sort(compareTiles);
+  return (
+    <section
+      className="engine-screen__hand"
+      aria-label="対象の手牌"
+      data-stuck={stuck ? 'true' : 'false'}
+    >
+      <div ref={handRef} className="summary-card__tiles">
+        {sortedHand.map((tile, i) => (
+          <Tile
+            key={`h${tile.type}${tile.n}${tile.type !== 'z' && tile.n === 5 && tile.red ? 'r' : ''}-${i}`}
+            tile={tile}
+          />
+        ))}
+        {melds.map((group, mi) => (
+          <span key={`m${mi}`} className="summary-card__meld">
+            {group.map((t, ti) => (
+              <Tile key={ti} tile={t} />
+            ))}
+          </span>
+        ))}
+      </div>
+    </section>
+  );
+});
 
 /** 計算画面の描画本体(props のみで描画し、テスト可能にする) */
 export function EngineView(props: EngineViewProps): React.JSX.Element {
@@ -111,17 +158,7 @@ export function EngineView(props: EngineViewProps): React.JSX.Element {
         />
         <div className="engine-card" data-stuck={stuck ? 'true' : 'false'}>
           <EnginePremise {...props.premise} />
-          <section
-            className="engine-screen__hand"
-            aria-label="対象の手牌"
-            style={
-              {
-                '--hand-count': Math.max(1, props.tiles.length)
-              } as React.CSSProperties
-            }
-          >
-            <GlanceTiles tiles={props.tiles} />
-          </section>
+          <EngineHandRow hand={props.hand} melds={props.melds} stuck={stuck} />
         </div>
         {props.available ? (
           <section className="engine-screen__controls">
@@ -156,21 +193,22 @@ export function EngineView(props: EngineViewProps): React.JSX.Element {
                 </Button>
               )}
             </div>
-            {props.slow ? (
+            {props.slow && run.status === 'idle' ? (
               <p className="engine-screen__note">時間がかかります</p>
-            ) : null}
-            {running ? (
-              <div className="engine-screen__running">
-                <output className="engine-spinner" aria-label="計算中" />
-                <span className="engine-screen__elapsed tabular-nums">
-                  {formatElapsed(run.elapsedMs)}
-                </span>
-              </div>
             ) : null}
           </section>
         ) : (
           <p className="engine-screen__error">計算できません</p>
         )}
+        {props.available && running ? (
+          <div className="engine-screen__running">
+            <LoadingIndicator label="計算中" />
+            <p className="engine-screen__running-label">計算中…</p>
+            <span className="engine-screen__elapsed tabular-nums">
+              {formatElapsed(run.elapsedMs)}
+            </span>
+          </div>
+        ) : null}
         {run.status === 'failed' ? (
           <p className="engine-screen__error">{FAIL_MESSAGES[run.reason]}</p>
         ) : null}

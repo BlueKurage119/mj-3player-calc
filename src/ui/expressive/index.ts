@@ -24,3 +24,8 @@ export {
   Disclosure,
   type DisclosureProps
 } from './Disclosure';
+
+export {
+  LoadingIndicator,
+  type LoadingIndicatorProps
+} from './LoadingIndicator';
