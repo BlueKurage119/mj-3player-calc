@@ -16,7 +16,7 @@ describe('status-bar-guard.css (Issue #158 M2)', () => {
   it('ガード要素の必須宣言を全て含む', () => {
     expect(baseRule).toMatch(/position:\s*fixed;/);
     expect(baseRule).toMatch(/top:\s*0;/);
-    expect(baseRule).toMatch(/z-index:\s*0;/);
+    expect(baseRule).toMatch(/z-index:\s*16;/);
     expect(baseRule).toMatch(/pointer-events:\s*none;/);
     expect(baseRule).toMatch(/height:\s*max\(/);
     expect(baseRule).toMatch(/(?<!-webkit-)background-clip:\s*text;/);

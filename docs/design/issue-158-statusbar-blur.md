@@ -72,13 +72,13 @@
 
 - `index.html` の `<body>` 直下、`<div id="root">` の**外・前**に静的要素 `<div class="status-bar-guard" aria-hidden="true"></div>` を置く。React・Suspense・画面遷移の影響を受けず、初回描画から常時存在する(H1・H2 を同時に回避)。
 - スタイル(新規 `src/ui/theme/status-bar-guard.css`、`main.tsx` で `tokens.css` と同様に直接 import。`build-css.test.ts` は `ui/theme/` を対象外としているため、§5 で専用の規約テストを追加する):
-  - `position: fixed; top: 0; inset-inline: 0; z-index: 0; pointer-events: none;`
+  - `position: fixed; top: 0; inset-inline: 0; z-index: 16; pointer-events: none;`
   - `height: max(env(safe-area-inset-top, 0px), 0.75rem);`(10px 超を常に満たす。0.75rem = 12px)
   - `background-color: var(--md-sys-color-surface-container);`(プレビュー: `:root[data-app-env="preview"]` で `var(--md-sys-color-quaternary)`)
   - 描画を消す: `-webkit-background-clip: text; background-clip: text; color: transparent;`
   - `opacity` / `visibility` / `display: none` は使わない(判定から外れるため)
 - メリット: 変更が小さい。既存のヘッダー・下端フェード・#142 の UX を変えない。JS増分ゼロ(CSS数十バイト)。
-- デメリット: WebKit の非公開ヒューリスティックに依存(将来の iOS で無効化され得る)。z-index 0 の fixed 要素が sticky ヘッダー(z15)より背面にあるため、判定が「最前面」を見る場合は効かない(実挙動未確認)。
+- デメリット: WebKit の非公開ヒューリスティックに依存(将来の iOS で無効化され得る)。当初案の z-index 0 では sticky ヘッダー(z15)より背面となり「最前面」判定に効かない懸念があったため、第1段階で z-index 16 に変更した(§6)。
 - リスク: 低。不可視・pointer-events なしのため既存 UI への副作用は原理上ない。
 
 ### 案B: `.app-header` 自体を `position: fixed` 化
@@ -143,7 +143,7 @@
 ### 5.1 機械検証(検収担当が実行)
 
 - [ ] M1: `npm run build` 後、`dist/index.html` に `class="status-bar-guard"` を持つ要素が `<div id="root">` より前に1つだけ存在する(`grep -n` で行番号比較)。
-- [ ] M2: 規約テスト(新規 `src/ui/theme/status-bar-guard.test.ts` 等)で `status-bar-guard.css` を文字列検査し、以下を全て満たす: `position: fixed`・`top: 0`・`z-index: 0`・`pointer-events: none`・`background-clip: text`(`-webkit-` 版も)・`background-color: var(--md-sys-color-surface-container)`・preview 時 `var(--md-sys-color-quaternary)`・`height` に `max(` を含む。`opacity`・`visibility`・`display: none` を含まない。`#[0-9a-fA-F]{3,8}` を含まない。
+- [ ] M2: 規約テスト(新規 `src/ui/theme/status-bar-guard.test.ts` 等)で `status-bar-guard.css` を文字列検査し、以下を全て満たす: `position: fixed`・`top: 0`・`z-index: 16`・`pointer-events: none`・`background-clip: text`(`-webkit-` 版も)・`background-color: var(--md-sys-color-surface-container)`・preview 時 `var(--md-sys-color-quaternary)`・`height` に `max(` を含む。`opacity`・`visibility`・`display: none` を含まない。`#[0-9a-fA-F]{3,8}` を含まない。
 - [ ] M3: 本番ビルドの CSS アセットに `status-bar-guard` セレクタが含まれる(本番ビルドで CSS が落ちないこと。`grep -l status-bar-guard dist/assets/*.css` が1件以上)。
 - [ ] M4: `npm run build` の `dist/index.html` の `theme-color` meta 2本の `content` が、`tokens.css` の `--md-sys-color-surface-container` の light / dark 値と一致する。プレビュービルド(`scripts/build-config.ts` のプレビュー判定条件で実行)では quaternary の値と一致する。既存の theme-color 関連テストを更新して自動化すること。
 - [ ] M8: `npm run build` 後の `dist/manifest.webmanifest` の `theme_color` と `background_color` が、`tokens.css` の `--md-sys-color-surface-container` の dark 値と一致する。プレビュービルドでは `--md-sys-color-quaternary` の dark 値と一致する。
@@ -170,7 +170,7 @@
 
 ## 6. 効かなかった場合のフォールバック手順(順に試す)
 
-1. ガード要素の `z-index` を `16`(ヘッダーより前面。pointer-events なし・不可視なので操作は阻害しない)に上げる。H3(最前面判定)対策。
+1. ガード要素の `z-index` を `16`(ヘッダーより前面。pointer-events なし・不可視なので操作は阻害しない)に上げる。H3(最前面判定)対策。**実施済み(実機確認待ち)。**
 2. ガード要素の高さを `calc(env(safe-area-inset-top, 0px) + 0.75rem)` に増やし、ヘッダー上端と重なる量を確保。
 3. `background-clip: text` をやめ、ガードを可視の帯(背景 = 期待色、ステータスバー領域のみ)にする。セーフエリアを塗りつぶす実装として成立する。
 4. 案B(ヘッダー fixed 化)へ切替。設計書を改訂して再承認を受ける。

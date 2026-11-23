@@ -8,7 +8,7 @@
   position: fixed;
   top: 0;
   inset-inline: 0;
-  z-index: 0;
+  z-index: 16; /* ヘッダー(z-index: 15)より前面。不可視・pointer-events なしのため操作は阻害しない */
   pointer-events: none;
   height: max(env(safe-area-inset-top, 0px), 0.75rem);
   background-color: var(--md-sys-color-surface-container);
