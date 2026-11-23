@@ -8,7 +8,7 @@ describe('ビルド設定解決 (CR-T1〜CR-T3)', () => {
       isPreview: false,
       base: '/mj-3player-calc/',
       shareUrl: 'https://bluekurage119.github.io/mj-3player-calc/',
-      statusBarColorRole: 'surface'
+      statusBarColorRole: 'surface-container'
     });
 
     expect(
@@ -20,7 +20,7 @@ describe('ビルド設定解決 (CR-T1〜CR-T3)', () => {
       isPreview: false,
       base: '/mj-3player-calc/',
       shareUrl: 'https://bluekurage119.github.io/mj-3player-calc/',
-      statusBarColorRole: 'surface'
+      statusBarColorRole: 'surface-container'
     });
   });
 

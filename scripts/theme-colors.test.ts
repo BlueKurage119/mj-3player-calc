@@ -136,3 +136,17 @@ describe('ステータスバー色のロール指定 (CR-T4)', () => {
     );
   });
 });
+
+describe('ステータスバー色: surface-container ロール (Issue #158)', () => {
+  it('readStatusBarColors(surface-container) が tokens.css の light / dark 値を返す', () => {
+    const tokensCss = fs.readFileSync(TOKENS_CSS_PATH, 'utf-8');
+    const light = readTokenValues(tokensCss, 'light')['surface-container'];
+    const dark = readTokenValues(tokensCss, 'dark')['surface-container'];
+    expect(light).toBeTruthy();
+    expect(dark).toBeTruthy();
+    expect(readStatusBarColors(tokensCss, 'surface-container')).toEqual({
+      light,
+      dark
+    });
+  });
+});

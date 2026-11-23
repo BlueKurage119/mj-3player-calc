@@ -24,7 +24,8 @@ const statusBarColors = readStatusBarColors(
   tokensCss,
   buildConfig.statusBarColorRole
 );
-const manifestThemeColor = readStatusBarColors(tokensCss, 'surface').light;
+// manifest は1値のみで動的変更できないため、ステータスバー色の役割のダーク値を採る(Issue #158)
+const manifestThemeColor = statusBarColors.dark;
 const appVersion: string = JSON.parse(
   fs.readFileSync(path.resolve(import.meta.dirname, 'package.json'), 'utf-8')
 ).version;

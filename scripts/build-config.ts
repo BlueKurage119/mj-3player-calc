@@ -1,5 +1,5 @@
 export type AppBuildEnv = 'production' | 'preview';
-export type StatusBarColorRole = 'surface' | 'quaternary';
+export type StatusBarColorRole = 'surface-container' | 'quaternary';
 
 export interface ResolvedBuildConfig {
   appEnv: AppBuildEnv;
@@ -51,7 +51,7 @@ export function resolveBuildConfig(
   const shareUrl = resolveShareUrl(env[ENV_SHARE_URL]);
   const statusBarColorRole: StatusBarColorRole = isPreview
     ? 'quaternary'
-    : 'surface';
+    : 'surface-container';
 
   return {
     appEnv,
