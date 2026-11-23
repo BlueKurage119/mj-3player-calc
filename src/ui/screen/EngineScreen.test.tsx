@@ -610,7 +610,7 @@ describe('F3-2 計算画面離脱時の dispose (Issue #151 / #139 U-10)', () =>
     fireEvent.click(mustQuery(view.container, '.engine-screen__run'));
 
     expect(
-      mustQuery(view.container, '.engine-spinner').getAttribute('aria-label')
+      mustQuery(view.container, '.loading-indicator').getAttribute('aria-label')
     ).toBe('計算中');
     expect(mustQuery(view.container, '.engine-screen__run').textContent).toBe(
       '中止'
@@ -777,5 +777,52 @@ describe('F3-2 計算画面離脱時の dispose (Issue #151 / #139 U-10)', () =>
     expect(mustQuery(view.container, '.engine-screen__run').textContent).toBe(
       '計算する'
     );
+  });
+
+  it('153-S1: EngineScreen で未理牌の手牌と副露(ポン・暗槓・未入力副露)を描画すると、門前牌は理牌され、入力済み副露のみグループ表示され、暗槓の両端は裏牌になる', async () => {
+    const harness = createFakeClientHarness();
+    const unsortedHand = parseTiles('9s1m5p1z');
+    const setupActions: AppAction[] = [
+      { type: 'add-hand-tiles', tiles: unsortedHand },
+      { type: 'add-meld' },
+      { type: 'set-meld-kind', i: 0, kind: 'pon' },
+      { type: 'set-meld-tile', i: 0, tile: { type: 'z', n: 6 } },
+      { type: 'add-meld' },
+      { type: 'set-meld-kind', i: 1, kind: 'ankan' },
+      { type: 'set-meld-tile', i: 1, tile: { type: 'z', n: 7 } },
+      // 未入力の副露スロット
+      { type: 'add-meld' }
+    ];
+    const view = render(
+      <AppStateProvider>
+        <TestEngineHost
+          setupActions={setupActions}
+          createClient={harness.createClient}
+        />
+      </AppStateProvider>
+    );
+
+    await waitFor(() => {
+      expect(
+        view.container.querySelector('.engine-screen__hand')
+      ).not.toBeNull();
+    });
+
+    const handSection = mustQuery(view.container, '.engine-screen__hand');
+    const meldEls = [...handSection.querySelectorAll('.summary-card__meld')];
+    // 未入力副露は除外され2グループのみ出力される
+    expect(meldEls.length).toBe(2);
+
+    // 門前牌(副露外の .tile)は compareTiles 順
+    const closedTileLabels = [
+      ...handSection.querySelectorAll('.summary-card__tiles > .tile')
+    ].map(el => el.getAttribute('aria-label'));
+    expect(closedTileLabels).toEqual(['1萬', '5筒', '9索', '東']);
+
+    // 暗槓の4枚は両端が「裏」
+    const ankanLabels = [...(meldEls[1]?.querySelectorAll('.tile') ?? [])].map(
+      el => el.getAttribute('aria-label')
+    );
+    expect(ankanLabels).toEqual(['裏', '中', '中', '裏']);
   });
 });

@@ -1,6 +1,5 @@
-import { useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import type React from 'react';
-import { instantiateMeld } from '../../core/input';
 import type { EngineClient } from '../../engine/client';
 import { useResult } from '../calc/use-result';
 import { DEFAULT_RANK_METRIC, type RankMetric } from '../engine/chart-series';
@@ -16,6 +15,7 @@ import { useEngineRun } from '../engine/use-engine-run';
 import { classifyResult } from '../result/classify';
 import { engineHandSize, engineStartShanten } from '../result/engine-entry';
 import { isNukiEnabled, useAppDispatch, useAppState } from '../state';
+import { meldTiles } from './MeldArea';
 import './main-screen.css';
 
 /** 表示する巡目の既定(計算は常に18巡目まで一括) */
@@ -55,10 +55,10 @@ export function EngineScreen({
   const engine = useEngineRun(key, createClient);
   const run = visibleRunState(engine.state, key);
 
-  const tiles = [
-    ...hand,
-    ...melds.flatMap(m => instantiateMeld(m, app.rule.red))
-  ];
+  const meldGroups = useMemo(
+    () => melds.map(m => meldTiles(m, app.rule.red)).filter(g => g.length > 0),
+    [melds, app.rule.red]
+  );
 
   return (
     <EngineView
@@ -66,7 +66,8 @@ export function EngineScreen({
       onOpenHelp={() =>
         dispatch({ type: 'open-help', focus: 'engine', returnTo: 'engine' })
       }
-      tiles={tiles}
+      hand={hand}
+      melds={meldGroups}
       premise={{
         table: app.table,
         dora: app.input.dora,

@@ -37,7 +37,8 @@ const cand = (
 const view = (over: Partial<EngineViewProps> = {}): EngineViewProps => ({
   onBack: noop,
   onOpenHelp: noop,
-  tiles: [{ type: 'z', n: 1 }],
+  hand: [{ type: 'z', n: 1 }],
+  melds: [],
   premise: { table: TABLE, dora: [], nuki: 0, nukiEnabled: true },
   available: true,
   methodChoice: true,
@@ -84,15 +85,47 @@ describe('EngineView: 実行前後の表示', () => {
     expect(render(view({ slow: true }))).toContain('時間がかかります');
   });
 
-  it('U-5: running はスピナー・経過時間・「中止」を出し、「計算する」を出さず、計算方法を無効にする', () => {
+  it('U-5: running はローディングインジケータ・「計算中…」・経過時間・「中止」を出し、「計算する」を出さず、計算方法を無効にする', () => {
     const html = render(
       view({ run: { status: 'running', startedAt: 0, elapsedMs: 62_000 } })
     );
+    expect(html).toContain('class="loading-indicator"');
+    expect(html).toContain('role="progressbar"');
     expect(html).toContain('aria-label="計算中"');
+    expect(html).toContain('計算中…');
+    expect(html).toContain('engine-screen__elapsed tabular-nums');
     expect(html).toContain('1分2秒');
     expect(html).toContain('中止');
     expect(html).not.toContain('計算する');
     expect(html).toContain('disabled');
+    // 表示順: ローディングインジケータ → 「計算中…」 → 経過時間
+    const iInd = html.indexOf('loading-indicator');
+    const iLabel = html.indexOf('計算中…');
+    const iElapsed = html.indexOf('engine-screen__elapsed');
+    expect(iInd).toBeGreaterThan(-1);
+    expect(iInd).toBeLessThan(iLabel);
+    expect(iLabel).toBeLessThan(iElapsed);
+  });
+
+  it('153-N1: slow=true の「時間がかかります」は idle のときのみ表示し、running/done/failed では出さない', () => {
+    const c = cand(null, () => ({}));
+    expect(render(view({ slow: true, run: { status: 'idle' } }))).toContain(
+      'engine-screen__note'
+    );
+    expect(
+      render(
+        view({
+          slow: true,
+          run: { status: 'running', startedAt: 0, elapsedMs: 1000 }
+        })
+      )
+    ).not.toContain('engine-screen__note');
+    expect(render(view({ slow: true, run: done([c]) }))).not.toContain(
+      'engine-screen__note'
+    );
+    expect(
+      render(view({ slow: true, run: { status: 'failed', reason: 'error' } }))
+    ).not.toContain('engine-screen__note');
   });
 
   it('U-8: failed は理由ごとに1行の文言を出す', () => {
@@ -255,15 +288,19 @@ describe(' UI監修: ボタン配置・スライダー・前提', () => {
     expect(row).toContain('計算する');
   });
 
-  it('実行中は同じ位置が「中止」に替わり、スピナーと経過時間は行の外に出る', () => {
+  it('実行中は同じ位置が「中止」に替わり、ローディングインジケータと経過時間は操作行(.engine-screen__controls)の外に出る', () => {
     const html = render(
       view({ run: { status: 'running', startedAt: 0, elapsedMs: 3000 } })
     );
-    const row = actionsOf(html);
-    const actions = row.slice(0, row.indexOf('engine-screen__running'));
-    expect(actions).toContain('中止');
-    expect(actions).not.toContain('計算する');
-    expect(html).toContain('3秒');
+    const controlsStart = html.indexOf('engine-screen__controls');
+    const controlsEnd = html.indexOf('</section>', controlsStart);
+    const controls = html.slice(controlsStart, controlsEnd);
+    expect(controls).toContain('中止');
+    expect(controls).not.toContain('計算する');
+    expect(controls).not.toContain('engine-screen__running');
+    const runningPos = html.indexOf('<div class="engine-screen__running">');
+    expect(runningPos).toBeGreaterThan(controlsEnd);
+    expect(html.slice(runningPos)).toContain('3秒');
   });
 
   it('2択を出さないときも「計算する」は行の中にある', () => {
@@ -545,22 +582,145 @@ describe('第12版: 前提と手牌の固定カード', () => {
     expect(css).not.toMatch(/#[0-9a-fA-F]{3,8}\b/);
   });
 
-  it('手牌の牌は通常 1.5rem、固定中はドラと同じ 1.25rem に縮み、14枚でも折り返さない', () => {
+  it('手牌の牌は通常 1.5rem、固定中はドラと同じ 1.25rem に縮み、useFitTiles 用クラスを持ち、幅トランジションを持たない', () => {
     expect(block(/\.engine-screen__hand \{[^}]*\}/)).toContain(
-      '--hand-tile: 1.5rem'
+      '--tile-width: 1.5rem'
     );
     expect(
       block(
         /\.engine-card\[data-stuck="true"\] \.engine-screen__hand \{[^}]*\}/
       )
-    ).toContain('--hand-tile: 1.25rem');
+    ).toContain('--tile-width: 1.25rem');
     expect(block(/\.engine-premise \{[^}]*\}/)).toContain(
       '--tile-width: 1.25rem'
     );
-    const tiles = block(/\.engine-screen__hand \.glance-tiles \{[^}]*\}/);
-    expect(tiles).toContain('flex-wrap: nowrap');
-    expect(tiles).toContain('100cqw');
-    expect(render(view())).toContain('--hand-count');
+    expect(css).not.toContain('--hand-tile');
+    expect(css).not.toContain('100cqw /');
+    expect(css).not.toMatch(/\.engine-screen__hand \.tile\s*\{/);
+    const html = render(view());
+    expect(html).toContain('class="summary-card__tiles"');
+    expect(html).not.toContain('--hand-count');
+
+    const runningCss = block(/\.engine-screen__running \{[^}]*\}/);
+    expect(runningCss).toContain('flex-direction: column');
+    expect(runningCss).toContain('align-items: center');
+    expect(runningCss).not.toContain('background-color');
+    expect(runningCss).not.toContain('border');
+    expect(runningCss).not.toContain('box-shadow');
+    expect(css).not.toContain('engine-spinner');
+  });
+
+  it('153-H1: 未理牌の13枚・14枚門前手牌(赤五含む)が compareTiles 順に理牌され、14枚目が切り離されない', () => {
+    const unsorted14: EngineViewProps['hand'] = [
+      { type: 'z', n: 7 },
+      { type: 's', n: 5, red: true },
+      { type: 'm', n: 9 },
+      { type: 'p', n: 5, red: false },
+      { type: 's', n: 5, red: false },
+      { type: 'z', n: 1 },
+      { type: 'p', n: 5, red: true },
+      { type: 'm', n: 1 },
+      { type: 's', n: 1 },
+      { type: 'p', n: 2 },
+      { type: 's', n: 9 },
+      { type: 'p', n: 8 },
+      { type: 'm', n: 1 },
+      { type: 'z', n: 5 }
+    ];
+    const html14 = render(view({ hand: unsorted14, melds: [] }));
+    expect(html14).not.toContain('summary-card__winning-tile');
+    expect(html14).not.toContain('summary-card__meld');
+
+    const handSection14 =
+      html14.match(/class="summary-card__tiles"[\s\S]*?<\/div>/)?.[0] ?? '';
+    const labels14 = [...handSection14.matchAll(/aria-label="([^"]+)"/g)].map(
+      m => m[1]
+    );
+    expect(labels14).toEqual([
+      '1萬',
+      '1萬',
+      '9萬',
+      '2筒',
+      '5筒',
+      '赤5筒',
+      '8筒',
+      '1索',
+      '5索',
+      '赤5索',
+      '9索',
+      '東',
+      '白',
+      '中'
+    ]);
+    expect(labels14.length).toBe(14);
+
+    const html13 = render(view({ hand: unsorted14.slice(0, 13), melds: [] }));
+    const handSection13 =
+      html13.match(/class="summary-card__tiles"[\s\S]*?<\/div>/)?.[0] ?? '';
+    const labels13 = [...handSection13.matchAll(/aria-label="([^"]+)"/g)].map(
+      m => m[1]
+    );
+    expect(labels13.length).toBe(13);
+    expect(labels13).toEqual([
+      '1萬',
+      '1萬',
+      '9萬',
+      '2筒',
+      '5筒',
+      '赤5筒',
+      '8筒',
+      '1索',
+      '5索',
+      '赤5索',
+      '9索',
+      '東',
+      '中'
+    ]);
+  });
+
+  it('153-H2: 副露(ポン・明槓・暗槓)が門前手牌の後ろに .summary-card__meld 単位で並び、暗槓は両端が裏牌になる', () => {
+    const html = render(
+      view({
+        hand: [
+          { type: 's', n: 3 },
+          { type: 'm', n: 1 },
+          { type: 'p', n: 4 },
+          { type: 'z', n: 2 }
+        ],
+        melds: [
+          [
+            { type: 'z', n: 6 },
+            { type: 'z', n: 6 },
+            { type: 'z', n: 6 }
+          ],
+          [
+            { type: 'p', n: 2 },
+            { type: 'p', n: 2 },
+            { type: 'p', n: 2 },
+            { type: 'p', n: 2 }
+          ],
+          [
+            { type: 'back' },
+            { type: 's', n: 9 },
+            { type: 's', n: 9 },
+            { type: 'back' }
+          ]
+        ]
+      })
+    );
+    const handSection =
+      html.match(/class="summary-card__tiles"[\s\S]*?<\/div>/)?.[0] ?? '';
+    const meldParts = handSection.split('<span class="summary-card__meld">');
+    expect(meldParts.length).toBe(4);
+    const closedLabels = [
+      ...(meldParts[0] ?? '').matchAll(/aria-label="([^"]+)"/g)
+    ].map(m => m[1]);
+    expect(closedLabels).toEqual(['1萬', '4筒', '3索', '南']);
+
+    const ankanLabels = [
+      ...(meldParts[3] ?? '').matchAll(/aria-label="([^"]+)"/g)
+    ].map(m => m[1]);
+    expect(ankanLabels).toEqual(['裏', '9索', '9索', '裏']);
   });
 });
 

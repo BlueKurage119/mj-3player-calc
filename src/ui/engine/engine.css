@@ -64,29 +64,13 @@
     color-mix(in srgb, var(--md-sys-color-shadow) 30%, transparent);
 }
 
-/* 手牌: 通常は 1.5rem、固定中はドラの牌と同じ 1.25rem。14枚でも折り返さず、幅に収まる大きさに縮める */
+/* 手牌: 通常は 1.5rem、固定中はドラの牌と同じ 1.25rem。14枚・副露込みでも折り返さず、useFitTiles で幅に収める */
 .engine-screen__hand {
-  --hand-tile: 1.5rem;
-  container-type: inline-size;
+  --tile-width: 1.5rem;
 }
 
 .engine-card[data-stuck="true"] .engine-screen__hand {
-  --hand-tile: 1.25rem;
-}
-
-.engine-screen__hand .glance-tiles {
-  flex-wrap: nowrap;
-  --tile-width: min(
-    var(--hand-tile),
-    calc((100cqw - 2px * (var(--hand-count, 1) - 1)) / var(--hand-count, 1))
-  );
-}
-
-.engine-screen__hand .tile {
-  flex-shrink: 0;
-  transition-property: width;
-  transition-duration: var(--md-sys-motion-spring-effects-fast-duration);
-  transition-timing-function: var(--md-sys-motion-spring-effects-fast-easing);
+  --tile-width: 1.25rem;
 }
 
 .engine-premise {
@@ -133,8 +117,7 @@
   .engine-card,
   .engine-premise .summary-card__winds,
   .engine-premise .summary-card__pill,
-  .engine-premise .summary-card__label,
-  .engine-screen__hand .tile {
+  .engine-premise .summary-card__label {
     transition: none;
   }
 }
@@ -237,39 +220,31 @@
 
 .engine-screen__running {
   display: flex;
+  flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: 0.75rem;
+  padding-block: 3rem;
+  text-align: center;
 }
 
-.engine-screen__elapsed {
-  flex: 1 1 auto;
+.engine-screen__running-label {
+  margin: 0;
+  color: var(--md-sys-color-on-surface);
   font-family: var(--md-sys-typescale-title-medium-font);
   font-size: var(--md-sys-typescale-title-medium-size);
   line-height: var(--md-sys-typescale-title-medium-line-height);
   font-weight: var(--md-sys-typescale-title-medium-weight);
+  letter-spacing: var(--md-sys-typescale-title-medium-tracking);
 }
 
-.engine-spinner {
-  display: inline-block;
-  width: 1.5rem;
-  height: 1.5rem;
-  box-sizing: border-box;
-  border-radius: var(--md-sys-shape-corner-full);
-  border: 2px solid var(--md-sys-color-outline-variant);
-  border-top-color: var(--md-sys-color-primary);
-  animation: engine-spin 0.9s linear infinite;
-}
-
-@keyframes engine-spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .engine-spinner {
-    animation-duration: 3s;
-  }
+.engine-screen__elapsed {
+  color: var(--md-sys-color-on-surface-variant);
+  font-family: var(--md-sys-typescale-body-medium-font);
+  font-size: var(--md-sys-typescale-body-medium-size);
+  line-height: var(--md-sys-typescale-body-medium-line-height);
+  font-weight: var(--md-sys-typescale-body-medium-weight);
+  letter-spacing: var(--md-sys-typescale-body-medium-tracking);
 }
 
 /* 結果 */
