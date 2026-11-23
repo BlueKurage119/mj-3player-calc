@@ -744,6 +744,8 @@ describe('第8版: 並びとスタイル', () => {
     const css = readFileSync(new URL('./engine.css', import.meta.url), 'utf8');
     const sort = css.match(/\.engine-candidates__sort \{[^}]*\}/)?.[0] ?? '';
     expect(sort).toContain('justify-content: center');
+    expect(sort).toContain('min-height: 2.5rem');
+    expect(sort).toContain('border-radius: var(--md-sys-shape-corner-small)');
     const chip = css.match(/\.engine-candidates__chip \{[^}]*\}/)?.[0] ?? '';
     expect(chip).toContain('white-space: nowrap');
     expect(chip).not.toContain('width: 2em');
