@@ -5,6 +5,7 @@ import { Slider } from '../md';
 import { Tile } from '../tile';
 import { TurnChart } from './TurnChart';
 import {
+  CANDIDATE_LINE_STYLES,
   CHART_TURNS,
   RANK_METRICS,
   type RankMetric,
@@ -12,10 +13,9 @@ import {
   formatPercent,
   isShantenBack,
   rankCandidates,
-  CANDIDATE_LINE_STYLES,
   statAt,
-  toCandidateSeries,
   tintStyle,
+  toCandidateSeries,
   toRateSeries
 } from './chart-series';
 import './engine.css';
@@ -210,7 +210,7 @@ export function EngineResult(props: EngineResultProps): React.JSX.Element {
           )}
           <div className="engine-result__slider-row">
             <output className="engine-result__turn-label tabular-nums">
-              {displayTurn}順目
+              {displayTurn}巡目
             </output>
             <Slider
               className="engine-result__slider"

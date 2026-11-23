@@ -579,7 +579,7 @@ describe('F3-2 計算画面の条件送信 (Issue #150 / #139 U-4)', () => {
 
     expect(
       mustQuery(view.container, '.engine-result__turn-label').textContent
-    ).toBe('3順目');
+    ).toBe('3巡目');
 
     const slider = mustQuery(view.container, '.engine-result__slider');
     (slider as unknown as { value: number }).value = 10;
@@ -587,7 +587,7 @@ describe('F3-2 計算画面の条件送信 (Issue #150 / #139 U-4)', () => {
 
     expect(
       mustQuery(view.container, '.engine-result__turn-label').textContent
-    ).toBe('10順目');
+    ).toBe('10巡目');
     expect(harness.requests().length).toBe(1);
 
     fireEvent.click(view.getByRole('radio', { name: '手替わりを詳しく' }));
