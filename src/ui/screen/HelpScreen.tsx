@@ -12,6 +12,7 @@ import { Button, Divider, IconButton } from '../md';
 import { TSUMO_LOSS_DESCRIPTIONS } from '../settings/rule-help';
 import { useAppDispatch, useAppState } from '../state';
 import type { HelpFocus } from '../state';
+import { useScrolled } from './use-scrolled';
 import '../help/help.css';
 import './main-screen.css';
 
@@ -65,10 +66,14 @@ export function HelpView({
   const roundedManganLabel = getRuleLabel('roundedMangan');
   const accumlatedYakumanLabel = getRuleLabel('accumlatedYakuman');
   const doubleWindFuLabel = getRuleLabel('doubleWindFu');
+  const scrolled = useScrolled();
 
   return (
     <div className="help-screen">
-      <header className="app-header">
+      <header
+        className="app-header"
+        data-scrolled={scrolled ? 'true' : 'false'}
+      >
         <div className="app-header__inner app-header__inner--start">
           <IconButton
             variant="standard"

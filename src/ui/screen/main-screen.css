@@ -16,12 +16,40 @@ body {
 }
 
 .app-header {
+  --app-header-bg: color-mix(
+    in srgb,
+    var(--md-sys-color-surface-container)
+      calc(var(--app-header-scroll, 0) * 100%),
+    var(--md-sys-color-surface)
+  );
+  --app-header-fade-height: 0.75rem;
   position: sticky;
   top: 0;
-  z-index: 20;
+  z-index: 15;
   width: 100%;
-  background-color: var(--md-sys-color-surface);
+  background-color: var(--app-header-bg);
   color: var(--md-sys-color-on-surface);
+}
+
+.app-header::after {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  top: 100%;
+  height: var(--app-header-fade-height);
+  z-index: -1;
+  pointer-events: none;
+  background-color: var(--app-header-bg);
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    var(--md-sys-color-surface),
+    transparent
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    var(--md-sys-color-surface),
+    transparent
+  );
 }
 
 .app-header__inner {
@@ -102,6 +130,7 @@ body {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
+  padding-block-start: 0.75rem;
 }
 
 .input-group {
@@ -296,7 +325,7 @@ body {
 .summary-card {
   position: sticky;
   top: var(--app-header-height, 0px);
-  z-index: 10;
+  z-index: 18;
   height: 0;
   margin-block-end: -1rem;
   overflow: visible;
