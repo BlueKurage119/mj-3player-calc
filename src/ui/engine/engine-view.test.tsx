@@ -89,7 +89,7 @@ describe('EngineView: 実行前後の表示', () => {
     const html = render(
       view({ run: { status: 'running', startedAt: 0, elapsedMs: 62_000 } })
     );
-    expect(html).toContain('class="loading-indicator"');
+    expect(html).toContain('class="circular-progress"');
     expect(html).toContain('role="progressbar"');
     expect(html).toContain('aria-label="計算中"');
     expect(html).toContain('計算中…');
@@ -99,7 +99,7 @@ describe('EngineView: 実行前後の表示', () => {
     expect(html).not.toContain('計算する');
     expect(html).toContain('disabled');
     // 表示順: ローディングインジケータ → 「計算中…」 → 経過時間
-    const iInd = html.indexOf('loading-indicator');
+    const iInd = html.indexOf('circular-progress');
     const iLabel = html.indexOf('計算中…');
     const iElapsed = html.indexOf('engine-screen__elapsed');
     expect(iInd).toBeGreaterThan(-1);
