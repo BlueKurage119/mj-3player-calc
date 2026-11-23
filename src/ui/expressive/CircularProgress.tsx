@@ -2,7 +2,7 @@ import type React from 'react';
 import './circular-progress.css';
 
 export interface CircularProgressProps {
-  /** 指定時は aria-label(②は role="progressbar" も)を付与。省略時は aria-hidden="true" */
+  /** 指定時は role="progressbar" と aria-label を付与。省略時は aria-hidden="true" */
   label?: string | undefined;
   className?: string | undefined;
 }
