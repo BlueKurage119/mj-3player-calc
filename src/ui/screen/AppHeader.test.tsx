@@ -221,34 +221,20 @@ describe('ヘッダー下端部の仕上げ改善 (Issue #142)', () => {
     ''
   );
 
-  it('Issue142-C1: .app-header が on-scroll トーン変化と常時表示の下端フェード・prefers-reduced-motion を持つ', () => {
+  it('Issue142-C1: .app-header が --app-header-scroll 連動の color-mix 背景色と常時表示の下端フェードを持つ', () => {
     const headerBlock =
       strippedMainCss.match(/\.app-header\s*\{([^}]*)\}/)?.[1] ?? '';
     expect(headerBlock).not.toBe('');
-    // 理由: .app-header 定義ブロック内に必須プロパティ・トークンが含まれることを検証するため部分一致を使う
-    expect(headerBlock).toContain(
-      '--app-header-bg: var(--md-sys-color-surface);'
+    // 理由: --app-header-bg が --app-header-scroll に応じた color-mix で定義されていることを検証するため空白正規化のうえ部分一致を使う
+    expect(headerBlock.replace(/\s+/g, ' ')).toContain(
+      '--app-header-bg: color-mix( in srgb, var(--md-sys-color-surface-container) calc(var(--app-header-scroll, 0) * 100%), var(--md-sys-color-surface) );'
     );
-    // 理由: 境界線・影を持たないことを検証するため否定の部分一致を使う
+    // 理由: 境界線を持たないことを検証するため否定の部分一致を使う
     expect(headerBlock).not.toContain('border-bottom');
     // 理由: box-shadow を持たないことを検証するため否定の部分一致を使う
     expect(headerBlock).not.toContain('box-shadow');
-    // 理由: トランジションに MD3 fast effects トークンを使用していることを検証するため部分一致を使う
-    expect(headerBlock).toContain(
-      'transition-duration: var(--md-sys-motion-spring-effects-fast-duration);'
-    );
-    // 理由: トランジションイージングに MD3 fast effects トークンを使用していることを検証するため部分一致を使う
-    expect(headerBlock).toContain(
-      'transition-timing-function: var(--md-sys-motion-spring-effects-fast-easing);'
-    );
-
-    const scrolledBlock =
-      strippedMainCss.match(
-        /\.app-header\[data-scrolled="true"\]\s*\{([^}]*)\}/
-      )?.[1] ?? '';
-    expect(scrolledBlock.trim()).toBe(
-      '--app-header-bg: var(--md-sys-color-surface-container);'
-    );
+    // 理由: スクロール追従のため transition を持たないことを検証するため否定の部分一致を使う
+    expect(headerBlock).not.toContain('transition');
 
     const afterMatch = strippedMainCss.match(
       /\.app-header::after\s*\{([^}]*)\}/
@@ -271,23 +257,8 @@ describe('ヘッダー下端部の仕上げ改善 (Issue #142)', () => {
     expect(afterBlock).toContain('mask-image: linear-gradient(');
     // 理由: 常時表示であり opacity: 0 で非表示にしないことを検証するため否定の部分一致を使う
     expect(afterBlock).not.toContain('opacity: 0');
-    // 理由: ::after も本体と同じトランジション時間トークンを持つことを検証するため部分一致を使う
-    expect(afterBlock).toContain(
-      'transition-duration: var(--md-sys-motion-spring-effects-fast-duration);'
-    );
-
-    const afterIndex = afterMatch?.index ?? -1;
-    const afterTail = strippedMainCss.slice(afterIndex);
-    const reducedMotionMatch = afterTail.match(
-      /@media\s*\(prefers-reduced-motion:\s*reduce\)\s*\{([\s\S]*?\})\s*\}/
-    );
-    const reducedBlock = reducedMotionMatch?.[1] ?? '';
-    // 理由: .app-header::after の直後に .app-header, .app-header::after { transition: none; } があることを検証するため部分一致を使う
-    expect(reducedBlock).toContain('.app-header,');
-    // 理由: .app-header::after が transition: none 対象に含まれることを検証するため部分一致を使う
-    expect(reducedBlock).toContain('.app-header::after');
-    // 理由: transition: none が指定されていることを検証するため部分一致を使う
-    expect(reducedBlock).toContain('transition: none;');
+    // 理由: ::after もスクロール追従のため transition を持たないことを検証するため否定の部分一致を使う
+    expect(afterBlock).not.toContain('transition');
   });
 
   it('Issue142-C2: .input-section に上端余白 0.75rem があり .main-screen に上端余白がない', () => {
@@ -411,31 +382,22 @@ describe('ヘッダー下端部の仕上げ改善 (Issue #142)', () => {
     expect(bottomSheetBlock.match(/z-index:\s*(\d+)/)?.[1]).toBe('20');
   });
 
-  it('Issue142-C4: scoring-table.css がスクロール時のラベル・未選択トグル背景色と transition(角丸モーフ両立・reduced-motion)を持つ', () => {
-    // 理由: スクロール時の背景色トークン指定が点数計算表 CSS に含まれることを検証するため部分一致を使う
-    expect(strippedScoringCss).toContain(
-      '.scoring-table-screen\n  .app-header[data-scrolled="true"]\n  .scoring-table-screen__rule-label[data-tsumo-loss="loss"]'
+  it('Issue142-C4: scoring-table.css が --app-header-scroll 連動の color-mix 背景色を持ち、不要な transition 上書きがない', () => {
+    const normalizedScoringCss = strippedScoringCss.replace(/\s+/g, ' ');
+    // 理由: ツモ損ありラベルのスクロール連動セレクタが含まれることを検証するため部分一致を使う
+    expect(normalizedScoringCss).toContain(
+      '.scoring-table-screen .app-header .scoring-table-screen__rule-label[data-tsumo-loss="loss"]'
     );
-    // 理由: 未選択トグルのスクロール時セレクタが含まれることを検証するため部分一致を使う
-    expect(strippedScoringCss).toContain(
-      '.scoring-table-screen\n  .app-header[data-scrolled="true"]\n  .connected-button[aria-checked="false"]'
+    // 理由: 未選択トグルのスクロール連動セレクタが含まれることを検証するため部分一致を使う
+    expect(normalizedScoringCss).toContain(
+      '.scoring-table-screen .app-header .connected-button[aria-checked="false"]'
     );
-    // 理由: 背景色が surface-container-highest に切り替わることを検証するため部分一致を使う
-    expect(strippedScoringCss).toContain(
-      'background-color: var(--md-sys-color-surface-container-highest);'
+    // 理由: 背景色が surface-container から surface-container-highest へ連続変化することを検証するため部分一致を使う
+    expect(normalizedScoringCss).toContain(
+      'background-color: color-mix( in srgb, var(--md-sys-color-surface-container-highest) calc(var(--app-header-scroll, 0) * 100%), var(--md-sys-color-surface-container) );'
     );
-    // 理由: .connected-button の border-radius モーフ遷移を壊さず background-color 遷移と両立していることを検証するため部分一致を使う
-    expect(strippedScoringCss).toContain(
-      'border-radius var(--md-sys-motion-spring-spatial-fast-duration)'
-    );
-    // 理由: background-color 遷移に fast effects トークンを使用していることを検証するため空白正規化うえで部分一致を使う
-    expect(strippedScoringCss.replace(/\s+/g, ' ')).toContain(
-      'background-color var(--md-sys-motion-spring-effects-fast-duration)'
-    );
-    // 理由: prefers-reduced-motion: reduce 時の transition: none が定義されていることを検証するため部分一致を使う
-    expect(strippedScoringCss).toContain(
-      '@media (prefers-reduced-motion: reduce)'
-    );
+    // 理由: shape-morph.css の角丸モーフ遷移を妨げないよう background-color 用の transition 上書きが無いことを検証するため否定の部分一致を使う
+    expect(normalizedScoringCss).not.toContain('transition');
     // 理由: HEX・ms・cubic-bezier が直書きされていないことを検証するため否定の正規表現一致を使う
     expect(
       strippedScoringCss.match(/:\s*[^;\n]*#([0-9a-fA-F]{3,8})/g)

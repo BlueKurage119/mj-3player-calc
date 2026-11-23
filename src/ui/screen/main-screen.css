@@ -16,7 +16,12 @@ body {
 }
 
 .app-header {
-  --app-header-bg: var(--md-sys-color-surface);
+  --app-header-bg: color-mix(
+    in srgb,
+    var(--md-sys-color-surface-container)
+      calc(var(--app-header-scroll, 0) * 100%),
+    var(--md-sys-color-surface)
+  );
   --app-header-fade-height: 0.75rem;
   position: sticky;
   top: 0;
@@ -24,13 +29,6 @@ body {
   width: 100%;
   background-color: var(--app-header-bg);
   color: var(--md-sys-color-on-surface);
-  transition-property: background-color;
-  transition-duration: var(--md-sys-motion-spring-effects-fast-duration);
-  transition-timing-function: var(--md-sys-motion-spring-effects-fast-easing);
-}
-
-.app-header[data-scrolled="true"] {
-  --app-header-bg: var(--md-sys-color-surface-container);
 }
 
 .app-header::after {
@@ -52,16 +50,6 @@ body {
     var(--md-sys-color-surface),
     transparent
   );
-  transition-property: background-color;
-  transition-duration: var(--md-sys-motion-spring-effects-fast-duration);
-  transition-timing-function: var(--md-sys-motion-spring-effects-fast-easing);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .app-header,
-  .app-header::after {
-    transition: none;
-  }
 }
 
 .app-header__inner {
