@@ -19,6 +19,8 @@
 | google/material-design-icons（Material Symbols） | **Apache-2.0** | 上流の `LICENSE`（著作権者欄は雛形のまま。NOTICE は無し） | `src/ui/icons/` でインライン SVG として使用可。権利表示はコード先頭コメント・`CREDITS.md`・`LICENSES/Apache-2.0.txt` の3か所に置く |
 | material-components/material-web（`@material/web` 2.5.0） | **Apache-2.0**（`Copyright 2018-2023 Google, Inc.`） | 上流の `LICENSE`（NOTICE は無し） | 本番依存として配布物に含まれる。`CREDITS.md` と `LICENSES/Apache-2.0.txt` に表示する |
 | `@resvg/resvg-js`（2.6.2） | **MPL-2.0** | `package.json`・npm registry | devDependency（アイコン PNG 生成用）。配布物に含まれない |
+| tomohxx/shanten-dp-rust（`shanten-dp` 0.3.2） | **MIT**（`Copyright (c) 2026 tomohxx`） | `wasm/engine/Cargo.toml`・上流 `LICENSE` | `wasm/engine` の本番依存として配布物に含まれる。`CREDITS.md` とアプリ内ライセンス画面に表示する |
+| ┗ `bitflags`・`thiserror`（`shanten-dp` の推移的ランタイム依存） | **MIT OR Apache-2.0**（MIT を選択。`bitflags`: `Copyright (c) 2014 The Rust Project Developers`、`thiserror`: 上流に記名なし） | `wasm/engine/Cargo.lock`・上流 `LICENSE-MIT` | `engine_bg.wasm` に実リンクされる。MIT を選択し、`CREDITS.md` とアプリ内ライセンス画面に表示する |
 
 ### mj-mighty-calc について
 riichi 系ライブラリを import しているのは次のファイルです: `App.tsx`, `ui/LuckSheet.tsx`, `ui/TileImage.tsx`, `core/{almighty,tiles,analysis,yakuNames,backend}.ts`。

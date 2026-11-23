@@ -137,3 +137,13 @@
 
 - URL: https://github.com/rayon-rs/either
 - ライセンス: MIT License(MIT OR Apache-2.0 から選択、`Copyright (c) 2015`、全文は `LICENSES/MIT.txt` を参照)
+
+### bitflags
+
+- URL: https://github.com/bitflags/bitflags
+- ライセンス: MIT License(MIT OR Apache-2.0 から選択、`Copyright (c) 2014 The Rust Project Developers`、全文は `LICENSES/MIT.txt` を参照)
+
+### thiserror
+
+- URL: https://github.com/dtolnay/thiserror
+- ライセンス: MIT License(MIT OR Apache-2.0 から選択、上流に記名なし、全文は `LICENSES/MIT.txt` を参照)
