@@ -7,7 +7,7 @@ export interface CircularProgressProps {
   className?: string | undefined;
 }
 
-/** 円形プログレスインジケーター(円形コンテナ背景あり・不確定型) */
+/** 円形プログレスインジケーター(コンテナ背景なし・不確定型) */
 export function CircularProgress(
   props: CircularProgressProps
 ): React.JSX.Element {

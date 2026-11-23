@@ -36,10 +36,10 @@ describe('自作 CircularProgress (Issue #159)', () => {
 
   it('159-E2: circular-progress.css は MD3 トークンのみを使用し、HEX・px・ms・cubic-bezier・rgb( 直書きがなく、reduced-motion に対応する', () => {
     // 意図的アサーション: CSS ソース内のトークン参照・静止基準スタイル・reduced-motion 規則を検証
-    expect(css).toContain('--md-sys-color-primary-container');
     expect(css).toContain('--md-sys-color-primary');
     expect(css).toContain('--md-sys-color-secondary-container');
-    expect(css).toContain('--md-sys-shape-corner-full');
+    // コンテナ背景は付けない(監修で削除を決定)
+    expect(css).not.toContain('background-color');
     expect(css).toContain('--md-sys-motion-duration-extra-long4');
     expect(css).toContain('--md-sys-motion-easing-linear');
     expect(css).toContain('--md-sys-motion-easing-standard');

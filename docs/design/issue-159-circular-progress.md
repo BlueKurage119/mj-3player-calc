@@ -15,7 +15,7 @@
 - **型**: 不確定(回転)型とする。確定型は別Issue(2.1)。
 - **方式**: ①ラップと②自作の2方式を実装し、監修で1つに決める。Expressive 風 wavy、太いバリアント、Compose/Flutter からの移植は対象外。
 - **見た目**:
-  - ②にコンテナ背景を付ける(primary-container の円)。
+  - ②はコンテナ背景を付けない(当初は primary-container の円としたが、監修で削除を決定)。監修で②自作を採用する方針も示された(正式な確定は第2段階の着手指示による)。
   - ①は標準M3の見た目を基準とした比較用として扱う(3.1)。
   - 寸法は M3 仕様図(1.3)に合わせる。
 - **旧部品**: 旧 `LoadingIndicator`(tsx・css・test)は削除する。
@@ -117,8 +117,8 @@
 
 **コンテナと仕様寸法の両立【設計案・比率は監修で調整】**
 
-- コンテナは外径 3rem(48)の円。背景は `--md-sys-color-primary-container`、形状は `--md-sys-shape-corner-full`。外径は `--circular-progress-size` で上書きできるようにする。
-- コンテナの中に、仕様図 flat の外径40を置く。viewBox 48 の中心 (24,24) で次のとおり描く。
+- 【監修で変更・確定】コンテナ背景(円)は付けない(オーナー決定)。ボックスは 3rem(48)のまま(`--circular-progress-size` で上書き可)で、背景・border-radius は持たない。
+- ボックスの中に、仕様図 flat の外径40を置く。viewBox 48 の中心 (24,24) で次のとおり描く。
   - 円の半径は `r = (40 − 4) / 2 = 18`、線幅は `stroke-width: 4` とする。
   - 円周は 2π×18 ≈ 113.10 になる。
 - コンテナの縁と円弧の外周の余白は 4(各辺)。
@@ -131,7 +131,7 @@
 - **トラック**: `<circle class="circular-progress__track">`。同じ半径・線幅で、円弧の残りを描く。
   - 色【設計案】は `--md-sys-color-secondary-container`。ライト/ダークのテーマトークンで自動的に切り替わり、仕様図2の淡い紫/暗い灰紫に相当する。
   - 代替案は `--md-sys-color-surface-container-highest`。
-  - コンテナ背景(primary-container)の上で見分けられるかは監修で確かめる。見分けにくい場合の候補は `--md-sys-color-surface` 系。
+  - コンテナ背景が無いため、ページ背景の上でトラックが見分けられるかを監修で確かめる。見分けにくい場合は代替案(surface-container-highest)に変える。
 - **gap**: 円弧の両端とトラックの両端の間に、見かけの間隔4を空ける。round キャップで線が両端に 2 ずつはみ出すため、dash 上の間隔は 4 + 4 = 8(SVG単位)を目安とする。
   - トラックの dash 長は `円周 − 円弧長 − 2×8` とする。
   - トラックの開始位置は、円弧の終端から 8 先に置く。
@@ -298,7 +298,7 @@ export function CircularProgress(props: CircularProgressProps): React.JSX.Elemen
 | --- | --- | --- |
 | 6 | 不確定型の円弧長の最小・最大(円周比) | 最小 約10%、最大 約75% |
 | 7 | 1回転の周期、伸縮1周期の時間とイージング | トークン(`--md-sys-motion-duration-extra-long4` の倍率、standard 系イージング)。製造時に見た目で調整する |
-| 8 | 円形コンテナ(背景)付きの表示が circular 仕様にあるか | 仕様図には無い。オーナー決定によりコンテナを付ける。比率(48 の中に外径 40)は監修で調整する |
+| 8 | 円形コンテナ(背景)付きの表示が circular 仕様にあるか | 仕様図には無い。当初はオーナー決定でコンテナ付きとしたが、監修で背景を削除することに決定した(ボックス 3rem の中に外径 40) |
 | 9 | トラックの色トークン | `--md-sys-color-secondary-container`(代替は `--md-sys-color-surface-container-highest`) |
 
 ## 7. 後続Issueへの引き継ぎ

@@ -1,4 +1,4 @@
-/* 円形プログレスインジケーター(MD3 トークンのみ使用・不確定型・コンテナ背景付き) */
+/* 円形プログレスインジケーター(MD3 トークンのみ使用・不確定型・コンテナ背景なし) */
 
 .circular-progress {
   display: inline-flex;
@@ -6,8 +6,6 @@
   justify-content: center;
   width: var(--circular-progress-size, 3rem);
   height: var(--circular-progress-size, 3rem);
-  border-radius: var(--md-sys-shape-corner-full);
-  background-color: var(--md-sys-color-primary-container);
   flex-shrink: 0;
 }
 
