@@ -3,6 +3,7 @@ import { act, cleanup, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { RegisterSWOptions } from 'virtual:pwa-register/react';
 import {
+  ACTIVATION_WAIT_TIMEOUT_MS,
   UPDATE_CHECK_MIN_INTERVAL_MS,
   attachVisibilityUpdateCheck,
   usePwaUpdate
@@ -46,6 +47,7 @@ describe('SW 登録・更新検知フック (Issue #166)', () => {
   });
 
   afterEach(() => {
+    vi.useRealTimers();
     cleanup();
     vi.restoreAllMocks();
     Object.defineProperty(window, 'location', {
@@ -229,5 +231,131 @@ describe('SW 登録・更新検知フック (Issue #166)', () => {
     expect(uncontrolledUpdate).toHaveBeenCalledWith(true);
     expect(reloadSpy).toHaveBeenCalledTimes(1);
     uncontrolledHook.unmount();
+  });
+
+  it('166-T7b: 未制御タブで waiting 中の SW がある場合、activated 遷移を待ってから reload() を呼ぶ', async () => {
+    const reloadSpy = vi.fn();
+    Object.defineProperty(window, 'location', {
+      value: { ...originalLocation, reload: reloadSpy },
+      configurable: true
+    });
+    Object.defineProperty(navigator, 'serviceWorker', {
+      value: { controller: null },
+      configurable: true
+    });
+
+    const workerTarget = new EventTarget();
+    let workerState: ServiceWorkerState = 'installed';
+    const removeListenerSpy = vi.spyOn(workerTarget, 'removeEventListener');
+    const mockWaitingWorker = {
+      get state() {
+        return workerState;
+      },
+      addEventListener: workerTarget.addEventListener.bind(workerTarget),
+      removeEventListener: workerTarget.removeEventListener.bind(workerTarget)
+    } as unknown as ServiceWorker;
+
+    let capturedOptions: RegisterSWOptions | undefined;
+    mockUseRegisterSW.mockImplementation((options?: RegisterSWOptions) => {
+      capturedOptions = options;
+      return {
+        needRefresh: [true, vi.fn()],
+        offlineReady: [false, vi.fn()],
+        updateServiceWorker: vi.fn(() => Promise.resolve())
+      };
+    });
+
+    const { result, unmount } = renderHook(() => usePwaUpdate());
+    act(() => {
+      capturedOptions?.onRegisteredSW?.('/sw.js', {
+        update: vi.fn(() => Promise.resolve({} as ServiceWorkerRegistration)),
+        waiting: mockWaitingWorker
+      } as unknown as ServiceWorkerRegistration);
+    });
+
+    let applyPromise!: Promise<void>;
+    await act(async () => {
+      applyPromise = result.current.applyUpdate();
+      await Promise.resolve();
+    });
+    expect(reloadSpy).not.toHaveBeenCalled();
+
+    // activating 段階ではまだリロードしない
+    act(() => {
+      workerState = 'activating';
+      workerTarget.dispatchEvent(new Event('statechange'));
+    });
+    expect(reloadSpy).not.toHaveBeenCalled();
+
+    // activated 遷移でリスナー解除のうえリロードする
+    await act(async () => {
+      workerState = 'activated';
+      workerTarget.dispatchEvent(new Event('statechange'));
+      await applyPromise;
+    });
+    expect(reloadSpy).toHaveBeenCalledTimes(1);
+    expect(removeListenerSpy).toHaveBeenCalledTimes(1);
+    unmount();
+  });
+
+  it('166-T7c: 未制御タブで waiting 中の SW が有効化しない場合、ACTIVATION_WAIT_TIMEOUT_MS（3,000 ms）経過後に reload() を呼ぶ', async () => {
+    expect(ACTIVATION_WAIT_TIMEOUT_MS).toBe(3_000);
+    vi.useFakeTimers();
+
+    const reloadSpy = vi.fn();
+    Object.defineProperty(window, 'location', {
+      value: { ...originalLocation, reload: reloadSpy },
+      configurable: true
+    });
+    Object.defineProperty(navigator, 'serviceWorker', {
+      value: { controller: null },
+      configurable: true
+    });
+
+    const workerTarget = new EventTarget();
+    const removeListenerSpy = vi.spyOn(workerTarget, 'removeEventListener');
+    const mockWaitingWorker = {
+      state: 'installed' as ServiceWorkerState,
+      addEventListener: workerTarget.addEventListener.bind(workerTarget),
+      removeEventListener: workerTarget.removeEventListener.bind(workerTarget)
+    } as unknown as ServiceWorker;
+
+    let capturedOptions: RegisterSWOptions | undefined;
+    mockUseRegisterSW.mockImplementation((options?: RegisterSWOptions) => {
+      capturedOptions = options;
+      return {
+        needRefresh: [true, vi.fn()],
+        offlineReady: [false, vi.fn()],
+        updateServiceWorker: vi.fn(() => Promise.resolve())
+      };
+    });
+
+    const { result, unmount } = renderHook(() => usePwaUpdate());
+    act(() => {
+      capturedOptions?.onRegisteredSW?.('/sw.js', {
+        update: vi.fn(() => Promise.resolve({} as ServiceWorkerRegistration)),
+        waiting: mockWaitingWorker
+      } as unknown as ServiceWorkerRegistration);
+    });
+
+    let applyPromise!: Promise<void>;
+    await act(async () => {
+      applyPromise = result.current.applyUpdate();
+      await Promise.resolve();
+    });
+    expect(reloadSpy).not.toHaveBeenCalled();
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(2_999);
+    });
+    expect(reloadSpy).not.toHaveBeenCalled();
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1);
+      await applyPromise;
+    });
+    expect(reloadSpy).toHaveBeenCalledTimes(1);
+    expect(removeListenerSpy).toHaveBeenCalledTimes(1);
+    unmount();
   });
 });
