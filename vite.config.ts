@@ -74,8 +74,8 @@ export default {
     wasm(),
     injectThemeColorPlugin(statusBarColors, buildConfig),
     VitePWA({
-      registerType: 'autoUpdate',
-      injectRegister: 'script',
+      registerType: 'prompt',
+      injectRegister: false,
       manifest: {
         name: '三麻点数計算機',
         short_name: '三麻計算機',
@@ -109,8 +109,8 @@ export default {
         ]
       },
       workbox: {
-        skipWaiting: true,
-        clientsClaim: true,
+        skipWaiting: false,
+        clientsClaim: false,
         cleanupOutdatedCaches: true,
         globPatterns: ['**/*.{js,css,html,wasm,svg,png}'],
         ...(buildConfig.isPreview

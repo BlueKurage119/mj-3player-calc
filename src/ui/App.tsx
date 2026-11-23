@@ -5,6 +5,7 @@ import {
   isMdGalleryMode,
   isTileGalleryMode
 } from './app-mode';
+import { PwaUpdatePrompt } from './pwa/PwaUpdatePrompt';
 import { MainScreen } from './screen/MainScreen';
 import { AppStateProvider, useAppState } from './state';
 
@@ -83,6 +84,7 @@ export const App = (): React.JSX.Element => {
   return (
     <AppStateProvider>
       <AppContent />
+      <PwaUpdatePrompt />
     </AppStateProvider>
   );
 };
