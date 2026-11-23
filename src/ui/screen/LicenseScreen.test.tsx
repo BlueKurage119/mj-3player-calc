@@ -18,7 +18,7 @@ describe('G3L: 第三者ライセンス画面 (LicenseView)', () => {
       '三麻点数計算機',
       '素材',
       'ライブラリ',
-      '手牌分解器(WASM)',
+      '手牌分解器・エンジン(WASM)',
       'ライセンス全文'
     ]);
 
@@ -50,7 +50,8 @@ describe('G3L: 第三者ライセンス画面 (LicenseView)', () => {
       'Copyrights in the Rust Standard Library are retained by their contributors.',
       'Copyright (c) 2014 Alex Crichton',
       'Copyright (c) 2019 Cloudflare, Inc.',
-      'Copyright (c) 2015'
+      'Copyright (c) 2015',
+      'Copyright (c) 2014 The Rust Project Developers'
     ];
 
     for (const copyright of expectedCopyrights) {
