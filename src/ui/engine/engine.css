@@ -344,12 +344,12 @@
 .engine-candidates__sort {
   all: unset;
   box-sizing: border-box;
-  min-height: 2rem;
+  min-height: 2.5rem;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  border-radius: var(--md-sys-shape-corner-extra-small);
+  border-radius: var(--md-sys-shape-corner-small);
   padding-inline: 0.25rem;
   color: var(--md-sys-color-on-surface-variant);
   font-family: var(--md-sys-typescale-label-medium-font);
