@@ -3,6 +3,7 @@ import type React from 'react';
 import { SYMBOL_MORE_VERT, SymbolIcon } from '../icons';
 import { Divider, IconButton, Menu, MenuItem } from '../md';
 import { type AppAction, useAppDispatch } from '../state';
+import { useScrolled } from './use-scrolled';
 
 export type HeaderMenuItemId =
   | 'settings'
@@ -59,12 +60,17 @@ export interface AppHeaderProps {
 
 export function AppHeader({ headerRef }: AppHeaderProps): React.JSX.Element {
   const dispatch = useAppDispatch();
+  const scrolled = useScrolled();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuAnchorRef = useRef<HTMLElement | null>(null);
   const closeMenu = () => setMenuOpen(false);
 
   return (
-    <header ref={headerRef} className="app-header">
+    <header
+      ref={headerRef}
+      className="app-header"
+      data-scrolled={scrolled ? 'true' : 'false'}
+    >
       <div className="app-header__inner">
         <h1 className="app-header__title">三麻点数計算機</h1>
         {IS_PREVIEW && (

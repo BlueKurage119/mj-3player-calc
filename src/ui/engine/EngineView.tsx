@@ -10,6 +10,7 @@ import { SYMBOL_ARROW_BACK, SYMBOL_HELP, SymbolIcon } from '../icons';
 import { Button, IconButton } from '../md';
 import { useFitTiles } from '../screen/use-fit-tiles';
 import { useInView } from '../screen/use-in-view';
+import { useScrolled } from '../screen/use-scrolled';
 import { Tile } from '../tile';
 import { EnginePremise, type EnginePremiseProps } from './EnginePremise';
 import { EngineResult, type EngineResultProps } from './EngineResult';
@@ -122,6 +123,7 @@ export function EngineView(props: EngineViewProps): React.JSX.Element {
     true
   );
   const stuck = !inFlow;
+  const scrolled = useScrolled();
   return (
     <div
       className="engine-screen"
@@ -129,7 +131,11 @@ export function EngineView(props: EngineViewProps): React.JSX.Element {
         { '--engine-header-height': `${headerHeight}px` } as React.CSSProperties
       }
     >
-      <header ref={headerRef} className="app-header">
+      <header
+        ref={headerRef}
+        className="app-header"
+        data-scrolled={scrolled ? 'true' : 'false'}
+      >
         <div className="app-header__inner app-header__inner--start">
           <IconButton
             variant="standard"

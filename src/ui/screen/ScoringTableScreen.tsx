@@ -14,6 +14,7 @@ import {
   buildLimitTable
 } from '../scoring-table/scoring-table';
 import { STEPPER_BOUNDS, useAppDispatch, useAppState } from '../state';
+import { useScrolled } from './use-scrolled';
 import './main-screen.css';
 import './scoring-table.css';
 
@@ -112,10 +113,14 @@ export function ScoringTableView({
 
   const fuHanTable = buildFuHanTable(rule, { dealer, honba, deposit });
   const limitTable = buildLimitTable(rule, { dealer, honba, deposit });
+  const scrolled = useScrolled();
 
   return (
     <div className="scoring-table-screen">
-      <header className="app-header">
+      <header
+        className="app-header"
+        data-scrolled={scrolled ? 'true' : 'false'}
+      >
         <div className="app-header__inner app-header__inner--start">
           <IconButton
             variant="standard"
