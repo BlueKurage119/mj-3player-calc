@@ -1,0 +1,22 @@
+/*
+ * iOS 27 のステータスバー強制ブラー対策(Issue #158)。
+ * 画面上端に「高さ10px超・背景色あり・fixed」の要素を常時置くことで、ブラー対象から外す。
+ * 要素は index.html の #root の外に静的に置く(React・画面遷移の影響を受けない)。
+ * 描画は background-clip: text で消す。opacity / visibility / display:none は判定から外れるため使わない。
+ */
+.status-bar-guard {
+  position: fixed;
+  top: 0;
+  inset-inline: 0;
+  z-index: 0;
+  pointer-events: none;
+  height: max(env(safe-area-inset-top, 0px), 0.75rem);
+  background-color: var(--md-sys-color-surface-container);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+:root[data-app-env="preview"] .status-bar-guard {
+  background-color: var(--md-sys-color-quaternary);
+}
