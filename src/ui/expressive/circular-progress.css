@@ -1,0 +1,97 @@
+/* 円形プログレスインジケーター(MD3 トークンのみ使用・不確定型・コンテナ背景付き) */
+
+.circular-progress {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--circular-progress-size, 3rem);
+  height: var(--circular-progress-size, 3rem);
+  border-radius: var(--md-sys-shape-corner-full);
+  background-color: var(--md-sys-color-primary-container);
+  flex-shrink: 0;
+}
+
+.circular-progress__svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  animation: circular-progress-rotate
+    calc(var(--md-sys-motion-duration-extra-long4) * 2)
+    var(--md-sys-motion-easing-linear) infinite;
+}
+
+.circular-progress__arc,
+.circular-progress__track {
+  fill: none;
+  stroke-width: 4;
+  stroke-linecap: round;
+}
+
+/* 静止時(約30%: 円周 113.1 のうち 33.9)を基準スタイルとして固定する */
+.circular-progress__arc {
+  stroke: var(--md-sys-color-primary);
+  stroke-dasharray: 33.9 113.1;
+  stroke-dashoffset: 0;
+  animation: circular-progress-arc
+    calc(var(--md-sys-motion-duration-extra-long4) * 1.4)
+    var(--md-sys-motion-easing-standard) infinite;
+}
+
+/* 静止時トラック: 円周 113.1 - 円弧 33.9 - 両端gap(2 * 8) = 63.2。開始位置は 33.9 + 8 = 41.9 */
+.circular-progress__track {
+  stroke: var(--md-sys-color-secondary-container);
+  stroke-dasharray: 63.2 113.1;
+  stroke-dashoffset: -41.9;
+  animation: circular-progress-track
+    calc(var(--md-sys-motion-duration-extra-long4) * 1.4)
+    var(--md-sys-motion-easing-standard) infinite;
+}
+
+@keyframes circular-progress-rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* 円弧長の最小 約10%(11.3) 〜 最大 約75%(84.8) を1周期で1周分送りながら伸縮する */
+@keyframes circular-progress-arc {
+  0% {
+    stroke-dasharray: 11.3 113.1;
+    stroke-dashoffset: 0;
+  }
+  50% {
+    stroke-dasharray: 84.8 113.1;
+    stroke-dashoffset: -14.1;
+  }
+  100% {
+    stroke-dasharray: 11.3 113.1;
+    stroke-dashoffset: -113.1;
+  }
+}
+
+/* トラックは円弧の両端から SVG単位 8(roundキャップ込み見かけ間隔 4)を保って追従する */
+@keyframes circular-progress-track {
+  0% {
+    stroke-dasharray: 85.8 113.1;
+    stroke-dashoffset: -19.3;
+  }
+  50% {
+    stroke-dasharray: 12.3 113.1;
+    stroke-dashoffset: -106.9;
+  }
+  100% {
+    stroke-dasharray: 85.8 113.1;
+    stroke-dashoffset: -132.4;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .circular-progress__svg,
+  .circular-progress__arc,
+  .circular-progress__track {
+    animation: none;
+  }
+}
