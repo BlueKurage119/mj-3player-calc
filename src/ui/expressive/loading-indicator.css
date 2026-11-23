@@ -1,0 +1,70 @@
+/* MD3 Expressive Loading Indicator (円形コンテナ背景あり・回転モーフィング) */
+
+.loading-indicator {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--loading-indicator-size, 3rem);
+  height: var(--loading-indicator-size, 3rem);
+  border-radius: var(--md-sys-shape-corner-full);
+  background-color: var(--md-sys-color-primary-container);
+  color: var(--md-sys-color-on-primary-container);
+  flex-shrink: 0;
+}
+
+.loading-indicator__svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  animation: loading-indicator-rotate
+    calc(var(--md-sys-motion-duration-extra-long4) * 6)
+    var(--md-sys-motion-easing-linear) infinite;
+}
+
+.loading-indicator__shape {
+  fill: currentColor;
+  animation: loading-indicator-morph
+    calc(var(--md-sys-motion-duration-extra-long4) * 4)
+    var(--md-sys-motion-easing-emphasized) infinite;
+}
+
+@keyframes loading-indicator-rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* 4シェイプ巡回 (M + C×8 + Z の完全同一コマンド列) */
+@keyframes loading-indicator-morph {
+  0%,
+  100% {
+    d: path(
+      "M 24 12.5 C 27.2 12.5 31.42 6.68 36.37 11.63 C 41.32 16.58 35.5 20.8 35.5 24 C 35.5 27.2 41.32 31.42 36.37 36.37 C 31.42 41.32 27.2 35.5 24 35.5 C 20.8 35.5 16.58 41.32 11.63 36.37 C 6.68 31.42 12.5 27.2 12.5 24 C 12.5 20.8 6.68 16.58 11.63 11.63 C 16.58 6.68 20.8 12.5 24 12.5 Z"
+    );
+  }
+  25% {
+    d: path(
+      "M 24 8.5 C 30.8 8.5 33.19 8.87 36.16 11.84 C 39.13 14.81 39.5 17.2 39.5 24 C 39.5 30.8 39.13 33.19 36.16 36.16 C 33.19 39.13 30.8 39.5 24 39.5 C 17.2 39.5 14.81 39.13 11.84 36.16 C 8.87 33.19 8.5 30.8 8.5 24 C 8.5 17.2 8.87 14.81 11.84 11.84 C 14.81 8.87 17.2 8.5 24 8.5 Z"
+    );
+  }
+  50% {
+    d: path(
+      "M 24 9.5 C 24.93 4.38 37.21 9.47 34.25 13.75 C 38.53 10.79 43.62 23.07 38.5 24 C 43.62 24.93 38.53 37.21 34.25 34.25 C 37.21 38.53 24.93 43.62 24 38.5 C 23.07 43.62 10.79 38.53 13.75 34.25 C 9.47 37.21 4.38 24.93 9.5 24 C 4.38 23.07 9.47 10.79 13.75 13.75 C 10.79 9.47 23.07 4.38 24 9.5 Z"
+    );
+  }
+  75% {
+    d: path(
+      "M 24 12.5 C 28.77 12.5 33.35 13.71 36.73 15.87 C 40.1 18.02 42 20.95 42 24 C 42 27.05 40.1 29.98 36.73 32.13 C 33.35 34.29 28.77 35.5 24 35.5 C 19.23 35.5 14.65 34.29 11.27 32.13 C 7.9 29.98 6 27.05 6 24 C 6 20.95 7.9 18.02 11.27 15.87 C 14.65 13.71 19.23 12.5 24 12.5 Z"
+    );
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loading-indicator__svg,
+  .loading-indicator__shape {
+    animation: none;
+  }
+}
