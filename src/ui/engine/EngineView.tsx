@@ -5,7 +5,7 @@ import {
   type TileOrBack,
   compareTiles
 } from '../../core/tile';
-import { ConnectedButtonGroup, LoadingIndicator } from '../expressive';
+import { CircularProgress, ConnectedButtonGroup } from '../expressive';
 import { SYMBOL_ARROW_BACK, SYMBOL_HELP, SymbolIcon } from '../icons';
 import { Button, IconButton } from '../md';
 import { useFitTiles } from '../screen/use-fit-tiles';
@@ -208,7 +208,7 @@ export function EngineView(props: EngineViewProps): React.JSX.Element {
         )}
         {props.available && running ? (
           <div className="engine-screen__running">
-            <LoadingIndicator label="計算中" />
+            <CircularProgress label="計算中" />
             <p className="engine-screen__running-label">計算中…</p>
             <span className="engine-screen__elapsed tabular-nums">
               {formatElapsed(run.elapsedMs)}

@@ -610,7 +610,7 @@ describe('F3-2 計算画面離脱時の dispose (Issue #151 / #139 U-10)', () =>
     fireEvent.click(mustQuery(view.container, '.engine-screen__run'));
 
     expect(
-      mustQuery(view.container, '.loading-indicator').getAttribute('aria-label')
+      mustQuery(view.container, '.circular-progress').getAttribute('aria-label')
     ).toBe('計算中');
     expect(mustQuery(view.container, '.engine-screen__run').textContent).toBe(
       '中止'

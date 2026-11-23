@@ -26,6 +26,6 @@ export {
 } from './Disclosure';
 
 export {
-  LoadingIndicator,
-  type LoadingIndicatorProps
-} from './LoadingIndicator';
+  CircularProgress,
+  type CircularProgressProps
+} from './CircularProgress';
