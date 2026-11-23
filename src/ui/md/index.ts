@@ -71,8 +71,3 @@ export {
   MenuItem,
   type MenuItemProps
 } from './Menu';
-
-export {
-  CircularProgress,
-  type CircularProgressProps
-} from './CircularProgress';

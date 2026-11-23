@@ -18,7 +18,6 @@ import type {
 } from '@material/web/iconbutton/icon-button.js';
 import type { MdMenuItem } from '@material/web/menu/menu-item.js';
 import type { MdMenu } from '@material/web/menu/menu.js';
-import type { MdCircularProgress } from '@material/web/progress/circular-progress.js';
 import type { MdRipple } from '@material/web/ripple/ripple.js';
 import type { MdOutlinedSelect } from '@material/web/select/outlined-select.js';
 import type { MdSelectOption } from '@material/web/select/select-option.js';
@@ -146,12 +145,6 @@ declare module 'react' {
       };
       'md-menu-item': CustomElementBaseProps<MdMenuItem> & {
         disabled?: boolean | undefined;
-      };
-
-      'md-circular-progress': CustomElementBaseProps<MdCircularProgress> & {
-        indeterminate?: boolean | undefined;
-        value?: number | undefined;
-        max?: number | undefined;
       };
     }
   }

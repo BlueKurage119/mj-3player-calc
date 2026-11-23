@@ -7,11 +7,7 @@ import {
 } from '../../core/tile';
 import { CircularProgress, ConnectedButtonGroup } from '../expressive';
 import { SYMBOL_ARROW_BACK, SYMBOL_HELP, SymbolIcon } from '../icons';
-import {
-  Button,
-  IconButton,
-  CircularProgress as MdCircularProgressView
-} from '../md';
+import { Button, IconButton } from '../md';
 import { useFitTiles } from '../screen/use-fit-tiles';
 import { useInView } from '../screen/use-in-view';
 import { useScrolled } from '../screen/use-scrolled';
@@ -106,10 +102,6 @@ const EngineHandRow = memo(function EngineHandRow({
 export function EngineView(props: EngineViewProps): React.JSX.Element {
   const { run } = props;
   const running = run.status === 'running';
-  const useWrap =
-    import.meta.env.DEV &&
-    typeof location !== 'undefined' &&
-    new URLSearchParams(location.search).get('progress') === 'wrap';
   // 前提と手牌のカードは、ヘッダーの下に固定する(初期画面の要約カードと同じ流儀。ヘッダーの高さを実測)
   const headerRef = useRef<HTMLElement | null>(null);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
@@ -216,11 +208,7 @@ export function EngineView(props: EngineViewProps): React.JSX.Element {
         )}
         {props.available && running ? (
           <div className="engine-screen__running">
-            {useWrap ? (
-              <MdCircularProgressView label="計算中" />
-            ) : (
-              <CircularProgress label="計算中" />
-            )}
+            <CircularProgress label="計算中" />
             <p className="engine-screen__running-label">計算中…</p>
             <span className="engine-screen__elapsed tabular-nums">
               {formatElapsed(run.elapsedMs)}
