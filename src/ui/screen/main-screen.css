@@ -20,7 +20,7 @@ body {
   --app-header-fade-height: 0.75rem;
   position: sticky;
   top: 0;
-  z-index: 20;
+  z-index: 15;
   width: 100%;
   background-color: var(--app-header-bg);
   color: var(--md-sys-color-on-surface);
@@ -337,7 +337,7 @@ body {
 .summary-card {
   position: sticky;
   top: var(--app-header-height, 0px);
-  z-index: 10;
+  z-index: 18;
   height: 0;
   margin-block-end: -1rem;
   overflow: visible;

@@ -200,12 +200,25 @@ describe('ヘッダー下端部の仕上げ改善 (Issue #142)', () => {
     new URL('./main-screen.css', import.meta.url),
     'utf8'
   );
+  const engineCss = readFileSync(
+    new URL('../engine/engine.css', import.meta.url),
+    'utf8'
+  );
   const scoringTableCss = readFileSync(
     new URL('./scoring-table.css', import.meta.url),
     'utf8'
   );
+  const bottomSheetCss = readFileSync(
+    new URL('../expressive/bottom-sheet.css', import.meta.url),
+    'utf8'
+  );
   const strippedMainCss = mainCss.replace(/\/\*[\s\S]*?\*\//g, '');
+  const strippedEngineCss = engineCss.replace(/\/\*[\s\S]*?\*\//g, '');
   const strippedScoringCss = scoringTableCss.replace(/\/\*[\s\S]*?\*\//g, '');
+  const strippedBottomSheetCss = bottomSheetCss.replace(
+    /\/\*[\s\S]*?\*\//g,
+    ''
+  );
 
   it('Issue142-C1: .app-header が on-scroll トーン変化と常時表示の下端フェード・prefers-reduced-motion を持つ', () => {
     const headerBlock =
@@ -376,5 +389,57 @@ describe('ヘッダー下端部の仕上げ改善 (Issue #142)', () => {
         '<header class="app-header" data-scrolled="false">'
       );
     }
+  });
+
+  it('Issue142-Z1: 固定カード(.summary-card / .engine-card)が .app-header より前面(18 > 15)で、.result-banner(19)・.bottom-sheet(20)より背面にある', () => {
+    const headerBlock =
+      strippedMainCss.match(/\.app-header\s*\{([^}]*)\}/)?.[1] ?? '';
+    const summaryBlock =
+      strippedMainCss.match(/\.summary-card\s*\{([^}]*)\}/)?.[1] ?? '';
+    const resultBannerBlock =
+      strippedMainCss.match(/\.result-banner\s*\{([^}]*)\}/)?.[1] ?? '';
+    const bottomSheetBlock =
+      strippedBottomSheetCss.match(/\.bottom-sheet\s*\{([^}]*)\}/)?.[1] ?? '';
+    const engineCardBlock =
+      strippedEngineCss.match(/\.engine-card\s*\{([^}]*)\}/)?.[1] ?? '';
+
+    expect(headerBlock.match(/z-index:\s*(\d+)/)?.[1]).toBe('15');
+    expect(summaryBlock.match(/z-index:\s*(\d+)/)?.[1]).toBe('18');
+    expect(engineCardBlock.match(/z-index:\s*(\d+)/)?.[1]).toBe('18');
+    expect(resultBannerBlock.match(/z-index:\s*(\d+)/)?.[1]).toBe('19');
+    expect(bottomSheetBlock.match(/z-index:\s*(\d+)/)?.[1]).toBe('20');
+  });
+
+  it('Issue142-C4: scoring-table.css がスクロール時のラベル・未選択トグル背景色と transition(角丸モーフ両立・reduced-motion)を持つ', () => {
+    // 理由: スクロール時の背景色トークン指定が点数計算表 CSS に含まれることを検証するため部分一致を使う
+    expect(strippedScoringCss).toContain(
+      '.scoring-table-screen\n  .app-header[data-scrolled="true"]\n  .scoring-table-screen__rule-label[data-tsumo-loss="loss"]'
+    );
+    // 理由: 未選択トグルのスクロール時セレクタが含まれることを検証するため部分一致を使う
+    expect(strippedScoringCss).toContain(
+      '.scoring-table-screen\n  .app-header[data-scrolled="true"]\n  .connected-button[aria-checked="false"]'
+    );
+    // 理由: 背景色が surface-container-highest に切り替わることを検証するため部分一致を使う
+    expect(strippedScoringCss).toContain(
+      'background-color: var(--md-sys-color-surface-container-highest);'
+    );
+    // 理由: .connected-button の border-radius モーフ遷移を壊さず background-color 遷移と両立していることを検証するため部分一致を使う
+    expect(strippedScoringCss).toContain(
+      'border-radius var(--md-sys-motion-spring-spatial-fast-duration)'
+    );
+    // 理由: background-color 遷移に fast effects トークンを使用していることを検証するため空白正規化うえで部分一致を使う
+    expect(strippedScoringCss.replace(/\s+/g, ' ')).toContain(
+      'background-color var(--md-sys-motion-spring-effects-fast-duration)'
+    );
+    // 理由: prefers-reduced-motion: reduce 時の transition: none が定義されていることを検証するため部分一致を使う
+    expect(strippedScoringCss).toContain(
+      '@media (prefers-reduced-motion: reduce)'
+    );
+    // 理由: HEX・ms・cubic-bezier が直書きされていないことを検証するため否定の正規表現一致を使う
+    expect(
+      strippedScoringCss.match(/:\s*[^;\n]*#([0-9a-fA-F]{3,8})/g)
+    ).toBeNull();
+    expect(strippedScoringCss.match(/\b\d+ms\b/g)).toBeNull();
+    expect(strippedScoringCss.match(/cubic-bezier\([^)]*\)/g)).toBeNull();
   });
 });

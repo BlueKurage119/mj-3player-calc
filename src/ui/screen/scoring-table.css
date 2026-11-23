@@ -129,6 +129,36 @@
   color: var(--md-sys-color-on-primary-container);
 }
 
+/* スクロール時のヘッダー背景(surface-container)と調和しつつコントラストを確保する */
+.scoring-table-screen__rule-label[data-tsumo-loss="loss"] {
+  transition-property: background-color;
+  transition-duration: var(--md-sys-motion-spring-effects-fast-duration);
+  transition-timing-function: var(--md-sys-motion-spring-effects-fast-easing);
+}
+
+.scoring-table-screen .connected-button[aria-checked="false"] {
+  transition: border-radius var(--md-sys-motion-spring-spatial-fast-duration)
+    var(--md-sys-motion-spring-spatial-fast-easing), background-color
+    var(--md-sys-motion-spring-effects-fast-duration)
+    var(--md-sys-motion-spring-effects-fast-easing);
+}
+
+.scoring-table-screen
+  .app-header[data-scrolled="true"]
+  .scoring-table-screen__rule-label[data-tsumo-loss="loss"],
+.scoring-table-screen
+  .app-header[data-scrolled="true"]
+  .connected-button[aria-checked="false"] {
+  background-color: var(--md-sys-color-surface-container-highest);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scoring-table-screen__rule-label[data-tsumo-loss="loss"],
+  .scoring-table-screen .connected-button[aria-checked="false"] {
+    transition: none;
+  }
+}
+
 .scoring-table__scroll {
   width: 100%;
   overflow-x: auto;
