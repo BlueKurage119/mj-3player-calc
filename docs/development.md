@@ -4,20 +4,24 @@
 
 - `src/core/` — 計算コア（役判定・符・点数・向聴）。[livewing/mahjong-calc](https://github.com/livewing/mahjong-calc)（MIT）の `src/lib` から取り込み、三麻向けに改修します
 - `wasm/decomposer/` — 手牌分解器（Rust/WASM）。同じく mahjong-calc から取り込み
+- `wasm/engine/` — 何切る確率・期待値計算エンジン（Rust/WASM、`shanten-dp` 利用）
+- `src/engine/` — 計算エンジンの TypeScript 層・Web Worker クライアント
 - `src/ui/` — UI（Material Design 3 Expressive）
 
 ## 開発
 
-初回は `npm run build:wasm` のあとに `npm install` を実行します(依存の `decomposer` が WASM のビルド成果物を参照するため)。
+初回は `npm run build:wasm` のあとに `npm install` を実行します(依存の `decomposer` と `engine` が WASM のビルド成果物を参照するため)。
 
 | コマンド | 用途 | 備考 |
 | --- | --- | --- |
-| `npm run build:wasm` | 手牌分解器(WASM)のビルド | 初回と Rust 変更時。Rust と wasm-pack が必要 |
+| `npm run build:wasm` | 手牌分解器および計算エンジン(WASM)のビルド | 初回と Rust 変更時(`wasm/decomposer/`・`wasm/engine/` の両方をビルド)。Rust と wasm-pack が必要 |
 | `npm install` | 依存パッケージの導入 | `build:wasm` の後に実行する |
 | `npm run dev` | 開発サーバーの起動 | |
 | `npm run build` | 型検査と本番ビルド | 成果物は `dist/` |
 | `npm run preview` | 本番ビルドのローカル確認 | 先に `npm run build` を実行する |
 | `npm test` | テスト(Vitest) | |
+| `npm run test:engine-mc` | モンテカルロ精度検証テスト | `ENGINE_MC=1` で実行 |
+| `npm run build:engine-bench` | エンジン計測用ビルド | |
 | `npm run typecheck` | 型検査 | |
 | `npm run lint` | 静的検査(Biome) | |
 | `npm run format:check` | 整形差分のチェック(Biome) | `npm run format` で自動整形 |
@@ -45,4 +49,4 @@ GCP 側の初期構築（Workload Identity Federation・サービスアカウン
 
 ## リリース
 
-PR マージおよびデプロイ・公開前チェックの後、オーナーが対象コミットに注釈付きタグを打って push し、監修済みリリースノートで GitHub Release を作成します。版上げと手順の詳細は [issue-110-v1-release.md](design/issue-110-v1-release.md#8-オーナー向け手順書タグgithub-release) を参照してください。
+PR マージおよびデプロイ・公開前チェックの後、対象コミットに注釈付きタグを打って push し、監修済みリリースノートで GitHub Release を作成します。v1.0.0 の手順は [issue-110-v1-release.md](design/issue-110-v1-release.md#8-オーナー向け手順書タグgithub-release)、v2.0.0 の役割分担と手順は [issue-152-v2-release.md](design/issue-152-v2-release.md#8-統合デプロイリリース手順書役割分担) を参照してください。

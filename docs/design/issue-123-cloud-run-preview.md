@@ -3,6 +3,7 @@
 - 対象 Issue: #123（検証・デバッグ用に、Google Cloud の Cloud Run へアプリを配布する）
 - 基準コミット: `main` `62db1bb`（2026-11-18 時点）
 - 状態: **設計確定**（Q1〜Q3 のユーザー回答をすべて反映済み。未決事項なし）
+- 注記: 環境固有識別子は公開リポジトリ整理のためプレースホルダ表記へ置換済み（Issue #152）
 
 ## 1. 目的と範囲
 
@@ -36,12 +37,12 @@
 | H3 | **公開範囲**: 認証なし（`--allow-unauthenticated`）＋ 検索避け（`X-Robots-Tag: noindex, nofollow` レスポンスヘッダ + `robots.txt` 等）。※最小権限化のため公開設定はオーナーによる初回サービス作成時に付与し、通常 CI からは設定を上書きせず保持する | §3.2・§4.3・§5.2・§9.2 |
 | H4 | **ベースパス**: Cloud Run 用ビルドではルート `/` ベースにする（本番 GitHub Pages の `/mj-3player-calc/` は維持）。`VitePWA` の `start_url`・`scope` もベースパスに合わせる | §3.1・§3.2 |
 | H5 | **リージョン・クリーンアップ**: 東京リージョン（`asia-northeast1`）。不要イメージ・リビジョンの自動削除（Artifact Registry Cleanup Policy 等の必須化）は当面不要で手動削除とする（手順書に手動確認・削除の案内を記載） | §5.2・§9.6 |
-| H6 | **認証方式・GCP 環境・検収範囲**: GitHub Actions からの認証は Workload Identity Federation（OIDC、SA 鍵 JSON 不使用）。対象 GCP プロジェクトは `skygcp`（プロジェクト番号: `106538176815`、実測確認済み）。GCP 構築および GitHub Secrets/Variables 登録は別モデルコードレビュー完了後にオーナーが実施するため、検収では実デプロイを行わずローカル検証とする | §5・§8・§9 |
+| H6 | **認証方式・GCP 環境・検収範囲**: GitHub Actions からの認証は Workload Identity Federation（OIDC、SA 鍵 JSON 不使用）。対象 GCP プロジェクトは `<GCP_PROJECT_ID>`（プロジェクト番号: `<GCP_PROJECT_NUMBER>`、実測確認済み）。GCP 構築および GitHub Secrets/Variables 登録は別モデルコードレビュー完了後にオーナーが実施するため、検収では実デプロイを行わずローカル検証とする | §5・§8・§9 |
 | Q1-a | **ヘッダー識別表現（UI 監修確定）**: 全 5 画面のヘッダー背景は通常の `surface` を維持したまま、ヘッダー上端に `0.25rem` のアクセントライン（OS テーマ追随の `--preview-os-quaternary`）とヘッダー文字色（`quaternary`）を適用し、メイン画面（`AppHeader`）のタイトル横に「プレビュー」ピルバッジを表示する | §3.5 |
 | Q1-b | **識別色（クォータリーカラー確定）**: シード `#1B5E20` の HCT 色相を赤側に 60° 下げ・クロマ `24.0` とした山吹色系をクォータリーカラー（4 ロール）として `scripts/gen-theme-tokens.ts` に追加し `tokens.css` へ生成する。UI 監修の結果、山吹色（`quaternary`: ライト `#715b2e` / ダーク `#dfc38c`、バッジ文字 `on-quaternary`）で確定したため比較用切替機構は削除する | §3.4・§3.5 |
 | Q1-c | **メタデータ・OS テーマ連動**: ステータスバー（`meta name="theme-color"` のライト/ダーク）のみ識別色 `quaternary`（`#715b2e` / `#dfc38c`）に連動させ、ヘッダー上部ラインを `<html data-os-theme>` 経由で OS テーマに追随させてステータスバーと一体化する。`<title>`・`manifest.name`・`manifest.short_name`・`manifest.theme_color` は本番のまま維持する | §3.1・§3.5 |
-| Q2 | **共有用 URL・QR コード**: 確定 URL は `https://mj-3player-calc-106538176815.asia-northeast1.run.app/`（`-preview` なし）。QR コードと共有テキスト内の URL のみこのベース URL に差し替える（`CLOUDRUN_SHARE_URL` での上書き余地は維持） | §3.3・§5.2 |
-| Q3 | **サービス名・リポジトリ・ガード不要**: Cloud Run サービス名既定値は `mj-3player-calc`、Artifact Registry リポジトリ既定値は既存共用の `cloud-run-source-deploy`。`CLOUDRUN_PREVIEW_ENABLED` のようなガード条件は設けず、最初から `push`（`main`）および `workflow_dispatch` で実行する | §5.2・§5.3・§9 |
+| Q2 | **共有用 URL・QR コード**: 確定 URL は `https://mj-3player-calc-<GCP_PROJECT_NUMBER>.asia-northeast1.run.app/`（`-preview` なし）。QR コードと共有テキスト内の URL のみこのベース URL に差し替える（`CLOUDRUN_SHARE_URL` での上書き余地は維持） | §3.3・§5.2 |
+| Q3 | **サービス名・リポジトリ・ガード不要**: Cloud Run サービス名既定値は `mj-3player-calc`、Artifact Registry リポジトリ既定値は既存共用の `<GAR_REPOSITORY>`。`CLOUDRUN_PREVIEW_ENABLED` のようなガード条件は設けず、最初から `push`（`main`）および `workflow_dispatch` で実行する | §5.2・§5.3・§9 |
 
 ### 2.2 実物調査と実測結果（`main` `62db1bb`、2026-11-18）
 
@@ -53,12 +54,12 @@
 | `scripts/theme-colors.test.ts` | `@material/material-color-utilities` が拡張子省略 ESM で Vitest が直接解決できないため、`vi.mock('@material/material-color-utilities', () => ({}))` でモックしたうえで `gen-theme-tokens.ts` を import している | `DynamicScheme`・`Variant`・`TonalPalette`・`MaterialDynamicColors` へのアクセスは必ず `generateTokensCss()` 等の関数内で行い、モジュールトップレベルで参照しない |
 | クォータリー色 HEX 実測（`vite-node`） | `#1B5E20` の `seedHct.hue` は `145.5162316490231`、`(seedHct.hue - 60 + 360) % 360` は `85.5162316490231`、`chroma = 24.0`。`DynamicScheme(Variant.TONAL_SPOT, contrastLevel: 0, specVersion: '2021', tertiaryPalette)` での実測値（§3.4 詳述）: ライト `quaternary=#715b2e`, `onQuaternary=#ffffff`, `quaternaryContainer=#fddfa6`, `onQuaternaryContainer=#574419` / ダーク `quaternary=#dfc38c`, `onQuaternary=#3f2e04`, `quaternaryContainer=#574419`, `onQuaternaryContainer=#fddfa6` | 山吹色系の明瞭なアクセント色が得られ、ライト・ダーク双方で十分なコントラストが確保される |
 | `src/ui/share/share-config.ts` | `export const SHARE_URL: string | null = 'https://bluekurage119.github.io/mj-3player-calc/';` | `define` による `__SHARE_URL__` 置換とフォールバック定数で切り替え可能。`npm test` 時は本番値が使われ既存テストと両立する |
-| `share-layout.ts` / `share-theme.ts` / `uqr` | フッターの URL 最大幅 `760px`、`qrSize: 168`、`qrQuietZone: 4`、`qrMinModulePx: 3`。`node -e` で確定 URL `https://mj-3player-calc-106538176815.asia-northeast1.run.app/`（61 文字）を実測したところ、ECC `M` で `size: 33`・`modulePx: 4`（本番 URL と同じサイズ・モジュール幅）になる | 確定 URL でも既存の QR 描画仕様・フッターレイアウトに完全に収まる |
+| `share-layout.ts` / `share-theme.ts` / `uqr` | フッターの URL 最大幅 `760px`、`qrSize: 168`、`qrQuietZone: 4`、`qrMinModulePx: 3`。`node -e` で確定 URL `https://mj-3player-calc-<GCP_PROJECT_NUMBER>.asia-northeast1.run.app/`（61 文字）を実測したところ、ECC `M` で `size: 33`・`modulePx: 4`（本番 URL と同じサイズ・モジュール幅）になる | 確定 URL でも既存の QR 描画仕様・フッターレイアウトに完全に収まる |
 | ヘッダー構成（全 5 画面） | `MainScreen` は `AppHeader`（`<header className="app-header"><div className="app-header__inner"><h1 ...>` + `<div className="app-header__actions">` で `justify-content: space-between`）、他 4 画面は `<header className="app-header">` を描画し、全 5 画面が `src/ui/screen/main-screen.css` を import。`AppHeader.test.tsx`（`F1-2-12`）は `<md-menu>` 内部のみを検証 | `:root[data-app-env="preview"] .app-header` で全 5 画面のヘッダー上部ライン・文字色を一括変更し、`AppHeader` に `margin-inline-end: auto` 付きの「プレビュー」ピルバッジを置けば本番 DOM・`F1-2-12`・`space-between` 配置のすべてと両立する |
 | `public/` と `sw.js` | `public/` 配下はすべて `dist/` にコピーされ precache 対象になる | `robots.txt` は `public/` に置かず `deploy/cloud-run/robots.txt` としてコンテナ側のみに配置する |
 | 初回 JS 実測（09 号） | `main` `62db1bb` で `npm run build` を実行し、`dist/assets/index-Cpk8wRUr.js`（`modulepreload` なし）を `gzip -9 -c` で実測したところ **128,880 B**（生サイズ 478,339 B、09 号記載の v1.0.0 値 128,883 B と 3 B 差） | 設計基準値 128,880 B に対し、本番ビルドの増分は +0 B に抑える |
 | 認証・リポジトリ | `git remote -v` は `BlueKurage119/mj-3player-calc`。ローカルに `docker`・`ruby`・`node`・`npm` が存在 | WIF の `attribute-condition` で `BlueKurage119/mj-3player-calc` に限定する |
-| `skygcp` 実環境・過去案件（`my-kansen-tid`・`saitama-super-tid`） | `gcloud run services list` で既存 4 サービス（`my-kansen-tid`・`saitama-super-tid`・`mj-3players-pushfold-quiz`・`bus-departure-board`）すべてが `https://<service>-106538176815.asia-northeast1.run.app` の確定 URL 形式で稼働中。`asia-northeast1` に既存 Artifact Registry リポジトリ `cloud-run-source-deploy`（DOCKER、約 184.39 MB）が存在し、`my-kansen-tid`・`saitama-super-tid` の両方が共用。既存 WIF Pool `github`（`my-kansen-tid` 用）と `saitama-github`（`saitama-super-tid` 用）が存在し、過去案件方針として「既存サービス・既存 WIF provider の条件・IAM は変更しない」「通常 CI にプロジェクト全体の管理権限を付与しない」を採用。両案件とも CI は `google-github-actions/auth` + `setup-gcloud` + `gcloud auth configure-docker` + `docker build/push` + `gcloud run deploy`（`--allow-unauthenticated` なし、既存サービスの IAM ポリシー保持）を使用し、サービス単位の `roles/run.developer`・対象 AR の `roles/artifactregistry.writer`・ランタイム SA への `roles/iam.serviceAccountUser` のみを付与している | 確定 URL 形式の実環境動作を確認。既存 `cloud-run-source-deploy` を共用し、既存 WIF Pool や既存サービスには触れず専用 WIF Pool（`mj3calc-github`）・専用ランタイム SA（`mj3calc-runtime`）・専用デプロイ SA（`mj3calc-deployer`）を新設する。オーナーが初回サービスを `--allow-unauthenticated` で先行作成し、CI には最小権限のみ付与して `setup-gcloud` + `gcloud run deploy` 方式に揃える |
+| `<GCP_PROJECT_ID>` 実環境・過去案件 | `gcloud run services list` で既存の Cloud Run 4 サービスすべてが `https://<service>-<GCP_PROJECT_NUMBER>.asia-northeast1.run.app` の確定 URL 形式で稼働中。`asia-northeast1` に既存 Artifact Registry リポジトリ `<GAR_REPOSITORY>`（DOCKER、約 184.39 MB）が存在し、既存他サービスが共用。既存サービス用の WIF Pool が複数存在し、過去案件方針として「既存サービス・既存 WIF provider の条件・IAM は変更しない」「通常 CI にプロジェクト全体の管理権限を付与しない」を採用。両案件とも CI は `google-github-actions/auth` + `setup-gcloud` + `gcloud auth configure-docker` + `docker build/push` + `gcloud run deploy`（`--allow-unauthenticated` なし、既存サービスの IAM ポリシー保持）を使用し、サービス単位の `roles/run.developer`・対象 AR の `roles/artifactregistry.writer`・ランタイム SA への `roles/iam.serviceAccountUser` のみを付与している | 確定 URL 形式の実環境動作を確認。既存 `<GAR_REPOSITORY>` を共用し、既存 WIF Pool や既存サービスには触れず専用 WIF Pool（`<WIF_POOL>`）・専用ランタイム SA（`<RUNTIME_SA_NAME>`）・専用デプロイ SA（`<DEPLOYER_SA_NAME>`）を新設する。オーナーが初回サービスを `--allow-unauthenticated` で先行作成し、CI には最小権限のみ付与して `setup-gcloud` + `gcloud run deploy` 方式に揃える |
 | Actions・Docker タグ確認 | Web 検索により `google-github-actions/auth@v3`、`google-github-actions/setup-gcloud@v3`、`nginx/nginx-unprivileged:stable-alpine`（`nginx/` 名前空間。`1.28-alpine` タグは存在せず、検収で判明したため `stable-alpine` へ訂正）がいずれも GitHub 公式リポジトリ・公開レジストリに存在することを確認済み | §4・§5 で上記バージョンを指定する（ただし GitHub Actions 上での実実行は「実挙動未確認」） |
 
 ### 2.3 参照した業務標準・設計書
@@ -78,7 +79,7 @@
 | 変数名 | 既定値（未設定時） | プレビュービルド時の指定例 | 役割 |
 | --- | --- | --- | --- |
 | `VITE_APP_ENV` | `'production'` | `'preview'` | ビルド種別の切り替え。`'preview'` のとき `base: '/'`、識別ヘッダー・バッジ・`meta theme-color` 連動を有効化 |
-| `VITE_SHARE_URL` | `'https://bluekurage119.github.io/mj-3player-calc/'` | `'https://mj-3player-calc-106538176815.asia-northeast1.run.app/'` | `SHARE_URL` に注入する公開 URL |
+| `VITE_SHARE_URL` | `'https://bluekurage119.github.io/mj-3player-calc/'` | `'https://mj-3player-calc-<GCP_PROJECT_NUMBER>.asia-northeast1.run.app/'` | `SHARE_URL` に注入する公開 URL |
 
 #### 具体的な型・シグネチャ（`scripts/build-config.ts` 新規作成）
 
@@ -158,7 +159,7 @@ export const SHARE_URL: string | null =
   typeof __SHARE_URL__ !== 'undefined' ? __SHARE_URL__ : DEFAULT_SHARE_URL;
 ```
 
-- Cloud Run プレビュー時の `VITE_SHARE_URL` 既定値は確定 URL `https://mj-3player-calc-106538176815.asia-northeast1.run.app/`（ワークフロー内で `https://${SERVICE}-106538176815.asia-northeast1.run.app/` として組み立て、GitHub Variable `CLOUDRUN_SHARE_URL` が設定されていればそちらで上書きする）。
+- Cloud Run プレビュー時の `VITE_SHARE_URL` 既定値は確定 URL `https://mj-3player-calc-<GCP_PROJECT_NUMBER>.asia-northeast1.run.app/`（ワークフロー内で `https://${SERVICE}-<GCP_PROJECT_NUMBER>.asia-northeast1.run.app/` として組み立て、GitHub Variable `CLOUDRUN_SHARE_URL` が設定されていればそちらで上書きする）。
 - これにより、共有画像フッターの QR コード・URL ラベルおよび `navigator.share` テキスト内の URL のみがベース URL としてプレビュー URL へ差し替わる。
 - QR 実測（§2.2）のとおり、61 文字の確定 URL は既存の `uqr` ECC `M`（33×33、4px/module）およびフッターテキスト最大幅 `760px` に余裕をもって収まる。
 
@@ -400,12 +401,12 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  GCP_PROJECT_ID: skygcp
-  GCP_PROJECT_NUMBER: '106538176815'
+  GCP_PROJECT_ID: <GCP_PROJECT_ID>
+  GCP_PROJECT_NUMBER: '<GCP_PROJECT_NUMBER>'
   GCP_REGION: asia-northeast1
   CLOUDRUN_SERVICE_DEFAULT: mj-3player-calc
-  GAR_REPOSITORY_DEFAULT: cloud-run-source-deploy
-  CLOUDRUN_RUNTIME_SA_DEFAULT: mj3calc-runtime@skygcp.iam.gserviceaccount.com
+  GAR_REPOSITORY_DEFAULT: <GAR_REPOSITORY>
+  CLOUDRUN_RUNTIME_SA_DEFAULT: <RUNTIME_SA_NAME>@<GCP_PROJECT_ID>.iam.gserviceaccount.com
 
 jobs:
   deploy:
@@ -511,11 +512,11 @@ jobs:
 
 | 種別 | 名前 | 必須 / 任意 | 設定値（例） | 用途 |
 | --- | --- | --- | --- | --- |
-| Secret | `GCP_WORKLOAD_IDENTITY_PROVIDER` | 必須 | `projects/106538176815/locations/global/workloadIdentityPools/mj3calc-github/providers/github-oidc` | WIF OIDC プロバイダの完全リソース名 |
-| Secret | `GCP_SERVICE_ACCOUNT` | 必須 | `mj3calc-deployer@skygcp.iam.gserviceaccount.com` | デプロイ用サービスアカウントのメールアドレス |
+| Secret | `GCP_WORKLOAD_IDENTITY_PROVIDER` | 必須 | `projects/<GCP_PROJECT_NUMBER>/locations/global/workloadIdentityPools/<WIF_POOL>/providers/github-oidc` | WIF OIDC プロバイダの完全リソース名 |
+| Secret | `GCP_SERVICE_ACCOUNT` | 必須 | `<DEPLOYER_SA_NAME>@<GCP_PROJECT_ID>.iam.gserviceaccount.com` | デプロイ用サービスアカウントのメールアドレス |
 | Variable | `CLOUDRUN_SERVICE` | 任意（既定: `mj-3player-calc`） | `mj-3player-calc` | Cloud Run サービス名の上書き |
-| Variable | `GAR_REPOSITORY` | 任意（既定: `cloud-run-source-deploy`） | `cloud-run-source-deploy` | Artifact Registry リポジトリ名の上書き |
-| Variable | `CLOUDRUN_RUNTIME_SA` | 任意（既定: `mj3calc-runtime@skygcp.iam.gserviceaccount.com`） | `mj3calc-runtime@skygcp.iam.gserviceaccount.com` | Cloud Run ランタイム用サービスアカウントの上書き |
+| Variable | `GAR_REPOSITORY` | 任意（既定: `<GAR_REPOSITORY>`） | `<GAR_REPOSITORY>` | Artifact Registry リポジトリ名の上書き |
+| Variable | `CLOUDRUN_RUNTIME_SA` | 任意（既定: `<RUNTIME_SA_NAME>@<GCP_PROJECT_ID>.iam.gserviceaccount.com`） | `<RUNTIME_SA_NAME>@<GCP_PROJECT_ID>.iam.gserviceaccount.com` | Cloud Run ランタイム用サービスアカウントの上書き |
 | Variable | `CLOUDRUN_SHARE_URL` | 任意（既定: 確定 URL） | `https://...` | 共有 URL の明示上書き（独自ドメイン利用時等） |
 
 ## 6. バンドル目標値（09 号）
@@ -585,7 +586,7 @@ jobs:
 | ID | 対象 | 検証内容 |
 | --- | --- | --- |
 | `CR-T1` | `scripts/build-config.test.ts` | 未指定・`VITE_APP_ENV=production` のとき `isPreview: false`, `base: '/mj-3player-calc/'`, `shareUrl: 'https://bluekurage119.github.io/mj-3player-calc/'`, `statusBarColorRole: 'surface'` を返す |
-| `CR-T2` | `scripts/build-config.test.ts` | `VITE_APP_ENV=preview` かつ `VITE_SHARE_URL='https://mj-3player-calc-106538176815.asia-northeast1.run.app/'` のとき `isPreview: true`, `base: '/'`, 指定した `shareUrl`, `statusBarColorRole: 'quaternary'` を返す |
+| `CR-T2` | `scripts/build-config.test.ts` | `VITE_APP_ENV=preview` かつ `VITE_SHARE_URL='https://mj-3player-calc-<GCP_PROJECT_NUMBER>.asia-northeast1.run.app/'` のとき `isPreview: true`, `base: '/'`, 指定した `shareUrl`, `statusBarColorRole: 'quaternary'` を返す |
 | `CR-T3` | `scripts/build-config.test.ts` | 未知の `VITE_APP_ENV`・`https://` で始まらない `VITE_SHARE_URL` を渡したときに例外を投げる |
 | `CR-T4` | `scripts/theme-colors.test.ts` | `readStatusBarColors(tokensCss, 'quaternary-container')` および `'tertiary-container'` が `tokens.css` のライト/ダーク双方の値と一致し、存在しないロール名で例外（`readTokenValues` の `requiredRoles` 検査に由来）を投げる |
 | `CR-T5` | `src/ui/screen/AppHeader.test.tsx` | 通常のテスト環境（非プレビュー）で `AppHeader` をレンダリングしたとき、`.app-header__preview-badge`（「プレビュー」）が含まれない |
@@ -624,7 +625,7 @@ jobs:
 - **CR-AC5（プレビュービルドの生成物とパス）**:
   - 以下を実行し成功すること:
     ```bash
-    VITE_APP_ENV=preview VITE_SHARE_URL=https://mj-3player-calc-106538176815.asia-northeast1.run.app/ npm run build
+    VITE_APP_ENV=preview VITE_SHARE_URL=https://mj-3player-calc-<GCP_PROJECT_NUMBER>.asia-northeast1.run.app/ npm run build
     ```
   - `dist/index.html` について:
     - `src`/`href` がすべて `/` で始まり（`/assets/...`, `/favicon.svg`, `/manifest.webmanifest`, `/registerSW.js`）、`/mj-3player-calc/` を含まないこと（`grep -n "/mj-3player-calc/" dist/index.html` が空）。
@@ -635,7 +636,7 @@ jobs:
   - `dist/manifest.webmanifest` の `name`=`"三麻点数計算機"`・`short_name`=`"三麻計算機"`・`theme_color`=`"#f7fbf1"` が本番のまま維持され、`start_url` と `scope` のみが `"/"` になっていること（Q1-c・H4）。
   - `dist/registerSW.js` が `register('/sw.js', { scope: '/' })` を含むこと。
   - `dist/sw.js` について、`grep -E 'denylist:\[[^]]*robots' dist/sw.js` が一致し（Workbox 生成コード上で `/robots.txt` 除外設定が出力されていること）、かつ `grep -c 'decomposer_bg-.*\.wasm' dist/sw.js` が `1` 以上であること（WASM と牌 SVG 等が precache されていること）。
-  - `grep -rl "mj-3player-calc-106538176815.asia-northeast1.run.app" dist/assets/*.js` で共有モジュールチャンクにプレビュー URL が埋め込まれていること。
+  - `grep -rl "mj-3player-calc-<GCP_PROJECT_NUMBER>.asia-northeast1.run.app" dist/assets/*.js` で共有モジュールチャンクにプレビュー URL が埋め込まれていること。
   - プレビュービルドの初回 JS サイズ（`gzip -9`）も参考値として計測し PR 本文に記録すること。
 
 ### 8.4 ローカル Docker コンテナでの起動・HTTP 応答・UI 確認
@@ -678,7 +679,7 @@ jobs:
     - `if:` 式内で `secrets.` を直接参照していないこと。
     - `google-github-actions/auth@v3`（`token_format` 不要の通常 OIDC 認証）および `google-github-actions/setup-gcloud@v3` を使用していること。
     - `gcloud auth configure-docker`、`docker build -f deploy/cloud-run/Dockerfile`、`docker push`、`gcloud run deploy` を使用していること。
-    - `GCP_PROJECT_ID: skygcp`、`GCP_PROJECT_NUMBER: '106538176815'`、`GCP_REGION: asia-northeast1`、`CLOUDRUN_SERVICE_DEFAULT: mj-3player-calc`、`GAR_REPOSITORY_DEFAULT: cloud-run-source-deploy`、`CLOUDRUN_RUNTIME_SA_DEFAULT: mj3calc-runtime@skygcp.iam.gserviceaccount.com` が設定されていること。
+    - `GCP_PROJECT_ID: <GCP_PROJECT_ID>`、`GCP_PROJECT_NUMBER: '<GCP_PROJECT_NUMBER>'`、`GCP_REGION: asia-northeast1`、`CLOUDRUN_SERVICE_DEFAULT: mj-3player-calc`、`GAR_REPOSITORY_DEFAULT: <GAR_REPOSITORY>`、`CLOUDRUN_RUNTIME_SA_DEFAULT: <RUNTIME_SA_NAME>@<GCP_PROJECT_ID>.iam.gserviceaccount.com` が設定されていること。
     - `gcloud run deploy` に `--min 0`、`--max 1`、`--max-instances 1`、`--concurrency 80`、`--cpu 1`、`--memory 256Mi`、`--timeout 60s`、`--cpu-throttling`、`--quiet` が含まれ、かつ `--allow-unauthenticated` を含まないこと（`grep -n "allow-unauthenticated" .github/workflows/preview-cloud-run.yml` が空であること）。
     - 設計書（§9）含め `roles/run.admin` を付与する記述になっていないこと（※ GitHub Actions 上での実実行は未実施・実挙動未確認）。
 - **CR-AC10（`docs/development.md` と未確認事項の記載）**:
@@ -689,32 +690,32 @@ jobs:
 
 本節の手順は、Issue #123 の PR マージ後（または別モデルによるコードレビュー完了後）にオーナーが実施する。**※ 以下の GCP 上の実リソース作成・WIF 認証・Cloud Run デプロイ・公開 URL での実機アクセスは検収時点では「実挙動未確認」である。**
 
-- **既存リソース不変更の方針**: `skygcp` 上の既存 Cloud Run 4 サービス、既存 Artifact Registry イメージ群（`my-kansen-tid` 等）、および既存 WIF Pool（`github`・`saitama-github`）や既存 IAM 設定には一切変更を加えない。
+- **既存リソース不変更の方針**: `<GCP_PROJECT_ID>` 上の既存 Cloud Run 4 サービス、既存 Artifact Registry イメージ群（既存他サービス等）、および既存の WIF Poolや既存 IAM 設定には一切変更を加えない。
 - （注: ワークフローに自動スキップガードを設けない確定仕様〔Q3〕のため、PR マージから下記設定完了までの間に `main` へ別コミットが push されるとワークフローが一時的に失敗終了する。設定完了後に再実行または次回 push で正常化する。）
 
 ### 9.1 前提条件と環境変数
 
-- GCP プロジェクト ID: `skygcp`
-- GCP プロジェクト番号: `106538176815`
+- GCP プロジェクト ID: `<GCP_PROJECT_ID>`
+- GCP プロジェクト番号: `<GCP_PROJECT_NUMBER>`
 - リージョン: `asia-northeast1`（東京）
 - 対象 GitHub リポジトリ: `BlueKurage119/mj-3player-calc`
 - Cloud Run サービス名: `mj-3player-calc`
-- Artifact Registry リポジトリ名: `cloud-run-source-deploy`（既存共用）
-- ランタイム用 SA: `mj3calc-runtime`（権限なし専用 SA）
-- デプロイ用 SA: `mj3calc-deployer`（最小権限専用 SA）
-- WIF Pool / Provider: `mj3calc-github` / `github-oidc`
-- `gcloud` CLI が利用可能で、対象プロジェクト `skygcp` に対する管理者権限（Owner 等）でログイン済みであり、課金アカウントがプロジェクトに紐づいていること。
+- Artifact Registry リポジトリ名: `<GAR_REPOSITORY>`（既存共用）
+- ランタイム用 SA: `<RUNTIME_SA_NAME>`（権限なし専用 SA）
+- デプロイ用 SA: `<DEPLOYER_SA_NAME>`（最小権限専用 SA）
+- WIF Pool / Provider: `<WIF_POOL>` / `github-oidc`
+- `gcloud` CLI が利用可能で、対象プロジェクト `<GCP_PROJECT_ID>` に対する管理者権限（Owner 等）でログイン済みであり、課金アカウントがプロジェクトに紐づいていること。
 
 ```bash
-export PROJECT_ID="skygcp"
-export PROJECT_NUMBER="106538176815"
+export PROJECT_ID="<GCP_PROJECT_ID>"
+export PROJECT_NUMBER="<GCP_PROJECT_NUMBER>"
 export REGION="asia-northeast1"
 export GITHUB_REPO="BlueKurage119/mj-3player-calc"
 export SERVICE_NAME="mj-3player-calc"
-export GAR_REPO="cloud-run-source-deploy"
-export RUNTIME_SA_NAME="mj3calc-runtime"
-export DEPLOYER_SA_NAME="mj3calc-deployer"
-export WIF_POOL="mj3calc-github"
+export GAR_REPO="<GAR_REPOSITORY>"
+export RUNTIME_SA_NAME="<RUNTIME_SA_NAME>"
+export DEPLOYER_SA_NAME="<DEPLOYER_SA_NAME>"
+export WIF_POOL="<WIF_POOL>"
 export WIF_PROVIDER="github-oidc"
 
 gcloud config set project "${PROJECT_ID}"
@@ -722,8 +723,8 @@ gcloud config set project "${PROJECT_ID}"
 
 ### 9.2 サービスアカウント作成・初回サービス先行作成・最小権限 IAM 付与
 
-- **API 有効化について**: `skygcp` は既存稼働プロジェクトのため `run.googleapis.com`・`artifactregistry.googleapis.com`・`iam.googleapis.com`・`iamcredentials.googleapis.com`・`sts.googleapis.com` は有効済みである。未有効の API がある場合のみ以下を実行する（`gcloud services list --enabled` で確認可能）。
-- **Artifact Registry について**: 既存の `cloud-run-source-deploy`（`asia-northeast1`）を共用するため、新規リポジトリ作成は不要。
+- **API 有効化について**: `<GCP_PROJECT_ID>` は既存稼働プロジェクトのため `run.googleapis.com`・`artifactregistry.googleapis.com`・`iam.googleapis.com`・`iamcredentials.googleapis.com`・`sts.googleapis.com` は有効済みである。未有効の API がある場合のみ以下を実行する（`gcloud services list --enabled` で確認可能）。
+- **Artifact Registry について**: 既存の `<GAR_REPOSITORY>`（`asia-northeast1`）を共用するため、新規リポジトリ作成は不要。
 
 ```bash
 # （未有効の API がある場合のみ実行）
@@ -770,13 +771,13 @@ gcloud run services add-iam-policy-binding "${SERVICE_NAME}" \
   --member="serviceAccount:${DEPLOYER_SA_EMAIL}" \
   --role="roles/run.developer"
 
-# (b) 既存 Artifact Registry (cloud-run-source-deploy) 単体へのイメージ push 権限
+# (b) 既存 Artifact Registry (<GAR_REPOSITORY>) 単体へのイメージ push 権限
 gcloud artifacts repositories add-iam-policy-binding "${GAR_REPO}" \
   --location="${REGION}" \
   --member="serviceAccount:${DEPLOYER_SA_EMAIL}" \
   --role="roles/artifactregistry.writer"
 
-# (c) ランタイム SA (mj3calc-runtime) 単体への Service Account User 権限
+# (c) ランタイム SA (<RUNTIME_SA_NAME>) 単体への Service Account User 権限
 gcloud iam service-accounts add-iam-policy-binding "${RUNTIME_SA_EMAIL}" \
   --member="serviceAccount:${DEPLOYER_SA_EMAIL}" \
   --role="roles/iam.serviceAccountUser"
@@ -785,7 +786,7 @@ gcloud iam service-accounts add-iam-policy-binding "${RUNTIME_SA_EMAIL}" \
 ### 9.3 Workload Identity Federation (OIDC) 設定
 
 ```bash
-# 1. 専用 Workload Identity Pool を作成（既存 github / saitama-github には触れない）
+# 1. 専用 Workload Identity Pool を作成（既存の WIF Pool には触れない）
 gcloud iam workload-identity-pools create "${WIF_POOL}" \
   --location="global" \
   --display-name="mj-3player-calc GitHub Actions Pool"
@@ -817,26 +818,26 @@ gcloud iam workload-identity-pools providers describe "${WIF_PROVIDER}" \
 GitHub リポジトリの `Settings` → `Secrets and variables` → `Actions` から以下を登録する（`gh` CLI でも登録可）。
 
 1. **Repository secrets（必須）**:
-   - `GCP_WORKLOAD_IDENTITY_PROVIDER`: §9.3 手順 4 の出力値（例: `projects/106538176815/locations/global/workloadIdentityPools/mj3calc-github/providers/github-oidc`）
-   - `GCP_SERVICE_ACCOUNT`: `mj3calc-deployer@skygcp.iam.gserviceaccount.com`
+   - `GCP_WORKLOAD_IDENTITY_PROVIDER`: §9.3 手順 4 の出力値（例: `projects/<GCP_PROJECT_NUMBER>/locations/global/workloadIdentityPools/<WIF_POOL>/providers/github-oidc`）
+   - `GCP_SERVICE_ACCOUNT`: `<DEPLOYER_SA_NAME>@<GCP_PROJECT_ID>.iam.gserviceaccount.com`
 2. **Repository variables（任意・上書きが必要な場合のみ）**:
-   - 既定値（サービス名 `mj-3player-calc`、AR リポジトリ `cloud-run-source-deploy`、ランタイム SA `mj3calc-runtime@skygcp.iam.gserviceaccount.com`、確定 URL `https://mj-3player-calc-106538176815.asia-northeast1.run.app/`）で運用する場合は登録不要。
+   - 既定値（サービス名 `mj-3player-calc`、AR リポジトリ `<GAR_REPOSITORY>`、ランタイム SA `<RUNTIME_SA_NAME>@<GCP_PROJECT_ID>.iam.gserviceaccount.com`、確定 URL `https://mj-3player-calc-<GCP_PROJECT_NUMBER>.asia-northeast1.run.app/`）で運用する場合は登録不要。
    - 変更したい場合のみ `CLOUDRUN_SERVICE`・`GAR_REPOSITORY`・`CLOUDRUN_RUNTIME_SA`・`CLOUDRUN_SHARE_URL` を登録する。
 
 ### 9.5 初回動作確認手順（実挙動未確認）
 
 1. GitHub Actions → `Preview Deploy (Cloud Run)` → `Run workflow`（ブランチ `main`）を手動実行する。
-2. ジョブ完了後、ログに出力された `Cloud Run URL` と `埋め込み済み SHARE_URL`（`https://mj-3player-calc-106538176815.asia-northeast1.run.app/`）が一致していることを確認する。
+2. ジョブ完了後、ログに出力された `Cloud Run URL` と `埋め込み済み SHARE_URL`（`https://mj-3player-calc-<GCP_PROJECT_NUMBER>.asia-northeast1.run.app/`）が一致していることを確認する。
    - もし `deploy` 出力 URL が異なる形式になった場合は、その URL を Variable `CLOUDRUN_SHARE_URL` に登録して再度 `Run workflow` を実行する。
 3. 公開 URL にブラウザおよび `curl -sI` でアクセスし、以下を確認する:
-   - `curl -sI https://mj-3player-calc-106538176815.asia-northeast1.run.app/` と `robots.txt` で `X-Robots-Tag: noindex, nofollow` が返り、`robots.txt` に `Disallow: /` があること。
+   - `curl -sI https://mj-3player-calc-<GCP_PROJECT_NUMBER>.asia-northeast1.run.app/` と `robots.txt` で `X-Robots-Tag: noindex, nofollow` が返り、`robots.txt` に `Disallow: /` があること。
    - ブラウザで山吹色のヘッダー識別色・`プレビュー` ピルバッジ・ステータスバー色が表示され、牌入力から点数・向聴数の計算まで動作すること。
    - 和了結果の共有機能で、フッター URL と QR コードがプレビュー URL になっていること。
    - 任意の作業ブランチを指定して `workflow_dispatch` を実行し、同じ Cloud Run サービスが上書き更新されること。
 
 ### 9.6 不要イメージ・旧リビジョンの手動確認・削除
 
-当面は自動クリーンアップポリシーを設定しないため、不要になった Artifact Registry のイメージや Cloud Run の過去リビジョンは以下のコマンドで手動確認・整理できる。**※ `cloud-run-source-deploy` は他サービスと共用しているため、必ず `/${SERVICE_NAME}` パス配下のみを対象にし、他サービスのイメージを削除しないこと。**
+当面は自動クリーンアップポリシーを設定しないため、不要になった Artifact Registry のイメージや Cloud Run の過去リビジョンは以下のコマンドで手動確認・整理できる。**※ `<GAR_REPOSITORY>` は他サービスと共用しているため、必ず `/${SERVICE_NAME}` パス配下のみを対象にし、他サービスのイメージを削除しないこと。**
 
 ```bash
 # Artifact Registry のイメージ一覧確認（mj-3player-calc 配下のみ）
@@ -858,7 +859,7 @@ gcloud run revisions list --service="${SERVICE_NAME}" --region="${REGION}"
 ### 9.7 運用・コスト・セキュリティ上の注意
 
 - 初回サービス作成時の `--allow-unauthenticated` によりインターネット上の誰でもアクセス可能な状態になるため、課金上限や予算アラートの設定を推奨する（`--min 0 --max 1 --max-instances 1 --cpu 1 --memory 256Mi` のため、アクセスがない間の課金は発生せず同時スケール上限も 1 インスタンスに抑えられる）。
-- 組織ポリシー（Domain Restricted Sharing 等）が `skygcp` に設定されている場合、初回サービス作成時の `--allow-unauthenticated` でエラーになることがある（既存 4 サービス稼働実績から現時点では問題ない見込みだが、実デプロイ未確認）。
+- 組織ポリシー（Domain Restricted Sharing 等）が `<GCP_PROJECT_ID>` に設定されている場合、初回サービス作成時の `--allow-unauthenticated` でエラーになることがある（既存 4 サービス稼働実績から現時点では問題ない見込みだが、実デプロイ未確認）。
 
 ## 10. 後続 Issue への引き継ぎ事項
 
