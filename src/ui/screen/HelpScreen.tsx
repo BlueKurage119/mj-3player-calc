@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import type React from 'react';
 import type { Rule } from '../../core/rule';
 import {
@@ -9,13 +10,17 @@ import { Disclosure } from '../expressive';
 import { SYMBOL_ARROW_BACK, SymbolIcon } from '../icons';
 import { Button, Divider, IconButton } from '../md';
 import { TSUMO_LOSS_DESCRIPTIONS } from '../settings/rule-help';
-import { useAppDispatch } from '../state';
+import { useAppDispatch, useAppState } from '../state';
+import type { HelpFocus } from '../state';
+import { useScrolled } from './use-scrolled';
 import '../help/help.css';
 import './main-screen.css';
 
 export interface HelpViewProps {
   onBack: () => void;
   onOpenLicense: () => void;
+  /** 開いた状態で表示する節(確率・期待値の画面から来たとき) */
+  focus?: HelpFocus | null | undefined;
 }
 
 function getRuleLabel(key: RuleItem['key']): string {
@@ -35,8 +40,17 @@ function getSelectOptionLabel<K extends SelectRuleKey>(
 /** ヘルプ画面の描画本体(props のみで描画し、テスト可能にする) */
 export function HelpView({
   onBack,
-  onOpenLicense
+  onOpenLicense,
+  focus = null
 }: HelpViewProps): React.JSX.Element {
+  useEffect(() => {
+    if (focus === 'engine') {
+      document.getElementById('help-engine')?.scrollIntoView?.({
+        block: 'start'
+      });
+    }
+  }, [focus]);
+
   const tsumoLossLabel = getRuleLabel('tsumoLoss');
   const tsumoLossLossLabel = getSelectOptionLabel('tsumoLoss', 'loss');
   const tsumoLossNorthSplitLabel = getSelectOptionLabel(
@@ -52,10 +66,14 @@ export function HelpView({
   const roundedManganLabel = getRuleLabel('roundedMangan');
   const accumlatedYakumanLabel = getRuleLabel('accumlatedYakuman');
   const doubleWindFuLabel = getRuleLabel('doubleWindFu');
+  const scrolled = useScrolled();
 
   return (
     <div className="help-screen">
-      <header className="app-header">
+      <header
+        className="app-header"
+        data-scrolled={scrolled ? 'true' : 'false'}
+      >
         <div className="app-header__inner app-header__inner--start">
           <IconButton
             variant="standard"
@@ -292,7 +310,7 @@ export function HelpView({
             <div className="help-screen__body">
               <h3 className="help-screen__subheading">点数計算表</h3>
               <p>
-                {`メニューの「点数計算表」で、符・飜ごとのロンとツモの点数を確認できます。親・子を切り替えられます。表は、設定の「${tsumoLossLabel}」「${roundedManganLabel}」「${accumlatedYakumanLabel}」「${doubleWindFuLabel}」に合わせて変わります。`}
+                {`メニューの「点数計算表」で、符・飜ごとのロンとツモの点数を確認できます。親・子の切り替えに加え、本場(積み棒)を反映した点数や、供託を含めた相手との点差表示にも切り替えられます。表は、設定の「${tsumoLossLabel}」「${roundedManganLabel}」「${accumlatedYakumanLabel}」「${doubleWindFuLabel}」に合わせて変わります。`}
               </p>
 
               <h3 className="help-screen__subheading">共有画像</h3>
@@ -303,6 +321,50 @@ export function HelpView({
               </p>
             </div>
           </Disclosure>
+
+          <div id="help-engine" className="help-screen__anchor">
+            <Disclosure summary="確率・期待値" defaultOpen={focus === 'engine'}>
+              <div className="help-screen__body">
+                <p>
+                  {
+                    '手牌から先の和了率・聴牌率・期待値を、巡目ごとに概算します。他家の和了・鳴き・流局は考えない一人麻雀で、ツモ和了だけを数えます。'
+                  }
+                </p>
+                <ul>
+                  <li>
+                    {
+                      '18巡分のツモを見込んだ期待値最大の方針を基準に、各巡目から18巡目までの累積値を近似計算します。1巡目が残り17回のツモ、18巡目が残り0回(和了率0%、聴牌率は聴牌の手なら100%)に対応します。配牌直後の手なら実際の巡目と一致し、途中の手ではずれます。'
+                    }
+                  </li>
+                  <li>
+                    {
+                      '門前は聴牌したらすぐ立直し、聴牌後は待ちを変えません。役がない聴牌は、聴牌には数えますが和了には数えません。'
+                    }
+                  </li>
+                  <li>
+                    {
+                      '一発・ダブル立直・天和・地和・海底は含めません。立直棒の1000点は引かず、本場(積み棒)と供託も計算に含めません。'
+                    }
+                  </li>
+                  <li>
+                    {
+                      '前提として、場風・自風・ドラ表示牌・抜き北を使います。山と裏ドラは近似で計算し、裏ドラは牌が決まらないため画面には出さず確率で近似します。'
+                    }
+                  </li>
+                  <li>
+                    {
+                      '方針は期待値が最大になる打ち方です。条件を変えると、和了率・聴牌率が下がることがあります。'
+                    }
+                  </li>
+                  <li>
+                    {
+                      '「概算」は手替わりを制限した計算です。「手替わりを詳しく」は制限をゆるめるぶん、時間がかかります。4向聴以上の手牌は計算対象外です。'
+                    }
+                  </li>
+                </ul>
+              </div>
+            </Disclosure>
+          </div>
         </div>
 
         <Divider />
@@ -322,10 +384,12 @@ export function HelpView({
 /** ヘルプ画面 */
 export function HelpScreen(): React.JSX.Element {
   const dispatch = useAppDispatch();
+  const { helpFocus, helpReturn } = useAppState();
 
   return (
     <HelpView
-      onBack={() => dispatch({ type: 'navigate', screen: 'main' })}
+      focus={helpFocus}
+      onBack={() => dispatch({ type: 'navigate', screen: helpReturn })}
       onOpenLicense={() =>
         dispatch({ type: 'navigate', screen: 'license', returnTo: 'help' })
       }

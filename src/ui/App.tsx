@@ -5,6 +5,7 @@ import {
   isMdGalleryMode,
   isTileGalleryMode
 } from './app-mode';
+import { PwaUpdatePrompt } from './pwa/PwaUpdatePrompt';
 import { MainScreen } from './screen/MainScreen';
 import { AppStateProvider, useAppState } from './state';
 
@@ -12,6 +13,7 @@ const SettingsScreen = lazy(() => import('./screen/SettingsScreen'));
 const ScoringTableScreen = lazy(() => import('./screen/ScoringTableScreen'));
 const LicenseScreen = lazy(() => import('./screen/LicenseScreen'));
 const HelpScreen = lazy(() => import('./screen/HelpScreen'));
+const EngineScreen = lazy(() => import('./screen/EngineScreen'));
 
 let DevTileGallery: ComponentType | null = null;
 let DevMdGallery: ComponentType | null = null;
@@ -51,6 +53,13 @@ function AppContent(): React.JSX.Element {
       </Suspense>
     );
   }
+  if (screen === 'engine') {
+    return (
+      <Suspense fallback={null}>
+        <EngineScreen />
+      </Suspense>
+    );
+  }
   return <MainScreen />;
 }
 
@@ -75,6 +84,7 @@ export const App = (): React.JSX.Element => {
   return (
     <AppStateProvider>
       <AppContent />
+      <PwaUpdatePrompt />
     </AppStateProvider>
   );
 };

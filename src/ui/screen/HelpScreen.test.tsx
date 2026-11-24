@@ -70,10 +70,10 @@ describe('G4: ヘルプ画面 (HelpView)', () => {
 });
 
 describe('G3: バージョン表示 (G3-T1〜T3)', () => {
-  it('G3-T1: renderHelpHtml() が「バージョン 1.1.0」を含む', () => {
+  it('G3-T1: renderHelpHtml() が「バージョン 2.0.0」を含む', () => {
     const html = renderHelpHtml();
     const match = html.match(/<p class="help-screen__version">([^<]+)<\/p>/);
-    expect(match?.[1]).toBe('バージョン 1.1.0');
+    expect(match?.[1]).toBe('バージョン 2.0.0');
   });
 
   it('G3-T2: 表示の版番号が package.json の version と一致する', () => {
@@ -89,5 +89,49 @@ describe('G3: バージョン表示 (G3-T1〜T3)', () => {
 
     expect(licenseIndex).toBeGreaterThan(-1);
     expect(versionIndex).toBeGreaterThan(licenseIndex);
+  });
+});
+
+describe('Issue #139 U-11: ヘルプの「確率・期待値」の節', () => {
+  const sectionOf = (html: string): string => {
+    const i = html.indexOf('id="help-engine"');
+    expect(i).toBeGreaterThan(-1);
+    return html.slice(i, html.indexOf('ライセンス', i));
+  };
+
+  it('focus="engine" のとき、節の本文が開いた状態で見える(hidden が付かない)', () => {
+    const html = renderToStaticMarkup(
+      <HelpView onBack={() => {}} onOpenLicense={() => {}} focus="engine" />
+    );
+    const section = sectionOf(html);
+    expect(section).toContain('aria-expanded="true"');
+    expect(section).not.toContain('hidden=""');
+    expect(section).toContain('一人麻雀');
+    expect(section).toContain('裏ドラは牌が決まらない');
+  });
+
+  it('直接開いたとき(focus 指定なし)は既存の節と同じく閉じている', () => {
+    const html = renderToStaticMarkup(
+      <HelpView onBack={() => {}} onOpenLicense={() => {}} />
+    );
+    const section = sectionOf(html);
+    expect(section).toContain('aria-expanded="false"');
+    expect(section).toContain('hidden=""');
+  });
+
+  it('V2-H1: 「確率・期待値」節に確定文面が含まれ、仮置きの i巡目 表記が含まれない', () => {
+    const html = renderHelpHtml();
+    const section = sectionOf(html);
+    expect(section).not.toContain('i巡目');
+    expect(section).toContain('18巡分のツモを見込んだ期待値最大の方針');
+    expect(section).toContain('4向聴以上の手牌は計算対象外です');
+    expect(section).toContain('本場(積み棒)と供託も計算に含めません');
+    expect(section).toContain('一人麻雀で、ツモ和了だけを数えます');
+  });
+
+  it('V2-H2: 「点数計算表」節に本場(積み棒)・供託・点差表示の記述が含まれる', () => {
+    const html = renderHelpHtml();
+    expect(html).toContain('本場(積み棒)を反映した点数');
+    expect(html).toContain('供託を含めた相手との点差表示');
   });
 });

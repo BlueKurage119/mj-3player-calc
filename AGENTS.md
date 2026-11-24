@@ -6,7 +6,7 @@
 ## 1. 概要
 
 - 三人麻雀に特化したスマホ向け点数計算機(PWA)。和了形・聴牌形では役と打点を、それ以外では向聴数と何切るを表示する
-- 計算コア(`src/core/`)と手牌分解器(`wasm/decomposer/`)は [livewing/mahjong-calc](https://github.com/livewing/mahjong-calc)(MIT)から取り込み、三麻向けに改修する
+- 計算コア(`src/core/`)と手牌分解器(`wasm/decomposer/`)は [livewing/mahjong-calc](https://github.com/livewing/mahjong-calc)(MIT)から取り込み、三麻向けに改修する。何切る確率・期待値計算エンジン(`src/engine/`・`wasm/engine/`)は Rust/WASM と TypeScript/Web Worker で構成する
 - 要件は [docs/requirements.md](docs/requirements.md)、ライセンス方針は [docs/license-policy.md](docs/license-policy.md)、Issue下書きは [docs/issues-draft.md](docs/issues-draft.md)
 
 ## 2. ディレクトリと権利関係
@@ -77,7 +77,7 @@
 ### 4.2 フェーズごとの役割定義
 
 | 役割 | Claude の担当 | Claude 指定モデル | Gemini 指定モデル | GPT 指定モデル | 役割と成果物 |
-| --- | --- | --- | --- | --- |
+| --- | --- | --- | --- | --- | --- |
 | ヒアリング | 統括（メインセッション） | — | — | — | **実装方針を左右する未確定事項をユーザーに選択肢とメリット・デメリット等を整理した形で提示する。** 確定した判断を Issue 番号と共に次の担当へ渡す。 |
 | 設計 | `mj3calc-designer` | Opus | Argon・Neon | Sol以上 | **対象の `docs/design/issue-N-<slug>.md` 1本だけを新規作成または改訂する。**コード、設定、ブランチ、コミットは変更しない。 |
 | 製造 | `mj3calc-builder`・`/agy-delegate` | Sonnet | Hydrogen | Terra | **指定済みブランチ上で実装・テスト・コミットまで行う。**push と PR 作成はしない。 |
@@ -100,7 +100,7 @@ Issue開発フローの詳細は、必ず守る手順(業務標準)と、それ�
 
 ## 5. 技術スタック・規約
 
-- React 19 + TypeScript + Vite + vite-plugin-pwa。計算コアはTypeScript、手牌分解器はRust(wasm-pack でWASM化)
+- React 19 + TypeScript + Vite + vite-plugin-pwa。計算コアはTypeScript、手牌分解器(`wasm/decomposer/`)および確率・期待値計算エンジン(`wasm/engine/`, `src/engine/`)はRust(wasm-pack でWASM化)+ TypeScript/Web Worker
 - Biome(`biome.json`)による lint・整形。詳細な規約は設定ファイルを正とする
 - UIは Material Design 3 Expressive に準ずる。Material Web(`@material/web`)で使えるものはラップ・改造して使い、Expressive 固有で使えない部分は自作する。色トークン規約等の必須制約は [docs/rules/06-ui-md3-protocol.md](docs/rules/06-ui-md3-protocol.md) を参照
 - UI文言は日本語
@@ -108,13 +108,15 @@ Issue開発フローの詳細は、必ず守る手順(業務標準)と、それ�
 ## 6. 主要コマンド
 
 ```bash
-npm run build:wasm     # 手牌分解器(WASM)のビルド。初回とRust変更時(要 Rust・wasm-pack)
-npm run dev            # 開発サーバー
-npm run build          # 型検査 + 本番ビルド
-npm run typecheck      # 型検査
-npm run lint           # Biomeによる静的検査
-npm run format:check   # Biomeによる整形差分チェック
-npm test               # Vitest
+npm run build:wasm        # 手牌分解器および計算エンジン(WASM)のビルド。初回とRust変更時(要 Rust・wasm-pack)
+npm run dev               # 開発サーバー
+npm run build             # 型検査 + 本番ビルド
+npm run typecheck         # 型検査
+npm run lint              # Biomeによる静的検査
+npm run format:check      # Biomeによる整形差分チェック
+npm test                  # Vitest
+npm run test:engine-mc    # モンテカルロ精度検証テスト(ENGINE_MC=1)
+npm run build:engine-bench # エンジン計測用ビルド
 ```
 
 ## 7. ブランチ・コミット・PR

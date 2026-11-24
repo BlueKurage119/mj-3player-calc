@@ -49,10 +49,12 @@ export function Dialog(props: DialogProps): React.JSX.Element {
   }, [onClose]);
 
   return (
-    <md-dialog ref={handleRef} open={open} className={className}>
-      {headline ? <div slot="headline">{headline}</div> : null}
-      {children ? <div slot="content">{children}</div> : null}
-      {actions ? <div slot="actions">{actions}</div> : null}
-    </md-dialog>
+    <div style={{ position: 'fixed', zIndex: 30 }}>
+      <md-dialog ref={handleRef} open={open} className={className}>
+        {headline ? <div slot="headline">{headline}</div> : null}
+        {children ? <div slot="content">{children}</div> : null}
+        {actions ? <div slot="actions">{actions}</div> : null}
+      </md-dialog>
+    </div>
   );
 }

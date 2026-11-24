@@ -24,7 +24,8 @@ const statusBarColors = readStatusBarColors(
   tokensCss,
   buildConfig.statusBarColorRole
 );
-const manifestThemeColor = readStatusBarColors(tokensCss, 'surface').light;
+// manifest は1値のみで動的変更できないため、ステータスバー色の役割のダーク値を採る(Issue #158)
+const manifestThemeColor = statusBarColors.dark;
 const appVersion: string = JSON.parse(
   fs.readFileSync(path.resolve(import.meta.dirname, 'package.json'), 'utf-8')
 ).version;
@@ -73,8 +74,8 @@ export default {
     wasm(),
     injectThemeColorPlugin(statusBarColors, buildConfig),
     VitePWA({
-      registerType: 'autoUpdate',
-      injectRegister: 'script',
+      registerType: 'prompt',
+      injectRegister: false,
       manifest: {
         name: '三麻点数計算機',
         short_name: '三麻計算機',
@@ -108,8 +109,8 @@ export default {
         ]
       },
       workbox: {
-        skipWaiting: true,
-        clientsClaim: true,
+        skipWaiting: false,
+        clientsClaim: false,
         cleanupOutdatedCaches: true,
         globPatterns: ['**/*.{js,css,html,wasm,svg,png}'],
         ...(buildConfig.isPreview
@@ -121,5 +122,9 @@ export default {
   build: {
     // top-level await
     target: ['chrome89', 'edge89', 'firefox89', 'safari15', 'es2022']
+  },
+  worker: {
+    format: 'es',
+    plugins: () => [wasm()]
   }
 } satisfies UserConfig;

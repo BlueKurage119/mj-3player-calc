@@ -32,7 +32,7 @@
 - URL: https://github.com/google/material-design-icons
 - ライセンス: Apache License 2.0 (全文は `LICENSES/Apache-2.0.txt` を参照。上流に NOTICE ファイルはない)
 - 使用内容:
-  - Outlined の 24px SVG から 16 アイコン分の path を `src/ui/icons/symbol-paths.ts` に定数として書き写して使用 (無改変)
+  - Outlined の 24px SVG から 17 アイコン分の path を `src/ui/icons/symbol-paths.ts` に定数として書き写して使用 (無改変)
 
 ## `@material/web`
 
@@ -92,14 +92,21 @@
   - バージョン: 7.4.1
   - ライセンス: MIT License (`Copyright 2018 Google LLC`、全文は `LICENSES/MIT.txt` を参照)
 
-## 配布物に含まれる Rust crate(手牌分解器 WASM)
+## 配布物に含まれる Rust crate(手牌分解器・エンジン WASM)
 
-`MIT OR Apache-2.0` のデュアルライセンスの項目はすべて MIT License を選択しています（全文は `LICENSES/MIT.txt` を参照）。なお、`wasm/decomposer/Cargo.lock` を管理していないため、Rust crate の版は固定していません。
+`MIT OR Apache-2.0` のデュアルライセンスの項目はすべて MIT License を選択しています（全文は `LICENSES/MIT.txt` を参照）。なお、`Cargo.lock` を管理していないため、`shanten-dp` (`=0.3.2`) 以外の Rust crate の版は固定していません。
 
 ### decomposer (`livewing/mahjong-calc`)
 
 - URL: https://github.com/livewing/mahjong-calc
 - ライセンス: MIT License (`Copyright 2021 livewing.net`、全文は `LICENSES/MIT.txt` を参照)
+
+### shanten-dp (`tomohxx/shanten-dp-rust`)
+
+- 提供元: tomohxx
+- URL: https://github.com/tomohxx/shanten-dp-rust
+- バージョン: 0.3.2
+- ライセンス: MIT License (`Copyright (c) 2026 tomohxx`、全文は `LICENSES/MIT.txt` を参照)
 
 ### Rust 標準ライブラリ
 
@@ -130,3 +137,13 @@
 
 - URL: https://github.com/rayon-rs/either
 - ライセンス: MIT License(MIT OR Apache-2.0 から選択、`Copyright (c) 2015`、全文は `LICENSES/MIT.txt` を参照)
+
+### bitflags
+
+- URL: https://github.com/bitflags/bitflags
+- ライセンス: MIT License(MIT OR Apache-2.0 から選択、`Copyright (c) 2014 The Rust Project Developers`、全文は `LICENSES/MIT.txt` を参照)
+
+### thiserror
+
+- URL: https://github.com/dtolnay/thiserror
+- ライセンス: MIT License(MIT OR Apache-2.0 から選択、上流に記名なし、全文は `LICENSES/MIT.txt` を参照)

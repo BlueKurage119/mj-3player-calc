@@ -1,5 +1,6 @@
 export {
   type Screen,
+  type HelpFocus,
   type SheetMode,
   type TenkeySuit,
   type MeldKind,

@@ -138,13 +138,19 @@ export const CREDIT_GROUPS: readonly CreditGroup[] = [
     ]
   },
   {
-    title: '手牌分解器(WASM)',
+    title: '手牌分解器・エンジン(WASM)',
     entries: [
       {
         name: 'decomposer(livewing/mahjong-calc)',
         license: 'MIT',
         copyrights: ['Copyright 2021 livewing.net'],
         url: 'https://github.com/livewing/mahjong-calc'
+      },
+      {
+        name: 'shanten-dp',
+        license: 'MIT',
+        copyrights: ['Copyright (c) 2026 tomohxx'],
+        url: 'https://github.com/tomohxx/shanten-dp-rust'
       },
       {
         name: 'Rust 標準ライブラリ',
@@ -183,6 +189,18 @@ export const CREDIT_GROUPS: readonly CreditGroup[] = [
         license: 'MIT-dual',
         copyrights: ['Copyright (c) 2015'],
         url: 'https://github.com/rayon-rs/either'
+      },
+      {
+        name: 'bitflags',
+        license: 'MIT-dual',
+        copyrights: ['Copyright (c) 2014 The Rust Project Developers'],
+        url: 'https://github.com/bitflags/bitflags'
+      },
+      {
+        name: 'thiserror',
+        license: 'MIT-dual',
+        copyrights: [],
+        url: 'https://github.com/dtolnay/thiserror'
       }
     ]
   }

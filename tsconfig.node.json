@@ -13,6 +13,7 @@
   },
   "files": [
     "./vite.config.ts",
+    "./vite.engine-bench.config.ts",
     "./scripts/build-config.ts",
     "./scripts/gen-theme-tokens.ts",
     "./scripts/theme-seed.ts",

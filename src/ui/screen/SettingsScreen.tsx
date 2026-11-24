@@ -3,16 +3,21 @@ import { SYMBOL_ARROW_BACK, SymbolIcon } from '../icons';
 import { Button, Divider, IconButton } from '../md';
 import { HelpTooltipScope, RuleSection, ThemeSection } from '../settings';
 import { useAppDispatch, useRuleLoadNotice } from '../state';
+import { useScrolled } from './use-scrolled';
 import '../settings/settings.css';
 import './main-screen.css';
 
 export function SettingsScreen(): React.JSX.Element {
   const dispatch = useAppDispatch();
   const { show: showNotice } = useRuleLoadNotice();
+  const scrolled = useScrolled();
 
   return (
     <div className="settings-screen">
-      <header className="app-header">
+      <header
+        className="app-header"
+        data-scrolled={scrolled ? 'true' : 'false'}
+      >
         <div className="app-header__inner app-header__inner--start">
           <IconButton
             variant="standard"

@@ -9,6 +9,7 @@ import {
 } from '../license/license-data';
 import { Divider, IconButton } from '../md';
 import { useAppDispatch, useAppState } from '../state';
+import { useScrolled } from './use-scrolled';
 import '../license/license.css';
 import './main-screen.css';
 
@@ -18,9 +19,14 @@ export interface LicenseViewProps {
 
 /** ライセンス画面の描画本体(props のみで描画し、テスト可能にする) */
 export function LicenseView({ onBack }: LicenseViewProps): React.JSX.Element {
+  const scrolled = useScrolled();
+
   return (
     <div className="license-screen">
-      <header className="app-header">
+      <header
+        className="app-header"
+        data-scrolled={scrolled ? 'true' : 'false'}
+      >
         <div className="app-header__inner app-header__inner--start">
           <IconButton
             variant="standard"

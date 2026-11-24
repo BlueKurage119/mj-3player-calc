@@ -1,6 +1,6 @@
 {
   "name": "mj-3player-calc",
-  "version": "1.1.0",
+  "version": "2.0.0",
   "description": "三人麻雀特化の点数計算機",
   "type": "module",
   "private": true,
@@ -11,7 +11,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "build:wasm": "cd wasm/decomposer && wasm-pack build",
+    "build:wasm": "cd wasm/decomposer && wasm-pack build && cd ../engine && wasm-pack build",
+    "build:engine-bench": "vite build --config vite.engine-bench.config.ts",
     "preview": "vite preview",
     "gen:theme": "vite-node --options.deps.inline=@material/material-color-utilities scripts/gen-theme-tokens.ts",
     "check:theme": "npm run gen:theme -- --check",
@@ -22,11 +23,13 @@
     "lint": "biome lint",
     "format": "biome format --write",
     "format:check": "biome format",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:engine-mc": "ENGINE_MC=1 vitest run src/engine/monte-carlo.test.ts"
   },
   "dependencies": {
     "@material/web": "2.5.0",
     "decomposer": "file:./wasm/decomposer/pkg",
+    "engine": "file:./wasm/engine/pkg",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "uqr": "0.1.2"
@@ -35,11 +38,13 @@
     "@biomejs/biome": "1.9.4",
     "@material/material-color-utilities": "0.4.0",
     "@resvg/resvg-js": "2.6.2",
+    "@testing-library/react": "^16.3.3",
     "@tsconfig/strictest": "^2.0.5",
     "@types/node": "^22.13.4",
     "@types/react": "^19.0.10",
     "@types/react-dom": "^19.0.4",
     "@vitejs/plugin-react-swc": "^3.8.0",
+    "happy-dom": "^21.0.4",
     "svgo": "3.3.2",
     "typescript": "^5.7.3",
     "vite": "^6.1.0",

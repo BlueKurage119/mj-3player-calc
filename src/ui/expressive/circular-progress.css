@@ -1,0 +1,103 @@
+/* 円形プログレスインジケーター(MD3 トークンのみ使用・不確定型・コンテナ背景なし) */
+
+.circular-progress {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--circular-progress-size, 3rem);
+  height: var(--circular-progress-size, 3rem);
+  flex-shrink: 0;
+}
+
+.circular-progress__svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  animation: circular-progress-rotate
+    calc(var(--md-sys-motion-duration-extra-long4) * 2)
+    var(--md-sys-motion-easing-linear) infinite;
+}
+
+.circular-progress__arc,
+.circular-progress__track {
+  fill: none;
+  stroke-width: 4;
+  stroke-linecap: round;
+  /* viewBox 中心(24,24)まわりに回す。円周 113.1 の 1 単位 = 約 3.1831deg */
+  transform-origin: 50% 50%;
+}
+
+/*
+ * 円弧とトラックは、どちらも「パス始点(3時方向)から始まる単一の dash」を回転で配置する。
+ * dash が始点の継ぎ目をまたがないため、円弧とトラックの間隔は常に一定になる。
+ * 間隔は dash 上 8(roundキャップが両端 2 ずつはみ出すため、見かけ 4)。
+ * 円弧が長さ L・回転 θ のとき、トラックは長さ 113.1 - L - 16・回転 θ + (L + 8) * 3.1831deg。
+ */
+
+/* 静止時(約30%: 円周 113.1 のうち 33.9)を基準スタイルとして固定する */
+.circular-progress__arc {
+  stroke: var(--md-sys-color-primary);
+  stroke-dasharray: 33.9 113.1;
+  animation: circular-progress-arc
+    calc(var(--md-sys-motion-duration-extra-long4) * 1.4)
+    var(--md-sys-motion-easing-standard) infinite;
+}
+
+/* 静止時トラック: 円周 113.1 - 円弧 33.9 - 両端間隔(2 * 8) = 63.2。回転は (33.9 + 8) * 3.1831 = 133.37deg */
+.circular-progress__track {
+  stroke: var(--md-sys-color-secondary-container);
+  stroke-dasharray: 63.2 113.1;
+  transform: rotate(133.37deg);
+  animation: circular-progress-track
+    calc(var(--md-sys-motion-duration-extra-long4) * 1.4)
+    var(--md-sys-motion-easing-standard) infinite;
+}
+
+@keyframes circular-progress-rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* 円弧長の最小 約10%(11.3) 〜 最大 約75%(84.8) を1周期で1周分送りながら伸縮する */
+@keyframes circular-progress-arc {
+  0% {
+    stroke-dasharray: 11.3 113.1;
+    transform: rotate(0deg);
+  }
+  50% {
+    stroke-dasharray: 84.8 113.1;
+    transform: rotate(44.88deg);
+  }
+  100% {
+    stroke-dasharray: 11.3 113.1;
+    transform: rotate(360deg);
+  }
+}
+
+/* トラックは円弧の両端から常に間隔 8(見かけ 4)を保って追従する */
+@keyframes circular-progress-track {
+  0% {
+    stroke-dasharray: 85.8 113.1;
+    transform: rotate(61.43deg);
+  }
+  50% {
+    stroke-dasharray: 12.3 113.1;
+    transform: rotate(340.27deg);
+  }
+  100% {
+    stroke-dasharray: 85.8 113.1;
+    transform: rotate(421.43deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .circular-progress__svg,
+  .circular-progress__arc,
+  .circular-progress__track {
+    animation: none;
+  }
+}

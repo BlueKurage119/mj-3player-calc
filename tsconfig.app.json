@@ -5,7 +5,7 @@
     "target": "esnext",
     "module": "esnext",
     "lib": ["dom", "dom.iterable", "esnext"],
-    "types": ["vite/client"],
+    "types": ["vite/client", "vite-plugin-pwa/react"],
     "jsx": "react-jsx",
     "sourceMap": true,
     "moduleResolution": "bundler",
@@ -16,5 +16,5 @@
     "noUncheckedSideEffectImports": true,
     "noEmit": true
   },
-  "include": ["./src"]
+  "include": ["./src", "./bench"]
 }

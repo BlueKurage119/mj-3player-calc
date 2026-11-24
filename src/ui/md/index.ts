@@ -19,6 +19,11 @@ export {
 } from './Chip';
 
 export {
+  Slider,
+  type SliderProps
+} from './Slider';
+
+export {
   Switch,
   type SwitchProps
 } from './Switch';
