@@ -70,10 +70,10 @@ describe('G4: ヘルプ画面 (HelpView)', () => {
 });
 
 describe('G3: バージョン表示 (G3-T1〜T3)', () => {
-  it('G3-T1: renderHelpHtml() が「バージョン 2.0.0-dev」を含む', () => {
+  it('G3-T1: renderHelpHtml() が「バージョン 2.0.0」を含む', () => {
     const html = renderHelpHtml();
     const match = html.match(/<p class="help-screen__version">([^<]+)<\/p>/);
-    expect(match?.[1]).toBe('バージョン 2.0.0-dev');
+    expect(match?.[1]).toBe('バージョン 2.0.0');
   });
 
   it('G3-T2: 表示の版番号が package.json の version と一致する', () => {
@@ -117,5 +117,21 @@ describe('Issue #139 U-11: ヘルプの「確率・期待値」の節', () => {
     const section = sectionOf(html);
     expect(section).toContain('aria-expanded="false"');
     expect(section).toContain('hidden=""');
+  });
+
+  it('V2-H1: 「確率・期待値」節に確定文面が含まれ、仮置きの i巡目 表記が含まれない', () => {
+    const html = renderHelpHtml();
+    const section = sectionOf(html);
+    expect(section).not.toContain('i巡目');
+    expect(section).toContain('18巡分のツモを見込んだ期待値最大の方針');
+    expect(section).toContain('4向聴以上の手牌は計算対象外です');
+    expect(section).toContain('本場(積み棒)と供託も計算に含めません');
+    expect(section).toContain('一人麻雀で、ツモ和了だけを数えます');
+  });
+
+  it('V2-H2: 「点数計算表」節に本場(積み棒)・供託・点差表示の記述が含まれる', () => {
+    const html = renderHelpHtml();
+    expect(html).toContain('本場(積み棒)を反映した点数');
+    expect(html).toContain('供託を含めた相手との点差表示');
   });
 });

@@ -310,7 +310,7 @@ export function HelpView({
             <div className="help-screen__body">
               <h3 className="help-screen__subheading">点数計算表</h3>
               <p>
-                {`メニューの「点数計算表」で、符・飜ごとのロンとツモの点数を確認できます。親・子を切り替えられます。表は、設定の「${tsumoLossLabel}」「${roundedManganLabel}」「${accumlatedYakumanLabel}」「${doubleWindFuLabel}」に合わせて変わります。`}
+                {`メニューの「点数計算表」で、符・飜ごとのロンとツモの点数を確認できます。親・子の切り替えに加え、本場(積み棒)を反映した点数や、供託を含めた相手との点差表示にも切り替えられます。表は、設定の「${tsumoLossLabel}」「${roundedManganLabel}」「${accumlatedYakumanLabel}」「${doubleWindFuLabel}」に合わせて変わります。`}
               </p>
 
               <h3 className="help-screen__subheading">共有画像</h3>
@@ -322,7 +322,6 @@ export function HelpView({
             </div>
           </Disclosure>
 
-          {/* 本文は仮置き(文言はオーナー監修で差し替える。材料は Issue #139 設計書 §1) */}
           <div id="help-engine" className="help-screen__anchor">
             <Disclosure summary="確率・期待値" defaultOpen={focus === 'engine'}>
               <div className="help-screen__body">
@@ -334,7 +333,7 @@ export function HelpView({
                 <ul>
                   <li>
                     {
-                      'i巡目の値は、いまの手牌から残り(18−i)回のツモまでの累積です。1巡目が最大で、18巡目は残り0回(和了率0%、聴牌率は聴牌の手なら100%)です。配牌直後の手なら実際の巡目と一致し、途中の手ではずれます。'
+                      '18巡分のツモを見込んだ期待値最大の方針を基準に、各巡目から18巡目までの累積値を近似計算します。1巡目が残り17回のツモ、18巡目が残り0回(和了率0%、聴牌率は聴牌の手なら100%)に対応します。配牌直後の手なら実際の巡目と一致し、途中の手ではずれます。'
                     }
                   </li>
                   <li>
@@ -344,12 +343,12 @@ export function HelpView({
                   </li>
                   <li>
                     {
-                      '一発・ダブル立直・天和・地和・海底は含めません。立直の1000点は引きません。山と裏ドラは近似です。'
+                      '一発・ダブル立直・天和・地和・海底は含めません。立直棒の1000点は引かず、本場(積み棒)と供託も計算に含めません。'
                     }
                   </li>
                   <li>
                     {
-                      '前提として、場風・自風・ドラ表示牌・抜き北を使います。裏ドラは牌が決まらないので、画面には出さず、確率で近似します。'
+                      '前提として、場風・自風・ドラ表示牌・抜き北を使います。山と裏ドラは近似で計算し、裏ドラは牌が決まらないため画面には出さず確率で近似します。'
                     }
                   </li>
                   <li>
@@ -359,7 +358,7 @@ export function HelpView({
                   </li>
                   <li>
                     {
-                      '「概算」は手替わりを制限した計算です。「手替わりを詳しく」は制限をゆるめるぶん、時間がかかります。4向聴以上は計算しません。'
+                      '「概算」は手替わりを制限した計算です。「手替わりを詳しく」は制限をゆるめるぶん、時間がかかります。4向聴以上の手牌は計算対象外です。'
                     }
                   </li>
                 </ul>
