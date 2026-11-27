@@ -20,7 +20,7 @@ export interface BuildToOptions {
 export function runViteBuild(outDir: string, env: AppBuildEnv): void {
   execFileSync(
     path.join(ROOT, 'node_modules/.bin/vite'),
-    ['build', '--outDir', outDir, '--emptyOutDir', '--logLevel', 'silent'],
+    ['build', '--outDir', outDir, '--emptyOutDir', '--logLevel', 'error'],
     {
       cwd: ROOT,
       env: {

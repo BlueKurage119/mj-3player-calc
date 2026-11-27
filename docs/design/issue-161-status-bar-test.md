@@ -99,7 +99,7 @@ export function removeBuild(outDir: string | undefined): void;
 ```
 
 - `buildTo`: `fs.mkdtempSync(path.join(tmpRoot, \`mj3-build-${env}-\`))` → `try { run(outDir, env) } catch (e) { fs.rmSync(outDir, { recursive: true, force: true }); throw e; }` → `return outDir`。
-- `runViteBuild`: `execFileSync(<ROOT>/node_modules/.bin/vite, ['build', '--outDir', outDir, '--emptyOutDir', '--logLevel', 'silent'], { cwd: ROOT, env: { ...process.env, NODE_ENV: 'production', VITE_APP_ENV: env }, stdio: 'pipe' })`。`ROOT` は `path.resolve(import.meta.dirname, '..')`。ログ先の環境変数が空でなければ、ビルド成功後に `fs.appendFileSync(log, \`${env}\n\`)`。
+- `runViteBuild`: `execFileSync(<ROOT>/node_modules/.bin/vite, ['build', '--outDir', outDir, '--emptyOutDir', '--logLevel', 'error'], { cwd: ROOT, env: { ...process.env, NODE_ENV: 'production', VITE_APP_ENV: env }, stdio: 'pipe' })`。`--logLevel` は `error` とする(PR #181 の Codex 自動レビュー指摘により `silent` から変更。`silent` ではビルド失敗時の stderr が空になり、例外メッセージから失敗原因を追えない。2026-11-28)。`ROOT` は `path.resolve(import.meta.dirname, '..')`。ログ先の環境変数が空でなければ、ビルド成功後に `fs.appendFileSync(log, \`${env}\n\`)`。
   - 環境変数は `scripts/build-config.ts` 39〜40行と同じく**定数キー経由**で参照する: `const ENV_BUILD_ARTIFACTS_LOG = 'BUILD_ARTIFACTS_LOG';` → `process.env[ENV_BUILD_ARTIFACTS_LOG]`。`tsconfig.node.json` は `@tsconfig/strictest` を継承し `noPropertyAccessFromIndexSignature: true` のため `process.env.BUILD_ARTIFACTS_LOG` は TS4111 になり、文字列リテラル添字 `process.env['BUILD_ARTIFACTS_LOG']` は Biome の `useLiteralKeys` に当たる。
 - `removeBuild`: `outDir === undefined` なら何もしない。それ以外は `fs.rmSync(outDir, { recursive: true, force: true })`(`beforeAll` が失敗して `outDir` が未代入のまま `afterAll` が走る場合に備える)。
 - 一時ディレクトリ接頭辞は `mj3-build-`(旧 `sbg-` から変更。受け入れ条件 A4 で両方を検査する)。
