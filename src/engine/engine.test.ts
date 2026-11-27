@@ -1372,5 +1372,158 @@ describe('F3-1 計算エンジン (Issue #138)', () => {
         OPTS_DEFAULT
       );
     });
+
+    it('F31-C7: 4副露(13枚・14枚)でも聴牌・和了率・期待値を計算できる', () => {
+      const melds = [
+        { type: 'pon' as const, tile: { type: 'm' as const, n: 1 as const } },
+        { type: 'pon' as const, tile: { type: 'm' as const, n: 9 as const } },
+        { type: 'pon' as const, tile: { type: 'p' as const, n: 1 as const } },
+        { type: 'pon' as const, tile: { type: 'p' as const, n: 9 as const } }
+      ];
+      const res13 = computeEngine({
+        id: 3071,
+        table: southTable,
+        input: { hand: parseHand('1z'), melds, dora: [], nuki: 0 },
+        rule: yakuhaiRule,
+        remainingDraws: 18,
+        options: OPTS_DEFAULT
+      });
+      assertPerTurnValid(res13, 18);
+      if (res13.type !== 'ok') return;
+      expect(res13.candidates).toHaveLength(1);
+      const c13 = must(res13.candidates[0], 'c13');
+      expect(c13.tenpai).toBe(1);
+      expect(c13.win).toBeGreaterThan(0);
+      expect(c13.ev).toBeGreaterThan(0);
+
+      const res14 = computeEngine({
+        id: 3072,
+        table: southTable,
+        input: { hand: parseHand('1z2z'), melds, dora: [], nuki: 0 },
+        rule: yakuhaiRule,
+        remainingDraws: 18,
+        options: OPTS_DEFAULT
+      });
+      assertPerTurnValid(res14, 18);
+      if (res14.type !== 'ok') return;
+      expect(res14.candidates).toHaveLength(2);
+      expect(res14.candidates.map(c => c.discard)).toEqual([
+        { type: 'z', n: 1 },
+        { type: 'z', n: 2 }
+      ]);
+      for (const c of res14.candidates) {
+        expect(c.tenpai).toBe(1);
+        expect(c.win).toBeGreaterThan(0);
+        expect(c.ev).toBeGreaterThan(0);
+      }
+    });
+
+    it('F31-C8: 暗槓を含む門前手(13枚・14枚)は門前扱いで立直・ツモが付く', () => {
+      const melds = [
+        {
+          type: 'kan' as const,
+          tile: { type: 'm' as const, n: 1 as const },
+          closed: true
+        }
+      ];
+      const res13 = computeEngine({
+        id: 3081,
+        table: southTable,
+        input: { hand: parseHand('999m123456p1z'), melds, dora: [], nuki: 0 },
+        rule: yakuhaiRule,
+        remainingDraws: 18,
+        options: OPTS_DEFAULT
+      });
+      assertPerTurnValid(res13, 18);
+      if (res13.type !== 'ok') return;
+      expect(res13.candidates).toHaveLength(1);
+      const c13 = must(res13.candidates[0], 'c13');
+      expect(c13.tenpai).toBe(1);
+      expect(must(c13.perTurn[0], 'turn1').ev).toBeGreaterThan(0);
+
+      const res14 = computeEngine({
+        id: 3082,
+        table: southTable,
+        input: {
+          hand: parseHand('999m123456p1z2z'),
+          melds,
+          dora: [],
+          nuki: 0
+        },
+        rule: yakuhaiRule,
+        remainingDraws: 18,
+        options: OPTS_DEFAULT
+      });
+      assertPerTurnValid(res14, 18);
+      if (res14.type !== 'ok') return;
+      expect(res14.candidates).toHaveLength(9);
+      const c1z = must(
+        res14.candidates.find(
+          c => c.discard?.type === 'z' && c.discard.n === 1
+        ),
+        'discard 1z'
+      );
+      const c2z = must(
+        res14.candidates.find(
+          c => c.discard?.type === 'z' && c.discard.n === 2
+        ),
+        'discard 2z'
+      );
+      expect(c1z.tenpai).toBe(1);
+      expect(c2z.tenpai).toBe(1);
+    });
+
+    it('F31-C9: 抜き北4枚(e_max = 0)の13枚聴牌で正常に計算できる', () => {
+      const nukiRule: Rule = { ...DEFAULT_RULE, north: 'nukidora', red: 0 };
+      const res = computeEngine({
+        id: 309,
+        table: southTable,
+        input: {
+          hand: parseHand('111999m123456p1z'),
+          melds: [],
+          dora: [],
+          nuki: 4
+        },
+        rule: nukiRule,
+        remainingDraws: 18,
+        options: OPTS_DEFAULT
+      });
+      assertPerTurnValid(res, 18);
+      if (res.type !== 'ok') return;
+      expect(res.candidates).toHaveLength(1);
+      const cand = must(res.candidates[0], 'cand');
+      expect(cand.tenpai).toBe(1);
+      expect(cand.win).toBeGreaterThan(0);
+      expect(cand.ev).toBeGreaterThan(0);
+    });
+
+    it('F31-C10: 待ちがすべて見えている14枚の聴牌候補は tenpai=1・win=0・ev=0 で全 perTurn の tenpai が 1 に近い', () => {
+      const res = computeEngine({
+        id: 310,
+        table: southTable,
+        input: {
+          hand: parseHand('111999m123456p1z2z'),
+          melds: [],
+          dora: parseHand('1z1z1z'),
+          nuki: 0
+        },
+        rule: yakuhaiRule,
+        remainingDraws: 18,
+        options: OPTS_DEFAULT
+      });
+      assertPerTurnValid(res, 18);
+      if (res.type !== 'ok') return;
+      expect(res.candidates).toHaveLength(10);
+      const c2z = must(
+        res.candidates.find(c => c.discard?.type === 'z' && c.discard.n === 2),
+        'discard 2z'
+      );
+      expect(c2z.tenpai).toBe(1);
+      expect(c2z.win).toBe(0);
+      expect(c2z.ev).toBe(0);
+      for (const row of c2z.perTurn) {
+        expect(row.tenpai).toBeCloseTo(1, 12);
+      }
+    });
   });
 });

@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { EngineClient } from '../../engine/client';
+import { type EngineClient, createEngineClient } from '../../engine/client';
 import type {
   CandidateStat,
   EngineRequest,
@@ -65,6 +65,7 @@ describe('createEngineRunner', () => {
   });
   afterEach(() => {
     vi.useRealTimers();
+    vi.unstubAllGlobals();
   });
 
   it('U-5: 実行中は running になり、経過時間が1秒ごとに増える。中止で idle に戻り、cancelled はエラー扱いにならない', async () => {
@@ -206,6 +207,35 @@ describe('createEngineRunner', () => {
     });
     expect(again.getState()).toMatchObject({ status: 'done', key: 'same' });
     expect(cache.get('other')).toBeNull();
+  });
+
+  it('173-T2: Worker 生成が同期例外を投げると failed(error) になり、登録したタイマーが解除される', async () => {
+    class ThrowingWorker {
+      constructor() {
+        throw new Error('spawn');
+      }
+    }
+    vi.stubGlobal('Worker', ThrowingWorker);
+    const registered: number[] = [];
+    const cleared: number[] = [];
+    let nextTimer = 1;
+    const runner = createEngineRunner({
+      createClient: createEngineClient,
+      cache: createEngineCache(),
+      setIntervalFn: () => {
+        const h = nextTimer++;
+        registered.push(h);
+        return h;
+      },
+      clearIntervalFn: h => {
+        cleared.push(h as number);
+      }
+    });
+    runner.run(req(1), 'k');
+    await flush();
+    expect(runner.getState()).toEqual({ status: 'failed', reason: 'error' });
+    expect(registered).toEqual([1]);
+    expect(cleared).toEqual([1]);
   });
 });
 
