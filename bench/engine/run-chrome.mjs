@@ -10,8 +10,10 @@ let filterConfigs = null;
 let filterHands = null;
 let remainingDraws = 18;
 let runs = 10;
-let handBudgetMs = 1e12;
-let runTimeoutMs = 1e12;
+// 既定は上限なし(setTimeout の遅延は 32bit 符号付き整数へ折り返されるため、32bit 上限超の値は即時発火や意図しない遅延の原因になる)。
+// 上限なしは Infinity で表し、main.ts 側でタイマーを張らない。
+let handBudgetMs = Number.POSITIVE_INFINITY;
+let runTimeoutMs = Number.POSITIVE_INFINITY;
 
 for (let i = 0; i < args.length; i++) {
   const a = args[i];

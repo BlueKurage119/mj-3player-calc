@@ -152,17 +152,22 @@ async function runOneHand(
   for (let i = 0; i < runs; i++) {
     const client = createEngineClient();
     const t0 = performance.now();
-    // 1回の上限時間を超えたら Worker を terminate して打ち切る(測定不能として記録する)
+    // 上限が有限値のときだけ、1回の上限時間を超えたら Worker を terminate して打ち切る(測定不能として記録する)
     let timer: ReturnType<typeof setTimeout> | undefined;
-    const res = (await Promise.race([
-      client.requestEngine({ ...baseReq, id: i + 1 }),
-      new Promise<EngineWorkerMessage>(resolve => {
-        timer = setTimeout(
-          () => resolve({ id: i + 1, type: 'error', message: 'timeout' }),
-          runTimeoutMs
-        );
-      })
-    ])) as EngineWorkerMessage;
+    const reqPromise = client.requestEngine({ ...baseReq, id: i + 1 });
+    const res = (
+      Number.isFinite(runTimeoutMs)
+        ? await Promise.race([
+            reqPromise,
+            new Promise<EngineWorkerMessage>(resolve => {
+              timer = setTimeout(
+                () => resolve({ id: i + 1, type: 'error', message: 'timeout' }),
+                runTimeoutMs
+              );
+            })
+          ])
+        : await reqPromise
+    ) as EngineWorkerMessage;
     clearTimeout(timer);
     const dt = performance.now() - t0;
     client.dispose();
