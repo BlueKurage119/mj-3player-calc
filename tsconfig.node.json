@@ -18,6 +18,7 @@
     "./scripts/gen-theme-tokens.ts",
     "./scripts/theme-seed.ts",
     "./scripts/theme-colors.ts",
-    "./scripts/gen-icons.ts"
+    "./scripts/gen-icons.ts",
+    "./scripts/build-artifacts.ts"
   ]
 }
