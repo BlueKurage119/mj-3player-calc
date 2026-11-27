@@ -29,7 +29,7 @@ impl<const N: usize> PackedCounts<N> {
         self.set(index, f(self.get(index)))
     }
 
-    pub fn iter(&self) -> PackedCountsIterator<N> {
+    pub fn iter(&self) -> PackedCountsIterator<'_, N> {
         PackedCountsIterator::new(self)
     }
 }
