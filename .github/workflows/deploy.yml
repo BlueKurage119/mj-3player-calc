@@ -37,7 +37,7 @@ jobs:
         with:
           tool: wasm-pack
 
-      - name: 手牌分解器(WASM)のビルド
+      - name: WASM(手牌分解器・計算エンジン)のビルド
         run: npm run build:wasm
 
       - name: npm ci

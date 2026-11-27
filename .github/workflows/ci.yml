@@ -48,12 +48,23 @@ jobs:
         with:
           tool: wasm-pack
 
-      - name: 手牌分解器(WASM)のビルド
+      - name: WASM(手牌分解器・計算エンジン)のビルド
         id: wasm
         run: npm run build:wasm
 
+      - name: cargo test(手牌分解器)
+        if: "!cancelled()"
+        working-directory: wasm/decomposer
+        run: cargo test
+
+      - name: cargo test(計算エンジン)
+        if: "!cancelled()"
+        working-directory: wasm/engine
+        run: cargo test
+
       - name: npm ci
         id: install
+        if: "!cancelled() && steps.wasm.outcome == 'success'"
         run: npm ci
 
       - name: npm run build
