@@ -22,13 +22,26 @@ const handOptions = {
   kanFuri: false
 } as const;
 
-const resultOf = (hand: string): Result =>
+const resultOfWith = (
+  hand: string,
+  opts:
+    | typeof handOptions
+    | {
+        readonly [K in keyof typeof handOptions]: (typeof handOptions)[K] extends boolean
+          ? boolean
+          : (typeof handOptions)[K];
+      },
+  rule: typeof DEFAULT_RULE
+): Result =>
   generateResult(
     table,
     { hand: parseTiles(hand), melds: [], dora: [], nuki: 0 },
-    handOptions,
-    { ...DEFAULT_RULE }
+    opts,
+    rule
   );
+
+const resultOf = (hand: string): Result =>
+  resultOfWith(hand, handOptions, { ...DEFAULT_RULE });
 
 const renderPanel = (
   result: Result,
@@ -189,5 +202,91 @@ describe('engineStartShanten / engineHandSize', () => {
       tileAvailabilities: []
     };
     expect(engineStartShanten(v, 10, 0)).toBeNull();
+  });
+
+  const tenhoOpts = { ...handOptions, tenho: true } as const;
+  const localRule = { ...DEFAULT_RULE, localYaku: true };
+
+  it('173-T3: 13枚の十三不搭のみの hora は engineStartShanten が null で、ResultPanel に計算ボタンが出ない', () => {
+    for (const hand of ['19m147p258s12345z', '19m149p19s123456z']) {
+      const res = resultOfWith(hand, tenhoOpts, localRule);
+      const view = classifyResult(res);
+      expect(view.kind).toBe('hora');
+      if (view.kind === 'hora') {
+        expect(view.hora.every(h => h.type === 'shisanputa')).toBe(true);
+      }
+      expect(engineStartShanten(view, 13, 0)).toBeNull();
+      expect(renderPanel(res, 13)).not.toMatch(HAS_BUTTON);
+    }
+  });
+
+  it('173-T4: 十三不搭と他の和了が混在する13枚 hora、および通常13枚聴牌(天和・ローカル役有効)は 0 を返す', () => {
+    const normalView = classifyResult(tempai13());
+    const shisaView = classifyResult(
+      resultOfWith('19m147p258s12345z', tenhoOpts, localRule)
+    );
+    if (normalView.kind !== 'hora' || shisaView.kind !== 'hora') {
+      throw new Error('hora view expected');
+    }
+    const mentsuHora = normalView.hora[0];
+    const shisanputaHora = shisaView.hora[0];
+    if (!mentsuHora || !shisanputaHora) {
+      throw new Error('hora element expected');
+    }
+    const mixed: ResultView = {
+      kind: 'hora',
+      hora: [mentsuHora, shisanputaHora]
+    };
+    expect(engineStartShanten(mixed, 13, 0)).toBe(0);
+
+    const normalTenhoView = classifyResult(
+      resultOfWith('1199m123456p789s', tenhoOpts, localRule)
+    );
+    expect(engineStartShanten(normalTenhoView, 13, 0)).toBe(0);
+  });
+
+  it('173-T8: 14枚打牌候補でも打牌後が十三不搭だけの hora になる候補は除外する', () => {
+    const v1 = classifyResult(
+      resultOfWith('19m147p258s12345z3p', tenhoOpts, localRule)
+    );
+    expect(v1.kind).toBe('discard');
+    expect(engineStartShanten(v1, 14, 0)).toBeNull();
+
+    const v2 = classifyResult(
+      resultOfWith('19m149p19s123456z3p', tenhoOpts, localRule)
+    );
+    expect(v2.kind).toBe('discard');
+    expect(engineStartShanten(v2, 14, 0)).toBeNull();
+
+    const shisaView = classifyResult(
+      resultOfWith('19m147p258s12345z', tenhoOpts, localRule)
+    );
+    if (shisaView.kind !== 'hora') throw new Error('hora expected');
+    const mixedDiscard: ResultView = {
+      kind: 'discard',
+      discards: [
+        {
+          tile: { type: 'p', n: 3 },
+          next: {
+            type: 'hora-shanten',
+            info: { type: 'hora', hora: shisaView.hora }
+          }
+        },
+        {
+          tile: { type: 'z', n: 1 },
+          next: {
+            type: 'hora-shanten',
+            info: { type: 'shanten', shanten: 1, tileAvailabilities: [] }
+          }
+        }
+      ]
+    };
+    expect(engineStartShanten(mixedDiscard, 14, 0)).toBe(1);
+
+    const normalDiscard = classifyResult(
+      resultOfWith('1199m123456p789s5z', tenhoOpts, localRule)
+    );
+    expect(engineStartShanten(normalDiscard, 14, 0)).toBe(0);
+    expect(engineStartShanten(classifyResult(discard14()), 14, 0)).toBe(0);
   });
 });

@@ -1,4 +1,9 @@
-import { useEffect, useState, useSyncExternalStore } from 'react';
+import {
+  useEffect,
+  useLayoutEffect,
+  useState,
+  useSyncExternalStore
+} from 'react';
 import { type EngineClient, createEngineClient } from '../../engine/client';
 import {
   type EngineRunState,
@@ -30,6 +35,9 @@ export function useEngineRun(
     })
   );
   const state = useSyncExternalStore(runner.subscribe, runner.getState);
+  useLayoutEffect(() => {
+    runner.restore(key);
+  }, [runner, key]);
   useEffect(() => () => runner.dispose(), [runner]);
   return {
     state,

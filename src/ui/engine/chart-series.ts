@@ -164,6 +164,9 @@ export interface CandidateSeriesResult {
   axis: ChartAxis;
 }
 
+/** 点の軸の上端の下限(1・2・5×10^k で 100 以上はすべて 4 で割り切れ、目盛り 5 本が整数になる) */
+export const POINT_AXIS_MIN_MAX = 100;
+
 /**
  * b案: 14枚入力の上位候補(表示巡目での指標の値の降順。候補行の並びの先頭 limit 件)ごとの折れ線。
  * 系列の順・色は行の順位に対応する。期待値のときは縦軸を点にして上端を最大値から決める
@@ -191,7 +194,10 @@ export const toCandidateSeries = (
   });
   if (metric !== 'ev') return { series, axis: PERCENT_AXIS };
   const max = Math.max(0, ...series.flatMap(s => s.values));
-  return { series, axis: { kind: 'point', max: niceMax(max) } };
+  return {
+    series,
+    axis: { kind: 'point', max: niceMax(Math.max(max, POINT_AXIS_MIN_MAX)) }
+  };
 };
 
 export interface RankedCandidate {

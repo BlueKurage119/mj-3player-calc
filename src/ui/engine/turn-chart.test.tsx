@@ -34,4 +34,30 @@ describe('TurnChart 縦軸の目盛り位置', () => {
     expect(dotY?.[1]).toBe(tickAt2500?.[1]);
     expect(gridYs).toContain(tickAt2500?.[1]);
   });
+
+  it('172-T7: 点の軸(上端 100)で、縦軸目盛りラベルが 0,25,50,75,100 の5つになり重複しない', () => {
+    const html = renderToStaticMarkup(
+      <TurnChart
+        series={[
+          {
+            id: 's',
+            label: 's',
+            colorToken: '--md-sys-color-chart-primary',
+            dash: undefined,
+            values: Array.from({ length: CHART_TURNS }, () => 0)
+          }
+        ]}
+        displayTurn={3}
+        axis={{ kind: 'point', max: 100 }}
+        legend={false}
+      />
+    );
+    const yTicks = [
+      ...html.matchAll(
+        /class="turn-chart__tick"[^>]*text-anchor="end"[^>]*>([^<]+)</g
+      )
+    ].map(m => m[1]);
+    expect(yTicks).toEqual(['0', '25', '50', '75', '100']);
+    expect(new Set(yTicks).size).toBe(5);
+  });
 });

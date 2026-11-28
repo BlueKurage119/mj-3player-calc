@@ -311,6 +311,7 @@ pub fn run_solve(
                         let (counts, total_c) =
                             remaining_counts(&hand, &state.h0, &state.u0, nuki_mode, e as u8);
                         if total_c == 0 {
+                            next_mass[sid * e_count + e] += m0 + m1;
                             continue;
                         }
                         let total_f = total_c as f64;

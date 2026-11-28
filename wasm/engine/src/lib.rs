@@ -252,4 +252,72 @@ mod tests {
         assert!((out[1] - expected_win).abs() < 1e-12);
         assert!((out[2] - expected_win * 1000.0).abs() < 1e-9);
     }
+
+    #[test]
+    fn forward_keeps_tempai_mass_when_wall_empty() {
+        let mut h0 = [0u8; 34];
+        h0[9] = 3;
+        h0[10] = 1;
+        h0[11] = 1;
+        h0[12] = 1;
+        h0[13] = 1;
+        h0[14] = 1;
+        h0[15] = 1;
+        h0[27] = 2;
+        h0[19] = 1;
+        h0[20] = 1;
+
+        let limits = make_tile_limits(true);
+        let s0 = calc_shanten(&h0, &limits, 4, Mode::all(), false, true)
+            .unwrap()
+            .unwrap();
+        assert_eq!(s0, 0);
+
+        let u0 = [0u8; 34];
+        let mut res = search(&h0, &h0, 4, &u0, &limits, false, 2, true, true, 2, s0);
+        let values = vec![1000.0; res.total_waits() * 2];
+        let out = solve(&mut res, &values);
+        assert_eq!(out.len(), 9);
+        for &idx in &[0usize, 3, 6] {
+            assert!((out[idx] - 1.0).abs() < 1e-12, "out[{idx}] = {}", out[idx]);
+        }
+        for &idx in &[1usize, 2, 4, 5, 7, 8] {
+            assert!(out[idx].abs() < 1e-12, "out[{idx}] = {}", out[idx]);
+        }
+    }
+
+    #[test]
+    fn forward_keeps_rinshan_tempai_mass_when_wall_empty() {
+        let mut h0 = [0u8; 34];
+        h0[9] = 3;
+        h0[10] = 1;
+        h0[11] = 1;
+        h0[12] = 1;
+        h0[13] = 1;
+        h0[14] = 1;
+        h0[15] = 1;
+        h0[27] = 2;
+        h0[19] = 1;
+        h0[20] = 1;
+
+        let limits = make_tile_limits(true);
+        let s0 = calc_shanten(&h0, &limits, 4, Mode::all(), false, true)
+            .unwrap()
+            .unwrap();
+        assert_eq!(s0, 0);
+
+        let mut u0 = [0u8; 34];
+        u0[30] = 1;
+        let mut res = search(&h0, &h0, 4, &u0, &limits, true, 2, true, true, 2, s0);
+        let e_count = res.max_extra_nuki() as usize + 1;
+        let values = vec![1000.0; res.total_waits() * 2 * e_count];
+        let out = solve(&mut res, &values);
+        assert_eq!(out.len(), 9);
+        for &idx in &[0usize, 3, 6] {
+            assert!((out[idx] - 1.0).abs() < 1e-12, "out[{idx}] = {}", out[idx]);
+        }
+        for &idx in &[1usize, 2, 4, 5, 7, 8] {
+            assert!(out[idx].abs() < 1e-12, "out[{idx}] = {}", out[idx]);
+        }
+    }
 }

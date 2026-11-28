@@ -68,7 +68,15 @@ export function createEngineClient(): EngineClient {
     }
 
     if (!worker) {
-      worker = spawnWorker();
+      try {
+        worker = spawnWorker();
+      } catch (e) {
+        return Promise.resolve({
+          id: req.id,
+          type: 'error',
+          message: `worker-spawn-failed: ${e instanceof Error ? e.message : String(e)}`
+        });
+      }
     }
 
     return new Promise<EngineResponse>(resolve => {

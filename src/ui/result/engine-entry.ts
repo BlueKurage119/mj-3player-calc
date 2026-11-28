@@ -5,13 +5,20 @@ import type { ResultView } from './classify';
 /** エンジンが扱う最大の向聴数(4向聴以上は計算しない) */
 export const ENGINE_MAX_SHANTEN = 3;
 
-/** 打牌候補1件の打牌後の向聴数(聴牌・和了は 0) */
+/** 和了候補がすべて十三不搭か(シミュレーターの聴牌と同一視しない) */
+const isShisanputaOnly = (hora: readonly { type: string }[]): boolean =>
+  hora.length > 0 && hora.every(h => h.type === 'shisanputa');
+
+/** 打牌候補1件の打牌後の向聴数(聴牌・和了は 0)。十三不搭だけの和了は null(入口判定から除外) */
 const discardShanten = (
   d: Extract<ResultView, { kind: 'discard' }>['discards'][number]
-): number =>
-  d.next.type === 'tempai' || d.next.info.type === 'hora'
-    ? 0
-    : d.next.info.shanten;
+): number | null => {
+  if (d.next.type === 'tempai') return 0;
+  if (d.next.info.type === 'hora') {
+    return isShisanputaOnly(d.next.info.hora) ? null : 0;
+  }
+  return d.next.info.shanten;
+};
 
 /**
  * 入力が13枚か14枚か(副露分を除いた手牌の枚数。compute.ts の expected13 と同じ式)。
@@ -40,7 +47,9 @@ export const engineStartShanten = (
   if (size === null) return null;
   switch (view.kind) {
     case 'hora':
-      return size === 13 && view.hora.length > 0 ? 0 : null;
+      return size === 13 && view.hora.length > 0 && !isShisanputaOnly(view.hora)
+        ? 0
+        : null;
     case 'tempai':
       return size === 13 && view.tileAvailabilities.some(a => a.count > 0)
         ? 0
@@ -52,8 +61,12 @@ export const engineStartShanten = (
         ? view.shanten
         : null;
     case 'discard': {
-      if (size !== 14 || view.discards.length === 0) return null;
-      const min = Math.min(...view.discards.map(discardShanten));
+      if (size !== 14) return null;
+      const values = view.discards
+        .map(discardShanten)
+        .filter((s): s is number => s !== null);
+      if (values.length === 0) return null;
+      const min = Math.min(...values);
       return min <= ENGINE_MAX_SHANTEN ? min : null;
     }
     default:

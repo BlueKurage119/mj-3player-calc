@@ -2,18 +2,22 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createEngineClient } from './client';
 import { DEFAULT_ENGINE_OPTIONS, type EngineRequest } from './types';
 
-type Behavior = 'ok' | 'onerror' | 'fatal' | 'error' | 'hold';
+type Behavior = 'ok' | 'onerror' | 'fatal' | 'error' | 'hold' | 'throw';
 
 /** 生成順に振る舞いを決める模擬 Worker */
 const installMockWorker = (behaviors: Behavior[]) => {
   const instances: MockWorker[] = [];
+  let spawnCount = 0;
   class MockWorker {
     onmessage: ((e: MessageEvent) => void) | null = null;
     onerror: ((e: ErrorEvent) => void) | null = null;
     terminated = false;
     readonly behavior: Behavior;
     constructor() {
-      this.behavior = behaviors[instances.length] ?? 'ok';
+      this.behavior = behaviors[spawnCount++] ?? 'ok';
+      if (this.behavior === 'throw') {
+        throw new Error('spawn');
+      }
       instances.push(this);
     }
     /** 'hold' の Worker に、テストが任意のタイミングで応答・エラーを届ける */
@@ -154,5 +158,22 @@ describe('F3-1 client の Worker 復旧 (Issue #138)', () => {
     await flush();
     expect(r2.value).toEqual({ id: 2, type: 'out-of-range' });
     expect(workers).toHaveLength(2);
+  });
+
+  it("173-T1: Worker 生成が同期例外を投げても reject せず type:'error' で解決し、2回目は新しい Worker で成功する", async () => {
+    const workers = installMockWorker(['throw', 'ok']);
+    const client = createEngineClient();
+    const r1 = await client.requestEngine(req(1));
+    expect(r1).toEqual({
+      id: 1,
+      type: 'error',
+      message: 'worker-spawn-failed: spawn'
+    });
+    if (r1.type === 'error') {
+      expect(r1.message).not.toBe('cancelled');
+    }
+    const r2 = await client.requestEngine(req(2));
+    expect(r2).toEqual({ id: 2, type: 'out-of-range' });
+    expect(workers).toHaveLength(1);
   });
 });

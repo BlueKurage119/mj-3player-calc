@@ -13,16 +13,18 @@ export type EngineRunState =
       elapsedMs: number;
       key: string;
     }
-  | { status: 'failed'; reason: EngineFailReason };
+  | { status: 'failed'; reason: EngineFailReason; key: string };
 
 export const IDLE_STATE: EngineRunState = { status: 'idle' };
 
-/** 現在の key と一致しない結果は捨てて未計算として扱う */
+/** 現在の key と一致しない結果・失敗は捨てて未計算として扱う */
 export const visibleRunState = (
   state: EngineRunState,
   key: string
 ): EngineRunState =>
-  state.status === 'done' && state.key !== key ? IDLE_STATE : state;
+  (state.status === 'done' || state.status === 'failed') && state.key !== key
+    ? IDLE_STATE
+    : state;
 
 /* ---- 直近1件の結果(画面を離れて戻ったとき、同じ入力・条件なら再表示する) ---- */
 
@@ -69,6 +71,11 @@ export interface EngineRunner {
   cancel: () => void;
   /** 取り消して Worker を破棄する(画面を離れるとき)。破棄後も run で再開できる */
   dispose: () => void;
+  /**
+   * 表示上 idle(visibleRunState が idle)で、cache に key と一致する結果があれば復元する。
+   * running 中は何もしない
+   */
+  restore: (key: string) => void;
 }
 
 const TICK_MS = 1000;
@@ -141,16 +148,16 @@ export const createEngineRunner = (opts: EngineRunnerOptions): EngineRunner => {
             emit(
               res.message === 'cancelled'
                 ? IDLE_STATE
-                : { status: 'failed', reason: 'error' }
+                : { status: 'failed', reason: 'error', key }
             );
           } else {
-            emit({ status: 'failed', reason: res.type });
+            emit({ status: 'failed', reason: res.type, key });
           }
         })
         .catch(() => {
           if (token !== mine) return;
           stopTimer();
-          emit({ status: 'failed', reason: 'error' });
+          emit({ status: 'failed', reason: 'error', key });
         });
     },
     cancel: () => {
@@ -162,6 +169,12 @@ export const createEngineRunner = (opts: EngineRunnerOptions): EngineRunner => {
       cancelRun();
       client = null;
       if (state.status === 'running') state = IDLE_STATE;
+    },
+    restore: key => {
+      if (state.status === 'running') return;
+      if (visibleRunState(state, key).status !== 'idle') return;
+      const cached = cache.get(key);
+      if (cached !== null) emit(cached);
     }
   };
 };
