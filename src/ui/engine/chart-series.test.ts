@@ -174,4 +174,24 @@ describe('toCandidateSeries(b案)', () => {
       1, 1, 2000, 2000, 5000, 20000
     ]);
   });
+
+  it('172-T6: 期待値の縦軸上端の下限は 100 で、最大 0・30 は 100、最大 150 は 200 になる', () => {
+    const zeroCs = [1, 2].map(t => cand(t, () => ({ ev: 0 })));
+    expect(toCandidateSeries(zeroCs, 3, 'ev').axis).toEqual({
+      kind: 'point',
+      max: 100
+    });
+    const max30Cs = [1, 2].map(t => cand(t, () => ({ ev: t === 1 ? 30 : 0 })));
+    expect(toCandidateSeries(max30Cs, 3, 'ev').axis).toEqual({
+      kind: 'point',
+      max: 100
+    });
+    const max150Cs = [1, 2].map(t =>
+      cand(t, () => ({ ev: t === 1 ? 150 : 0 }))
+    );
+    expect(toCandidateSeries(max150Cs, 3, 'ev').axis).toEqual({
+      kind: 'point',
+      max: 200
+    });
+  });
 });

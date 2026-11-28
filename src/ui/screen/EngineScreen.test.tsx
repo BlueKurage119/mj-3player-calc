@@ -825,4 +825,105 @@ describe('F3-2 計算画面離脱時の dispose (Issue #151 / #139 U-10)', () =>
     );
     expect(ankanLabels).toEqual(['裏', '中', '中', '裏']);
   });
+
+  it('172-T2: 14枚「手替わりを詳しく」で計算後にヘルプ往復し、概算で idle 表示後に「手替わりを詳しく」へ戻すと再計算せず結果が復元される', async () => {
+    const harness = createFakeClientHarness();
+    const candidate14: CandidateStat = {
+      ...sampleCandidate,
+      discard: HAND_14_1SHANTEN[0] ?? { type: 'z', n: 1 }
+    };
+    const { view, dispatch } = await mountScreen(
+      [{ type: 'add-hand-tiles', tiles: HAND_14_1SHANTEN }],
+      harness
+    );
+
+    fireEvent.click(view.getByRole('radio', { name: '手替わりを詳しく' }));
+    fireEvent.click(mustQuery(view.container, '.engine-screen__run'));
+    expect(harness.requests().length).toBe(1);
+
+    await act(async () => {
+      harness.resolveLatest({
+        id: 1,
+        type: 'ok',
+        candidates: [candidate14],
+        elapsedMs: 15
+      });
+    });
+
+    await waitFor(() => {
+      expect(view.container.querySelector('.engine-result')).not.toBeNull();
+      expect(view.container.querySelector('.engine-candidates')).not.toBeNull();
+    });
+
+    fireEvent.click(mustQuery(view.container, '.engine-screen__help-button'));
+    expect(
+      mustQuery(view.container, '[data-testid="other-screen"]').getAttribute(
+        'data-screen'
+      )
+    ).toBe('help');
+
+    act(() => {
+      dispatch({ type: 'navigate', screen: 'engine' });
+    });
+    await waitFor(() => {
+      expect(
+        view.container.querySelector('.engine-screen__run')
+      ).not.toBeNull();
+    });
+
+    expect(
+      view.getByRole('radio', { name: '概算' }).getAttribute('aria-checked')
+    ).toBe('true');
+    expect(view.container.querySelector('.engine-result')).toBeNull();
+
+    fireEvent.click(view.getByRole('radio', { name: '手替わりを詳しく' }));
+    await waitFor(() => {
+      expect(view.container.querySelector('.engine-result')).not.toBeNull();
+      expect(view.container.querySelector('.engine-candidates')).not.toBeNull();
+    });
+    expect(harness.requests().length).toBe(1);
+  });
+
+  it('172-T4: 14枚概算で失敗したあと「手替わりを詳しく」へ切り替えると失敗表示が消えて idle になり、概算に戻すと再表示される', async () => {
+    const harness = createFakeClientHarness();
+    const { view } = await mountScreen(
+      [{ type: 'add-hand-tiles', tiles: HAND_14_1SHANTEN }],
+      harness
+    );
+
+    const roughRadio = view.getByRole('radio', { name: '概算' });
+    const detailedRadio = view.getByRole('radio', {
+      name: '手替わりを詳しく'
+    });
+    expect(roughRadio.getAttribute('aria-checked')).toBe('true');
+
+    fireEvent.click(mustQuery(view.container, '.engine-screen__run'));
+    await act(async () => {
+      harness.resolveLatest({
+        id: 1,
+        type: 'error',
+        message: 'x'
+      });
+    });
+
+    await waitFor(() => {
+      expect(
+        view.container.querySelector('.engine-screen__error')
+      ).not.toBeNull();
+    });
+
+    fireEvent.click(detailedRadio);
+    expect(view.container.querySelector('.engine-screen__error')).toBeNull();
+    expect(view.container.querySelector('.engine-screen__running')).toBeNull();
+    expect(view.container.querySelector('.engine-result')).toBeNull();
+    expect(view.container.querySelector('.engine-screen__run')).not.toBeNull();
+    expect(mustQuery(view.container, '.engine-screen__note').textContent).toBe(
+      '時間がかかります'
+    );
+
+    fireEvent.click(roughRadio);
+    expect(
+      view.container.querySelector('.engine-screen__error')
+    ).not.toBeNull();
+  });
 });

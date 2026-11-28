@@ -130,7 +130,7 @@ describe('createEngineRunner', () => {
     runner.run(req(1), 'k');
     f.calls[0]?.resolve(res);
     await flush();
-    expect(runner.getState()).toEqual({ status: 'failed', reason });
+    expect(runner.getState()).toEqual({ status: 'failed', reason, key: 'k' });
   });
 
   it('U-5: 応答が cancelled のエラーなら失敗表示にせず idle に戻す', async () => {
@@ -233,9 +233,103 @@ describe('createEngineRunner', () => {
     });
     runner.run(req(1), 'k');
     await flush();
-    expect(runner.getState()).toEqual({ status: 'failed', reason: 'error' });
+    expect(runner.getState()).toEqual({
+      status: 'failed',
+      reason: 'error',
+      key: 'k'
+    });
     expect(registered).toEqual([1]);
     expect(cleared).toEqual([1]);
+  });
+
+  it('172-T1: restore は idle・key不一致の failed でキャッシュが一致したときだけ復元し、running や同一 key 表示中は何もしない', async () => {
+    const cache = createEngineCache();
+    const cachedDone: Extract<EngineRunState, { status: 'done' }> = {
+      status: 'done',
+      candidates: [cand(0.3)],
+      elapsedMs: 5,
+      key: 'k1'
+    };
+    cache.set(cachedDone);
+
+    // (a) idle で cache が一致 → done に復元し、購読者に通知する
+    const rIdle = createEngineRunner({
+      createClient: () => fakeClient().client,
+      cache
+    });
+    const listener = vi.fn();
+    rIdle.subscribe(listener);
+    rIdle.restore('k1');
+    expect(rIdle.getState()).toEqual(cachedDone);
+    expect(listener).toHaveBeenCalledTimes(1);
+
+    // (b) cache が不一致 → idle のまま
+    const rMiss = createEngineRunner({
+      createClient: () => fakeClient().client,
+      cache
+    });
+    rMiss.restore('other');
+    expect(rMiss.getState()).toEqual({ status: 'idle' });
+
+    // (c) running 中 → 変化なし
+    const fRun = fakeClient();
+    const rRun = createEngineRunner({
+      createClient: () => fRun.client,
+      cache
+    });
+    rRun.run(req(1), 'k1');
+    rRun.restore('k1');
+    expect(rRun.getState().status).toBe('running');
+
+    // (d) 同じ key の done / failed を表示中 → 変化なし
+    const rSameDone = createEngineRunner({
+      createClient: () => fakeClient().client,
+      cache,
+      initial: {
+        status: 'done',
+        candidates: [cand(0.9)],
+        elapsedMs: 1,
+        key: 'k1'
+      }
+    });
+    const sameDoneListener = vi.fn();
+    rSameDone.subscribe(sameDoneListener);
+    rSameDone.restore('k1');
+    expect(rSameDone.getState()).toMatchObject({
+      status: 'done',
+      candidates: [cand(0.9)]
+    });
+    expect(sameDoneListener).not.toHaveBeenCalled();
+
+    const fSameFail = fakeClient();
+    const rSameFail = createEngineRunner({
+      createClient: () => fSameFail.client,
+      cache
+    });
+    rSameFail.run(req(2), 'k1');
+    fSameFail.calls[0]?.resolve({ id: 2, type: 'error', message: 'boom' });
+    await flush();
+    const failListener = vi.fn();
+    rSameFail.subscribe(failListener);
+    rSameFail.restore('k1');
+    expect(rSameFail.getState()).toEqual({
+      status: 'failed',
+      reason: 'error',
+      key: 'k1'
+    });
+    expect(failListener).not.toHaveBeenCalled();
+
+    // (e) key が不一致の failed を表示中で cache が一致 → done に復元する
+    const fOtherFail = fakeClient();
+    const rOtherFail = createEngineRunner({
+      createClient: () => fOtherFail.client,
+      cache
+    });
+    rOtherFail.run(req(3), 'k-other');
+    fOtherFail.calls[0]?.resolve({ id: 3, type: 'error', message: 'boom' });
+    await flush();
+    rOtherFail.restore('k1');
+    expect(rOtherFail.getState()).toEqual(cachedDone);
   });
 });
 
@@ -255,5 +349,37 @@ describe('visibleRunState', () => {
       elapsedMs: 0
     };
     expect(visibleRunState(running, 'b')).toBe(running);
+  });
+
+  it('172-T3: key が違う failed は idle、一致する failed と running はそのまま、run の failed は実行時 key を保持する', async () => {
+    const failed: EngineRunState = {
+      status: 'failed',
+      reason: 'error',
+      key: 'a'
+    };
+    expect(visibleRunState(failed, 'a')).toBe(failed);
+    expect(visibleRunState(failed, 'b')).toEqual({ status: 'idle' });
+
+    const running: EngineRunState = {
+      status: 'running',
+      startedAt: 0,
+      elapsedMs: 0
+    };
+    expect(visibleRunState(running, 'a')).toBe(running);
+    expect(visibleRunState(running, 'b')).toBe(running);
+
+    const f = fakeClient();
+    const runner = createEngineRunner({
+      createClient: () => f.client,
+      cache: createEngineCache()
+    });
+    runner.run(req(1), 'run-key');
+    f.calls[0]?.resolve({ id: 1, type: 'out-of-range' });
+    await flush();
+    expect(runner.getState()).toEqual({
+      status: 'failed',
+      reason: 'out-of-range',
+      key: 'run-key'
+    });
   });
 });

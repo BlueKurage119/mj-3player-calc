@@ -1,4 +1,10 @@
-import { type ComponentType, Suspense, lazy } from 'react';
+import {
+  type ComponentType,
+  Suspense,
+  lazy,
+  useLayoutEffect,
+  useRef
+} from 'react';
 import type React from 'react';
 import {
   isGalleryEnabled,
@@ -23,8 +29,14 @@ if (import.meta.env.DEV) {
   DevMdGallery = lazy(() => import('./md/MdGallery'));
 }
 
-function AppContent(): React.JSX.Element {
+export function AppContent(): React.JSX.Element {
   const { screen } = useAppState();
+  const prevScreen = useRef(screen);
+  useLayoutEffect(() => {
+    if (prevScreen.current === screen) return;
+    prevScreen.current = screen;
+    window.scrollTo(0, 0);
+  }, [screen]);
   if (screen === 'settings') {
     return (
       <Suspense fallback={null}>

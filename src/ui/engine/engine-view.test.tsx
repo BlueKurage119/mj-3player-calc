@@ -124,19 +124,28 @@ describe('EngineView: 実行前後の表示', () => {
       'engine-screen__note'
     );
     expect(
-      render(view({ slow: true, run: { status: 'failed', reason: 'error' } }))
+      render(
+        view({
+          slow: true,
+          run: { status: 'failed', reason: 'error', key: 'k' }
+        })
+      )
     ).not.toContain('engine-screen__note');
   });
 
   it('U-8: failed は理由ごとに1行の文言を出す', () => {
     expect(
-      render(view({ run: { status: 'failed', reason: 'out-of-range' } }))
+      render(
+        view({ run: { status: 'failed', reason: 'out-of-range', key: 'k' } })
+      )
     ).toContain('4向聴以上は計算できません');
     expect(
-      render(view({ run: { status: 'failed', reason: 'not-applicable' } }))
+      render(
+        view({ run: { status: 'failed', reason: 'not-applicable', key: 'k' } })
+      )
     ).toContain('この手牌は計算できません');
     expect(
-      render(view({ run: { status: 'failed', reason: 'error' } }))
+      render(view({ run: { status: 'failed', reason: 'error', key: 'k' } }))
     ).toContain('計算できませんでした');
   });
 
